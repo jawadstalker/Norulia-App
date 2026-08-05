@@ -8,7 +8,6 @@ import { MenuItem } from '../ui/MenuItem';
 import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius } from '../../constants/theme';
 import {
-  ClipboardCheck,
   Brain,
   Sparkles,
   Puzzle,
@@ -24,14 +23,13 @@ import {
 const { width } = Dimensions.get('window');
 
 const menuItems = [
-  { id: 'assessment', titleKey: 'assessment', icon: ClipboardCheck, color: '#7C3AED', route: '/assessment' },
-  { id: 'ai', titleKey: 'aiAssistant', icon: Sparkles, color: '#EC4899', route: '/ai' },
-  { id: 'protocol', titleKey: 'smartProtocol', icon: Brain, color: '#3B82F6', route: '/protocol' },
+  // { id: 'ai', titleKey: 'aiAssistant', icon: Sparkles, color: '#EC4899', route: '/ai' },
+  // { id: 'protocol', titleKey: 'smartProtocol', icon: Brain, color: '#3B82F6', route: '/protocol' }, 
   { id: 'psycho', titleKey: 'psychoPhysical', icon: Puzzle, color: '#10B981', route: '/psycho' },
   { id: 'cultural', titleKey: 'culturalInterventions', icon: Globe, color: '#F59E0B', route: '/cultural' },
-  { id: 'profile', titleKey: 'userProfile', icon: User, color: '#6366F1', route: '/profile' },
-  { id: 'plus', titleKey: 'plusModule', icon: Plus, color: '#EF4444', route: '/plus' },
-  { id: 'program', titleKey: 'programManagement', icon: Calendar, color: '#8B5CF6', route: '/program' },
+  // { id: 'profile', titleKey: 'userProfile', icon: User, color: '#6366F1', route: '/profile' },
+  { id: 'plus', titleKey: 'plusModule', icon: Plus, color: '#EF4444', route: '/plus' }, 
+  // { id: 'program', titleKey: 'programManagement', icon: Calendar, color: '#8B5CF6', route: '/program' },
   { id: 'medication', titleKey: 'medicationManagement', icon: Pill, color: '#14B8A6', route: '/medication' },
   { id: 'consultation', titleKey: 'consultation', icon: Video, color: '#F97316', route: '/consultation' },
 ];

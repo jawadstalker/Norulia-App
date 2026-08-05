@@ -1,0 +1,14 @@
+node_modules
+.expo
+.idea
+.git
+dist
+*.rar
+*.zip
+
+android/.gradle
+android/build
+android/app/build
+
+*.log
+npm-debug.log

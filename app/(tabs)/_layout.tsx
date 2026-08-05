@@ -17,6 +17,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="assistant" />
       <Tabs.Screen name="schedule" />
       <Tabs.Screen name="profile" />
+      <Tabs.Screen name="medication" />
     </Tabs>
   );
 }

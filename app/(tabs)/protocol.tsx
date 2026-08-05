@@ -14,29 +14,29 @@ export default function ProtocolScreen() {
 
   const protocols = [
     {
-      title: 'Cognitive Enhancement',
-      desc: 'Personalized brain training protocols',
+      title: t.cognitiveEnhancement || 'Cognitive Enhancement',
+      desc: t.cognitiveTraining || 'Personalized brain training protocols',
       icon: Brain,
       color: colors.primary,
       progress: 70
     },
     {
-      title: 'Focus Training',
-      desc: 'Improve concentration and attention',
+      title: t.focusTraining || 'Focus Training',
+      desc: t.improveAttention || 'Improve concentration and attention',
       icon: Target,
       color: colors.success,
       progress: 45
     },
     {
-      title: 'Memory Boost',
-      desc: 'Enhance memory retention',
+      title: t.memoryBoost || 'Memory Boost',
+      desc: t.enhanceMemory || 'Enhance memory retention',
       icon: Zap,
       color: colors.warning,
       progress: 80
     },
     {
-      title: 'Stress Management',
-      desc: 'Build resilience and coping skills',
+      title: t.stressManagement || 'Stress Management',
+      desc: t.buildResilience || 'Build resilience and coping skills',
       icon: Shield,
       color: colors.error,
       progress: 55
@@ -58,11 +58,11 @@ export default function ProtocolScreen() {
           </View>
 
           <Text style={[styles.title, { color: colors.text }]}>
-            {t.smartProtocol}
+            {t.smartProtocol || 'Smart Personal Protocol'}
           </Text>
 
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            AI powered personalized cognitive programs
+            {t.aiPoweredProtocols || 'AI powered personalized cognitive programs'}
           </Text>
         </View>
 
@@ -112,7 +112,7 @@ export default function ProtocolScreen() {
                 ]}
               >
                 <Text style={styles.buttonText}>
-                  Start Protocol
+                  {t.startProtocol || 'Start Protocol'}
                 </Text>
                 <ChevronRight size={18} color="#fff" />
               </TouchableOpacity>
