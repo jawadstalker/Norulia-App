@@ -10,10 +10,10 @@ workflows:
       vars:
         EXPO_TOKEN: Encrypted(EXPO_TOKEN)
 
-      cache:
-        cache_paths:
-          - $HOME/.npm
-          - node_modules
+    cache:
+      cache_paths:
+        - $HOME/.npm
+        - node_modules
 
     scripts:
       - name: Install dependencies
