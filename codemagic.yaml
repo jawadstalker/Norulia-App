@@ -1,13 +1,11 @@
 workflows:
   android-apk:
     name: Neurolia Android APK Build
-
-    max_build_duration: 60
-
+    max_build_duration: 90
+    instance_type: mac_mini_m2
     environment:
-      groups:
-        - expo_credentials
-      node: 22
+      node: 20
+      java: 17
 
     cache:
       cache_paths:
@@ -17,19 +15,17 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          npm ci
+          npm ci || npm install
 
-      - name: Install EAS CLI
+      - name: Prebuild Android project
         script: |
-          npm install -g eas-cli
+          npx expo prebuild --platform android --clean
 
-      - name: Build Android APK
+      - name: Build APK
         script: |
-          eas build \
-            --platform android \
-            --profile preview \
-            --non-interactive
+          cd android
+          ./gradlew assembleRelease --no-daemon
 
     artifacts:
-      - "*.apk"
-      - "build/**/*.apk"
+      - android/app/build/outputs/apk/release/*.apk
+      - android/build/reports/**
