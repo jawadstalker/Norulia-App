@@ -1,0 +1,40 @@
+workflows:
+  android-apk:
+    name: Neurolia Android APK Build
+
+    max_build_duration: 60
+
+    environment:
+      node: 22
+
+      vars:
+        EXPO_TOKEN: Encrypted(EXPO_TOKEN)
+
+      cache:
+        cache_paths:
+          - $HOME/.npm
+          - node_modules
+
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm ci
+
+      - name: Install EAS CLI
+        script: |
+          npm install -g eas-cli
+
+      - name: Verify Expo project
+        script: |
+          npx expo doctor
+
+      - name: Build Android APK
+        script: |
+          eas build \
+            --platform android \
+            --profile preview \
+            --non-interactive
+
+    artifacts:
+      - "*.apk"
+      - "build/**/*.apk"
