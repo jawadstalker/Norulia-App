@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Game</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+
+<div class="top">
+
+<div class="box">
+⏱
+<span id="timer">00:00</span>
+</div>
+
+<div class="box">
+⭐
+<span id="score">0</span>
+</div>
+
+<div class="box">
+🎯
+<span id="moves">0</span>
+</div>
+
+<button id="restart">
+Restart
+</button>
+
+</div>
+
+<div id="game" class="board"></div>
+
+<div id="win" class="popup hidden">
+
+<h2>🎉 برنده شدی!</h2>
+
+<p id="result"></p>
+
+<button onclick="location.reload()">
+دوباره
+</button>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
