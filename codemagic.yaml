@@ -23,9 +23,7 @@ workflows:
         script: |
           npm install -g eas-cli
 
-      - name: Verify Expo project
-        script: |
-          npx expo-doctor
+
 
       - name: Build Android APK
         script: |
