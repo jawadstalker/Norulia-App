@@ -1,4 +1,12 @@
 {
+  "icon": "./assets/icon.jpg",
+
+"android": {
+  "adaptiveIcon": {
+    "foregroundImage": "./assets/adaptive-icon.jpg",
+    "backgroundColor": "#ffffff"
+  }
+},
   "expo": {
     "name": "neurolia-clean",
     "slug": "neurolia-clean",

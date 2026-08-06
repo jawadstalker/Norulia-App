@@ -18,7 +18,7 @@ import { AuthProvider, useAuth } from '../context/AuthContext';
 import { SplashScreen as AppSplashScreen } from '../components/screens/SplashScreen';
 import { AuthScreen } from '../components/screens/AuthScreen';
 import { BottomNavBar } from '../components/ui/BottomNavBar';
-import { useFrameworkReady } from '../hooks/useFrameworkReady';
+// import { useFrameworkReady } from '../hooks/useFrameworkReady';
 import { useRouter, usePathname } from 'expo-router';
 
 SplashScreen.preventAutoHideAsync();
@@ -71,7 +71,7 @@ function AppContent() {
 }
 
 export default function RootLayout() {
-  useFrameworkReady();
+  // useFrameworkReady();
 
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
