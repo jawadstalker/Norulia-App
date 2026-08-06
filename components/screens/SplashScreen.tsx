@@ -29,7 +29,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 150, damping: 15 }}
         >
-          <View style={[styles.logoContainer, { backgroundColor: colors.primary }]}>
+          <View style={[styles.logoContainer, { backgroundColor: '#7C5CFF' }]}>
             <Brain size={60} color="#FFFFFF" strokeWidth={2} />
             <MotiView
               from={{ rotate: '0deg' }}
@@ -37,7 +37,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
               transition={{ type: 'timing', duration: 8000, loop: true }}
               style={styles.orbit}
             >
-              <Sparkles size={20} color={colors.warning} />
+              <Sparkles size={20} color="#C4B5FD" />
             </MotiView>
           </View>
         </MotiView>
@@ -59,7 +59,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           from={{ width: 0 }}
           animate={{ width: width * 0.5 }}
           transition={{ type: 'timing', duration: 2000, delay: 800 }}
-          style={[styles.progressBar, { backgroundColor: colors.primary }]}
+          style={[styles.progressBar, { backgroundColor: '#A78BFA' }]}
         />
       </View>
 
@@ -85,7 +85,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
             }}
             style={[
               styles.particle,
-              { backgroundColor: colors.primary + '40' },
+              { backgroundColor: '#A78BFA40' },
             ]}
           />
         ))}
