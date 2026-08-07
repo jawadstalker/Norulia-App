@@ -100,6 +100,7 @@ export default function MedicationHistory() {
 
 const styles = StyleSheet.create({
   container: {
+    paddingTop: 80,
     flex: 1,
   },
   header: {

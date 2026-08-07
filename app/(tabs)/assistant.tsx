@@ -491,6 +491,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   container: {
+    paddingTop: 80,
     flex: 1,
     paddingHorizontal: Spacing.lg,
   },

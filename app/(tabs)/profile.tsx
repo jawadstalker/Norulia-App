@@ -91,6 +91,7 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacing.lg,
     paddingBottom: 100,
+    paddingTop : 80,
   },
   header: {
     alignItems: 'center',

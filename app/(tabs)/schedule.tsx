@@ -383,6 +383,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+    paddingTop: 80,
     padding: Spacing.lg,
     paddingBottom: 160,
   },
