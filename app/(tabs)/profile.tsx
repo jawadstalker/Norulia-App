@@ -36,7 +36,18 @@ export default function ProfileScreen() {
         colors={[colors.primary, colors.accent || colors.primary]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.hero}
+        style={[
+          styles.hero,
+          {
+            borderWidth: 1,
+            borderColor: 'rgba(255,255,255,0.18)',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: 0.15,
+            shadowRadius: 20,
+            elevation: 8,
+          }
+        ]}
       >
         <View style={[styles.heroBlobA, { backgroundColor: '#FFFFFF' }]} />
         <View style={[styles.heroBlobB, { backgroundColor: '#FFFFFF' }]} />
@@ -156,13 +167,25 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   hero: {
-    width,
-    paddingTop: 80,
-    paddingBottom: 56,
+    width: width - Spacing.lg * 2,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.lg,
+    paddingTop: 50,
+    paddingBottom: 42,
     alignItems: 'center',
-    borderBottomLeftRadius: 36,
-    borderBottomRightRadius: 36,
+  
+    borderRadius: 32,
+  
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  
     overflow: 'hidden',
+  
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
   },
   heroBlobA: {
     position: 'absolute',
@@ -183,9 +206,9 @@ const styles = StyleSheet.create({
     left: -30,
   },
   avatarRing: {
-    width: 128,
-    height: 128,
-    borderRadius: 64,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
@@ -196,23 +219,23 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   avatarInner: {
-    width: 118,
-    height: 118,
-    borderRadius: 59,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
   },
   profileAvatar: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
+    width: 106,
+    height: 106,
+    borderRadius: 53,
   },
   crownBadge: {
     position: 'absolute',
-    bottom: 4,
-    right: 4,
+    bottom: 2,
+    right: 2,
     width: 26,
     height: 26,
     borderRadius: 13,
@@ -251,7 +274,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   body: {
-    marginTop: -28,
+    marginTop: 16,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
   },
