@@ -15,8 +15,10 @@ import * as SplashScreen from 'expo-splash-screen';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { LanguageProvider, useLanguage } from '../context/LanguageContext';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { AssessmentProvider, useAssessment } from '../context/AssessmentContext';
 import { SplashScreen as AppSplashScreen } from '../components/screens/SplashScreen';
 import { AuthScreen } from '../components/screens/AuthScreen';
+import { AssessmentScreen } from '../components/screens/AssessmentScreen';
 import { BottomNavBar } from '../components/ui/BottomNavBar';
 import { useFrameworkReady } from '../hooks/useFrameworkReady';
 import { useRouter, usePathname } from 'expo-router';
@@ -25,6 +27,7 @@ SplashScreen.preventAutoHideAsync();
 
 function AppContent() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isCompleted: assessmentCompleted, isLoading: assessmentLoading, completeAssessment } = useAssessment();
   const { colors, theme } = useTheme();
   const { isRTL, language } = useLanguage();
   const [showSplash, setShowSplash] = useState(true);
@@ -56,6 +59,14 @@ function AppContent() {
 
   if (!isAuthenticated) {
     return <AuthScreen />;
+  }
+
+  if (assessmentLoading) {
+    return <View style={[styles.container, { backgroundColor: colors.background }]} />;
+  }
+
+  if (!assessmentCompleted) {
+    return <AssessmentScreen onComplete={completeAssessment} />;
   }
 
   return (
@@ -90,7 +101,9 @@ export default function RootLayout() {
         <ThemeProvider>
           <LanguageProvider>
             <AuthProvider>
-              <AppContent />
+              <AssessmentProvider>
+                <AppContent />
+              </AssessmentProvider>
             </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>
