@@ -34,7 +34,7 @@ const weeklyMovie = {
     'A visually beautiful journey about escaping routine, discovering courage, and finding meaning in everyday life.',
   reason:
     'This week’s selection is designed to inspire curiosity, reduce mental fatigue, and encourage a more positive perspective.',
-  poster: require('../../assets/movies/movie_4.webp'),
+  poster: require('../../assets/movies/movie.jpg'),
 };
 
 const recommendations = [
@@ -43,21 +43,21 @@ const recommendations = [
     title: 'Inside Out',
     genre: 'Animation • Family',
     rating: '8.1',
-    poster: require('../../assets/movies/movie_2.webp'),
+    poster: require('../../assets/movies/movie.jpg'),
   },
   {
     id: '2',
     title: 'Soul',
     genre: 'Animation • Drama',
     rating: '8.0',
-    poster: require('../../assets/movies/movie_3.png'),
+    poster: require('../../assets/movies/movie.jpg'),
   },
   {
     id: '3',
     title: 'Good Will Hunting',
     genre: 'Drama',
     rating: '8.3',
-    poster: require('../../assets/movies/walter-mitty.png'),
+    poster: require('../../assets/movies/movie.jpg'),
   },
 ];
 

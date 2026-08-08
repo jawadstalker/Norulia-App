@@ -61,7 +61,7 @@ export const translations = {
     retry: 'تلاش مجدد',
 
     // ===== Nova AI Assistant =====
-    novaAI: 'نوا هوش مصنوعی',
+    novaAI: ' هوش مصنوعی نورولیا',
     cognitiveCompanion: 'همراه شناختی شخصی شما',
     online: 'آنلاین',
     offline: 'آفلاین',
