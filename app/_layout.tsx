@@ -23,6 +23,7 @@ import { BottomNavBar } from '../components/ui/BottomNavBar';
 import { useFrameworkReady } from '../hooks/useFrameworkReady';
 import { useRouter, usePathname } from 'expo-router';
 
+// Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
 function AppContent() {
@@ -46,7 +47,8 @@ function AppContent() {
 
   const handleSplashComplete = () => {
     setShowSplash(false);
-    SplashScreen.hide();
+    // Hide the native splash screen when our custom splash completes
+    SplashScreen.hideAsync();
   };
 
   const handleNavigate = (route: string) => {
@@ -84,14 +86,32 @@ function AppContent() {
 export default function RootLayout() {
   useFrameworkReady();
 
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
   });
 
-  if (!fontsLoaded) {
+  // Handle splash screen hiding when fonts are ready or if there's an error
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      // Hide the native splash screen
+      SplashScreen.hideAsync().catch(error => {
+        console.warn('Error hiding splash screen:', error);
+      });
+    }
+  }, [fontsLoaded, fontError]);
+
+  // Log any font loading errors
+  useEffect(() => {
+    if (fontError) {
+      console.error('Font loading error:', fontError);
+    }
+  }, [fontError]);
+
+  // Show nothing while fonts are loading, but don't block if there's an error
+  if (!fontsLoaded && !fontError) {
     return null;
   }
 
