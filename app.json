@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "neurolia-clean",
-    "slug": "neurolia-clean",
+    "name": "Neurolia",
+    "slug": "Neurolia",
+    "scheme": "neuroliaclean",
     "version": "1.0.0",
 
     "orientation": "portrait",
