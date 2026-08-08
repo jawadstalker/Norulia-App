@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,187 +7,1045 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
-import { useTheme } from '../../context/ThemeContext';
-import { Spacing, BorderRadius } from '../../constants/theme';
-import { Card } from '../../components/ui/Card';
-import { Brain, Clock, Trophy } from 'lucide-react-native';
 
-const games = [
+import { useRouter } from 'expo-router';
+
+import {
+  ArrowLeft,
+  Brain,
+  Clock,
+  Trophy,
+  Heart,
+  Compass,
+  ChevronLeft,
+} from 'lucide-react-native';
+
+import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
+
+import {
+  Spacing,
+  BorderRadius,
+} from '../../constants/theme';
+
+import { Card } from '../../components/ui/Card';
+
+
+// ======================================================
+// دسته‌های بازی
+// ======================================================
+
+const categories = [
   {
-    id: '1',
-    title: 'Memory Challenge',
-    description: 'Improve memory and cognitive skills',
-    image: require('../../assets/games/game1.png'),
-    level: 'Easy',
-    time: '5 min',
+    id: 'psychological',
+    title: 'Psychological Games',
+    titleFa: 'بازی‌های روانشناختی',
+    description: 'Train your memory, attention and cognitive skills',
+    descriptionFa: 'حافظه، توجه و مهارت‌های شناختی خود را تقویت کنید',
+    icon: Brain,
   },
   {
-    id: '2',
-    title: 'Focus Training',
-    description: 'Train attention and concentration',
-    image: require('../../assets/games/game2.png'),
-    level: 'Medium',
-    time: '10 min',
+    id: 'stress',
+    title: 'Anti-Stress Games',
+    titleFa: 'بازی‌های ضد استرس',
+    description: 'Relax your mind and reduce stress',
+    descriptionFa: 'ذهن خود را آرام کنید و استرس را کاهش دهید',
+    icon: Heart,
   },
   {
-    id: '3',
-    title: 'Reaction Test',
-    description: 'Improve reaction speed',
-    image: require('../../assets/games/game3.png'),
-    level: 'Hard',
-    time: '7 min',
+    id: 'adventure',
+    title: 'Adventure Games',
+    titleFa: 'بازی‌های ماجراجویی',
+    description: 'Explore new worlds and enjoy exciting challenges',
+    descriptionFa: 'دنیاهای جدید را کشف کنید و از چالش‌های هیجان‌انگیز لذت ببرید',
+    icon: Compass,
   },
 ];
 
+
+// ======================================================
+// بازی‌های هر دسته
+// ======================================================
+
+const games = [
+  // ---------------- Psychological ----------------
+
+  {
+    id: '1',
+    category: 'psychological',
+
+    title: 'Memory Challenge',
+    titleFa: 'چالش حافظه',
+
+    description: 'Improve memory and cognitive skills',
+    descriptionFa: 'بهبود حافظه و مهارت‌های شناختی',
+
+    image: require('../../assets/games/game3.png'),
+
+    level: 'Easy',
+    levelFa: 'آسان',
+
+    time: '5 min',
+    timeFa: '۵ دقیقه',
+
+    route: '/games/memory-challenge',
+  },
+
+  {
+    id: '2',
+    category: 'psychological',
+
+    title: 'Last Survival',
+    titleFa: 'آخرین بازمانده',
+
+    description: 'Train attention and concentration',
+    descriptionFa: 'تمرین توجه و تمرکز',
+
+    image: require('../../assets/games/game2.png'),
+
+    level: 'Medium',
+    levelFa: 'متوسط',
+
+    time: '10 min',
+    timeFa: '۱۰ دقیقه',
+
+    route: '/games/last-survival',
+  },
+
+  {
+    id: '3',
+    category: 'psychological',
+
+    title: 'Reaction Test',
+    titleFa: 'تست واکنش',
+
+    description: 'Improve reaction speed',
+    descriptionFa: 'بهبود سرعت واکنش',
+
+    image: require('../../assets/games/game4.png'),
+
+    level: 'Hard',
+    levelFa: 'سخت',
+
+    time: '7 min',
+    timeFa: '۷ دقیقه',
+
+    route: '/games/stroop',
+  },
+
+
+  // ---------------- Anti Stress ----------------
+
+  {
+    id: '4',
+    category: 'stress',
+
+    title: 'Calm Breathing',
+    titleFa: 'تنفس آرام',
+
+    description: 'Relax with guided breathing',
+    descriptionFa: 'با تمرین تنفس هدایت‌شده آرام شوید',
+
+    image: require('../../assets/games/game3.png'),
+
+    level: 'Easy',
+    levelFa: 'آسان',
+
+    time: '5 min',
+    timeFa: '۵ دقیقه',
+
+    route: '/games/calm-breathing',
+  },
+
+  {
+    id: '5',
+    category: 'stress',
+
+    title: 'Relaxing Garden',
+    titleFa: 'باغ آرامش',
+
+    description: 'Enjoy a peaceful relaxing experience',
+    descriptionFa: 'یک تجربه آرام و لذت‌بخش را تجربه کنید',
+
+    image: require('../../assets/games/game2.png'),
+
+    level: 'Easy',
+    levelFa: 'آسان',
+
+    time: '10 min',
+    timeFa: '۱۰ دقیقه',
+
+    route: '/games/relaxing-garden',
+  },
+
+
+  // ---------------- Adventure ----------------
+
+  {
+    id: '6',
+    category: 'adventure',
+
+    title: 'Lost Island',
+    titleFa: 'جزیره گمشده',
+
+    description: 'Explore a mysterious island',
+    descriptionFa: 'یک جزیره مرموز را کشف کنید',
+
+    image: require('../../assets/games/game4.png'),
+
+    level: 'Medium',
+    levelFa: 'متوسط',
+
+    time: '15 min',
+    timeFa: '۱۵ دقیقه',
+
+    route: '/games/lost-island',
+  },
+
+  {
+    id: '7',
+    category: 'adventure',
+
+    title: 'Forest Adventure',
+    titleFa: 'ماجراجویی در جنگل',
+
+    description: 'Discover the secrets of the forest',
+    descriptionFa: 'رازهای جنگل را کشف کنید',
+
+    image: require('../../assets/games/game3.png'),
+
+    level: 'Hard',
+    levelFa: 'سخت',
+
+    time: '20 min',
+    timeFa: '۲۰ دقیقه',
+
+    route: '/games/forest-adventure',
+  },
+];
+
+
+// ======================================================
+// صفحه اصلی
+// ======================================================
+
 export default function PsychoScreen() {
   const { colors } = useTheme();
+  const { t, language, isRTL } = useLanguage();
   const router = useRouter();
 
-  return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <TouchableOpacity
-        onPress={() => router.back()}
-        style={[styles.backButton, { backgroundColor: colors.surface }]}
+  // دسته انتخاب شده
+  const [selectedCategory, setSelectedCategory] =
+    useState<string | null>(null);
+
+
+  // --------------------------------------------------
+  // متن‌ها
+  // --------------------------------------------------
+
+  const textAlignStyle = isRTL
+    ? 'right'
+    : 'left';
+
+
+  const getGameTitle = (game: typeof games[0]) => {
+    return language === 'fa'
+      ? game.titleFa
+      : game.title;
+  };
+
+
+  const getGameDescription = (game: typeof games[0]) => {
+    return language === 'fa'
+      ? game.descriptionFa
+      : game.description;
+  };
+
+
+  const getGameLevel = (game: typeof games[0]) => {
+    return language === 'fa'
+      ? game.levelFa
+      : game.level;
+  };
+
+
+  const getGameTime = (game: typeof games[0]) => {
+    return language === 'fa'
+      ? game.timeFa
+      : game.time;
+  };
+
+
+  // --------------------------------------------------
+  // بازی‌های دسته انتخاب‌شده
+  // --------------------------------------------------
+
+  const filteredGames = games.filter(
+    game =>
+      game.category === selectedCategory
+  );
+
+
+  // --------------------------------------------------
+  // تابع بازگشت
+  // --------------------------------------------------
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
+  };
+
+
+  // ======================================================
+  // نمایش دسته‌ها
+  // ======================================================
+
+  if (!selectedCategory) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {
+            backgroundColor:
+              colors.background,
+          },
+        ]}
       >
-        <ArrowLeft size={22} color={colors.text} />
-        <Text style={[styles.backText, { color: colors.text }]}>Back</Text>
-      </TouchableOpacity>
+
+        {/* Back */}
+
+        <TouchableOpacity
+          onPress={handleBack}
+          style={[
+            styles.backButton,
+            {
+              backgroundColor:
+                colors.surface,
+
+              flexDirection:
+                isRTL
+                  ? 'row-reverse'
+                  : 'row',
+            },
+          ]}
+        >
+          <ArrowLeft
+            size={22}
+            color={colors.text}
+            style={
+              isRTL
+                ? {
+                    transform: [
+                      {
+                        scaleX: -1,
+                      },
+                    ],
+                  }
+                : {}
+            }
+          />
+
+          <Text
+            style={[
+              styles.backText,
+              {
+                color:
+                  colors.text,
+
+                textAlign:
+                  textAlignStyle,
+              },
+            ]}
+          >
+            {t.back}
+          </Text>
+        </TouchableOpacity>
+
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={
+            styles.content
+          }
+        >
+
+          {/* عنوان */}
+
+          <Text
+            style={[
+              styles.title,
+              {
+                color:
+                  colors.text,
+              },
+            ]}
+          >
+            {language === 'fa'
+              ? 'بازی‌ها'
+              : 'Games'}
+          </Text>
+
+
+          <Text
+            style={[
+              styles.subtitle,
+              {
+                color:
+                  colors.textSecondary,
+              },
+            ]}
+          >
+            {language === 'fa'
+              ? 'دسته مورد نظر خود را انتخاب کنید'
+              : 'Choose a game category'}
+          </Text>
+
+
+          {/* دسته‌ها */}
+
+          {categories.map(
+            category => {
+              const Icon =
+                category.icon;
+
+              return (
+                <TouchableOpacity
+                  key={category.id}
+                  activeOpacity={0.85}
+                  onPress={() =>
+                    setSelectedCategory(
+                      category.id
+                    )
+                  }
+                >
+
+                  <Card
+                    style={
+                      styles.categoryCard
+                    }
+                  >
+
+                    <View
+                      style={[
+                        styles.categoryIcon,
+                        {
+                          backgroundColor:
+                            colors.primary +
+                            '18',
+                        },
+                      ]}
+                    >
+
+                      <Icon
+                        size={34}
+                        color={
+                          colors.primary
+                        }
+                      />
+
+                    </View>
+
+
+                    <View
+                      style={[
+                        styles.categoryInfo,
+                        {
+                          alignItems:
+                            isRTL
+                              ? 'flex-end'
+                              : 'flex-start',
+                        },
+                      ]}
+                    >
+
+                      <Text
+                        style={[
+                          styles.categoryTitle,
+                          {
+                            color:
+                              colors.text,
+
+                            textAlign:
+                              textAlignStyle,
+                          },
+                        ]}
+                      >
+                        {language ===
+                        'fa'
+                          ? category.titleFa
+                          : category.title}
+                      </Text>
+
+
+                      <Text
+                        style={[
+                          styles.categoryDescription,
+                          {
+                            color:
+                              colors.textSecondary,
+
+                            textAlign:
+                              textAlignStyle,
+                          },
+                        ]}
+                      >
+                        {language ===
+                        'fa'
+                          ? category.descriptionFa
+                          : category.description}
+                      </Text>
+
+                    </View>
+
+
+                    <ChevronLeft
+                      size={22}
+                      color={
+                        colors.textSecondary
+                      }
+                      style={
+                        isRTL
+                          ? {
+                              transform: [
+                                {
+                                  rotate:
+                                    '180deg',
+                                },
+                              ],
+                            }
+                          : {}
+                      }
+                    />
+
+                  </Card>
+
+                </TouchableOpacity>
+              );
+            }
+          )}
+
+        </ScrollView>
+      </View>
+    );
+  }
+
+
+  // ======================================================
+  // نمایش بازی‌های دسته انتخاب‌شده
+  // ======================================================
+
+  const selectedCategoryData =
+    categories.find(
+      category =>
+        category.id ===
+        selectedCategory
+    );
+
+
+  return (
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor:
+            colors.background,
+        },
+      ]}
+    >
+
+      {/* Header */}
+
+      <View
+        style={[
+          styles.gameHeader,
+          {
+            flexDirection:
+              isRTL
+                ? 'row-reverse'
+                : 'row',
+          },
+        ]}
+      >
+
+        <TouchableOpacity
+          onPress={() =>
+            setSelectedCategory(null)
+          }
+          style={[
+            styles.headerBackButton,
+            {
+              backgroundColor:
+                colors.surface,
+            },
+          ]}
+        >
+
+          <ArrowLeft
+            size={21}
+            color={
+              colors.text
+            }
+            style={
+              isRTL
+                ? {
+                    transform: [
+                      {
+                        scaleX: -1,
+                      },
+                    ],
+                  }
+                : {}
+            }
+          />
+
+        </TouchableOpacity>
+
+
+        <View
+          style={[
+            styles.headerTitleContainer,
+            {
+              alignItems:
+                isRTL
+                  ? 'flex-end'
+                  : 'flex-start',
+            },
+          ]}
+        >
+
+          <Text
+            style={[
+              styles.headerTitle,
+              {
+                color:
+                  colors.text,
+
+                textAlign:
+                  textAlignStyle,
+              },
+            ]}
+          >
+            {language === 'fa'
+              ? selectedCategoryData?.titleFa
+              : selectedCategoryData?.title}
+          </Text>
+
+          <Text
+            style={[
+              styles.headerSubtitle,
+              {
+                color:
+                  colors.textSecondary,
+
+                textAlign:
+                  textAlignStyle,
+              },
+            ]}
+          >
+            {filteredGames.length}{' '}
+            {language === 'fa'
+              ? 'بازی'
+              : 'games'}
+          </Text>
+
+        </View>
+
+      </View>
+
+
+      {/* Games */}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={
+          styles.content
+        }
       >
-        <Text style={[styles.title, { color: colors.text }]}>
-          Psycho-Physical Training
-        </Text>
 
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Train your brain with interactive challenges
-        </Text>
+        {filteredGames.map(
+          game => (
+            <Card
+              key={game.id}
+              style={styles.card}
+            >
 
-        {games.map((game, index) => (
-          <Card key={game.id} style={styles.card}>
-            <Image
-              source={game.image}
-              style={styles.cover}
-              resizeMode="cover"
-            />
-            <View style={styles.info}>
-              <Text style={[styles.gameTitle, { color: colors.text }]}>
-                {game.title}
-              </Text>
+              <Image
+                source={game.image}
+                style={styles.cover}
+                resizeMode="cover"
+              />
 
-              <Text style={[styles.description, { color: colors.textSecondary }]}>
-                {game.description}
-              </Text>
 
-              <View style={styles.details}>
-                <View style={styles.detailItem}>
-                  <Brain size={16} color={colors.primary} />
-                  <Text style={[styles.detailText, { color: colors.textSecondary }]}>
-                    {game.level}
-                  </Text>
+              <View
+                style={styles.info}
+              >
+
+                <Text
+                  style={[
+                    styles.gameTitle,
+                    {
+                      color:
+                        colors.text,
+
+                      textAlign:
+                        textAlignStyle,
+                    },
+                  ]}
+                >
+                  {getGameTitle(game)}
+                </Text>
+
+
+                <Text
+                  style={[
+                    styles.description,
+                    {
+                      color:
+                        colors.textSecondary,
+
+                      textAlign:
+                        textAlignStyle,
+                    },
+                  ]}
+                >
+                  {getGameDescription(
+                    game
+                  )}
+                </Text>
+
+
+                <View
+                  style={[
+                    styles.details,
+                    {
+                      flexDirection:
+                        isRTL
+                          ? 'row-reverse'
+                          : 'row',
+                    },
+                  ]}
+                >
+
+                  <View
+                    style={
+                      styles.detailItem
+                    }
+                  >
+
+                    <Brain
+                      size={16}
+                      color={
+                        colors.primary
+                      }
+                    />
+
+                    <Text
+                      style={[
+                        styles.detailText,
+                        {
+                          color:
+                            colors.textSecondary,
+                        },
+                      ]}
+                    >
+                      {getGameLevel(
+                        game
+                      )}
+                    </Text>
+
+                  </View>
+
+
+                  <View
+                    style={
+                      styles.detailItem
+                    }
+                  >
+
+                    <Clock
+                      size={16}
+                      color={
+                        colors.primary
+                      }
+                    />
+
+                    <Text
+                      style={[
+                        styles.detailText,
+                        {
+                          color:
+                            colors.textSecondary,
+                        },
+                      ]}
+                    >
+                      {getGameTime(
+                        game
+                      )}
+                    </Text>
+
+                  </View>
+
                 </View>
 
-                <View style={styles.detailItem}>
-                  <Clock size={16} color={colors.primary} />
-                  <Text style={[styles.detailText, { color: colors.textSecondary }]}>
-                    {game.time}
+
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    {
+                      backgroundColor:
+                        colors.primary,
+                    },
+                  ]}
+                  onPress={() =>
+                    router.replace(
+                      game.route as any
+                    )
+                  }
+                  activeOpacity={0.8}
+                >
+
+                  <Text
+                    style={
+                      styles.buttonText
+                    }
+                  >
+                    {t.startGame}
                   </Text>
-                </View>
+
+                </TouchableOpacity>
+
               </View>
 
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: colors.primary }]}
-              >
-                <Text style={styles.buttonText}>Start Game</Text>
-              </TouchableOpacity>
-            </View>
-          </Card>
-        ))}
+            </Card>
+          )
+        )}
+
       </ScrollView>
+
     </View>
   );
 }
 
+
+// ======================================================
+// Styles
+// ======================================================
+
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
   },
+
   content: {
-    paddingTop: 80,
-    padding: Spacing.lg,
+    paddingTop: 20,
+    paddingHorizontal:
+      Spacing.lg,
     paddingBottom: 100,
   },
+
   backButton: {
-    flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
+    alignSelf:
+      'flex-start',
+
     paddingHorizontal: 14,
     paddingVertical: 10,
+
     borderRadius: 20,
-    marginTop: Spacing.md,
-    marginLeft: Spacing.lg,
+
+    marginTop:
+      Spacing.md,
+
+    marginLeft:
+      Spacing.lg,
   },
+
   backText: {
     marginLeft: 8,
     fontSize: 15,
     fontWeight: '600',
   },
+
   title: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '800',
+    textAlign: 'center',
     marginTop: Spacing.md,
-    paddingHorizontal: Spacing.lg,
   },
+
   subtitle: {
     fontSize: 15,
+    textAlign: 'center',
     marginTop: 8,
-    marginBottom: Spacing.lg,
-    paddingHorizontal: Spacing.lg,
+    marginBottom:
+      Spacing.lg,
   },
+
+
+  // ------------------------------
+  // Category
+  // ------------------------------
+
+  categoryCard: {
+    minHeight: 120,
+
+    marginBottom:
+      Spacing.md,
+
+    padding:
+      Spacing.md,
+
+    flexDirection:
+      'row',
+
+    alignItems:
+      'center',
+
+    gap: 14,
+  },
+
+  categoryIcon: {
+    width: 64,
+    height: 64,
+
+    borderRadius: 20,
+
+    alignItems:
+      'center',
+
+    justifyContent:
+      'center',
+  },
+
+  categoryInfo: {
+    flex: 1,
+  },
+
+  categoryTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+  },
+
+  categoryDescription: {
+    fontSize: 13,
+    marginTop: 5,
+    lineHeight: 19,
+  },
+
+
+  // ------------------------------
+  // Games
+  // ------------------------------
+
+  gameHeader: {
+    paddingHorizontal:
+      Spacing.lg,
+
+    paddingTop:
+      Spacing.lg,
+
+    paddingBottom:
+      Spacing.md,
+
+    alignItems:
+      'center',
+
+    gap: 12,
+  },
+
+  headerBackButton: {
+    width: 42,
+    height: 42,
+
+    borderRadius: 21,
+
+    alignItems:
+      'center',
+
+    justifyContent:
+      'center',
+  },
+
+  headerTitleContainer: {
+    flex: 1,
+  },
+
+  headerTitle: {
+    fontSize: 21,
+    fontWeight: '800',
+  },
+
+  headerSubtitle: {
+    fontSize: 12,
+    marginTop: 3,
+  },
+
   card: {
-    marginBottom: Spacing.lg,
-    overflow: 'hidden',
+    marginBottom:
+      Spacing.lg,
+
+    overflow:
+      'hidden',
   },
+
   cover: {
     width: '100%',
     height: 170,
   },
+
   info: {
-    padding: Spacing.md,
+    padding:
+      Spacing.md,
   },
+
   gameTitle: {
     fontSize: 20,
     fontWeight: '700',
   },
+
   description: {
     marginTop: 6,
     fontSize: 14,
   },
+
   details: {
-    flexDirection: 'row',
-    marginTop: Spacing.md,
+    marginTop:
+      Spacing.md,
     gap: 20,
   },
+
   detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection:
+      'row',
+    alignItems:
+      'center',
     gap: 5,
   },
+
   detailText: {
     fontSize: 13,
   },
+
   button: {
-    marginTop: Spacing.md,
+    marginTop:
+      Spacing.md,
+
     paddingVertical: 12,
-    borderRadius: BorderRadius.full,
-    alignItems: 'center',
+
+    borderRadius:
+      BorderRadius.full,
+
+    alignItems:
+      'center',
   },
+
   buttonText: {
     color: '#fff',
     fontWeight: '700',
   },
+
 });

@@ -240,6 +240,9 @@ export const translations = {
     meaning: 'معنی',
     meaningQuestion: 'معنی کلمه "ساقی" چیست؟',
     backToList: 'بازگشت به لیست',
+
+    // ===== HOW TO PLAY =====
+    howToPlay: 'راهنما',
   },
 
   en: {
@@ -483,5 +486,8 @@ export const translations = {
     meaning: 'Meaning',
     meaningQuestion: 'What is the meaning of "Saqi"?',
     backToList: 'Back to List',
+
+    // ===== HOW TO PLAY =====
+    howToPlay: 'How to play',
   }
 };
