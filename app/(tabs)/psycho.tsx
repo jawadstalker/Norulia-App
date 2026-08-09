@@ -89,11 +89,11 @@ const games = [
   {
     id: '3',
     category: 'psychological',
-    title: 'Reaction Test',
+    title: 'Stroop',
     titleFa: 'تست واکنش',
     description: 'Improve reaction speed',
     descriptionFa: 'بهبود سرعت واکنش',
-    image: require('../../assets/games/game4.png'),
+    image: require('../../assets/games/game9.png'),
     level: 'Hard',
     levelFa: 'سخت',
     time: '7 min',
@@ -103,16 +103,16 @@ const games = [
   {
     id: '4',
     category: 'stress',
-    title: 'Calm Breathing',
-    titleFa: 'تنفس آرام',
-    description: 'Relax with guided breathing',
-    descriptionFa: 'با تمرین تنفس هدایت‌شده آرام شوید',
-    image: require('../../assets/games/game3.png'),
+    title: 'Visual Flow',
+    titleFa: 'جریان بصری',
+    description: 'Focuse on Flow',
+    descriptionFa: 'افزایش قدرت بصری',
+    image: require('../../assets/games/game4.png'),
     level: 'Easy',
     levelFa: 'آسان',
     time: '5 min',
     timeFa: '۵ دقیقه',
-    route: '/games/calm-breathing',
+    route: '/games/visual-flow',
   },
   {
     id: '5',
@@ -188,11 +188,7 @@ export default function PsychoScreen() {
   );
 
   const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/');
-    }
+    setSelectedCategory(null);
   };
 
   if (!selectedCategory) {
@@ -206,7 +202,13 @@ export default function PsychoScreen() {
         ]}
       >
         <TouchableOpacity
-          onPress={handleBack}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/');
+            }
+          }}
           style={[
             styles.backButton,
             {
@@ -370,32 +372,6 @@ export default function PsychoScreen() {
           },
         ]}
       >
-        <TouchableOpacity
-          onPress={() => setSelectedCategory(null)}
-          style={[
-            styles.headerBackButton,
-            {
-              backgroundColor: colors.surface,
-            },
-          ]}
-        >
-          <ArrowLeft
-            size={21}
-            color={colors.text}
-            style={
-              isRTL
-                ? {
-                    transform: [
-                      {
-                        scaleX: -1,
-                      },
-                    ],
-                  }
-                : {}
-            }
-          />
-        </TouchableOpacity>
-
         <View
           style={[
             styles.headerTitleContainer,
@@ -433,6 +409,7 @@ export default function PsychoScreen() {
 
         <TouchableOpacity
           onPress={handleBack}
+          activeOpacity={0.7}
           style={[
             styles.headerBackButton,
             {
@@ -619,7 +596,8 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.md,
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'space-between',
+    flexDirection: 'row',
   },
   headerBackButton: {
     width: 42,
@@ -642,10 +620,12 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: Spacing.lg,
     overflow: 'hidden',
+    borderRadius: 18,
   },
   cover: {
     width: '100%',
     height: 170,
+    borderRadius: 18,
   },
   info: {
     padding: Spacing.md,
