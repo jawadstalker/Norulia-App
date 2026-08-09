@@ -43,14 +43,55 @@ export function AuthScreen() {
   const [pressed, setPressed] = useState(false);
   const [tabWidth, setTabWidth] = useState(0);
 
-  const handleSubmit = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+const handleSubmit = async () => {
+  if (isLoading) {
+    return;
+  }
+
+  Haptics.impactAsync(
+    Haptics.ImpactFeedbackStyle.Medium
+  );
+
+  /**
+   * Basic validation.
+   *
+   * Do NOT call login/register until the user
+   * actually submits the form.
+   */
+  if (!email.trim()) {
+    return;
+  }
+
+  if (!password.trim()) {
+    return;
+  }
+
+  if (!isLogin && !name.trim()) {
+    return;
+  }
+
+  try {
     if (isLogin) {
-      await login(email, password);
+      await login(
+        email.trim(),
+        password
+      );
     } else {
-      await register(name, email, password);
+      await register(
+        name.trim(),
+        email.trim(),
+        password
+      );
     }
-  };
+  } catch (error) {
+    console.error(
+      '[AUTH SCREEN] Submit failed:',
+      error
+    );
+  }
+};
+
 
   const switchMode = (toLogin: boolean) => {
     if (toLogin === isLogin) return;
