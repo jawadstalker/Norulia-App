@@ -113,6 +113,7 @@ export default function AssessmentReport({ results, onEnterApp }: Props) {
 const styles = StyleSheet.create({
   container: { alignItems: 'center', paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl, paddingTop: Spacing.sm },
   headerIcon: {
+  
     width: 68,
     height: 68,
     borderRadius: 34,

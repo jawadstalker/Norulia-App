@@ -66,15 +66,7 @@ function AppContent() {
   };
 
   useEffect(() => {
-    console.log('================================');
-    console.log('[NORULIA APP STATE]');
-    console.log('isAuthenticated:', isAuthenticated);
-    console.log('authLoading:', authLoading);
-    console.log('assessmentCompleted:', assessmentCompleted);
-    console.log('assessmentLoading:', assessmentLoading);
-    console.log('showSplash:', showSplash);
-    console.log('pathname:', pathname);
-    console.log('================================');
+
   }, [isAuthenticated, authLoading, assessmentCompleted, assessmentLoading, showSplash, pathname]);
 
   if (showSplash) {
@@ -133,8 +125,7 @@ function AppContent() {
               console.log('[ASSESSMENT] Completion saved');
               setAssessmentCompleted(true);
               console.log('[ASSESSMENT] assessmentCompleted = true');
-              router.replace('/(tabs)');
-              console.log('[ASSESSMENT] router.replace(/(tabs)) called');
+
             } catch (error) {
               console.error('[ASSESSMENT] Completion error:', error);
             }
