@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import {
   ArrowLeft,
@@ -162,10 +162,19 @@ export default function PsychoScreen() {
   const { colors } = useTheme();
   const { t, language, isRTL } = useLanguage();
   const router = useRouter();
+  const { category } = useLocalSearchParams<{ category?: string }>();
 
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(
+    category === 'stress' ? 'stress' : null
+  );
 
   const textAlignStyle = isRTL ? 'right' : 'left';
+
+  useEffect(() => {
+    if (category === 'stress') {
+      setSelectedCategory('stress');
+    }
+  }, [category]);
 
   const getGameTitle = (game: typeof games[0]) => {
     return language === 'fa' ? game.titleFa : game.title;

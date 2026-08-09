@@ -95,12 +95,7 @@ export default function VisualFlowScreen() {
     setTrialActive(false);
     setGameEnded(true);
 
-    router.replace({
-      pathname: '/psycho',
-      params: {
-        category: 'stress',
-      },
-    });
+    router.push('/psycho');
   }, [router]);
 
   const showExitDialog = useCallback(() => {
