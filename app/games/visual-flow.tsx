@@ -1,1439 +1,496 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Animated,
-  PanResponder,
-  Dimensions,
-  Easing,
-  Alert,
-} from 'react-native';
-
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Dimensions, Alert, PanResponder } from 'react-native';
 import { useRouter } from 'expo-router';
-import {
-  ArrowLeft,
-  CheckCircle,
-  XCircle,
-  Palette,
-  Sparkles,
-  Compass,
-  Target,
-  Trophy,
-  RotateCcw,
-} from 'lucide-react-native';
-
+import { ArrowLeft, CheckCircle, XCircle, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Palette, Target, Zap, BarChart3 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-import {
-  Spacing,
-  BorderRadius,
-} from '../../constants/theme';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { Spacing, BorderRadius } from '../../constants/theme';
 
 const TOTAL_TRIALS = 30;
 const NUM_DOTS = 80;
-
 const DIRECTIONS = ['Up', 'Down', 'Left', 'Right'] as const;
 
-type Direction = (typeof DIRECTIONS)[number];
+type Direction = typeof DIRECTIONS[number];
+type Dot = { x: number; y: number; vx: number; vy: number; color: string; size: number };
 
-type Dot = {
-  id: number;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  color: string;
-};
-
-type Result = {
-  coherence: number;
-  correct: boolean;
-  rt: number;
-};
-
-const DOT_COLORS = [
-  '#FFD700',
-  '#FF4444',
-  '#00E5D0',
-  '#FFC107',
-  '#8B5CF6',
-  '#FF1493',
-  '#00D4FF',
-  '#FF6B35',
-];
-
-const directionTranslation: Record<Direction, string> = {
-  Up: 'بالا',
-  Down: 'پایین',
-  Left: 'چپ',
-  Right: 'راست',
-};
-
-const directionTranslationEn: Record<Direction, string> = {
-  Up: 'Up',
-  Down: 'Down',
-  Left: 'Left',
-  Right: 'Right',
-};
-
-const getDirectionVector = (
-  direction: Direction,
-): [number, number] => {
-  switch (direction) {
-    case 'Up':
-      return [0, -2];
-    case 'Down':
-      return [0, 2];
-    case 'Left':
-      return [-2, 0];
-    case 'Right':
-      return [2, 0];
-  }
-};
-
-const random = (min: number, max: number) =>
-  Math.random() * (max - min) + min;
+const directionTranslation: { [key in Direction]: string } = { Up: 'بالا', Down: 'پایین', Left: 'چپ', Right: 'راست' };
+const directionTranslationEn: { [key in Direction]: string } = { Up: 'Up', Down: 'Down', Left: 'Left', Right: 'Right' };
+const dotColors = ['#FFD700', '#FF4444', '#00E5D0', '#FFC107', '#8B5CF6', '#FF1493', '#00D4FF', '#FF6B35'];
+const random = (min: number, max: number) => Math.random() * (max - min) + min;
 
 export default function VisualFlowScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { language, isRTL } = useLanguage();
 
-  const [showTutorial, setShowTutorial] = useState(true);
-  const [showExitDialog, setShowExitDialog] = useState(false);
-
+  const [tutorialVisible, setTutorialVisible] = useState(true);
   const [trialCount, setTrialCount] = useState(0);
   const [score, setScore] = useState(0);
-
-  const [currentDirection, setCurrentDirection] =
-    useState<Direction | null>(null);
-
-  const [coherenceLevel, setCoherenceLevel] =
-    useState(0.5);
-
-  const [trialActive, setTrialActive] =
-    useState(false);
-
+  const [currentDirection, setCurrentDirection] = useState<Direction | null>(null);
+  const [coherence, setCoherence] = useState(0);
+  const [trialActive, setTrialActive] = useState(false);
   const [gameEnded, setGameEnded] = useState(false);
-
-  const [infoText, setInfoText] = useState(
-    language === 'fa'
-      ? '👆 جهت حرکت دسته‌ی نقاط را تشخیص بده!'
-      : '👆 Detect the direction of the moving dots!',
-  );
-
-  const [infoType, setInfoType] = useState<
-    'normal' | 'correct' | 'wrong'
-  >('normal');
-
+  const [info, setInfo] = useState(language === 'fa' ? '👆 جهت حرکت دسته‌ی نقاط را تشخیص بده!' : '👆 Identify the direction of the moving dots!');
+  const [infoType, setInfoType] = useState<'normal' | 'correct' | 'wrong'>('normal');
   const [dots, setDots] = useState<Dot[]>([]);
-
-  const [results, setResults] = useState<Result[]>([]);
+  const [results, setResults] = useState<{ correct: boolean; rt: number; coherence: number }[]>([]);
+  const [gameStarted, setGameStarted] = useState(false);
 
   const startTimeRef = useRef(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(
-    null,
-  );
+  const animationRef = useRef<number | null>(null);
+  const dotsRef = useRef<Dot[]>([]);
+  const directionRef = useRef<Direction | null>(null);
+  const coherenceRef = useRef(0);
+  const trialActiveRef = useRef(false);
+  const gameEndedRef = useRef(false);
 
-  const generateDots = useCallback(
-    (
-      direction: Direction,
-      coherence: number,
-    ) => {
-      const generated: Dot[] = [];
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.94)).current;
 
-      const [cohVx, cohVy] =
-        getDirectionVector(direction);
-
-      const canvasWidth = SCREEN_WIDTH - 48;
-      const canvasHeight = 260;
-
-      for (let i = 0; i < NUM_DOTS; i++) {
-        const isCoherent =
-          Math.random() < coherence;
-
-        let vx: number;
-        let vy: number;
-
-        if (isCoherent) {
-          vx = cohVx + random(-0.3, 0.3);
-          vy = cohVy + random(-0.3, 0.3);
-        } else {
-          const angle = random(
-            0,
-            Math.PI * 2,
-          );
-
-          const speed = random(1, 3);
-
-          vx = Math.cos(angle) * speed;
-          vy = Math.sin(angle) * speed;
-        }
-
-        generated.push({
-          id: i,
-          x: random(8, canvasWidth - 8),
-          y: random(8, canvasHeight - 8),
-          vx,
-          vy,
-          color:
-            DOT_COLORS[
-              Math.floor(
-                Math.random() *
-                  DOT_COLORS.length,
-              )
-            ],
-        });
-      }
-
-      setDots(generated);
-    },
-    [],
-  );
-
-  const animateDots = useCallback(() => {
-    if (!trialActive || !currentDirection) {
-      return;
-    }
-
-    setDots(prevDots => {
-      const canvasWidth =
-        SCREEN_WIDTH - 48;
-
-      const canvasHeight = 260;
-
-      return prevDots.map(dot => {
-        let x = dot.x + dot.vx;
-        let y = dot.y + dot.vy;
-
-        if (x < 0) x = canvasWidth;
-        if (x > canvasWidth) x = 0;
-
-        if (y < 0) y = canvasHeight;
-        if (y > canvasHeight) y = 0;
-
-        return {
-          ...dot,
-          x,
-          y,
-        };
-      });
-    });
-  }, [trialActive, currentDirection]);
+  const t = {
+    title: language === 'fa' ? 'جریان بصری' : 'Visual Flow',
+    subtitle: language === 'fa' ? 'جهت حرکت دسته‌ی نقاط را پیدا کن!' : 'Find the main direction of the moving dots!',
+    start: language === 'fa' ? 'شروع تست' : 'Start Test',
+    back: language === 'fa' ? 'بازگشت' : 'Back',
+    correct: language === 'fa' ? 'درسته! 🎉' : 'Correct! 🎉',
+    wrong: language === 'fa' ? 'اشتباه!' : 'Wrong!',
+    exitTitle: language === 'fa' ? 'خروج از تست' : 'Exit Test',
+    exitMessage: language === 'fa' ? 'آیا از تست خارج می‌شوید؟' : 'Do you want to exit the test?',
+    confirm: language === 'fa' ? 'تایید' : 'Confirm',
+    cancel: language === 'fa' ? 'انصراف' : 'Cancel',
+    restart: language === 'fa' ? 'شروع دوباره' : 'Restart',
+    round: language === 'fa' ? 'دور' : 'Round',
+    score: language === 'fa' ? 'امتیاز' : 'Score',
+    difficulty: language === 'fa' ? 'سختی' : 'Difficulty',
+    games: language === 'fa' ? 'بازی' : 'game',
+    correctAnswers: language === 'fa' ? 'پاسخ صحیح' : 'Correct answers',
+    accuracy: language === 'fa' ? 'دقت' : 'Accuracy',
+    reaction: language === 'fa' ? 'میانگین زمان واکنش' : 'Average reaction time',
+    finalScore: language === 'fa' ? 'امتیاز نهایی' : 'Final score',
+    finished: language === 'fa' ? '🎯 تست تمام شد!' : '🎯 Test completed!',
+  };
 
   useEffect(() => {
-    if (!trialActive) return;
-
-    timerRef.current =
-      setInterval(animateDots, 40);
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 450, useNativeDriver: true }),
+      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }),
+    ]).start();
 
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
+      if (animationRef.current !== null) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
       }
     };
-  }, [trialActive, animateDots]);
+  }, []);
+
+  const goBack = useCallback(() => {
+    if (animationRef.current !== null) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+
+    trialActiveRef.current = false;
+    gameEndedRef.current = true;
+    setTrialActive(false);
+    setGameEnded(true);
+
+    router.replace({
+      pathname: '/psycho',
+      params: {
+        category: 'stress',
+      },
+    });
+  }, [router]);
+
+  const showExitDialog = useCallback(() => {
+    Alert.alert(
+      t.exitTitle,
+      t.exitMessage,
+      [
+        { text: t.cancel, style: 'cancel' },
+        { text: t.confirm, style: 'destructive', onPress: goBack },
+      ]
+    );
+  }, [t, goBack]);
+
+  const generateDots = useCallback((width: number, height: number) => {
+    const newDots: Dot[] = [];
+    for (let i = 0; i < NUM_DOTS; i++) {
+      const angle = random(0, Math.PI * 2);
+      const speed = random(1.5, 3.5);
+      newDots.push({
+        x: random(8, width - 8),
+        y: random(8, height - 8),
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        color: dotColors[Math.floor(Math.random() * dotColors.length)],
+        size: random(3, 5),
+      });
+    }
+    dotsRef.current = newDots;
+    setDots([...newDots]);
+  }, []);
+
+  const endGame = useCallback(() => {
+    gameEndedRef.current = true;
+    trialActiveRef.current = false;
+    setTrialActive(false);
+    setGameEnded(true);
+
+    if (animationRef.current !== null) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+
+    setInfo(t.finished);
+    setInfoType('correct');
+  }, [t]);
 
   const startTrial = useCallback(() => {
     if (trialCount >= TOTAL_TRIALS) {
+      endGame();
       return;
     }
 
-    const nextTrial = trialCount + 1;
+    const direction = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
+    const coh = random(0.2, 0.8);
 
-    const direction =
-      DIRECTIONS[
-        Math.floor(
-          Math.random() * DIRECTIONS.length,
-        )
-      ];
-
-    const coherence = random(
-      0.2,
-      0.8,
-    );
-
-    setTrialCount(nextTrial);
-    setTrialActive(true);
-    setGameEnded(false);
+    directionRef.current = direction;
+    coherenceRef.current = coh;
 
     setCurrentDirection(direction);
-    setCoherenceLevel(coherence);
+    setCoherence(coh);
+    setTrialCount(prev => prev + 1);
+    setTrialActive(true);
+    trialActiveRef.current = true;
+    gameEndedRef.current = false;
 
     startTimeRef.current = Date.now();
 
-    generateDots(
-      direction,
-      coherence,
-    );
-
+    setInfo(language === 'fa' ? '🤔 جهت حرکت را پیدا کن و پاسخ بده!' : '🤔 Find the direction and answer!');
     setInfoType('normal');
+  }, [trialCount, language, endGame]);
 
-    setInfoText(
-      language === 'fa'
-        ? '🤔 جهت حرکت را پیدا کن و دکمه را بزن!'
-        : '🤔 Find the direction and answer!',
-    );
-  }, [
-    trialCount,
-    generateDots,
-    language,
-  ]);
+  const animate = useCallback((width: number, height: number) => {
+    if (!trialActiveRef.current || gameEndedRef.current) return;
 
-  const startGame = () => {
-    setShowTutorial(false);
+    const direction = directionRef.current;
+    const coh = coherenceRef.current;
 
-    if (!trialActive && trialCount === 0) {
-      setTimeout(() => {
-        startTrial();
-      }, 500);
-    }
-  };
+    if (!direction) return;
 
-  const checkAnswer = async (
-    direction: Direction,
-  ) => {
-    if (
-      !trialActive ||
-      gameEnded ||
-      !currentDirection
-    ) {
-      return;
-    }
+    const vectors: { [key in Direction]: [number, number] } = {
+      Up: [0, -2],
+      Down: [0, 2],
+      Left: [-2, 0],
+      Right: [2, 0],
+    };
 
+    const [vx, vy] = vectors[direction];
+
+    const updated = dotsRef.current.map(dot => {
+      let nextVx = dot.vx;
+      let nextVy = dot.vy;
+
+      if (Math.random() < coh) {
+        nextVx = vx + random(-0.3, 0.3);
+        nextVy = vy + random(-0.3, 0.3);
+      } else {
+        const angle = random(0, Math.PI * 2);
+        const speed = random(1, 3);
+        nextVx = Math.cos(angle) * speed;
+        nextVy = Math.sin(angle) * speed;
+      }
+
+      let x = dot.x + nextVx;
+      let y = dot.y + nextVy;
+
+      if (x < 0) x = width;
+      if (x > width) x = 0;
+      if (y < 0) y = height;
+      if (y > height) y = 0;
+
+      return { ...dot, x, y, vx: nextVx, vy: nextVy };
+    });
+
+    dotsRef.current = updated;
+    setDots([...updated]);
+
+    animationRef.current = requestAnimationFrame(() => animate(width, height));
+  }, []);
+
+  const submitAnswer = useCallback((direction: Direction) => {
+    if (!trialActiveRef.current || gameEndedRef.current) return;
+
+    trialActiveRef.current = false;
     setTrialActive(false);
 
-    const reactionTime =
-      Date.now() -
-      startTimeRef.current;
+    if (animationRef.current !== null) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
 
-    const correct =
-      direction === currentDirection;
+    const reactionTime = Date.now() - startTimeRef.current;
+    const correct = direction === directionRef.current;
 
-    setResults(prev => [
-      ...prev,
-      {
-        coherence: coherenceLevel,
-        correct,
-        rt: reactionTime,
-      },
-    ]);
+    setResults(prev => [...prev, { correct, rt: reactionTime, coherence: coherenceRef.current }]);
 
     if (correct) {
       setScore(prev => prev + 10);
-
+      setInfo(t.correct);
       setInfoType('correct');
-
-      setInfoText(
-        language === 'fa'
-          ? '✅ درسته! 🎉'
-          : '✅ Correct! 🎉',
-      );
     } else {
+      const actual = directionRef.current!;
+      setInfo(`${t.wrong} ${language === 'fa' ? `جهت اصلی ${directionTranslation[actual]} بود` : `The main direction was ${directionTranslationEn[actual]}`}`);
       setInfoType('wrong');
-
-      const correctDirection =
-        language === 'fa'
-          ? directionTranslation[
-              currentDirection
-            ]
-          : directionTranslationEn[
-              currentDirection
-            ];
-
-      setInfoText(
-        language === 'fa'
-          ? `❌ اشتباه! جهت اصلی ${correctDirection} بود`
-          : `❌ Wrong! The correct direction was ${correctDirection}`,
-      );
-    }
-
-    if (
-      trialCount >= TOTAL_TRIALS
-    ) {
-      setTimeout(() => {
-        endGame();
-      }, 800);
-
-      return;
     }
 
     setTimeout(() => {
-      startTrial();
+      if (!gameEndedRef.current) {
+        if (trialCount >= TOTAL_TRIALS) {
+          endGame();
+        } else {
+          startTrial();
+        }
+      }
     }, 800);
-  };
+  }, [trialCount, t, language, startTrial, endGame]);
 
-  const endGame = () => {
-    setGameEnded(true);
-    setTrialActive(false);
+  useEffect(() => {
+    if (trialActive && dots.length > 0) {
+      const timer = setTimeout(() => {
+        const width = Dimensions.get('window').width - Spacing.lg * 2 - 28;
+        const height = Math.min(width * 2 / 3, 280);
+        animate(width, height);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [trialActive, dots.length, animate]);
 
-    const total =
-      results.length;
-
-    const corrects =
-      results.filter(
-        result => result.correct,
-      ).length;
-
-    const accuracy =
-      total > 0
-        ? (corrects / total) * 100
-        : 0;
-
-    const correctReactionTimes =
-      results
-        .filter(
-          result =>
-            result.correct &&
-            result.rt > 0,
-        )
-        .map(result => result.rt);
-
-    const avgRt =
-      correctReactionTimes.length > 0
-        ? correctReactionTimes.reduce(
-            (a, b) => a + b,
-            0,
-          ) /
-          correctReactionTimes.length
-        : 0;
-
-    setInfoType('correct');
-
-    setInfoText(
-      language === 'fa'
-        ? '🎯 تست تمام شد!'
-        : '🎯 Test completed!',
-    );
+  const startGame = () => {
+    setTutorialVisible(false);
+    setGameEnded(false);
+    gameEndedRef.current = false;
+    setGameStarted(true);
+    setTrialCount(0);
+    setScore(0);
+    setResults([]);
 
     setTimeout(() => {
-      const report =
-        language === 'fa'
-          ? `📊 گزارش جریان بصری
-
-✅ پاسخ صحیح: ${corrects} از ${total}
-🎯 دقت: ${accuracy.toFixed(1)}%
-⚡ میانگین زمان واکنش: ${avgRt.toFixed(0)}ms
-⭐ امتیاز نهایی: ${score}
-
-💪 ممنون از تلاشت!`
-          : `📊 Visual Flow Report
-
-✅ Correct: ${corrects} / ${total}
-🎯 Accuracy: ${accuracy.toFixed(1)}%
-⚡ Average reaction time: ${avgRt.toFixed(0)}ms
-⭐ Final score: ${score}
-
-💪 Great job!`;
-
-      Alert.alert(
-        language === 'fa'
-          ? 'گزارش تست'
-          : 'Test Report',
-        report,
-      );
+      const width = Dimensions.get('window').width - Spacing.lg * 2 - 28;
+      const height = Math.min(width * 2 / 3, 280);
+      generateDots(width, height);
+      startTrial();
     }, 300);
   };
 
   const restartGame = () => {
+    if (animationRef.current !== null) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+
+    gameEndedRef.current = false;
+    trialActiveRef.current = false;
     setGameEnded(false);
+    setTrialActive(false);
     setTrialCount(0);
     setScore(0);
     setResults([]);
-    setCurrentDirection(null);
-    setCoherenceLevel(0.5);
-    setTrialActive(false);
     setDots([]);
-
+    setInfo(language === 'fa' ? '👆 جهت حرکت دسته‌ی نقاط را تشخیص بده!' : '👆 Identify the direction of the moving dots!');
     setInfoType('normal');
 
-    setInfoText(
-      language === 'fa'
-        ? '👆 جهت حرکت دسته‌ی نقاط را تشخیص بده!'
-        : '👆 Detect the direction of the moving dots!',
+    setTimeout(startGame, 200);
+  };
+
+  const showReport = () => {
+    const total = results.length;
+    const corrects = results.filter(r => r.correct).length;
+    const accuracy = total ? (corrects / total * 100) : 0;
+    const correctRT = results.filter(r => r.correct).map(r => r.rt);
+    const avgRT = correctRT.length ? correctRT.reduce((a, b) => a + b, 0) / correctRT.length : 0;
+
+    Alert.alert(
+      language === 'fa' ? '📊 گزارش جریان بصری' : '📊 Visual Flow Report',
+      `${t.correctAnswers}: ${corrects} / ${total}\n${t.accuracy}: ${accuracy.toFixed(1)}%\n${t.reaction}: ${avgRT.toFixed(0)}ms\n${t.finalScore}: ${score}`
     );
-
-    setTimeout(() => {
-      startTrial();
-    }, 500);
   };
 
-  const showExit = () => {
-    setShowExitDialog(true);
-  };
-
-  const closeExit = () => {
-    setShowExitDialog(false);
-  };
-
-  const confirmExit = () => {
-    setShowExitDialog(false);
-
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/');
+  useEffect(() => {
+    if (gameEnded && results.length >= TOTAL_TRIALS) {
+      const timer = setTimeout(showReport, 350);
+      return () => clearTimeout(timer);
     }
-  };
+  }, [gameEnded, results]);
 
-  const panResponder =
-    useRef(
-      PanResponder.create({
-        onStartShouldSetPanResponder:
-          () => true,
+  const panResponder = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderRelease: (_, gesture) => {
+      const { dx, dy } = gesture;
+      if (Math.abs(dx) < 15 && Math.abs(dy) < 15) return;
+      if (Math.abs(dx) > Math.abs(dy)) submitAnswer(dx > 0 ? 'Right' : 'Left');
+      else submitAnswer(dy > 0 ? 'Down' : 'Up');
+    },
+  })).current;
 
-        onMoveShouldSetPanResponder:
-          () => true,
-
-        onPanResponderRelease:
-          (_, gesture) => {
-            const {
-              dx,
-              dy,
-            } = gesture;
-
-            if (
-              Math.abs(dx) < 10 &&
-              Math.abs(dy) < 10
-            ) {
-              return;
-            }
-
-            if (
-              Math.abs(dx) >
-              Math.abs(dy)
-            ) {
-              checkAnswer(
-                dx > 0
-                  ? 'Right'
-                  : 'Left',
-              );
-            } else {
-              checkAnswer(
-                dy > 0
-                  ? 'Down'
-                  : 'Up',
-              );
-            }
-          },
-      }),
-    ).current;
-
-  return (
-    <View
-      style={[
-        styles.screen,
-        {
-          backgroundColor:
-            '#1A0A2A',
-        },
-      ]}
-    >
-      <View
-        pointerEvents="none"
-        style={[
-          styles.glow,
-          {
-            backgroundColor:
-              'rgba(209,0,209,0.05)',
-          },
-        ]}
-      />
-
-      <View
-        style={[
-          styles.container,
-          {
-            backgroundColor:
-              '#2D1547',
-          },
-        ]}
-      >
-        <View
-          style={[
-            styles.header,
-            {
-              flexDirection:
-                isRTL
-                  ? 'row-reverse'
-                  : 'row',
-            },
-          ]}
-        >
-          <TouchableOpacity
-            onPress={showExit}
-            style={styles.backButton}
-            activeOpacity={0.8}
-          >
-            <ArrowLeft
-              size={22}
-              color="#fff"
-              style={
-                isRTL
-                  ? {
-                      transform: [
-                        {
-                          scaleX: -1,
-                        },
-                      ],
-                    }
-                  : undefined
-              }
-            />
-          </TouchableOpacity>
-
-          <Text
-            style={[
-              styles.headerTitle,
-              {
-                textAlign:
-                  'center',
-              },
-            ]}
-          >
-            🎨{' '}
-            {language === 'fa'
-              ? 'جریان بصری'
-              : 'Visual Flow'}
-          </Text>
-
-          <View
-            style={
-              styles.headerSpacer
-            }
-          />
-        </View>
-
-        <View
-          {...panResponder.panHandlers}
-          style={styles.canvasWrapper}
-        >
-          {dots.map(dot => (
-            <View
-              key={dot.id}
-              style={[
-                styles.dot,
-                {
-                  left: dot.x,
-                  top: dot.y,
-                  backgroundColor:
-                    dot.color,
-                  shadowColor:
-                    dot.color,
-                },
-              ]}
-            />
-          ))}
-
-          {showTutorial && (
-            <Tutorial
-              language={language}
-              isRTL={isRTL}
-              onBack={showExit}
-              onStart={startGame}
-            />
-          )}
-        </View>
-
-        <Text
-          style={[
-            styles.infoText,
-            {
-              color:
-                infoType === 'correct'
-                  ? '#34D399'
-                  : infoType === 'wrong'
-                    ? '#FF6B81'
-                    : '#E8D0F0',
-            },
-          ]}
-        >
-          {infoText}
-        </Text>
-
-        <View
-          style={[
-            styles.directionButtons,
-            {
-              flexDirection:
-                isRTL
-                  ? 'row-reverse'
-                  : 'row',
-            },
-          ]}
-        >
-          <DirectionButton
-            label="⬆️"
-            onPress={() =>
-              checkAnswer('Up')
-            }
-          />
-
-          <DirectionButton
-            label="⬇️"
-            onPress={() =>
-              checkAnswer('Down')
-            }
-          />
-
-          <DirectionButton
-            label="⬅️"
-            onPress={() =>
-              checkAnswer('Left')
-            }
-          />
-
-          <DirectionButton
-            label="➡️"
-            onPress={() =>
-              checkAnswer('Right')
-            }
-          />
-        </View>
-
-        <View
-          style={[
-            styles.statusBar,
-            {
-              flexDirection:
-                isRTL
-                  ? 'row-reverse'
-                  : 'row',
-            },
-          ]}
-        >
-          <StatusItem
-            label={
-              language === 'fa'
-                ? '🎯 دور'
-                : '🎯 Round'
-            }
-            value={`${trialCount}/${TOTAL_TRIALS}`}
-          />
-
-          <StatusItem
-            label={
-              language === 'fa'
-                ? '⭐ امتیاز'
-                : '⭐ Score'
-            }
-            value={String(score)}
-          />
-
-          <StatusItem
-            label={
-              language === 'fa'
-                ? '📊 سختی'
-                : '📊 Difficulty'
-            }
-            value={
-              trialActive
-                ? `${Math.round(
-                    coherenceLevel *
-                      100,
-                  )}%`
-                : '--'
-            }
-          />
-        </View>
-
-        {gameEnded && (
-          <TouchableOpacity
-            onPress={restartGame}
-            style={styles.restartButton}
-            activeOpacity={0.8}
-          >
-            <RotateCcw
-              size={18}
-              color="#E8D0F0"
-            />
-
-            <Text
-              style={
-                styles.restartText
-              }
-            >
-              {language === 'fa'
-                ? 'شروع دوباره'
-                : 'Restart'}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <Modal
-        transparent
-        visible={showExitDialog}
-        animationType="fade"
-        onRequestClose={
-          closeExit
-        }
-      >
-        <View
-          style={styles.modalOverlay}
-        >
-          <View
-            style={styles.exitDialog}
-          >
-            <Text
-              style={
-                styles.dialogTitle
-              }
-            >
-              {language === 'fa'
-                ? 'خروج از نورولیا'
-                : 'Exit Neurolia'}
-            </Text>
-
-            <Text
-              style={
-                styles.dialogMessage
-              }
-            >
-              {language === 'fa'
-                ? 'آیا از تست خارج می‌شوید؟'
-                : 'Are you sure you want to exit?'}
-            </Text>
-
-            <View
-              style={[
-                styles.dialogButtons,
-                {
-                  flexDirection:
-                    isRTL
-                      ? 'row-reverse'
-                      : 'row',
-                },
-              ]}
-            >
-              <TouchableOpacity
-                onPress={confirmExit}
-                style={[
-                  styles.dialogButton,
-                  styles.confirmButton,
-                ]}
-              >
-                <CheckCircle
-                  size={20}
-                  color="#fff"
-                />
-
-                <Text
-                  style={
-                    styles.dialogButtonText
-                  }
-                >
-                  {language === 'fa'
-                    ? 'تایید'
-                    : 'Confirm'}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={closeExit}
-                style={
-                  styles.dialogButton
-                }
-              >
-                <XCircle
-                  size={20}
-                  color="#E8D0F0"
-                />
-
-                <Text
-                  style={
-                    styles.dialogButtonText
-                  }
-                >
-                  {language === 'fa'
-                    ? 'انصراف'
-                    : 'Cancel'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    </View>
-  );
-}
-
-function Tutorial({
-  language,
-  isRTL,
-  onBack,
-  onStart,
-}: {
-  language: string;
-  isRTL: boolean;
-  onBack: () => void;
-  onStart: () => void;
-}) {
-  return (
-    <View
-      style={styles.tutorial}
-    >
-      <TouchableOpacity
-        onPress={onBack}
-        style={[
-          styles.tutorialBack,
-          isRTL
-            ? { left: 14, right: undefined }
-            : { right: 14 },
-        ]}
-      >
-        <ArrowLeft
-          size={20}
-          color="#fff"
-          style={
-            isRTL
-              ? {
-                  transform: [
-                    {
-                      scaleX: -1,
-                    },
-                  ],
-                }
-              : undefined
-          }
-        />
-      </TouchableOpacity>
-
-      <View
-        style={styles.logo}
-      >
-        <Palette
-          size={38}
-          color="#fff"
-        />
-      </View>
-
-      <Text
-        style={styles.tutorialTitle}
-      >
-        {language === 'fa'
-          ? 'جریان بصری'
-          : 'Visual Flow'}
-      </Text>
-
-      <Text
-        style={styles.tutorialSubtitle}
-      >
-        {language === 'fa'
-          ? 'جهت حرکت دسته‌ی نقاط را پیدا کن!'
-          : 'Find the main direction of the moving dots!'}
-      </Text>
-
-      <View
-        style={styles.ruleBox}
-      >
-        <Rule
-          icon="✨"
-          text={
-            language === 'fa'
-              ? 'نقاط رنگ‌ارنگ را تماشا کن'
-              : 'Watch the colorful dots'
-          }
-        />
-
-        <Rule
-          icon="🧭"
-          text={
-            language === 'fa'
-              ? 'جهت اصلی حرکت آنها را تشخیص بده'
-              : 'Detect their main movement direction'
-          }
-        />
-
-        <Rule
-          icon="⭐"
-          text={
-            language === 'fa'
-              ? 'هر پاسخ درست = ۱۰ امتیاز'
-              : 'Each correct answer = 10 points'
-          }
-          highlight
-        />
-
-        <Rule
-          icon="🎯"
-          text={
-            language === 'fa'
-              ? '۳۰ دور و افزایش تدریجی سختی'
-              : '30 rounds with increasing difficulty'
-          }
-          highlight
-        />
-      </View>
-
-      <TouchableOpacity
-        onPress={onStart}
-        style={styles.startButton}
-        activeOpacity={0.8}
-      >
-        <Text
-          style={styles.startButtonText}
-        >
-          ▶{' '}
-          {language === 'fa'
-            ? 'شروع تست'
-            : 'Start Test'}
-        </Text>
-      </TouchableOpacity>
-
-      <Text
-        style={styles.hint}
-      >
-        {language === 'fa'
-          ? '👆 با کلیک روی دکمه‌ها یا کشیدن روی صفحه پاسخ بده'
-          : '👆 Use the buttons or swipe on the screen'}
-      </Text>
-    </View>
-  );
-}
-
-function Rule({
-  icon,
-  text,
-  highlight = false,
-}: {
-  icon: string;
-  text: string;
-  highlight?: boolean;
-}) {
-  return (
-    <View
-      style={styles.ruleItem}
-    >
-      <Text
-        style={styles.ruleIcon}
-      >
-        {icon}
-      </Text>
-
-      <Text
-        style={[
-          styles.ruleText,
-          highlight &&
-            styles.highlightText,
-        ]}
-      >
-        {text}
-      </Text>
-    </View>
-  );
-}
-
-function DirectionButton({
-  label,
-  onPress,
-}: {
-  label: string;
-  onPress: () => void;
-}) {
-  return (
+  const DirectionButton = ({ direction, icon }: { direction: Direction; icon: React.ReactNode }) => (
     <TouchableOpacity
-      onPress={onPress}
-      style={styles.directionButton}
-      activeOpacity={0.7}
+      style={[styles.dirButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      onPress={() => submitAnswer(direction)}
+      activeOpacity={0.75}
     >
-      <Text
-        style={
-          styles.directionText
-        }
-      >
-        {label}
-      </Text>
+      {icon}
     </TouchableOpacity>
   );
-}
 
-function StatusItem({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+  if (tutorialVisible) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.tutorialHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <TouchableOpacity onPress={showExitDialog} activeOpacity={0.8} style={[styles.iconButton, { backgroundColor: colors.surface }]}>
+            <ArrowLeft size={22} color={colors.text} style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined} />
+          </TouchableOpacity>
+          <View style={styles.headerSpacer} />
+        </View>
+
+        <Animated.View style={[styles.tutorialCard, { backgroundColor: colors.surface, borderColor: colors.border, opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+          <View style={[styles.logo, { backgroundColor: colors.primary + '18' }]}>
+            <Target size={38} color={colors.primary} />
+          </View>
+
+          <Text style={[styles.tutorialTitle, { color: colors.text }]}>{t.title}</Text>
+          <Text style={[styles.tutorialSubtitle, { color: colors.textSecondary }]}>{t.subtitle}</Text>
+
+          <View style={[styles.ruleBox, { borderColor: colors.border, backgroundColor: colors.background }]}>
+            <View style={styles.ruleRow}>
+              <Palette size={20} color={colors.primary} />
+              <Text style={[styles.ruleText, { color: colors.text }]}>{language === 'fa' ? 'نقاط رنگارنگ را تماشا کن' : 'Watch the colorful dots'}</Text>
+            </View>
+            <View style={styles.ruleRow}>
+              <Target size={20} color={colors.primary} />
+              <Text style={[styles.ruleText, { color: colors.text }]}>{language === 'fa' ? 'جهت اصلی حرکت را تشخیص بده' : 'Identify their main direction'}</Text>
+            </View>
+            <View style={styles.ruleRow}>
+              <Zap size={20} color={colors.primary} />
+              <Text style={[styles.ruleText, { color: colors.text }]}>{language === 'fa' ? 'هر پاسخ درست = ۱۰ امتیاز' : 'Every correct answer = 10 points'}</Text>
+            </View>
+            <View style={styles.ruleRow}>
+              <BarChart3 size={20} color={colors.primary} />
+              <Text style={[styles.ruleText, { color: colors.text }]}>{language === 'fa' ? '۳۰ دور با سختی تدریجی' : '30 rounds with increasing difficulty'}</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity onPress={startGame} activeOpacity={0.85} style={[styles.startButton, { backgroundColor: colors.primary }]}>
+            <Text style={styles.startButtonText}>{t.start}</Text>
+          </TouchableOpacity>
+
+          <Text style={[styles.hint, { color: colors.textSecondary }]}>
+            {language === 'fa' ? '👆 با دکمه‌ها یا کشیدن روی صفحه پاسخ بده' : '👆 Answer using buttons or swipe on the screen'}
+          </Text>
+        </Animated.View>
+      </View>
+    );
+  }
+
   return (
-    <View
-      style={styles.statusItem}
-    >
-      <Text
-        style={styles.statusLabel}
-      >
-        {label}
-      </Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <TouchableOpacity onPress={showExitDialog} activeOpacity={0.8} style={[styles.iconButton, { backgroundColor: colors.surface }]}>
+          <ArrowLeft size={22} color={colors.text} style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined} />
+        </TouchableOpacity>
 
-      <Text
-        style={styles.statusValue}
+        <View style={[styles.titleContainer, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+          <Text style={[styles.headerTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>{t.title}</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+            {trialCount}/{TOTAL_TRIALS}
+          </Text>
+        </View>
+
+        <View style={styles.headerSpacer} />
+      </View>
+
+      <View
+        style={[styles.canvasWrapper, { backgroundColor: colors.surface, borderColor: infoType === 'correct' ? '#34D39955' : infoType === 'wrong' ? '#FF6B8155' : colors.border }]}
+        {...panResponder.panHandlers}
       >
-        {value}
-      </Text>
+        {dots.map((dot, index) => (
+          <View
+            key={index}
+            style={[styles.dot, { left: dot.x, top: dot.y, width: dot.size, height: dot.size, borderRadius: dot.size / 2, backgroundColor: dot.color }]}
+          />
+        ))}
+      </View>
+
+      <View style={styles.infoArea}>
+        <Text style={[styles.infoText, { color: infoType === 'correct' ? '#34D399' : infoType === 'wrong' ? '#FF6B81' : colors.textSecondary }]}>
+          {info}
+        </Text>
+      </View>
+
+      <View style={styles.directionButtons}>
+        <DirectionButton direction="Up" icon={<ChevronUp size={25} color={colors.text} />} />
+        <DirectionButton direction="Down" icon={<ChevronDown size={25} color={colors.text} />} />
+        <DirectionButton direction="Left" icon={<ChevronLeft size={25} color={colors.text} />} />
+        <DirectionButton direction="Right" icon={<ChevronRight size={25} color={colors.text} />} />
+      </View>
+
+      <View style={[styles.statusBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={styles.statusItem}>
+          <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>{t.round}</Text>
+          <Text style={[styles.statusValue, { color: colors.text }]}>{trialCount}/{TOTAL_TRIALS}</Text>
+        </View>
+        <View style={styles.statusItem}>
+          <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>{t.score}</Text>
+          <Text style={[styles.statusValue, { color: colors.primary }]}>{score}</Text>
+        </View>
+        <View style={styles.statusItem}>
+          <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>{t.difficulty}</Text>
+          <Text style={[styles.statusValue, { color: colors.text }]}>{trialActive ? Math.round(coherence * 100) + '%' : '--'}</Text>
+        </View>
+      </View>
+
+      {gameEnded && (
+        <TouchableOpacity onPress={restartGame} activeOpacity={0.85} style={[styles.restartButton, { backgroundColor: colors.primary }]}>
+          <RotateCcw size={18} color="#fff" />
+          <Text style={styles.restartText}>{t.restart}</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 8,
-  },
-
-  glow: {
-    position: 'absolute',
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    top: 80,
-    left: -80,
-  },
-
-  container: {
-    width: '100%',
-    maxWidth: 440,
-    borderRadius: 32,
-    padding: 14,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor:
-      'rgba(211,0,209,0.08)',
-  },
-
-  header: {
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor:
-      'rgba(211,0,209,0.08)',
-  },
-
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor:
-      'rgba(255,255,255,0.03)',
-    borderWidth: 1,
-    borderColor:
-      'rgba(211,0,209,0.08)',
-  },
-
-  headerTitle: {
-    flex: 1,
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-
-  headerSpacer: {
-    width: 40,
-  },
-
-  canvasWrapper: {
-    height: 260,
-    marginTop: 10,
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: '#10071D',
-    borderWidth: 1,
-    borderColor:
-      'rgba(211,0,209,0.08)',
-    position: 'relative',
-  },
-
-  dot: {
-    position: 'absolute',
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    shadowOffset: {
-      width: 0,
-      height: 0,
-    },
-    elevation: 4,
-  },
-
-  infoText: {
-    minHeight: 40,
-    paddingTop: 10,
-    paddingBottom: 4,
-    textAlign: 'center',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-
-  directionButtons: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 7,
-    marginTop: 6,
-    flexWrap: 'wrap',
-  },
-
-  directionButton: {
-    minWidth: 52,
-    height: 48,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor:
-      'rgba(255,255,255,0.02)',
-    borderWidth: 1,
-    borderColor:
-      'rgba(211,0,209,0.08)',
-  },
-
-  directionText: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-
-  statusBar: {
-    marginTop: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    justifyContent: 'space-between',
-    backgroundColor:
-      'rgba(255,255,255,0.02)',
-    borderWidth: 1,
-    borderColor:
-      'rgba(211,0,209,0.06)',
-  },
-
-  statusItem: {
-    alignItems: 'center',
-  },
-
-  statusLabel: {
-    color: '#A070B0',
-    fontSize: 10,
-    fontWeight: '500',
-  },
-
-  statusValue: {
-    color: '#E8D0F0',
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 2,
-  },
-
-  restartButton: {
-    marginTop: 10,
-    minHeight: 44,
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor:
-      'rgba(211,0,209,0.08)',
-    backgroundColor:
-      'rgba(255,255,255,0.02)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-
-  restartText: {
-    color: '#E8D0F0',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-
-  tutorial: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 100,
-    borderRadius: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor:
-      'rgba(45,21,71,0.96)',
-  },
-
-  tutorialBack: {
-    position: 'absolute',
-    top: 12,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor:
-      'rgba(255,255,255,0.03)',
-    borderWidth: 1,
-    borderColor:
-      'rgba(211,0,209,0.08)',
-  },
-
-  logo: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor:
-      'rgba(209,0,209,0.08)',
-    marginBottom: 8,
-  },
-
-  tutorialTitle: {
-    color: '#fff',
-    fontSize: 26,
-    fontWeight: '800',
-  },
-
-  tutorialSubtitle: {
-    color: '#A070B0',
-    fontSize: 13,
-    marginTop: 4,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-
-  ruleBox: {
-    width: '92%',
-    maxWidth: 300,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 16,
-    backgroundColor:
-      'rgba(255,255,255,0.02)',
-    borderWidth: 1,
-    borderColor:
-      'rgba(211,0,209,0.06)',
-  },
-
-  ruleItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 5,
-  },
-
-  ruleIcon: {
-    width: 32,
-    fontSize: 21,
-    textAlign: 'center',
-  },
-
-  ruleText: {
-    flex: 1,
-    color: '#E8D0F0',
-    fontSize: 13,
-  },
-
-  highlightText: {
-    color: '#D100D1',
-    fontWeight: '700',
-  },
-
-  startButton: {
-    marginTop: 12,
-    paddingHorizontal: 42,
-    paddingVertical: 13,
-    borderRadius: 60,
-    backgroundColor:
-      'rgba(209,0,209,0.10)',
-    borderWidth: 1,
-    borderColor:
-      'rgba(209,0,209,0.12)',
-  },
-
-  startButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '700',
-  },
-
-  hint: {
-    color: '#A070B0',
-    fontSize: 11,
-    marginTop: 10,
-    textAlign: 'center',
-  },
-
-  modalOverlay: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor:
-      'rgba(26,10,42,0.90)',
-    padding: 20,
-  },
-
-  exitDialog: {
-    width: '90%',
-    maxWidth: 320,
-    paddingHorizontal: 24,
-    paddingVertical: 30,
-    borderRadius: 28,
-    backgroundColor: '#2D1547',
-    borderWidth: 1,
-    borderColor:
-      'rgba(211,0,209,0.08)',
-  },
-
-  dialogTitle: {
-    color: '#fff',
-    fontSize: 21,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-
-  dialogMessage: {
-    color: '#E8D0F0',
-    fontSize: 15,
-    marginTop: 8,
-    marginBottom: 24,
-    lineHeight: 25,
-    textAlign: 'center',
-  },
-
-  dialogButtons: {
-    justifyContent: 'center',
-    gap: 10,
-  },
-
-  dialogButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    paddingHorizontal: 18,
-    paddingVertical: 11,
-    borderRadius: 60,
-    backgroundColor:
-      'rgba(255,255,255,0.02)',
-    borderWidth: 1,
-    borderColor:
-      'rgba(211,0,209,0.08)',
-  },
-
-  confirmButton: {
-    backgroundColor:
-      'rgba(209,0,209,0.08)',
-  },
-
-  dialogButtonText: {
-    color: '#E8D0F0',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  container: { flex: 1, paddingHorizontal: Spacing.lg },
+  header: { paddingTop: Spacing.lg, paddingBottom: Spacing.md, alignItems: 'center', gap: 12 },
+  tutorialHeader: { paddingTop: Spacing.lg, paddingBottom: Spacing.md, alignItems: 'center', justifyContent: 'space-between' },
+  iconButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  headerSpacer: { width: 44 },
+  titleContainer: { flex: 1 },
+  headerTitle: { fontSize: 20, fontWeight: '800' },
+  headerSubtitle: { fontSize: 12, marginTop: 2 },
+  tutorialCard: { flex: 1, borderRadius: 28, borderWidth: 1, padding: Spacing.lg, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.lg },
+  logo: { width: 78, height: 78, borderRadius: 39, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  tutorialTitle: { fontSize: 28, fontWeight: '800' },
+  tutorialSubtitle: { fontSize: 14, marginTop: 6, textAlign: 'center' },
+  ruleBox: { width: '100%', borderRadius: 18, borderWidth: 1, padding: 16, marginTop: 24, gap: 15 },
+  ruleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  ruleText: { fontSize: 14, flex: 1 },
+  startButton: { marginTop: 24, minWidth: 190, paddingVertical: 14, paddingHorizontal: 30, borderRadius: BorderRadius.full, alignItems: 'center' },
+  startButtonText: { color: '#fff', fontSize: 17, fontWeight: '800' },
+  hint: { fontSize: 12, marginTop: 12, textAlign: 'center' },
+  canvasWrapper: { width: '100%', height: Math.min((Dimensions.get('window').width - Spacing.lg * 2) * 2 / 3, 280), borderRadius: 20, borderWidth: 1, overflow: 'hidden', position: 'relative' },
+  dot: { position: 'absolute', shadowOpacity: 0.8, shadowRadius: 8, elevation: 5 },
+  infoArea: { minHeight: 58, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 8 },
+  infoText: { fontSize: 15, fontWeight: '600', textAlign: 'center' },
+  directionButtons: { flexDirection: 'row', justifyContent: 'center', gap: 9, flexWrap: 'wrap', marginBottom: 12 },
+  dirButton: { width: 58, height: 48, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  statusBar: { height: 54, borderRadius: 16, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
+  statusItem: { alignItems: 'center', minWidth: 70 },
+  statusLabel: { fontSize: 10 },
+  statusValue: { fontSize: 14, fontWeight: '800', marginTop: 2 },
+  restartButton: { height: 48, borderRadius: 24, marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  restartText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });
