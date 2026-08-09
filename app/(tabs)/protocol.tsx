@@ -81,7 +81,7 @@ export default function ProtocolScreen() {
 
           <View style={[styles.overallChip, { backgroundColor: colors.primary + '14' }]}>
             <Text style={[styles.overallChipText, { color: colors.primary }]}>
-              {avgProgress}% overall progress
+              {avgProgress}% {t.overallProgress || 'overall progress'}
             </Text>
           </View>
         </MotiView>

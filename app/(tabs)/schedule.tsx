@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -43,9 +43,73 @@ interface Event {
   color: string;
 }
 
+// تابع برای تبدیل تاریخ میلادی به شمسی
+function toPersianDate(date: Date): { year: number; month: number; day: number } {
+  const gregorianYear = date.getFullYear();
+  const gregorianMonth = date.getMonth() + 1;
+  const gregorianDay = date.getDate();
+
+  const daysInMonth = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  let daysPassed = 0;
+  for (let i = 1; i < gregorianMonth; i++) {
+    daysPassed += daysInMonth[i];
+  }
+  daysPassed += gregorianDay;
+
+  const isLeap = (gregorianYear % 4 === 0 && gregorianYear % 100 !== 0) || (gregorianYear % 400 === 0);
+  if (isLeap && gregorianMonth > 2) {
+    daysPassed += 1;
+  }
+
+  let persianYear = gregorianYear - 622;
+  let persianMonth = 1;
+  let persianDay = daysPassed - 79;
+
+  if (persianDay <= 0) {
+    persianYear -= 1;
+    persianDay += 365;
+    if ((persianYear + 1) % 4 === 0) {
+      persianDay += 1;
+    }
+  }
+
+  const persianDaysInMonth = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+  const isPersianLeap = persianYear % 4 === 0;
+  if (isPersianLeap) {
+    persianDaysInMonth[11] = 30;
+  }
+
+  let remainingDays = persianDay;
+  for (let i = 0; i < 12; i++) {
+    if (remainingDays <= persianDaysInMonth[i]) {
+      persianMonth = i + 1;
+      persianDay = remainingDays;
+      break;
+    }
+    remainingDays -= persianDaysInMonth[i];
+  }
+
+  return { year: persianYear, month: persianMonth, day: persianDay };
+}
+
+// تابع برای دریافت نام روز هفته به فارسی
+function getPersianWeekday(date: Date): string {
+  const weekdays = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+  return weekdays[date.getDay()];
+}
+
+// تابع برای دریافت نام ماه شمسی
+function getPersianMonthName(month: number): string {
+  const monthNames = [
+    'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+    'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
+  ];
+  return monthNames[month - 1] || '';
+}
+
 export default function ScheduleScreen() {
   const { colors, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([
     {
@@ -110,13 +174,38 @@ export default function ScheduleScreen() {
     return t.goodEvening || 'Good evening';
   };
 
+  // دریافت تاریخ نمایشی بر اساس زبان
   const getDateDisplay = () => {
     const now = new Date();
-    return now.toLocaleDateString(t.language === 'fa' ? 'fa-IR' : 'en-US', {
-      weekday: 'long',
-      month: 'short',
-      day: 'numeric',
-    });
+    
+    if (isRTL) {
+      // حالت فارسی - تاریخ شمسی
+      const persianDate = toPersianDate(now);
+      const weekday = getPersianWeekday(now);
+      const monthName = getPersianMonthName(persianDate.month);
+      
+      // تبدیل اعداد به فارسی
+      const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
+      const dayStr = persianDate.day.toString()
+        .split('')
+        .map(d => persianDigits[parseInt(d)] || d)
+        .join('');
+      const yearStr = persianDate.year.toString()
+        .split('')
+        .map(d => persianDigits[parseInt(d)] || d)
+        .join('');
+      
+      // در فارسی: روز هفته، روز، ماه، سال
+      return `${weekday} ${dayStr} ${monthName} ${yearStr}`;
+    } else {
+      // حالت انگلیسی - تاریخ میلادی
+      return now.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    }
   };
 
   const fabOptions = [
@@ -184,11 +273,23 @@ export default function ScheduleScreen() {
               backgroundColor: isDark ? colors.surface : '#ffffff',
             }}
           >
-            <View style={styles.dateContent}>
-              <View style={styles.dateLeft}>
+            <View style={[
+              styles.dateContent,
+              isRTL && styles.dateContentRTL
+            ]}>
+              <View style={[
+                styles.dateLeft,
+                isRTL && styles.dateLeftRTL
+              ]}>
                 <Calendar size={24} color={colors.primary} />
                 <View style={styles.dateTextContainer}>
-                  <Text style={[styles.dateDay, { color: colors.text }]}>
+                  <Text 
+                    style={[
+                      styles.dateDay, 
+                      { color: colors.text },
+                      isRTL && styles.textRTL
+                    ]}
+                  >
                     {getDateDisplay()}
                   </Text>
                 </View>
@@ -221,7 +322,10 @@ export default function ScheduleScreen() {
         </MotiView>
 
         {/* Timeline */}
-        <View style={styles.timeline}>
+        <View style={[
+          styles.timeline,
+          isRTL && styles.timelineRTL
+        ]}>
           {events.map((event, index) => (
             <MotiView
               key={event.id}
@@ -233,13 +337,24 @@ export default function ScheduleScreen() {
                 damping: 15,
               }}
             >
-              <View style={styles.timelineItem}>
+              <View style={[
+                styles.timelineItem,
+                isRTL && styles.timelineItemRTL
+              ]}>
                 {index < events.length - 1 && (
                   <View
-                    style={[styles.timelineLine, { backgroundColor: colors.border }]}
+                    style={[
+                      styles.timelineLine, 
+                      { backgroundColor: colors.border },
+                      isRTL && styles.timelineLineRTL
+                    ]}
                   />
                 )}
-                <View style={[styles.timelineDot, { backgroundColor: event.color }]} />
+                <View style={[
+                  styles.timelineDot, 
+                  { backgroundColor: event.color },
+                  isRTL && styles.timelineDotRTL
+                ]} />
                 <Card
                   style={{
                     ...styles.eventCard,
@@ -247,23 +362,38 @@ export default function ScheduleScreen() {
                     borderLeftColor: event.completed ? '#10B981' : event.color,
                     borderLeftWidth: 4,
                     opacity: event.completed ? 0.8 : 1,
+                    ...(isRTL && {
+                      borderLeftWidth: 0,
+                      borderRightWidth: 4,
+                      borderRightColor: event.completed ? '#10B981' : event.color,
+                    }),
                   }}
                 >
                   <TouchableOpacity
                     onPress={() => toggleCompletion(event.id)}
-                    style={styles.eventContent}
+                    style={[
+                      styles.eventContent,
+                      isRTL && styles.eventContentRTL
+                    ]}
                     activeOpacity={0.7}
                   >
                     <View
                       style={[
                         styles.eventIconContainer,
                         { backgroundColor: event.color + '20' },
+                        isRTL && styles.eventIconContainerRTL
                       ]}
                     >
                       <event.icon size={24} color={event.color} />
                     </View>
-                    <View style={styles.eventTextContainer}>
-                      <View style={styles.eventHeader}>
+                    <View style={[
+                      styles.eventTextContainer,
+                      isRTL && styles.eventTextContainerRTL
+                    ]}>
+                      <View style={[
+                        styles.eventHeader,
+                        isRTL && styles.eventHeaderRTL
+                      ]}>
                         <Text
                           style={[
                             styles.eventTitle,
@@ -273,6 +403,7 @@ export default function ScheduleScreen() {
                                 ? 'line-through'
                                 : 'none',
                             },
+                            isRTL && styles.textRTL,
                           ]}
                         >
                           {event.title}
@@ -289,19 +420,30 @@ export default function ScheduleScreen() {
                           <Circle size={22} color={colors.textTertiary} />
                         )}
                       </View>
-                      <View style={styles.eventDetails}>
+                      <View style={[
+                        styles.eventDetails,
+                        isRTL && styles.eventDetailsRTL
+                      ]}>
                         <Clock size={14} color={colors.textTertiary} />
                         <Text
-                          style={[styles.eventTime, { color: colors.textSecondary }]}
+                          style={[
+                            styles.eventTime, 
+                            { color: colors.textSecondary },
+                            isRTL && styles.textRTL,
+                          ]}
                         >
                           {event.time} • {event.duration}
                         </Text>
                       </View>
-                      <View style={styles.eventCategory}>
+                      <View style={[
+                        styles.eventCategory,
+                        isRTL && styles.eventCategoryRTL
+                      ]}>
                         <Text
                           style={[
-                            styles.eventCategoryText,
+                            styles.eventCategoryText, 
                             { color: colors.textTertiary },
+                            isRTL && styles.textRTL,
                           ]}
                         >
                           {event.category}
@@ -435,9 +577,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  dateContentRTL: {
+    flexDirection: 'row-reverse',
+  },
   dateLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  dateLeftRTL: {
+    flexDirection: 'row-reverse',
   },
   dateTextContainer: {
     marginLeft: Spacing.sm,
@@ -445,6 +593,10 @@ const styles = StyleSheet.create({
   dateDay: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  textRTL: {
+    writingDirection: 'rtl',
+    textAlign: 'right',
   },
   progressCircle: {
     width: 50,
@@ -472,10 +624,17 @@ const styles = StyleSheet.create({
   timeline: {
     paddingTop: Spacing.sm,
   },
+  timelineRTL: {
+    paddingTop: Spacing.sm,
+  },
   timelineItem: {
     paddingLeft: 20,
     paddingBottom: Spacing.md,
     position: 'relative',
+  },
+  timelineItemRTL: {
+    paddingLeft: 0,
+    paddingRight: 20,
   },
   timelineLine: {
     position: 'absolute',
@@ -483,6 +642,10 @@ const styles = StyleSheet.create({
     top: 24,
     bottom: 0,
     width: 2,
+  },
+  timelineLineRTL: {
+    left: 'auto',
+    right: 6,
   },
   timelineDot: {
     position: 'absolute',
@@ -495,6 +658,10 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     zIndex: 1,
   },
+  timelineDotRTL: {
+    left: 'auto',
+    right: 0,
+  },
   eventCard: {
     marginLeft: Spacing.md,
     padding: Spacing.md,
@@ -502,6 +669,9 @@ const styles = StyleSheet.create({
   eventContent: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  eventContentRTL: {
+    flexDirection: 'row-reverse',
   },
   eventIconContainer: {
     width: 48,
@@ -511,13 +681,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: Spacing.md,
   },
+  eventIconContainerRTL: {
+    marginRight: 0,
+    marginLeft: Spacing.md,
+  },
   eventTextContainer: {
     flex: 1,
+  },
+  eventTextContainerRTL: {
+    alignItems: 'flex-end',
   },
   eventHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  eventHeaderRTL: {
+    flexDirection: 'row-reverse',
   },
   eventTitle: {
     fontSize: 16,
@@ -530,12 +710,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 4,
   },
+  eventDetailsRTL: {
+    flexDirection: 'row-reverse',
+  },
   eventTime: {
     fontSize: 13,
     marginLeft: 4,
   },
   eventCategory: {
     marginTop: 4,
+  },
+  eventCategoryRTL: {
+    alignItems: 'flex-end',
   },
   eventCategoryText: {
     fontSize: 12,

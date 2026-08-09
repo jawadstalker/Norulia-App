@@ -23,7 +23,7 @@ export default function ProfileScreen() {
   const stats = [
     { label: t.level, value: user?.level || 1, icon: Trophy, color: colors.warning },
     { label: t.streak, value: user?.streak || 0, icon: Flame, color: colors.error },
-    { label: 'XP', value: user?.xp || 0, icon: Star, color: colors.primary },
+    { label: t.xp, value: user?.xp || 0, icon: Star, color: colors.primary }, // ✅ اصلاح شد
   ];
 
   return (
@@ -84,7 +84,7 @@ export default function ProfileScreen() {
 
           <View style={styles.badge}>
             <Sparkles size={13} color="#FFFFFF" />
-            <Text style={styles.badgeText}>Premium Member</Text>
+            <Text style={styles.badgeText}>{t.premiumMember}</Text>
           </View>
         </MotiView>
       </LinearGradient>
@@ -134,7 +134,7 @@ export default function ProfileScreen() {
               <View style={[styles.menuIconWrap, { backgroundColor: colors.success + '18' || colors.primary + '18' }]}>
                 <Shield size={19} color={colors.success || colors.primary} />
               </View>
-              <Text style={[styles.menuText, { color: colors.text }]}>Privacy & Security</Text>
+              <Text style={[styles.menuText, { color: colors.text }]}>{t.privacySecurity}</Text>
               <ChevronIcon size={19} color={colors.textTertiary} />
             </View>
           </Card>
@@ -173,14 +173,10 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 42,
     alignItems: 'center',
-  
     borderRadius: 32,
-  
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.18)',
-  
     overflow: 'hidden',
-  
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.15,

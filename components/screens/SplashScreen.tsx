@@ -273,7 +273,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
       >
         <Text style={[styles.title, { color: colors.text }]}>{t.appName}</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Your Mental Wellness Companion
+          {t.dashboardSubtitle}
         </Text>
 
         <View style={[styles.progressTrack, { backgroundColor: colors.border }]}>

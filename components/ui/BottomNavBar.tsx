@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { Home, Brain, MessageCircle, Calendar, User, Sparkles } from 'lucide-react-native';
 import { Spacing, BorderRadius } from '../../constants/theme';
 
@@ -28,6 +29,7 @@ interface BottomNavBarProps {
 
 export function BottomNavBar({ currentRoute, onNavigate }: BottomNavBarProps) {
   const { colors, isDark } = useTheme();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
 
   // ===== تشخیص Active Route =====
@@ -167,9 +169,9 @@ export function BottomNavBar({ currentRoute, onNavigate }: BottomNavBarProps) {
                     color: isActive ? colors.primary : colors.textTertiary,
                   }
                 ]}>
-                  {item.id === 'home' ? 'Home' : 
-                   item.id === 'brain' ? 'Brain' :
-                   item.id === 'calendar' ? 'Plan' : 'Profile'}
+                  {item.id === 'home' ? t.home : 
+                   item.id === 'brain' ? t.brain :
+                   item.id === 'calendar' ? t.plan : t.profile}
                 </Text>
               </MotiView>
             )}

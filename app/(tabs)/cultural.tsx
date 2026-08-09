@@ -6,308 +6,205 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Dimensions,
 } from 'react-native';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import {
-  ArrowLeft,
-  Play,
-  Star,
-  Clock,
-  Sparkles,
-  Brain,
-  ChevronRight,
-  Film,
-} from 'lucide-react-native';
-
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { useRouter } from 'expo-router';
+import { ChevronLeft, ChevronRight, Play, Clock, Star } from 'lucide-react-native';
 import { Spacing, BorderRadius } from '../../constants/theme';
 
-const weeklyMovie = {
-  title: 'The Secret Life of Walter Mitty',
+const { width } = Dimensions.get('window');
+
+// ===== DATA (Non-translatable) =====
+const weeklyMovieData = {
   year: '2013',
   duration: '1h 54m',
   rating: '7.3',
-  genre: 'Adventure • Comedy • Drama',
-  description:
-    'A visually beautiful journey about escaping routine, discovering courage, and finding meaning in everyday life.',
-  reason:
-    'This week’s selection is designed to inspire curiosity, reduce mental fatigue, and encourage a more positive perspective.',
   poster: require('../../assets/movies/movie.jpg'),
 };
 
-const recommendations = [
+const recommendationsData = [
   {
     id: '1',
-    title: 'Inside Out',
-    genre: 'Animation • Family',
     rating: '8.1',
     poster: require('../../assets/movies/movie.jpg'),
   },
   {
     id: '2',
-    title: 'Soul',
-    genre: 'Animation • Drama',
     rating: '8.0',
     poster: require('../../assets/movies/movie.jpg'),
   },
   {
     id: '3',
-    title: 'Good Will Hunting',
-    genre: 'Drama',
     rating: '8.3',
     poster: require('../../assets/movies/movie.jpg'),
   },
 ];
 
 export default function CulturalScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
+  const { t, isRTL } = useLanguage();
   const router = useRouter();
 
+  const ChevronIcon = isRTL ? ChevronLeft : ChevronRight;
+
+  // ===== Combine translatable text with data =====
+  const weeklyMovie = {
+    ...weeklyMovieData,
+    title: t.weeklyMovieTitle,
+    genre: t.weeklyMovieGenre,
+    description: t.weeklyMovieDescription,
+    reason: t.weeklyMovieReason,
+  };
+
+  const recommendationTexts = [
+    { title: t.rec1Title, genre: t.rec1Genre },
+    { title: t.rec2Title, genre: t.rec2Genre },
+    { title: t.rec3Title, genre: t.rec3Genre },
+  ];
+
+  const recommendations = recommendationsData.map((movie, index) => ({
+    ...movie,
+    ...recommendationTexts[index],
+  }));
+
   return (
-    <LinearGradient
-      colors={
-        isDark
-          ? ['#211A38', '#151226', '#100E1B']
-          : ['#F4F0FF', '#FAF9FF', '#FFFFFF']
-      }
-      style={styles.container}
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      showsVerticalScrollIndicator={false}
     >
-      <TouchableOpacity
-        onPress={() => router.back()}
-        style={[styles.backButton, { backgroundColor: colors.surface }]}
-      >
-        <ArrowLeft size={22} color={colors.text} />
-        <Text style={[styles.backText, { color: colors.text }]}>Back</Text>
-      </TouchableOpacity>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        {/* Header */}
-        <MotiView
-          from={{ opacity: 0, translateY: -20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ duration: 500 }}
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.backButton, { backgroundColor: colors.surface }]}  // ✅ اصلاح شد
         >
-          <View style={styles.header}>
-            <View>
-              <View style={styles.titleRow}>
-                <Film size={22} color={colors.primary} />
-                <Text style={[styles.title, { color: colors.text }]}>
-                  Weekly Cinema
-                </Text>
-              </View>
+          <ChevronIcon size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          {t.weeklyCinema}
+        </Text>
+        <View style={styles.placeholder} />
+      </View>
 
-              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                A movie selected for your cognitive wellness
-              </Text>
+      {/* Hero Section */}
+      <MotiView
+        from={{ opacity: 0, translateY: 20 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: 'timing', duration: 500 }}
+        style={styles.heroContainer}
+      >
+        <LinearGradient
+          colors={[colors.primary, colors.accent || colors.primary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroGradient}
+        >
+          <View style={styles.heroContent}>
+            <Text style={styles.heroBadge}>{t.thisWeeksPick}</Text>
+            <Text style={styles.heroTitle}>{weeklyMovie.title}</Text>
+            <Text style={styles.heroGenre}>{weeklyMovie.genre}</Text>
+
+            <View style={styles.heroMeta}>
+              <View style={styles.metaItem}>
+                <Clock size={14} color="rgba(255,255,255,0.8)" />
+                <Text style={styles.metaText}>{weeklyMovie.duration}</Text>
+              </View>
+              <View style={styles.metaItem}>
+                <Star size={14} color="rgba(255,255,255,0.8)" />
+                <Text style={styles.metaText}>{weeklyMovie.rating}</Text>
+              </View>
+              <Text style={styles.metaText}>{weeklyMovie.year}</Text>
             </View>
 
-            <View
-              style={[styles.avatarContainer, { backgroundColor: colors.primary }]}
+            <TouchableOpacity
+              style={styles.exploreButton}
+              onPress={() => {}}
+              activeOpacity={0.8}
             >
-              <Image
-                source={require('../../assets/avatars/model 2.jpg')}
-                style={styles.avatar}
-              />
-            </View>
+              <Text style={styles.exploreButtonText}>{t.exploreMovie}</Text>
+              <Play size={16} color="#FFFFFF" fill="#FFFFFF" />
+            </TouchableOpacity>
           </View>
-        </MotiView>
 
-        {/* Weekly Label */}
-        <MotiView
-          from={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 150 }}
-        >
-          <View
-            style={[
-              styles.weekBadge,
-              {
-                backgroundColor: isDark
-                  ? 'rgba(167,139,250,0.15)'
-                  : 'rgba(124,58,237,0.08)',
-              },
-            ]}
-          >
-            <Sparkles size={16} color={colors.primary} />
-            <Text style={[styles.weekBadgeText, { color: colors.primary }]}>
-              THIS WEEK'S PICK
-            </Text>
-          </View>
-        </MotiView>
+          <Image source={weeklyMovie.poster} style={styles.heroPoster} />
+        </LinearGradient>
+      </MotiView>
 
-        {/* Featured Movie */}
-        <MotiView
-          from={{ opacity: 0, translateY: 30, scale: 0.96 }}
-          animate={{ opacity: 1, translateY: 0, scale: 1 }}
-          transition={{ type: 'spring', damping: 18, stiffness: 140, delay: 250 }}
-        >
-          <View
-            style={[
-              styles.featuredCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <Image source={weeklyMovie.poster} style={styles.poster} />
+      {/* Why This Movie */}
+      <MotiView
+        from={{ opacity: 0, translateY: 20 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: 'timing', duration: 500, delay: 150 }}
+        style={styles.section}
+      >
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          {t.whyThisMovie}
+        </Text>
+        <View style={[styles.reasonCard, { backgroundColor: colors.surface }]}>  {/* ✅ اصلاح شد */}
+          <Text style={[styles.reasonText, { color: colors.textSecondary }]}>
+            {weeklyMovie.reason}
+          </Text>
+        </View>
+      </MotiView>
 
-            <LinearGradient
-              colors={[
-                'transparent',
-                isDark ? 'rgba(26,24,37,0.75)' : 'rgba(255,255,255,0.7)',
-              ]}
-              style={styles.posterOverlay}
-            />
-
-            <View style={styles.featuredContent}>
-              <Text style={[styles.movieTitle, { color: colors.text }]}>
-                {weeklyMovie.title}
-              </Text>
-
-              <Text style={[styles.movieMeta, { color: colors.textSecondary }]}>
-                {weeklyMovie.year} • {weeklyMovie.genre}
-              </Text>
-
-              <View style={styles.statsRow}>
-                <View style={styles.stat}>
-                  <Star size={15} color={colors.warning} fill={colors.warning} />
-                  <Text style={[styles.statText, { color: colors.text }]}>
-                    {weeklyMovie.rating}
-                  </Text>
-                </View>
-
-                <View style={styles.stat}>
-                  <Clock size={15} color={colors.textSecondary} />
-                  <Text style={[styles.statText, { color: colors.textSecondary }]}>
-                    {weeklyMovie.duration}
-                  </Text>
-                </View>
-              </View>
-
-              <Text style={[styles.description, { color: colors.textSecondary }]}>
-                {weeklyMovie.description}
-              </Text>
-
-              <TouchableOpacity
-                activeOpacity={0.85}
-                style={[styles.watchButton, { backgroundColor: colors.primary }]}
-              >
-                <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
-                <Text style={styles.watchButtonText}>Explore Movie</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </MotiView>
-
-        {/* Why this movie */}
-        <MotiView
-          from={{ opacity: 0, translateY: 20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ delay: 400 }}
-        >
-          <View
-            style={[
-              styles.reasonCard,
-              {
-                backgroundColor: isDark
-                  ? 'rgba(167,139,250,0.10)'
-                  : 'rgba(124,58,237,0.06)',
-                borderColor: isDark
-                  ? 'rgba(167,139,250,0.2)'
-                  : 'rgba(124,58,237,0.12)',
-              },
-            ]}
-          >
-            <View style={[styles.reasonIcon, { backgroundColor: colors.primary }]}>
-              <Brain size={20} color="#FFFFFF" />
-            </View>
-
-            <View style={styles.reasonContent}>
-              <Text style={[styles.reasonTitle, { color: colors.text }]}>
-                Why this movie?
-              </Text>
-              <Text style={[styles.reasonText, { color: colors.textSecondary }]}>
-                {weeklyMovie.reason}
-              </Text>
-            </View>
-          </View>
-        </MotiView>
-
-        {/* Recommendations */}
+      {/* Recommendations */}
+      <MotiView
+        from={{ opacity: 0, translateY: 20 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: 'timing', duration: 500, delay: 300 }}
+        style={styles.section}
+      >
         <View style={styles.sectionHeader}>
           <View>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              More for you
+              {t.moreForYou}
             </Text>
             <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-              Movies selected based on your interests
+              {t.moviesBasedOnInterests}
             </Text>
           </View>
-
-          <TouchableOpacity>
-            <Text style={[styles.seeAll, { color: colors.primary }]}>See all</Text>
+          <TouchableOpacity onPress={() => {}}>
+            <Text style={[styles.seeAllText, { color: colors.primary }]}>
+              {t.seeAll}
+            </Text>
           </TouchableOpacity>
         </View>
 
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalList}
+          contentContainerStyle={styles.recommendationsList}
         >
           {recommendations.map((movie, index) => (
             <MotiView
               key={movie.id}
-              from={{ opacity: 0, translateX: 30 }}
-              animate={{ opacity: 1, translateX: 0 }}
-              transition={{ delay: 500 + index * 100 }}
+              from={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: 'timing', duration: 400, delay: 400 + index * 100 }}
+              style={styles.recommendationCard}
             >
-              <TouchableOpacity
-                activeOpacity={0.85}
-                style={[
-                  styles.movieCard,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
-                ]}
-              >
-                <Image source={movie.poster} style={styles.smallPoster} />
-
-                <View style={styles.movieCardContent}>
-                  <Text
-                    numberOfLines={1}
-                    style={[styles.smallMovieTitle, { color: colors.text }]}
-                  >
-                    {movie.title}
-                  </Text>
-
-                  <Text
-                    numberOfLines={1}
-                    style={[styles.smallMovieGenre, { color: colors.textSecondary }]}
-                  >
-                    {movie.genre}
-                  </Text>
-
-                  <View style={styles.ratingRow}>
-                    <Star size={13} color={colors.warning} fill={colors.warning} />
-                    <Text style={[styles.ratingText, { color: colors.text }]}>
-                      {movie.rating}
-                    </Text>
-                    <ChevronRight
-                      size={16}
-                      color={colors.textTertiary}
-                      style={styles.chevron}
-                    />
-                  </View>
+              <TouchableOpacity onPress={() => {}} activeOpacity={0.8}>
+                <Image source={movie.poster} style={styles.recPoster} />
+                <View style={[styles.recRating, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+                  <Star size={12} color="#FFD700" fill="#FFD700" />
+                  <Text style={styles.recRatingText}>{movie.rating}</Text>
                 </View>
+                <Text style={[styles.recTitle, { color: colors.text }]} numberOfLines={1}>
+                  {movie.title}
+                </Text>
+                <Text style={[styles.recGenre, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {movie.genre}
+                </Text>
               </TouchableOpacity>
             </MotiView>
           ))}
         </ScrollView>
-
-        <View style={styles.bottomSpace} />
-      </ScrollView>
-    </LinearGradient>
+      </MotiView>
+    </ScrollView>
   );
 }
 
@@ -315,218 +212,173 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    marginTop: Spacing.xxl,
-    marginLeft: Spacing.lg,
-    marginBottom: -Spacing.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: BorderRadius.full,
-  },
-  backText: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 6,
-  },
-  content: {
-    padding: Spacing.lg,
-    paddingTop: Spacing.xl,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.md,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    marginLeft: 8,
-  },
-  subtitle: {
-    fontSize: 13,
-    marginTop: 6,
-    maxWidth: 270,
-    lineHeight: 19,
-  },
-  avatarContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    overflow: 'hidden',
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-  },
-  weekBadge: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: BorderRadius.full,
-    marginBottom: Spacing.md,
-  },
-  weekBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    marginLeft: 6,
-    letterSpacing: 0.5,
-  },
-  featuredCard: {
-    borderRadius: BorderRadius.xl,
-    overflow: 'hidden',
-    borderWidth: 1,
-    marginBottom: Spacing.lg,
-  },
-  poster: {
-    width: '100%',
-    height: 270,
-  },
-  posterOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 160,
-    height: 110,
-  },
-  featuredContent: {
-    padding: Spacing.lg,
-  },
-  movieTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-  },
-  movieMeta: {
-    fontSize: 13,
-    marginTop: 6,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    gap: 18,
-  },
-  stat: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  statText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  description: {
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: Spacing.md,
-  },
-  watchButton: {
-    height: 48,
-    borderRadius: BorderRadius.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: Spacing.lg,
-    gap: 8,
-  },
-  watchButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  reasonCard: {
-    flexDirection: 'row',
-    padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    marginBottom: Spacing.xl,
-  },
-  reasonIcon: {
+  backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  reasonContent: {
-    flex: 1,
-  },
-  reasonTitle: {
-    fontSize: 15,
+  headerTitle: {
+    fontSize: 18,
     fontWeight: '700',
-    marginBottom: 5,
   },
-  reasonText: {
+  placeholder: {
+    width: 40,
+  },
+  heroContainer: {
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.xl,
+  },
+  heroGradient: {
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    minHeight: 200,
+  },
+  heroContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  heroBadge: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.8)',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  heroTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  heroGenre: {
     fontSize: 13,
-    lineHeight: 19,
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: 12,
+  },
+  heroMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.8)',
+  },
+  exploreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 8,
+  },
+  exploreButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  heroPoster: {
+    width: 80,
+    height: 120,
+    borderRadius: 12,
+    marginLeft: Spacing.md,
+  },
+  section: {
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   sectionHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: Spacing.md,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
   },
   sectionSubtitle: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-  seeAll: {
     fontSize: 13,
-    fontWeight: '700',
   },
-  horizontalList: {
+  seeAllText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  reasonCard: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  reasonText: {
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  recommendationsList: {
+    gap: 12,
     paddingRight: Spacing.lg,
   },
-  movieCard: {
-    width: 180,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-    borderWidth: 1,
-    marginRight: Spacing.md,
+  recommendationCard: {
+    width: 140,
+    marginRight: 12,
   },
-  smallPoster: {
-    width: '100%',
-    height: 220,
+  recPoster: {
+    width: 140,
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 8,
   },
-  movieCardContent: {
-    padding: Spacing.sm + 2,
-  },
-  smallMovieTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  smallMovieGenre: {
-    fontSize: 11,
-    marginTop: 4,
-  },
-  ratingRow: {
+  recRating: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
   },
-  ratingText: {
+  recRatingText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  recTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  recGenre: {
     fontSize: 12,
-    fontWeight: '700',
-    marginLeft: 4,
-  },
-  chevron: {
-    marginLeft: 'auto',
-  },
-  bottomSpace: {
-    height: 100,
   },
 });
