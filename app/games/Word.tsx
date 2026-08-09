@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,56 +8,103 @@ import {
   Alert,
   Dimensions,
   Animated,
-  Easing,
   Modal,
   TouchableWithoutFeedback,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Play, Settings, Trophy, Globe, Home, X, Star, TrendingUp, Ruler, Zap, Repeat, RotateCcw } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  Play,
+  Settings,
+  Trophy,
+  Globe,
+  Home,
+  RotateCcw,
+  X,
+  Zap,
+  Target,
+  Layers,
+  Award,
+  Crown,
+  ChevronRight,
+  Volume2,
+  VolumeX,
+  Brain,
+  Clock3,
+  TrendingUp,
+  Medal,
+} from 'lucide-react-native';
+
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { Spacing, BorderRadius } from '../../constants/theme';
+import { Spacing } from '../../constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// ================================================================
-// =============== WORD DATABASE ================
-// ================================================================
+/* ============================================================
+   COLORS - LUXURY PURPLE THEME
+============================================================ */
+
+const LUXURY = {
+  background: '#100D16',
+  surface: '#181421',
+  surface2: '#211A2C',
+  surface3: '#2A2137',
+
+  border: 'rgba(196, 150, 255, 0.10)',
+  borderStrong: 'rgba(196, 150, 255, 0.18)',
+
+  text: '#F7F3FC',
+  textSecondary: '#B8AFC4',
+  textMuted: '#81768D',
+
+  // Purple/Violet theme
+  gold: '#9B6DFF',
+  goldLight: '#C4A3FF',
+  goldDark: '#6842B5',
+
+  success: '#6ED5A0',
+  danger: '#E87979',
+
+  white: '#FFFFFF',
+};
+
+/* ============================================================
+   WORD DATABASE
+============================================================ */
 
 const ENGLISH_WORDS = {
-  easy: ["APPLE", "BOOK", "CAT", "DOG", "FISH", "BIRD", "TREE", "STAR", "MOON", "SUN", "CAR", "BALL", "FIRE", "WATER", "HOUSE", "HAPPY", "SMILE", "GAME", "CLOUD", "HEART"],
-  medium: ["TREE", "RIVER", "HAPPINESS", "SKY", "OCEAN", "MOUNTAIN", "FOREST", "BUTTERFLY", "RAINBOW", "CANDLE", "BRIDGE", "CASTLE", "DIAMOND", "ELEPHANT", "GIRAFFE", "DOLPHIN", "KANGAROO", "PANDA", "TIGER", "LIBRARY", "HOSPITAL", "RESTAURANT", "THEATER", "MUSEUM", "TELESCOPE", "MICROSCOPE", "COMPUTER", "TELEPHONE", "CHOCOLATE", "STRAWBERRY", "WATERMELON", "PINEAPPLE", "MAGNIFICENT", "WONDERFUL", "BEAUTIFUL", "EXCITING", "AMAZING", "FREEDOM", "COURAGE", "PATIENCE", "KINDNESS", "STRENGTH", "MEMORY", "ATTENTION", "FOCUS", "PRACTICE", "IMPROVE"],
-  hard: ["GALAXY", "BIOLOGY", "ARCHITECTURE", "ASTRONOMY", "PSYCHOLOGY", "PHILOSOPHY", "UNIVERSE", "ATMOSPHERE", "BIODIVERSITY", "CONSERVATION", "EXPLORATION", "INNOVATION", "TECHNOLOGY", "CIVILIZATION", "REVOLUTION", "IMAGINATION", "CREATIVITY", "INSPIRATION", "MOTIVATION", "PERSEVERANCE", "INTELLIGENCE", "CONSCIOUSNESS", "NEUROSCIENCE", "COGNITIVE", "PERCEPTION", "EXPERIMENT", "HYPOTHESIS", "THEORY", "ANALYSIS", "EVALUATION", "SYNTHESIS", "INTEGRATION", "TRANSFORMATION", "EVOLUTION", "ADAPTATION", "COMPREHENSION", "NEUROPLASTICITY", "SYNAPTIC", "COGNITION", "EXECUTIVE_FUNCTION", "WORKING_MEMORY", "LONG_TERM_MEMORY", "ATTENTIONAL_CONTROL", "INHIBITORY_CONTROL", "COGNITIVE_FLEXIBILITY", "PROCESSING_SPEED"]
+  easy: ['APPLE', 'BOOK', 'CAT', 'DOG', 'FISH', 'BIRD', 'TREE', 'STAR', 'MOON', 'SUN'],
+  medium: ['TREE', 'RIVER', 'HAPPINESS', 'SKY', 'OCEAN', 'MOUNTAIN', 'FOREST', 'BUTTERFLY'],
+  hard: ['GALAXY', 'BIOLOGY', 'ARCHITECTURE', 'ASTRONOMY', 'PSYCHOLOGY', 'PHILOSOPHY'],
 };
 
 const PERSIAN_WORDS = {
-  easy: ["سیب", "سگ", "گل", "ماه", "کتاب", "گربه", "پرنده", "ماهی", "درخت", "ستاره", "خورشید", "ماشین", "توپ", "آتش", "آب", "خانه", "شادی", "لبخند", "بازی", "ابر", "قلب", "نور", "صلح", "رویا", "عشق"],
-  medium: ["درخت", "رودخانه", "شادی", "آسمان", "اقیانوس", "کوه", "جنگل", "پروانه", "رنگین‌کمان", "شمع", "پل", "قلعه", "الماس", "فیل", "زرافه", "دلفین", "کانگورو", "پاندا", "ببر", "کتابخانه", "بیمارستان", "رستوران", "تئاتر", "موزه", "تلسکوپ", "میکروسکوپ", "کامپیوتر", "تلفن", "تلویزیون", "شکلات", "توت‌فرنگی", "هندوانه", "آناناس", "نارگیل", "با شکوه", "شگفت‌انگیز", "زیبا", "مهیج", "حیرت‌آور", "آزادی", "شجاعت", "صبر", "مهربانی", "قدرت", "حافظه", "توجه", "تمرکز", "تمرین", "بهبود"],
-  hard: ["کهکشان", "زیست‌شناسی", "معماری", "ستاره‌شناسی", "روانشناسی", "فلسفه", "جهان", "جو", "تنوع زیستی", "حفاظت", "اکتشاف", "نوآوری", "فناوری", "تمدن", "انقلاب", "تخیل", "خلاقیت", "الهام", "انگیزه", "پشتکار", "هوش", "هشیاری", "علوم اعصاب", "شناختی", "ادراک", "آزمایش", "فرضیه", "نظریه", "تحلیل", "ارزیابی", "ترکیب", "یکپارچگی", "تحول", "تکامل", "انطباق", "درک", "انعطاف‌پذیری عصبی", "سیناپسی", "شناخت", "عملکرد اجرایی", "حافظه کاری", "حافظه بلندمدت", "کنترل توجه", "کنترل مهاری", "انعطاف‌پذیری شناختی", "سرعت پردازش"]
+  easy: ['سیب', 'سگ', 'گل', 'ماه', 'کتاب', 'گربه', 'پرنده', 'ماهی'],
+  medium: ['درخت', 'رودخانه', 'شادی', 'آسمان', 'اقیانوس', 'کوه', 'جنگل', 'پروانه'],
+  hard: ['کهکشان', 'زیست‌شناسی', 'معماری', 'ستاره‌شناسی', 'روانشناسی', 'فلسفه'],
 };
 
-// ================================================================
-// =============== CONSTANTS ================
-// ================================================================
+/* ============================================================
+   CONSTANTS
+============================================================ */
 
 const CONSTANTS = {
   BASE_SCORE: 10,
   BONUS_BASE: 20,
   BONUS_INCREMENT: 5,
-  MAX_SEQUENCE: 12,
-  MIN_SEQUENCE: 2,
   EXTRA_OPTIONS: 4,
   DISPLAY_TIMES: { easy: 1200, medium: 1000, hard: 700 },
   START_LENGTHS: { easy: 3, medium: 5, hard: 7 },
-  BONUS_MULTIPLIERS: { easy: 1.0, medium: 1.25, hard: 1.5 },
-  RT_THRESHOLDS: { excellent: 400, normal: 700, slow: 1000 }
+  BONUS_MULTIPLIERS: { easy: 1, medium: 1.25, hard: 1.5 },
+  RT_THRESHOLDS: { excellent: 400, normal: 700, slow: 1000 },
 };
 
-// ================================================================
-// =============== HELPERS ================
-// ================================================================
+/* ============================================================
+   HELPERS
+============================================================ */
 
-const shuffleArray = (array: any[]) => {
+const shuffleArray = <T,>(array: T[]) => {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -66,18 +113,19 @@ const shuffleArray = (array: any[]) => {
   return arr;
 };
 
-const random = (min: number, max: number) => Math.random() * (max - min) + min;
-
-// ================================================================
-// =============== MAIN COMPONENT ================
-// ================================================================
+/* ============================================================
+   COMPONENT
+============================================================ */
 
 export default function WordSequenceScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { language, isRTL } = useLanguage();
 
-  const [currentScreen, setCurrentScreen] = useState<'menu' | 'settings' | 'records' | 'game'>('menu');
+  const [currentScreen, setCurrentScreen] = useState<
+    'menu' | 'settings' | 'records' | 'game'
+  >('menu');
+
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [gameMode, setGameMode] = useState<'forward' | 'backward'>('forward');
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -88,11 +136,11 @@ export default function WordSequenceScreen() {
   const [gameLength, setGameLength] = useState(3);
   const [gameSequence, setGameSequence] = useState<string[]>([]);
   const [gamePlayerIndex, setGamePlayerIndex] = useState(0);
-  const [gameIsShowing, setGameIsShowing] = useState(false);
-  const [gameIsPlaying, setIsPlaying] = useState(false);
+  const [gameIsPlaying, setGameIsPlaying] = useState(false);
   const [gameIsOver, setGameIsOver] = useState(false);
-  const [gameStatus, setGameStatus] = useState('👀 دنباله را تماشا کن...');
-  const [gameStatusColor, setGameStatusColor] = useState('#A070B0');
+  const [gameRunning, setGameRunning] = useState(false);
+  const [gameStatus, setGameStatus] = useState('');
+  const [gameStatusColor, setGameStatusColor] = useState(LUXURY.textSecondary);
   const [gridWords, setGridWords] = useState<string[]>([]);
   const [wordHistory, setWordHistory] = useState<string[]>([]);
   const [gameCorrectCount, setGameCorrectCount] = useState(0);
@@ -103,823 +151,1030 @@ export default function WordSequenceScreen() {
   const [displayWord, setDisplayWord] = useState('');
   const [displayWordClass, setDisplayWordClass] = useState('');
   const [showLoading, setShowLoading] = useState(false);
-  const [gameRunning, setGameRunning] = useState(false);
   const [wordButtonsEnabled, setWordButtonsEnabled] = useState(false);
-  const [gridColumns, setGridColumns] = useState(3);
 
-  // Records state
+  // Records
   const [highScore, setHighScore] = useState(0);
   const [gamesPlayed, setGamesPlayed] = useState(0);
   const [bestLevel, setBestLevel] = useState(1);
   const [bestAccuracy, setBestAccuracy] = useState(0);
   const [bestRT, setBestRT] = useState<number | null>(null);
 
-  // Modal state
+  // Result
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalIcon, setModalIcon] = useState('💫');
-  const [modalTitle, setModalTitle] = useState('پایان بازی');
-  const [modalTitleColor, setModalTitleColor] = useState('#FFFFFF');
+  const [newRecord, setNewRecord] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
   const [finalLevel, setFinalLevel] = useState(1);
   const [finalAccuracy, setFinalAccuracy] = useState(0);
   const [finalRT, setFinalRT] = useState(0);
 
   // Refs
-  const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const lastReactionStartTime = useRef(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const wordTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const scaleAnim = useRef(new Animated.Value(0.94)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  
+  // 🔥 CRITICAL FIX: Use refs to avoid closure issues
+  const gameRunningRef = useRef(false);
+  const gameIsOverRef = useRef(false);
 
-  // ================================================================
-  // =============== LANGUAGE HELPERS ================
-  // ================================================================
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.96)).current;
+  const resultScaleAnim = useRef(new Animated.Value(0.85)).current;
+
+  /* ============================================================
+     HELPERS
+  ============================================================ */
 
   const getWordBank = () => {
-    const lang = language || 'fa';
-    return lang === 'en' ? ENGLISH_WORDS[difficulty] || ENGLISH_WORDS.medium :
-      PERSIAN_WORDS[difficulty] || PERSIAN_WORDS.medium;
+    try {
+      if (language === 'en') {
+        return ENGLISH_WORDS[difficulty] || ENGLISH_WORDS.medium;
+      }
+      return PERSIAN_WORDS[difficulty] || PERSIAN_WORDS.medium;
+    } catch (error) {
+      console.error('Error getting word bank:', error);
+      return language === 'en' ? ENGLISH_WORDS.medium : PERSIAN_WORDS.medium;
+    }
   };
 
-  const getDisplayTime = () => CONSTANTS.DISPLAY_TIMES[difficulty] || 1000;
-
-  const getStartLength = () => CONSTANTS.START_LENGTHS[difficulty] || 5;
-
+  const getDisplayTime = () => CONSTANTS.DISPLAY_TIMES[difficulty];
+  const getStartLength = () => CONSTANTS.START_LENGTHS[difficulty];
   const getMaxSequenceLength = () => {
     if (difficulty === 'easy') return 8;
     if (difficulty === 'hard') return 12;
     return 10;
   };
-
-  const getBonusMultiplier = () => CONSTANTS.BONUS_MULTIPLIERS[difficulty] || 1.0;
+  const getBonusMultiplier = () => CONSTANTS.BONUS_MULTIPLIERS[difficulty];
 
   const getBonusForLevel = (level: number) => {
     const base = CONSTANTS.BONUS_BASE + (level - 1) * CONSTANTS.BONUS_INCREMENT;
-    const multiplier = getBonusMultiplier();
-    return Math.round(base * multiplier);
+    return Math.round(base * getBonusMultiplier());
   };
 
   const getRTInterpretation = (rt: number) => {
-    if (rt < CONSTANTS.RT_THRESHOLDS.excellent) return 'عالی';
-    if (rt < CONSTANTS.RT_THRESHOLDS.normal) return 'طبیعی';
-    if (rt < CONSTANTS.RT_THRESHOLDS.slow) return 'کند';
-    return 'بسیار کند';
-  };
-
-  const getAverageRT = () => {
-    const rts = gameReactionTimes;
-    return rts.length === 0 ? 0 : rts.reduce((a, b) => a + b, 0) / rts.length;
-  };
-
-  const getCurrentRoundAverageRT = () => {
-    const rts = currentRoundRTs;
-    return rts.length === 0 ? 0 : rts.reduce((a, b) => a + b, 0) / rts.length;
-  };
-
-  const getRandomWords = (count: number, exclude: string[]) => {
-    const bank = getWordBank();
-    const available = bank.filter(w => !exclude.includes(w));
-    const shuffled = shuffleArray([...available]);
-    if (shuffled.length < count) {
-      setWordHistory([]);
-      const freshAvailable = bank.filter(w => !exclude.includes(w));
-      return shuffleArray([...freshAvailable]).slice(0, count);
+    if (isRTL) {
+      if (rt < CONSTANTS.RT_THRESHOLDS.excellent) return 'عملکرد عالی';
+      if (rt < CONSTANTS.RT_THRESHOLDS.normal) return 'عملکرد طبیعی';
+      if (rt < CONSTANTS.RT_THRESHOLDS.slow) return 'نیازمند تمرکز بیشتر';
+      return 'سرعت واکنش پایین';
     }
-    return shuffled.slice(0, count);
+    if (rt < CONSTANTS.RT_THRESHOLDS.excellent) return 'Excellent Performance';
+    if (rt < CONSTANTS.RT_THRESHOLDS.normal) return 'Normal Performance';
+    if (rt < CONSTANTS.RT_THRESHOLDS.slow) return 'Needs More Focus';
+    return 'Slow Reaction Speed';
   };
 
-  // ================================================================
-  // =============== RECORDS ================
-  // ================================================================
-
-  const loadRecords = () => {
+  const playSound = (type: 'correct' | 'wrong' | 'levelup' | 'gameover') => {
+    if (!soundEnabled) return;
     try {
-      const data = {
-        high_score: 0,
-        games_played: 0,
-        best_level: 1,
-        best_accuracy: 0,
-        best_reaction_time: null as number | null
-      };
-      // Try to load from localStorage equivalent (AsyncStorage in real app)
-      // For now using default values
-      setHighScore(data.high_score);
-      setGamesPlayed(data.games_played);
-      setBestLevel(data.best_level);
-      setBestAccuracy(data.best_accuracy);
-      setBestRT(data.best_reaction_time);
-    } catch (e) {
-      console.error('Error loading records:', e);
+      console.log(`🎵 Sound: ${type}`);
+    } catch (error) {
+      console.error('Sound error:', error);
     }
   };
 
-  const updateHighScore = (score: number) => {
-    if (score > highScore) {
-      setHighScore(score);
-      return true;
-    }
-    return false;
+  /* ============================================================
+     TIMEOUTS
+  ============================================================ */
+
+  const clearGameTimeouts = () => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
   };
 
-  const updateBestLevel = (level: number) => {
-    if (level > bestLevel) {
-      setBestLevel(level);
-      return true;
-    }
-    return false;
+  const addTimeout = (callback: () => void, delay: number) => {
+    const timeout = setTimeout(callback, delay);
+    timeoutsRef.current.push(timeout);
+    return timeout;
   };
 
-  const updateBestAccuracy = (accuracy: number) => {
-    if (accuracy > bestAccuracy) {
-      setBestAccuracy(accuracy);
-      return true;
-    }
-    return false;
-  };
-
-  const updateBestReactionTime = (rt: number) => {
-    if (rt <= 0) return false;
-    if (bestRT === null || rt < bestRT) {
-      setBestRT(rt);
-      return true;
-    }
-    return false;
-  };
-
-  const incrementGamesPlayed = () => {
-    setGamesPlayed(prev => prev + 1);
-  };
-
-  // ================================================================
-  // =============== GO BACK ================
-  // ================================================================
+  /* ============================================================
+     NAVIGATION - FIXED
+  ============================================================ */
 
   const goBack = () => {
+    // If not on main menu, go to menu first
+    if (currentScreen !== 'menu') {
+      setCurrentScreen('menu');
+      return;
+    }
+
+    // If game is running, ask for confirmation
+    if (gameRunningRef.current) {
+      Alert.alert(
+        isRTL ? 'خروج از بازی' : 'Exit Game',
+        isRTL ? 'آیا مطمئن هستید که می‌خواهید از بازی خارج شوید؟' : 'Are you sure you want to exit the game?',
+        [
+          { text: isRTL ? 'انصراف' : 'Cancel', style: 'cancel' },
+          {
+            text: isRTL ? 'خروج' : 'Exit',
+            style: 'destructive',
+            onPress: () => {
+              stopGame();
+              if (router.canGoBack()) {
+                router.back();
+              }
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    // Go back using router
     if (router.canGoBack()) {
       router.back();
     }
   };
 
   const handleBack = () => {
-    if (currentScreen === 'game' && gameRunning) {
+    if (currentScreen === 'game' && gameRunningRef.current) {
       Alert.alert(
-        'خروج از بازی',
-        'آیا مطمئن هستید که می‌خواهید از بازی خارج شوید؟',
+        isRTL ? 'خروج از بازی' : 'Exit Game',
+        isRTL ? 'آیا مطمئن هستید که می‌خواهید از بازی خارج شوید؟' : 'Are you sure you want to exit the game?',
         [
-          { text: 'انصراف', style: 'cancel' },
-          { text: 'خروج', style: 'destructive', onPress: () => {
-            stopGame();
-            setCurrentScreen('menu');
-          }}
+          { text: isRTL ? 'انصراف' : 'Cancel', style: 'cancel' },
+          {
+            text: isRTL ? 'خروج' : 'Exit',
+            style: 'destructive',
+            onPress: () => {
+              stopGame();
+              setCurrentScreen('menu');
+            },
+          },
         ]
       );
-    } else if (currentScreen === 'settings' || currentScreen === 'records') {
-      setCurrentScreen('menu');
-    } else {
-      goBack();
+      return;
     }
+
+    if (currentScreen === 'settings' || currentScreen === 'records') {
+      setCurrentScreen('menu');
+      return;
+    }
+
+    goBack();
   };
 
-  // ================================================================
-  // =============== SOUND ================
-  // ================================================================
-
-  const playBeep = (frequency: number, duration: number) => {
-    if (!soundEnabled) return;
-    // Simple sound simulation - in real app use expo-av
-    // For now just a placeholder
-  };
-
-  const playCorrectSound = () => playBeep(800, 150);
-  const playWrongSound = () => playBeep(300, 400);
-  const playTickSound = () => playBeep(600, 80);
-  const playLevelUpSound = () => {
-    playBeep(1000, 200);
-    setTimeout(() => playBeep(1200, 200), 200);
-  };
-
-  // ================================================================
-  // =============== SCREEN MANAGEMENT ================
-  // ================================================================
-
-  const showScreen = (screen: 'menu' | 'settings' | 'records' | 'game') => {
-    setCurrentScreen(screen);
-  };
-
-  // ================================================================
-  // =============== TIMER MANAGEMENT ================
-  // ================================================================
-
-  const clearGameTimeouts = () => {
-    timeoutsRef.current.forEach(t => clearTimeout(t));
-    timeoutsRef.current = [];
-    if (timerRef.current) { clearTimeout(timerRef.current);
-      timerRef.current = null; }
-    if (wordTimerRef.current) { clearTimeout(wordTimerRef.current);
-      wordTimerRef.current = null; }
-  };
-
-  const addTimeout = (fn: () => void, delay: number) => {
-    const id = setTimeout(fn, delay);
-    timeoutsRef.current.push(id);
-    return id;
-  };
-
-  // ================================================================
-  // =============== GAME LOGIC ================
-  // ================================================================
+  /* ============================================================
+     GAME - FIXED
+  ============================================================ */
 
   const startReactionTimer = () => {
     lastReactionStartTime.current = performance.now();
   };
 
   const stopReactionTimer = () => {
-    if (lastReactionStartTime.current === 0) return 0;
-    const rt = performance.now() - lastReactionStartTime.current;
+    if (!lastReactionStartTime.current) return 0;
+    const result = performance.now() - lastReactionStartTime.current;
     lastReactionStartTime.current = 0;
-    return rt;
+    return result;
   };
 
+  // 🔥 FIXED: Proper average calculation
   const recordReactionTime = (rt: number) => {
     if (rt <= 0 || rt > 10000) return;
-    setGameReactionTimes(prev => [...prev, rt]);
+
+    setGameReactionTimes(prev => {
+      const next = [...prev, rt];
+      const average = next.reduce((sum, value) => sum + value, 0) / next.length;
+      setAverageRT(average);
+      return next;
+    });
+
     setCurrentRoundRTs(prev => [...prev, rt]);
-    setAverageRT(getCurrentRoundAverageRT());
   };
 
-  const resetRoundRTs = () => {
-    setCurrentRoundRTs([]);
-    setAverageRT(0);
-  };
-
-  const enableWordButtons = (enabled: boolean) => {
-    setWordButtonsEnabled(enabled);
-  };
-
-  const updateGameStatus = (text: string, color: string = '#A070B0') => {
-    setGameStatus(text);
-    setGameStatusColor(color);
-  };
-
-  const showLoadingOverlay = (show: boolean) => {
-    setShowLoading(show);
-  };
-
-  const updateGameStats = () => {
-    // Stats are updated via state
-  };
-
+  // 🔥 FIXED: Start game with proper refs
   const startGame = () => {
-    setGameScore(0);
-    setGameLevel(1);
-    const startLen = getStartLength();
-    setGameLength(startLen);
-    setGameRunning(true);
-    setGameIsOver(false);
-    setGameIsShowing(false);
-    setIsPlaying(false);
-    setGameCorrectCount(0);
-    setGameTotalAttempts(0);
-    setWordHistory([]);
-    setGameReactionTimes([]);
-    setCurrentRoundRTs([]);
-    setAverageRT(0);
-    setWordButtonsEnabled(false);
-    setModalVisible(false);
+    try {
+      clearGameTimeouts();
 
-    incrementGamesPlayed();
-    clearGameTimeouts();
+      // Set refs BEFORE anything else
+      gameRunningRef.current = true;
+      gameIsOverRef.current = false;
 
-    showScreen('game');
-    setGameStatus('👀 دنباله را تماشا کن...', '#A070B0');
+      setGameScore(0);
+      setGameLevel(1);
+      setGameLength(getStartLength());
+      setGameSequence([]);
+      setGamePlayerIndex(0);
+      setGameRunning(true);
+      setGameIsOver(false);
+      setGameIsPlaying(false);
+      setGameCorrectCount(0);
+      setGameTotalAttempts(0);
+      setWordHistory([]);
+      setGameReactionTimes([]);
+      setCurrentRoundRTs([]);
+      setAverageRT(0);
+      setWordButtonsEnabled(false);
+      setModalVisible(false);
+      setCurrentScreen('game');
 
-    // Animate in
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
-      Animated.spring(scaleAnim, { toValue: 1, friction: 8, useNativeDriver: true })
-    ]).start();
+      fadeAnim.setValue(0);
+      scaleAnim.setValue(0.96);
 
-    addTimeout(() => startRound(), 300);
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 350,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      setGameStatus(
+        isRTL ? 'دنباله را با دقت دنبال کن' : 'Follow the sequence carefully'
+      );
+
+      addTimeout(() => {
+        startRound();
+      }, 350);
+
+      setGamesPlayed(prev => prev + 1);
+    } catch (error) {
+      console.error('Error starting game:', error);
+      Alert.alert(
+        isRTL ? 'خطا' : 'Error',
+        isRTL ? 'مشکلی در شروع بازی رخ داد' : 'An error occurred while starting the game'
+      );
+    }
   };
 
+  // 🔥 FIXED: Check refs instead of state
   const startRound = () => {
-    if (!gameRunning || gameIsOver) return;
-
-    setGameIsShowing(true);
-    setIsPlaying(false);
-    setGamePlayerIndex(0);
-
-    const maxLen = getMaxSequenceLength();
-    const len = Math.min(gameLength, maxLen);
-
-    const available = getWordBank().filter(w => !wordHistory.includes(w));
-    const shuffledAvailable = shuffleArray([...available]);
-    let seqWords = shuffledAvailable.slice(0, len);
-
-    if (seqWords.length < len) {
-      setWordHistory([]);
-      const fullShuffled = shuffleArray([...getWordBank()]);
-      seqWords = fullShuffled.slice(0, len);
+    if (!gameRunningRef.current || gameIsOverRef.current) {
+      return;
     }
 
-    setGameSequence(seqWords);
-    setWordHistory(prev => [...prev, ...seqWords].slice(-30));
+    try {
+      const maxLength = getMaxSequenceLength();
+      const length = Math.min(gameLength, maxLength);
+      const bank = getWordBank();
 
-    const extraCount = Math.min(CONSTANTS.EXTRA_OPTIONS, Math.floor(getWordBank().length / 2));
-    const extraWords = getRandomWords(extraCount, seqWords);
-    const grid = shuffleArray([...seqWords, ...extraWords]);
-    setGridWords(grid);
+      if (!bank || bank.length === 0) {
+        throw new Error('Word bank is empty');
+      }
 
-    const cols = grid.length <= 4 ? 2 : grid.length <= 6 ? 3 : 4;
-    setGridColumns(cols);
+      let available = bank.filter(word => !wordHistory.includes(word));
 
-    setDisplayWord('');
-    setDisplayWordClass('');
+      if (available.length < length) {
+        available = [...bank];
+        setWordHistory([]);
+      }
 
-    updateGameStatus('👀 دنباله را تماشا کن...', '#A070B0');
-    resetRoundRTs();
-    enableWordButtons(false);
-    showLoadingOverlay(true);
+      const sequence = shuffleArray(available).slice(0, length);
 
-    addTimeout(() => {
-      showLoadingOverlay(false);
-      showSequence(0);
-    }, 400);
-  };
+      if (sequence.length < length) {
+        throw new Error('Not enough words available');
+      }
 
-  const showSequence = (index: number) => {
-    if (!gameRunning || gameIsOver) return;
+      const extras = shuffleArray(
+        bank.filter(word => !sequence.includes(word))
+      ).slice(0, CONSTANTS.EXTRA_OPTIONS);
 
-    if (index >= gameSequence.length) {
-      setGameIsShowing(false);
-      setIsPlaying(true);
-      const mode = gameMode || 'forward';
-      updateGameStatus(
-        mode === 'forward' ? '🧠 حالا کلمات را به همان ترتیب تکرار کن!' : '🧠 حالا کلمات را به ترتیب برعکس تکرار کن!',
-        '#D100D1'
-      );
+      const finalGrid = shuffleArray([...sequence, ...extras]);
+
+      setGameSequence(sequence);
+      setWordHistory(prev => [...prev, ...sequence].slice(-30));
+      setGridWords(finalGrid);
+      setGamePlayerIndex(0);
       setDisplayWord('');
       setDisplayWordClass('');
-      enableWordButtons(true);
+      setWordButtonsEnabled(false);
+
+      setGameStatus(
+        isRTL ? 'دنباله را به خاطر بسپار' : 'Remember the sequence'
+      );
+      setGameStatusColor(LUXURY.textSecondary);
+
+      setShowLoading(true);
+
+      addTimeout(() => {
+        if (!gameRunningRef.current || gameIsOverRef.current) {
+          return;
+        }
+        setShowLoading(false);
+        showSequence(0, sequence);
+      }, 350);
+    } catch (error) {
+      console.error('Error starting round:', error);
+      gameOver();
+    }
+  };
+
+  // 🔥 FIXED: Check refs instead of state
+  const showSequence = (index: number, sequence: string[]) => {
+    if (!gameRunningRef.current || gameIsOverRef.current) {
+      return;
+    }
+
+    if (index >= sequence.length) {
+      setGameIsPlaying(true);
+      setGameStatus(
+        gameMode === 'forward'
+          ? isRTL
+            ? 'حالا کلمات را به همان ترتیب انتخاب کن'
+            : 'Now select the words in the same order'
+          : isRTL
+          ? 'حالا کلمات را برعکس انتخاب کن'
+          : 'Now select the words in reverse order'
+      );
+      setGameStatusColor(LUXURY.gold);
+      setDisplayWord('');
+      setWordButtonsEnabled(true);
       startReactionTimer();
       return;
     }
 
-    const word = gameSequence[index];
+    const word = sequence[index];
     setDisplayWord(word);
     setDisplayWordClass('showing');
-    playTickSound();
 
     const displayTime = getDisplayTime();
+
     addTimeout(() => {
+      if (!gameRunningRef.current || gameIsOverRef.current) {
+        return;
+      }
       setDisplayWordClass('hiding');
     }, displayTime * 0.8);
 
     addTimeout(() => {
-      showSequence(index + 1);
+      showSequence(index + 1, sequence);
     }, displayTime);
   };
 
   const handleWordClick = (word: string) => {
-    if (!gameRunning || gameIsOver || !gameIsPlaying) return;
+    if (!gameRunningRef.current || gameIsOverRef.current || !gameIsPlaying) {
+      return;
+    }
 
     const rt = stopReactionTimer();
-    if (rt > 0 && rt < 10000) recordReactionTime(rt);
+    if (rt > 0) {
+      recordReactionTime(rt);
+    }
 
-    const mode = gameMode || 'forward';
-    const expectedIndex = mode === 'forward' ? gamePlayerIndex : gameSequence.length - 1 - gamePlayerIndex;
+    const expectedIndex = gameMode === 'forward'
+      ? gamePlayerIndex
+      : gameSequence.length - 1 - gamePlayerIndex;
+
     const correctWord = gameSequence[expectedIndex];
 
     if (word === correctWord) {
-      setGamePlayerIndex(prev => prev + 1);
+      // Correct
+      const newIndex = gamePlayerIndex + 1;
+      setGamePlayerIndex(newIndex);
+
       const scoreGain = Math.round(CONSTANTS.BASE_SCORE * getBonusMultiplier());
       setGameScore(prev => prev + scoreGain);
       setGameCorrectCount(prev => prev + 1);
       setGameTotalAttempts(prev => prev + 1);
-      playCorrectSound();
 
-      updateGameStatus(`✅ درست! +${scoreGain} امتیاز`, '#34D399');
-
-      // Disable clicked button
-      setGridWords(prev => prev.map(w => w === word ? `✓${w}` : w));
+      setGridWords(prev =>
+        prev.map(item => item === word ? `✓${item}` : item)
+      );
 
       setDisplayWord(word);
       setDisplayWordClass('correct-feedback');
+      setGameStatus(isRTL ? `درست  •  +${scoreGain}` : `Correct  •  +${scoreGain}`);
+      setGameStatusColor(LUXURY.success);
 
-      if (gamePlayerIndex + 1 >= gameSequence.length) {
-        setIsPlaying(false);
-        setGameLevel(prev => prev + 1);
+      playSound('correct');
+
+      if (newIndex >= gameSequence.length) {
+        // Level complete
+        setGameIsPlaying(false);
+        setWordButtonsEnabled(false);
 
         const bonus = getBonusForLevel(gameLevel);
         setGameScore(prev => prev + bonus);
-        playLevelUpSound();
 
-        updateGameStatus(`⬆ مرحله بعد! +${bonus} امتیاز پاداش`, '#D100D1');
-        enableWordButtons(false);
-        resetRoundRTs();
+        setGameStatus(
+          isRTL ? `مرحله بعد  •  پاداش +${bonus}` : `Next Level  •  Bonus +${bonus}`
+        );
+        setGameStatusColor(LUXURY.gold);
 
-        const newLen = Math.min(gameLength + 1, getMaxSequenceLength());
-        setGameLength(newLen);
+        playSound('levelup');
+
+        const newLength = Math.min(gameLength + 1, getMaxSequenceLength());
+        setGameLevel(prev => prev + 1);
+        setGameLength(newLength);
 
         addTimeout(() => {
-          if (gameRunning && !gameIsOver) startRound();
-        }, 1500);
+          if (gameRunningRef.current && !gameIsOverRef.current) {
+            startRound();
+          }
+        }, 1200);
       } else {
-        enableWordButtons(true);
         startReactionTimer();
       }
-    } else {
-      setGameTotalAttempts(prev => prev + 1);
-      playWrongSound();
 
-      updateGameStatus('❌ اشتباه! بازی تمام شد', '#FF6B81');
-
-      // Mark wrong button
-      setGridWords(prev => prev.map(w => w === word ? `✗${w}` : w));
-
-      setDisplayWord(word);
-      setDisplayWordClass('wrong-feedback');
-
-      setIsPlaying(false);
-      enableWordButtons(false);
-
-      addTimeout(() => gameOver(), 600);
+      return;
     }
+
+    // Wrong
+    setGameTotalAttempts(prev => prev + 1);
+
+    setGridWords(prev =>
+      prev.map(item => item === word ? `✗${item}` : item)
+    );
+
+    setDisplayWord(word);
+    setDisplayWordClass('wrong-feedback');
+    setGameStatus(isRTL ? 'انتخاب اشتباه بود' : 'Wrong selection');
+    setGameStatusColor(LUXURY.danger);
+
+    playSound('wrong');
+
+    setGameIsPlaying(false);
+    setWordButtonsEnabled(false);
+
+    addTimeout(() => {
+      gameOver();
+    }, 650);
   };
 
+  // 🔥 FIXED: Proper game over
   const gameOver = () => {
+    gameRunningRef.current = false;
+    gameIsOverRef.current = true;
+
     setGameRunning(false);
     setGameIsOver(true);
-    setIsPlaying(false);
-    setGameIsShowing(false);
-    enableWordButtons(false);
+    setGameIsPlaying(false);
+    setWordButtonsEnabled(false);
+
     clearGameTimeouts();
 
-    const finalScoreVal = gameScore;
-    const finalLevelVal = gameLevel;
-    const accuracy = gameTotalAttempts > 0 ? Math.round((gameCorrectCount / gameTotalAttempts) * 100) : 0;
-    const avgRTVal = getAverageRT();
+    const accuracy = gameTotalAttempts > 0
+      ? Math.round((gameCorrectCount / gameTotalAttempts) * 100)
+      : 0;
 
-    let newRecords: string[] = [];
-    if (updateHighScore(finalScoreVal)) newRecords.push('بهترین امتیاز');
-    if (updateBestLevel(finalLevelVal)) newRecords.push('بهترین مرحله');
-    if (updateBestAccuracy(accuracy)) newRecords.push('بهترین دقت');
-    if (avgRTVal > 0 && updateBestReactionTime(avgRTVal)) newRecords.push('بهترین زمان واکنش');
+    const avgRT = gameReactionTimes.length
+      ? Math.round(gameReactionTimes.reduce((sum, value) => sum + value, 0) / gameReactionTimes.length)
+      : 0;
 
-    setFinalScore(finalScoreVal);
-    setFinalLevel(finalLevelVal);
+    setFinalScore(gameScore);
+    setFinalLevel(gameLevel);
     setFinalAccuracy(accuracy);
-    setFinalRT(avgRTVal);
+    setFinalRT(avgRT);
 
-    if (newRecords.length > 0) {
-      setModalIcon('🏆');
-      setModalTitle(newRecords.length === 1 ? '🎉 رکورد جدید!' : '🏆 رکوردهای جدید!');
-      setModalTitleColor('#34D399');
-    } else {
-      setModalIcon('💫');
-      setModalTitle('پایان بازی');
-      setModalTitleColor('#FFFFFF');
+    playSound('gameover');
+
+    let record = false;
+
+    if (gameScore > highScore) {
+      setHighScore(gameScore);
+      record = true;
     }
 
+    if (gameLevel > bestLevel) {
+      setBestLevel(gameLevel);
+      record = true;
+    }
+
+    if (accuracy > bestAccuracy) {
+      setBestAccuracy(accuracy);
+      record = true;
+    }
+
+    if (avgRT > 0 && (bestRT === null || avgRT < bestRT)) {
+      setBestRT(avgRT);
+      record = true;
+    }
+
+    setNewRecord(record);
     setModalVisible(true);
+
+    resultScaleAnim.setValue(0.85);
+    Animated.spring(resultScaleAnim, {
+      toValue: 1,
+      friction: 7,
+      tension: 60,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  // 🔥 FIXED: Proper stop
+  const stopGame = () => {
+    clearGameTimeouts();
+    gameRunningRef.current = false;
+    gameIsOverRef.current = true;
+    setGameRunning(false);
+    setGameIsOver(true);
+    setGameIsPlaying(false);
+    setWordButtonsEnabled(false);
+    setDisplayWord('');
   };
 
   const restartGame = () => {
     setModalVisible(false);
-    startGame();
+    addTimeout(() => {
+      startGame();
+    }, 100);
   };
 
-  const stopGame = () => {
-    setGameRunning(false);
-    setGameIsOver(true);
-    setIsPlaying(false);
-    setGameIsShowing(false);
-    clearGameTimeouts();
-    enableWordButtons(false);
-  };
+  /* ============================================================
+     MENU BUTTON
+  ============================================================ */
 
-  // ================================================================
-  // =============== RENDER FUNCTIONS ================
-  // ================================================================
-
-  const renderMenuItem = (icon: React.ReactNode, text: string, onPress: () => void, primary?: boolean) => (
+  const MenuButton = ({
+    icon,
+    title,
+    subtitle,
+    onPress,
+    primary = false,
+  }: {
+    icon: React.ReactNode;
+    title: string;
+    subtitle?: string;
+    onPress: () => void;
+    primary?: boolean;
+  }) => (
     <TouchableOpacity
       onPress={onPress}
-      activeOpacity={0.7}
+      activeOpacity={0.82}
       style={[
         styles.menuButton,
         primary && styles.menuButtonPrimary,
-        { borderColor: primary ? 'rgba(209,0,209,0.10)' : 'rgba(211,0,209,0.08)' }
       ]}
     >
-      <View style={styles.menuButtonContent}>
+      <View style={[styles.menuIcon, primary && styles.menuIconPrimary]}>
         {icon}
-        <Text style={[styles.menuButtonText, primary && styles.menuButtonTextPrimary]}>
-          {text}
-        </Text>
       </View>
+
+      <View style={styles.menuText}>
+        <Text style={[styles.menuTitle, primary && styles.menuTitlePrimary]}>
+          {title}
+        </Text>
+
+        {subtitle && (
+          <Text style={styles.menuSubtitle}>
+            {subtitle}
+          </Text>
+        )}
+      </View>
+
+      <ChevronRight
+        size={18}
+        color={primary ? LUXURY.gold : LUXURY.textMuted}
+        style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+      />
     </TouchableOpacity>
   );
 
-  const renderStatItem = (icon: React.ReactNode, label: string, value: string | number) => (
-    <View style={[styles.statItem, { borderColor: 'rgba(211,0,209,0.06)' }]}>
-      {icon}
-      <Text style={[styles.statLabel, { color: '#A070B0' }]}>{label}</Text>
-      <Text style={[styles.statValue, { color: '#D100D1' }]}>{value}</Text>
+  /* ============================================================
+     STAT CARD
+  ============================================================ */
+
+  const StatCard = ({
+    icon,
+    label,
+    value,
+    large = false,
+  }: {
+    icon: React.ReactNode;
+    label: string;
+    value: string | number;
+    large?: boolean;
+  }) => (
+    <View style={[styles.statCard, large && styles.statCardLarge]}>
+      <View style={styles.statIcon}>
+        {icon}
+      </View>
+
+      <Text style={styles.statLabel}>
+        {label}
+      </Text>
+
+      <Text style={[styles.statValue, large && styles.statValueLarge]}>
+        {value}
+      </Text>
     </View>
   );
 
-  const renderGameStat = (icon: React.ReactNode, label: string, value: string | number) => (
-    <View style={styles.gameStatItem}>
-      <Text style={styles.gameStatLabel}>{label}</Text>
-      <Text style={[styles.gameStatValue, { color: '#D100D1' }]}>{value}</Text>
-    </View>
-  );
-
-  const renderWordButton = (word: string, index: number) => {
-    const isCorrect = word.startsWith('✓');
-    const isWrong = word.startsWith('✗');
-    const displayWord = word.replace(/^[✓✗]/, '');
-
-    return (
-      <TouchableOpacity
-        key={index}
-        onPress={() => handleWordClick(displayWord)}
-        disabled={!wordButtonsEnabled || isCorrect || isWrong}
-        style={[
-          styles.wordButton,
-          {
-            backgroundColor: isCorrect ? 'rgba(52,211,153,0.04)' : isWrong ? 'rgba(255,107,129,0.04)' : 'rgba(255,255,255,0.02)',
-            borderColor: isCorrect ? 'rgba(52,211,153,0.12)' : isWrong ? 'rgba(255,107,129,0.12)' : 'rgba(211,0,209,0.06)',
-            opacity: (!wordButtonsEnabled && !isCorrect && !isWrong) ? 0.3 : 1,
-          }
-        ]}
-      >
-        <Text style={[
-          styles.wordButtonText,
-          { color: isCorrect ? '#34D399' : isWrong ? '#FF6B81' : '#E8D0F0' }
-        ]}>
-          {displayWord}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
-
-  // ================================================================
-  // =============== RENDER ================
-  // ================================================================
+  /* ============================================================
+     RENDER
+  ============================================================ */
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors?.background || LUXURY.background }]}>
       {/* Header */}
       <View style={[styles.header, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <TouchableOpacity
           onPress={handleBack}
-          activeOpacity={0.7}
-          style={[styles.headerButton, { backgroundColor: colors.surface }]}
+          style={styles.headerButton}
+          activeOpacity={0.8}
         >
-          <ArrowLeft size={22} color={colors.text} style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined} />
+          <ArrowLeft
+            size={20}
+            color={LUXURY.text}
+            style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+          />
         </TouchableOpacity>
 
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          {currentScreen === 'menu' ? 'توالی کلمات' :
-           currentScreen === 'settings' ? 'تنظیمات' :
-           currentScreen === 'records' ? 'رکوردها' :
-           'بازی توالی کلمات'}
+        <Text style={styles.headerTitle}>
+          {currentScreen === 'menu'
+            ? (isRTL ? 'توالی کلمات' : 'Word Sequence')
+            : currentScreen === 'settings'
+            ? (isRTL ? 'تنظیمات' : 'Settings')
+            : currentScreen === 'records'
+            ? (isRTL ? 'رکوردها' : 'Records')
+            : (isRTL ? 'بازی' : 'Game')}
         </Text>
 
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* Menu Screen */}
+      {/* MENU */}
       {currentScreen === 'menu' && (
-        <ScrollView contentContainerStyle={styles.menuScrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.logoSection}>
-            <Text style={styles.logoIcon}>📚</Text>
-            <Text style={[styles.mainTitle, { color: colors.text }]}>
-              توالی <Text style={styles.gradientText}>کلمات</Text>
+        <ScrollView
+          contentContainerStyle={styles.menuContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.brandSection}>
+            <View style={styles.brandMark}>
+              <Brain size={34} color={LUXURY.gold} strokeWidth={1.5} />
+            </View>
+
+            <Text style={styles.brandTitle}>
+              {isRTL ? 'توالی کلمات' : 'Word Sequence'}
             </Text>
-            <Text style={[styles.mainSubtitle, { color: '#A070B0' }]}>تقویت حافظه‌ی کاری</Text>
+
+            <Text style={styles.brandSubtitle}>
+              {isRTL ? 'تمرکز بیشتر، حافظه قوی‌تر' : 'More Focus, Stronger Memory'}
+            </Text>
           </View>
 
           <View style={styles.menuButtons}>
-            {renderMenuItem(
-              <Play size={20} color="#FFFFFF" />,
-              'شروع بازی',
-              startGame,
-              true
-            )}
-            {renderMenuItem(
-              <Settings size={20} color="#E8D0F0" />,
-              'تنظیمات',
-              () => showScreen('settings')
-            )}
-            {renderMenuItem(
-              <Trophy size={20} color="#E8D0F0" />,
-              'رکوردها',
-              () => {
-                loadRecords();
-                showScreen('records');
-              }
-            )}
-            {renderMenuItem(
-              <Globe size={20} color="#E8D0F0" />,
-              language === 'fa' ? '🇬🇧 English' : '🇫🇦 فارسی',
-              () => {
-                // Toggle language - handled by context
-              }
-            )}
-            {renderMenuItem(
-              <Home size={20} color="#E8D0F0" />,
-              'بازگشت به ماژول‌ها',
-              goBack
-            )}
+            <MenuButton
+              primary
+              icon={<Play size={20} color={LUXURY.background} fill={LUXURY.background} />}
+              title={isRTL ? 'شروع بازی' : 'Start Game'}
+              subtitle={isRTL ? 'آزمون حافظه و سرعت واکنش' : 'Memory & Reaction Speed Test'}
+              onPress={startGame}
+            />
+
+            <MenuButton
+              icon={<Settings size={20} color={LUXURY.gold} />}
+              title={isRTL ? 'تنظیمات' : 'Settings'}
+              subtitle={isRTL ? 'سطح، حالت بازی و صدا' : 'Level, Game Mode & Sound'}
+              onPress={() => setCurrentScreen('settings')}
+            />
+
+            <MenuButton
+              icon={<Trophy size={20} color={LUXURY.gold} />}
+              title={isRTL ? 'رکوردها' : 'Records'}
+              subtitle={isRTL ? 'بهترین عملکردهای شما' : 'Your Best Performances'}
+              onPress={() => setCurrentScreen('records')}
+            />
+
+            <MenuButton
+              icon={<Globe size={20} color={LUXURY.gold} />}
+              title={language === 'fa' ? 'English' : 'فارسی'}
+              subtitle={isRTL ? 'تغییر زبان بازی' : 'Change Game Language'}
+              onPress={() => {}}
+            />
+
+            <MenuButton
+              icon={<Home size={20} color={LUXURY.gold} />}
+              title={isRTL ? 'بازگشت' : 'Go Back'}
+              subtitle={isRTL ? 'بازگشت به ماژول‌ها' : 'Back to Modules'}
+              onPress={goBack}
+            />
+          </View>
+
+          <View style={styles.menuFooter}>
+            <View style={styles.footerLine} />
+            <Text style={styles.footerText}>MEMORY • FOCUS • SPEED</Text>
           </View>
         </ScrollView>
       )}
 
-      {/* Settings Screen */}
+      {/* SETTINGS */}
       {currentScreen === 'settings' && (
-        <ScrollView contentContainerStyle={styles.settingsScrollContent} showsVerticalScrollIndicator={false}>
-          <View style={[styles.settingsGroup, { borderColor: 'rgba(211,0,209,0.06)' }]}>
-            <Text style={[styles.settingsLabel, { color: '#E8D0F0' }]}>سختی:</Text>
-            <View style={styles.settingsOptions}>
-              {['easy', 'medium', 'hard'].map((d) => (
+        <ScrollView
+          contentContainerStyle={styles.pageContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={[styles.sectionTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+            {isRTL ? 'تنظیمات بازی' : 'Game Settings'}
+          </Text>
+
+          <View style={styles.settingsCard}>
+            <Text style={[styles.settingsLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {isRTL ? 'سطح دشواری' : 'Difficulty Level'}
+            </Text>
+
+            <View style={[styles.optionsRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              {(['easy', 'medium', 'hard'] as const).map(level => (
                 <TouchableOpacity
-                  key={d}
-                  onPress={() => setDifficulty(d as 'easy' | 'medium' | 'hard')}
-                  style={[
-                    styles.optionButton,
-                    difficulty === d && styles.optionButtonActive,
-                    { borderColor: difficulty === d ? 'rgba(209,0,209,0.15)' : 'rgba(211,0,209,0.06)' }
-                  ]}
+                  key={level}
+                  onPress={() => setDifficulty(level)}
+                  style={[styles.option, difficulty === level && styles.optionActive]}
                 >
-                  <Text style={[
-                    styles.optionButtonText,
-                    { color: difficulty === d ? '#FFFFFF' : '#E8D0F0' }
-                  ]}>
-                    {d === 'easy' ? 'آسان' : d === 'medium' ? 'متوسط' : 'سخت'}
+                  <Text style={[styles.optionTitle, difficulty === level && styles.optionTitleActive]}>
+                    {level === 'easy'
+                      ? (isRTL ? 'آسان' : 'Easy')
+                      : level === 'medium'
+                      ? (isRTL ? 'متوسط' : 'Medium')
+                      : (isRTL ? 'سخت' : 'Hard')}
                   </Text>
-                  <Text style={[
-                    styles.optionButtonSmall,
-                    { color: difficulty === d ? '#D100D1' : '#A070B0' }
-                  ]}>
-                    {d === 'easy' ? '(شروع با ۳)' : d === 'medium' ? '(شروع با ۵)' : '(شروع با ۷)'}
+                  <Text style={styles.optionDescription}>
+                    {level === 'easy'
+                      ? (isRTL ? 'شروع ۳' : 'Start 3')
+                      : level === 'medium'
+                      ? (isRTL ? 'شروع ۵' : 'Start 5')
+                      : (isRTL ? 'شروع ۷' : 'Start 7')}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
-          <View style={[styles.settingsGroup, { borderColor: 'rgba(211,0,209,0.06)' }]}>
-            <Text style={[styles.settingsLabel, { color: '#E8D0F0' }]}>صدا:</Text>
-            <TouchableOpacity onPress={() => setSoundEnabled(!soundEnabled)} style={styles.toggleButton}>
-              <View style={[styles.toggleTrack, soundEnabled && styles.toggleTrackActive]}>
-                <View style={[styles.toggleThumb, soundEnabled && styles.toggleThumbActive]} />
+          <View style={styles.settingsCard}>
+            <View style={[styles.settingsHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <View style={{ alignItems: isRTL ? 'flex-end' : 'flex-start' }}>
+                <Text style={[styles.settingsLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+                  {isRTL ? 'صدا' : 'Sound'}
+                </Text>
+                <Text style={[styles.settingsDescription, { textAlign: isRTL ? 'right' : 'left' }]}>
+                  {isRTL ? 'بازخورد صوتی بازی' : 'Game Sound Feedback'}
+                </Text>
               </View>
-              <Text style={[styles.toggleLabel, { color: '#A070B0' }]}>
-                {soundEnabled ? 'فعال' : 'غیرفعال'}
-              </Text>
-            </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setSoundEnabled(!soundEnabled)}
+                style={[styles.toggle, soundEnabled && styles.toggleActive]}
+              >
+                <View style={[styles.toggleThumb, soundEnabled && styles.toggleThumbActive]} />
+              </TouchableOpacity>
+            </View>
           </View>
 
-          <View style={[styles.settingsGroup, { borderColor: 'rgba(211,0,209,0.06)' }]}>
-            <Text style={[styles.settingsLabel, { color: '#E8D0F0' }]}>حالت:</Text>
-            <View style={styles.settingsOptions}>
-              {['forward', 'backward'].map((m) => (
-                <TouchableOpacity
-                  key={m}
-                  onPress={() => setGameMode(m as 'forward' | 'backward')}
-                  style={[
-                    styles.optionButton,
-                    gameMode === m && styles.optionButtonActive,
-                    { borderColor: gameMode === m ? 'rgba(209,0,209,0.15)' : 'rgba(211,0,209,0.06)' }
-                  ]}
-                >
-                  <Text style={[
-                    styles.optionButtonText,
-                    { color: gameMode === m ? '#FFFFFF' : '#E8D0F0' }
-                  ]}>
-                    {m === 'forward' ? '➡️ پیش‌رو' : '⬅️ معکوس'}
+          <View style={styles.settingsCard}>
+            <Text style={[styles.settingsLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {isRTL ? 'حالت بازی' : 'Game Mode'}
+            </Text>
+
+            <View style={[styles.modeContainer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <TouchableOpacity
+                onPress={() => setGameMode('forward')}
+                style={[
+                  styles.modeButton,
+                  gameMode === 'forward' && styles.modeButtonActive,
+                  { flexDirection: isRTL ? 'row-reverse' : 'row' }
+                ]}
+              >
+                <TrendingUp size={19} color={gameMode === 'forward' ? LUXURY.gold : LUXURY.textMuted} />
+                <View style={{ alignItems: isRTL ? 'flex-end' : 'flex-start' }}>
+                  <Text style={[styles.modeTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+                    {isRTL ? 'پیش‌رو' : 'Forward'}
                   </Text>
-                  <Text style={[
-                    styles.optionButtonSmall,
-                    { color: gameMode === m ? '#D100D1' : '#A070B0' }
-                  ]}>
-                    {m === 'forward' ? '(به همان ترتیب)' : '(برعکس)'}
+                  <Text style={[styles.modeDescription, { textAlign: isRTL ? 'right' : 'left' }]}>
+                    {isRTL ? 'همان ترتیب' : 'Same Order'}
                   </Text>
-                </TouchableOpacity>
-              ))}
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setGameMode('backward')}
+                style={[
+                  styles.modeButton,
+                  gameMode === 'backward' && styles.modeButtonActive,
+                  { flexDirection: isRTL ? 'row-reverse' : 'row' }
+                ]}
+              >
+                <Layers size={19} color={gameMode === 'backward' ? LUXURY.gold : LUXURY.textMuted} />
+                <View style={{ alignItems: isRTL ? 'flex-end' : 'flex-start' }}>
+                  <Text style={[styles.modeTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+                    {isRTL ? 'معکوس' : 'Backward'}
+                  </Text>
+                  <Text style={[styles.modeDescription, { textAlign: isRTL ? 'right' : 'left' }]}>
+                    {isRTL ? 'ترتیب برعکس' : 'Reverse Order'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
             </View>
           </View>
 
           <TouchableOpacity
-            onPress={() => showScreen('menu')}
-            style={[styles.saveButton, { backgroundColor: colors.primary }]}
+            onPress={() => setCurrentScreen('menu')}
+            style={styles.goldButton}
           >
-            <Text style={styles.saveButtonText}>💾 ذخیره</Text>
+            <Text style={styles.goldButtonText}>
+              {isRTL ? 'ذخیره تنظیمات' : 'Save Settings'}
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       )}
 
-      {/* Records Screen */}
+      {/* RECORDS */}
       {currentScreen === 'records' && (
-        <ScrollView contentContainerStyle={styles.recordsScrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.pageContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.recordsHero}>
+            <View style={styles.recordsHeroIcon}>
+              <Crown size={30} color={LUXURY.gold} />
+            </View>
+
+            <Text style={styles.recordsHeroTitle}>
+              {isRTL ? 'رکوردهای شخصی' : 'Personal Records'}
+            </Text>
+
+            <Text style={styles.recordsHeroSubtitle}>
+              {isRTL ? 'بهترین عملکردهای ثبت‌شده' : 'Best Recorded Performances'}
+            </Text>
+          </View>
+
           <View style={styles.recordsGrid}>
-            {[
-              { icon: '🏆', label: 'بهترین امتیاز', value: highScore },
-              { icon: '📈', label: 'بهترین مرحله', value: bestLevel },
-              { icon: '🎯', label: 'بهترین دقت', value: bestAccuracy + '%' },
-              { icon: '⚡', label: 'بهترین زمان واکنش', value: bestRT ? Math.round(bestRT) + ' ms' : '--' },
-              { icon: '📊', label: 'تعداد بازی‌ها', value: gamesPlayed },
-            ].map((item, index) => (
-              <View key={index} style={[styles.recordCard, { borderColor: 'rgba(211,0,209,0.06)' }]}>
-                <Text style={styles.recordIcon}>{item.icon}</Text>
-                <View style={styles.recordInfo}>
-                  <Text style={[styles.recordLabel, { color: '#A070B0' }]}>{item.label}</Text>
-                  <Text style={[styles.recordValue, { color: '#D100D1' }]}>{item.value}</Text>
-                </View>
-              </View>
-            ))}
+            <StatCard
+              large
+              icon={<Trophy size={21} color={LUXURY.gold} />}
+              label={isRTL ? 'بهترین امتیاز' : 'Best Score'}
+              value={highScore}
+            />
+
+            <StatCard
+              icon={<TrendingUp size={21} color={LUXURY.gold} />}
+              label={isRTL ? 'بهترین مرحله' : 'Best Level'}
+              value={bestLevel}
+            />
+
+            <StatCard
+              icon={<Target size={21} color={LUXURY.gold} />}
+              label={isRTL ? 'بهترین دقت' : 'Best Accuracy'}
+              value={`${bestAccuracy}%`}
+            />
+
+            <StatCard
+              icon={<Zap size={21} color={LUXURY.gold} />}
+              label={isRTL ? 'بهترین واکنش' : 'Best Reaction'}
+              value={bestRT ? `${Math.round(bestRT)} ms` : '--'}
+            />
+
+            <StatCard
+              icon={<Medal size={21} color={LUXURY.gold} />}
+              label={isRTL ? 'تعداد بازی' : 'Games Played'}
+              value={gamesPlayed}
+            />
           </View>
         </ScrollView>
       )}
 
-      {/* Game Screen */}
+      {/* GAME */}
       {currentScreen === 'game' && (
-        <Animated.View style={[styles.gameContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
-          <View style={[styles.gameHeader, { borderColor: 'rgba(211,0,209,0.06)' }]}>
-            <View style={styles.gameStats}>
-              {renderGameStat('⭐', 'امتیاز', gameScore)}
-              {renderGameStat('📈', 'مرحله', gameLevel)}
-              {renderGameStat('📏', 'طول', gameLength)}
-              {renderGameStat('⚡', 'زمان واکنش', averageRT > 0 ? Math.round(averageRT) + ' ms' : '--')}
+        <Animated.View
+          style={[
+            styles.gameContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }],
+            },
+          ]}
+        >
+          <View style={[styles.gameTopBar, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <View style={styles.gameMetric}>
+              <Text style={styles.gameMetricLabel}>{isRTL ? 'امتیاز' : 'Score'}</Text>
+              <Text style={styles.gameMetricValue}>{gameScore}</Text>
             </View>
-            <TouchableOpacity onPress={() => {
-              Alert.alert('خروج از بازی', 'آیا مطمئن هستید؟', [
-                { text: 'انصراف', style: 'cancel' },
-                { text: 'خروج', style: 'destructive', onPress: () => {
-                  stopGame();
-                  setCurrentScreen('menu');
-                }}
-              ]);
-            }} style={styles.gameCloseButton}>
-              <X size={20} color="#A070B0" />
-            </TouchableOpacity>
-          </View>
 
-          <Text style={[styles.gameStatusText, { color: gameStatusColor }]}>
-            {gameStatus}
-          </Text>
+            <View style={styles.gameMetric}>
+              <Text style={styles.gameMetricLabel}>{isRTL ? 'مرحله' : 'Level'}</Text>
+              <Text style={styles.gameMetricValue}>{gameLevel}</Text>
+            </View>
 
-          <View style={[styles.wordDisplay, { borderColor: 'rgba(211,0,209,0.06)' }]}>
-            {showLoading && (
-              <View style={styles.loadingOverlay}>
-                <View style={styles.loadingSpinner} />
-              </View>
-            )}
-            <Text style={[styles.wordText, {
-              color: displayWordClass === 'correct-feedback' ? '#34D399' :
-                     displayWordClass === 'wrong-feedback' ? '#FF6B81' :
-                     '#FFFFFF'
-            }]}>
-              {displayWord}
-            </Text>
-          </View>
+            <View style={styles.gameMetric}>
+              <Text style={styles.gameMetricLabel}>{isRTL ? 'طول' : 'Length'}</Text>
+              <Text style={styles.gameMetricValue}>{gameLength}</Text>
+            </View>
 
-          <View style={[styles.wordGrid, { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` }]}>
-            {gridWords.map((word, index) => renderWordButton(word, index))}
-          </View>
+            <View style={styles.gameMetric}>
+              <Text style={styles.gameMetricLabel}>{isRTL ? 'واکنش' : 'Reaction'}</Text>
+              <Text style={styles.gameMetricValue}>
+                {averageRT ? `${Math.round(averageRT)}ms` : '--'}
+              </Text>
+            </View>
 
-          <View style={styles.gameBottom}>
             <TouchableOpacity
               onPress={() => {
-                // Toggle language
+                Alert.alert(
+                  isRTL ? 'خروج از بازی' : 'Exit Game',
+                  isRTL ? 'آیا مطمئن هستید؟' : 'Are you sure?',
+                  [
+                    { text: isRTL ? 'انصراف' : 'Cancel', style: 'cancel' },
+                    {
+                      text: isRTL ? 'خروج' : 'Exit',
+                      style: 'destructive',
+                      onPress: () => {
+                        stopGame();
+                        setCurrentScreen('menu');
+                      },
+                    },
+                  ]
+                );
               }}
-              style={[styles.gameBottomButton, { borderColor: 'rgba(211,0,209,0.06)' }]}
+              style={styles.closeButton}
             >
-              <Globe size={16} color="#E8D0F0" />
-              <Text style={[styles.gameBottomButtonText, { color: '#E8D0F0' }]}>
-                {language === 'fa' ? '🇬🇧 English' : '🇫🇦 فارسی'}
-              </Text>
+              <X size={19} color={LUXURY.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={[styles.gameStatusContainer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <View style={[styles.statusDot, { backgroundColor: gameStatusColor }]} />
+            <Text style={[styles.gameStatus, { color: gameStatusColor }]}>{gameStatus}</Text>
+          </View>
+
+          <View style={styles.wordDisplay}>
+            {showLoading ? (
+              <View style={styles.loadingContainer}>
+                <View style={styles.loadingRing} />
+              </View>
+            ) : (
+              <>
+                <Text style={styles.wordDisplayLabel}>MEMORY SEQUENCE</Text>
+                <Text
+                  style={[
+                    styles.wordText,
+                    displayWordClass === 'correct-feedback' && styles.wordCorrect,
+                    displayWordClass === 'wrong-feedback' && styles.wordWrong,
+                  ]}
+                >
+                  {displayWord}
+                </Text>
+              </>
+            )}
+          </View>
+
+          <View style={[styles.wordGrid, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            {gridWords.map((word, index) => {
+              const isCorrect = word.startsWith('✓');
+              const isWrong = word.startsWith('✗');
+              const cleanWord = word.replace(/^[✓✗]/, '');
+
+              return (
+                <TouchableOpacity
+                  key={`${word}-${index}`}
+                  onPress={() => handleWordClick(cleanWord)}
+                  disabled={!wordButtonsEnabled || isCorrect || isWrong}
+                  activeOpacity={0.75}
+                  style={[
+                    styles.wordButton,
+                    isCorrect && styles.wordButtonCorrect,
+                    isWrong && styles.wordButtonWrong,
+                    !wordButtonsEnabled && !isCorrect && !isWrong && styles.wordButtonDisabled,
+                  ]}
+                >
+                  {isCorrect ? <Target size={15} color={LUXURY.success} /> : null}
+                  {isWrong ? <X size={15} color={LUXURY.danger} /> : null}
+                  <Text
+                    style={[
+                      styles.wordButtonText,
+                      isCorrect && styles.wordTextCorrect,
+                      isWrong && styles.wordTextWrong,
+                    ]}
+                  >
+                    {cleanWord}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <View style={[styles.gameBottom, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <TouchableOpacity
+              style={[styles.bottomButton, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+              onPress={() => setSoundEnabled(!soundEnabled)}
+            >
+              {soundEnabled ? (
+                <Volume2 size={16} color={LUXURY.textSecondary} />
+              ) : (
+                <VolumeX size={16} color={LUXURY.textMuted} />
+              )}
+              <Text style={styles.bottomButtonText}>{isRTL ? 'صدا' : 'Sound'}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
+              style={[styles.bottomButton, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
               onPress={() => {
                 stopGame();
                 setCurrentScreen('menu');
               }}
-              style={[styles.gameBottomButton, styles.gameBottomButtonPrimary, { borderColor: 'rgba(52,211,153,0.12)' }]}
             >
-              <Home size={16} color="#34D399" />
-              <Text style={[styles.gameBottomButtonText, { color: '#34D399' }]}>منو</Text>
+              <Home size={16} color={LUXURY.textSecondary} />
+              <Text style={styles.bottomButtonText}>{isRTL ? 'منو' : 'Menu'}</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
       )}
 
-      {/* Game Over Modal */}
+      {/* RESULT MODAL */}
       <Modal
         transparent
         visible={modalVisible}
@@ -928,43 +1183,88 @@ export default function WordSequenceScreen() {
       >
         <TouchableWithoutFeedback>
           <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { backgroundColor: '#2D1547', borderColor: 'rgba(211,0,209,0.08)' }]}>
-              <Text style={styles.modalIcon}>{modalIcon}</Text>
-              <Text style={[styles.modalTitle, { color: modalTitleColor }]}>{modalTitle}</Text>
+            <Animated.View
+              style={[
+                styles.resultCard,
+                {
+                  transform: [{ scale: resultScaleAnim }],
+                },
+              ]}
+            >
+              <View style={styles.resultHeader}>
+                <View style={[styles.resultIcon, newRecord && styles.resultIconGold]}>
+                  {newRecord ? <Crown size={30} color={LUXURY.gold} /> : <Award size={30} color={LUXURY.gold} />}
+                </View>
 
-              <View style={styles.modalStats}>
-                {[
-                  { label: 'امتیاز نهایی', value: finalScore },
-                  { label: 'مرحله', value: finalLevel },
-                  { label: 'دقت', value: finalAccuracy + '%' },
-                  { label: 'زمان واکنش', value: finalRT > 0 ? Math.round(finalRT) + ' ms' : '--' },
-                ].map((item, index) => (
-                  <View key={index} style={[styles.modalStat, { borderColor: 'rgba(211,0,209,0.06)' }]}>
-                    <Text style={[styles.modalStatLabel, { color: '#A070B0' }]}>{item.label}</Text>
-                    <Text style={[styles.modalStatValue, { color: '#D100D1' }]}>{item.value}</Text>
-                    {item.label === 'زمان واکنش' && finalRT > 0 && (
-                      <Text style={[styles.modalStatInterpretation, { color: '#A070B0' }]}>
-                        {getRTInterpretation(finalRT)}
-                      </Text>
-                    )}
-                  </View>
-                ))}
+                <Text style={styles.resultEyebrow}>
+                  {newRecord
+                    ? (isRTL ? 'رکورد جدید شخصی' : 'NEW PERSONAL RECORD')
+                    : (isRTL ? 'پایان جلسه' : 'SESSION COMPLETE')}
+                </Text>
+
+                <Text style={styles.resultTitle}>
+                  {newRecord
+                    ? (isRTL ? 'رکورد جدید' : 'New Record')
+                    : (isRTL ? 'بازی تمام شد' : 'Game Over')}
+                </Text>
               </View>
 
-              <View style={styles.modalButtons}>
-                <TouchableOpacity onPress={restartGame} style={[styles.modalButton, styles.modalButtonPrimary]}>
-                  <RotateCcw size={18} color="#FFFFFF" />
-                  <Text style={styles.modalButtonText}>دوباره</Text>
+              <View style={styles.finalScoreContainer}>
+                <Text style={styles.finalScoreLabel}>{isRTL ? 'امتیاز نهایی' : 'Final Score'}</Text>
+                <Text style={styles.finalScore}>{finalScore}</Text>
+                <View style={styles.scoreDivider} />
+              </View>
+
+              <View style={[styles.resultStats, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <View style={styles.resultStat}>
+                  <TrendingUp size={18} color={LUXURY.gold} />
+                  <Text style={styles.resultStatLabel}>{isRTL ? 'مرحله' : 'Level'}</Text>
+                  <Text style={styles.resultStatValue}>{finalLevel}</Text>
+                </View>
+
+                <View style={styles.resultStat}>
+                  <Target size={18} color={LUXURY.gold} />
+                  <Text style={styles.resultStatLabel}>{isRTL ? 'دقت' : 'Accuracy'}</Text>
+                  <Text style={styles.resultStatValue}>{finalAccuracy}%</Text>
+                </View>
+
+                <View style={styles.resultStat}>
+                  <Clock3 size={18} color={LUXURY.gold} />
+                  <Text style={styles.resultStatLabel}>{isRTL ? 'واکنش' : 'Reaction'}</Text>
+                  <Text style={styles.resultStatValue}>{finalRT ? `${finalRT} ms` : '--'}</Text>
+                </View>
+              </View>
+
+              {finalRT > 0 && (
+                <View style={[styles.performanceBadge, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                  <Zap size={14} color={LUXURY.gold} />
+                  <Text style={styles.performanceText}>{getRTInterpretation(finalRT)}</Text>
+                </View>
+              )}
+
+              <View style={styles.resultActions}>
+                <TouchableOpacity
+                  onPress={restartGame}
+                  activeOpacity={0.8}
+                  style={[styles.resultPrimaryButton, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+                >
+                  <RotateCcw size={18} color={LUXURY.background} />
+                  <Text style={styles.resultPrimaryText}>{isRTL ? 'دوباره بازی کن' : 'Play Again'}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => {
-                  setModalVisible(false);
-                  setCurrentScreen('menu');
-                }} style={[styles.modalButton, { borderColor: 'rgba(211,0,209,0.08)' }]}>
-                  <Home size={18} color="#E8D0F0" />
-                  <Text style={[styles.modalButtonText, { color: '#E8D0F0' }]}>منو</Text>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    setModalVisible(false);
+                    setCurrentScreen('menu');
+                  }}
+                  activeOpacity={0.8}
+                  style={[styles.resultSecondaryButton, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+                >
+                  <Home size={18} color={LUXURY.textSecondary} />
+                  <Text style={styles.resultSecondaryText}>{isRTL ? 'بازگشت به منو' : 'Back to Menu'}</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </Animated.View>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
@@ -972,477 +1272,738 @@ export default function WordSequenceScreen() {
   );
 }
 
-// ================================================================
-// =============== STYLES ================
-// ================================================================
+/* ============================================================
+   STYLES - LUXURY PURPLE THEME
+============================================================ */
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: LUXURY.background,
   },
 
   header: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.md,
+    height: 72,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'space-between',
   },
 
   headerButton: {
     width: 42,
     height: 42,
-    borderRadius: 21,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: LUXURY.surface,
+    borderWidth: 1,
+    borderColor: LUXURY.border,
   },
 
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '800',
     flex: 1,
     textAlign: 'center',
+    color: LUXURY.text,
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.3,
   },
 
   headerSpacer: {
     width: 42,
   },
 
-  // Menu
-  menuScrollContent: {
+  menuContent: {
     flexGrow: 1,
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: 40,
+    paddingHorizontal: 22,
+    paddingBottom: 35,
+  },
+
+  brandSection: {
     alignItems: 'center',
+    paddingTop: 42,
+    paddingBottom: 38,
   },
 
-  logoSection: {
+  brandMark: {
+    width: 76,
+    height: 76,
+    borderRadius: 26,
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 30,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(155,109,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(155,109,255,0.25)',
+    marginBottom: 20,
   },
 
-  logoIcon: {
-    fontSize: 64,
-    marginBottom: 8,
-  },
-
-  mainTitle: {
-    fontSize: 28,
+  brandTitle: {
+    color: LUXURY.text,
+    fontSize: 30,
     fontWeight: '800',
+    letterSpacing: -0.8,
   },
 
-  gradientText: {
-    color: '#D100D1',
-  },
-
-  mainSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
+  brandSubtitle: {
+    marginTop: 8,
+    color: LUXURY.textSecondary,
+    fontSize: 13,
   },
 
   menuButtons: {
-    width: '100%',
-    maxWidth: 320,
     gap: 10,
   },
 
   menuButton: {
-    padding: 14,
-    borderRadius: 60,
-    borderWidth: 1,
-    minHeight: 52,
+    minHeight: 72,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: LUXURY.surface,
+    borderWidth: 1,
+    borderColor: LUXURY.border,
   },
 
   menuButtonPrimary: {
-    backgroundColor: 'rgba(209,0,209,0.08)',
+    backgroundColor: LUXURY.gold,
+    borderColor: LUXURY.gold,
+    shadowColor: LUXURY.gold,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 18,
+    elevation: 5,
   },
 
-  menuButtonContent: {
-    flexDirection: 'row',
+  menuIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
-    gap: 10,
-  },
-
-  menuButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#E8D0F0',
-  },
-
-  menuButtonTextPrimary: {
-    color: '#FFFFFF',
-  },
-
-  // Settings
-  settingsScrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: 40,
-  },
-
-  settingsGroup: {
+    justifyContent: 'center',
+    backgroundColor: LUXURY.surface2,
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
+    borderColor: LUXURY.border,
+  },
+
+  menuIconPrimary: {
+    backgroundColor: 'rgba(0,0,0,0.08)',
+    borderColor: 'rgba(0,0,0,0.08)',
+  },
+
+  menuText: {
+    flex: 1,
+    marginHorizontal: 14,
+  },
+
+  menuTitle: {
+    color: LUXURY.text,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  menuTitlePrimary: {
+    color: LUXURY.background,
+  },
+
+  menuSubtitle: {
+    color: LUXURY.textMuted,
+    fontSize: 11,
+    marginTop: 4,
+  },
+
+  menuFooter: {
+    alignItems: 'center',
+    marginTop: 38,
+  },
+
+  footerLine: {
+    width: 40,
+    height: 1,
+    backgroundColor: LUXURY.gold,
+    opacity: 0.5,
+    marginBottom: 12,
+  },
+
+  footerText: {
+    color: LUXURY.textMuted,
+    fontSize: 8,
+    letterSpacing: 2,
+  },
+
+  pageContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 35,
+  },
+
+  sectionTitle: {
+    color: LUXURY.text,
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 20,
+  },
+
+  settingsCard: {
+    backgroundColor: LUXURY.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: LUXURY.border,
+    padding: 18,
+    marginBottom: 12,
   },
 
   settingsLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 10,
+    color: LUXURY.text,
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 5,
   },
 
-  settingsOptions: {
-    flexDirection: 'row',
+  settingsDescription: {
+    color: LUXURY.textMuted,
+    fontSize: 11,
+  },
+
+  optionsRow: {
     gap: 8,
-    flexWrap: 'wrap',
+    marginTop: 14,
   },
 
-  optionButton: {
+  option: {
     flex: 1,
-    minWidth: 70,
-    padding: 10,
-    borderWidth: 1,
-    borderRadius: 12,
+    paddingVertical: 14,
+    borderRadius: 15,
     alignItems: 'center',
-    gap: 2,
+    backgroundColor: LUXURY.surface2,
+    borderWidth: 1,
+    borderColor: LUXURY.border,
   },
 
-  optionButtonActive: {
-    backgroundColor: 'rgba(209,0,209,0.06)',
+  optionActive: {
+    backgroundColor: 'rgba(155,109,255,0.08)',
+    borderColor: 'rgba(155,109,255,0.35)',
   },
 
-  optionButtonText: {
+  optionTitle: {
+    color: LUXURY.textSecondary,
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 
-  optionButtonSmall: {
-    fontSize: 10,
+  optionTitleActive: {
+    color: LUXURY.goldLight,
   },
 
-  toggleButton: {
-    flexDirection: 'row',
+  optionDescription: {
+    color: LUXURY.textMuted,
+    fontSize: 9,
+    marginTop: 4,
+  },
+
+  settingsHeader: {
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'space-between',
   },
 
-  toggleTrack: {
-    width: 48,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+  toggle: {
+    width: 50,
+    height: 30,
+    borderRadius: 15,
+    padding: 3,
+    backgroundColor: LUXURY.surface3,
     borderWidth: 1,
-    borderColor: 'rgba(211,0,209,0.06)',
-    padding: 2,
+    borderColor: LUXURY.border,
   },
 
-  toggleTrackActive: {
-    backgroundColor: 'rgba(209,0,209,0.08)',
-    borderColor: 'rgba(209,0,209,0.10)',
+  toggleActive: {
+    backgroundColor: 'rgba(155,109,255,0.15)',
+    borderColor: 'rgba(155,109,255,0.35)',
   },
 
   toggleThumb: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: LUXURY.textMuted,
   },
 
   toggleThumbActive: {
     transform: [{ translateX: 20 }],
+    backgroundColor: LUXURY.gold,
   },
 
-  toggleLabel: {
-    fontSize: 14,
+  modeContainer: {
+    gap: 8,
+    marginTop: 14,
   },
 
-  saveButton: {
-    paddingVertical: 14,
-    borderRadius: 60,
+  modeButton: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
+    gap: 12,
+    padding: 14,
+    borderRadius: 15,
+    backgroundColor: LUXURY.surface2,
+    borderWidth: 1,
+    borderColor: LUXURY.border,
   },
 
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+  modeButtonActive: {
+    borderColor: 'rgba(155,109,255,0.35)',
+    backgroundColor: 'rgba(155,109,255,0.07)',
+  },
+
+  modeTitle: {
+    color: LUXURY.text,
+    fontSize: 13,
     fontWeight: '700',
   },
 
-  // Records
-  recordsScrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: 40,
+  modeDescription: {
+    color: LUXURY.textMuted,
+    fontSize: 10,
+    marginTop: 2,
+  },
+
+  goldButton: {
+    height: 54,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: LUXURY.gold,
+    marginTop: 4,
+  },
+
+  goldButtonText: {
+    color: LUXURY.background,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+
+  recordsHero: {
+    alignItems: 'center',
+    paddingTop: 22,
+    paddingBottom: 24,
+  },
+
+  recordsHeroIcon: {
+    width: 62,
+    height: 62,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(155,109,255,0.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(155,109,255,0.2)',
+    marginBottom: 14,
+  },
+
+  recordsHeroTitle: {
+    color: LUXURY.text,
+    fontSize: 24,
+    fontWeight: '800',
+  },
+
+  recordsHeroSubtitle: {
+    color: LUXURY.textMuted,
+    fontSize: 12,
+    marginTop: 6,
   },
 
   recordsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
   },
 
-  recordCard: {
+  statCard: {
+    width: (SCREEN_WIDTH - 50) / 2,
+    minHeight: 140,
+    borderRadius: 20,
+    backgroundColor: LUXURY.surface,
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 14,
-    flexDirection: 'row',
+    borderColor: LUXURY.border,
+    padding: 15,
+  },
+
+  statCardLarge: {
+    width: '100%',
+    minHeight: 155,
+  },
+
+  statIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     alignItems: 'center',
-    gap: 14,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(155,109,255,0.07)',
+    marginBottom: 15,
   },
 
-  recordIcon: {
-    fontSize: 28,
-  },
-
-  recordInfo: {
-    flex: 1,
-    alignItems: 'center',
-  },
-
-  recordLabel: {
+  statLabel: {
+    color: LUXURY.textMuted,
     fontSize: 11,
   },
 
-  recordValue: {
-    fontSize: 22,
-    fontWeight: '700',
+  statValue: {
+    color: LUXURY.text,
+    fontSize: 24,
+    fontWeight: '800',
+    marginTop: 5,
   },
 
-  // Game
+  statValueLarge: {
+    color: LUXURY.goldLight,
+    fontSize: 36,
+  },
+
   gameContainer: {
     flex: 1,
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
 
-  gameHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  gameTopBar: {
     alignItems: 'center',
+    padding: 7,
+    borderRadius: 18,
+    backgroundColor: LUXURY.surface,
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 8,
-    marginBottom: 8,
+    borderColor: LUXURY.border,
+    gap: 3,
   },
 
-  gameStats: {
-    flexDirection: 'row',
-    gap: 10,
-    flexWrap: 'wrap',
-  },
-
-  gameStatItem: {
+  gameMetric: {
+    flex: 1,
     alignItems: 'center',
-    minWidth: 40,
   },
 
-  gameStatLabel: {
-    fontSize: 6,
-    color: '#A070B0',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
+  gameMetricLabel: {
+    color: LUXURY.textMuted,
+    fontSize: 8,
   },
 
-  gameStatValue: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-
-  gameCloseButton: {
-    padding: 8,
-  },
-
-  gameStatusText: {
-    textAlign: 'center',
-    padding: 6,
+  gameMetricValue: {
+    color: LUXURY.goldLight,
     fontSize: 13,
-    minHeight: 34,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+
+  closeButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: LUXURY.surface2,
+  },
+
+  gameStatusContainer: {
+    height: 46,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+
+  gameStatus: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 
   wordDisplay: {
     flex: 1,
-    minHeight: 120,
-    borderWidth: 1,
-    borderRadius: 20,
+    minHeight: 170,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
+    backgroundColor: LUXURY.surface,
+    borderWidth: 1,
+    borderColor: LUXURY.borderStrong,
     overflow: 'hidden',
+    marginBottom: 10,
+  },
+
+  wordDisplayLabel: {
+    position: 'absolute',
+    top: 20,
+    color: LUXURY.textMuted,
+    fontSize: 8,
+    letterSpacing: 2,
   },
 
   wordText: {
-    fontSize: 48,
-    fontWeight: '700',
+    color: LUXURY.text,
+    fontSize: 44,
+    fontWeight: '800',
+    letterSpacing: -1,
   },
 
-  loadingOverlay: {
-    position: 'absolute',
-    inset: 0,
-    backgroundColor: 'rgba(45,21,71,0.8)',
+  wordCorrect: {
+    color: LUXURY.success,
+  },
+
+  wordWrong: {
+    color: LUXURY.danger,
+  },
+
+  loadingContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10,
   },
 
-  loadingSpinner: {
-    width: 40,
-    height: 40,
+  loadingRing: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.04)',
-    borderTopColor: '#D100D1',
-    borderRadius: 20,
+    borderColor: 'rgba(155,109,255,0.12)',
+    borderTopColor: LUXURY.gold,
   },
 
   wordGrid: {
-    flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    paddingVertical: 8,
+    marginBottom: 8,
   },
 
   wordButton: {
-    flex: 1,
-    minWidth: 60,
-    padding: 10,
-    borderWidth: 1,
-    borderRadius: 12,
+    width: (SCREEN_WIDTH - 48) / 3,
+    minHeight: 52,
+    paddingHorizontal: 7,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 42,
+    gap: 5,
+    backgroundColor: LUXURY.surface,
+    borderWidth: 1,
+    borderColor: LUXURY.border,
+  },
+
+  wordButtonDisabled: {
+    opacity: 0.38,
+  },
+
+  wordButtonCorrect: {
+    backgroundColor: 'rgba(110,213,160,0.07)',
+    borderColor: 'rgba(110,213,160,0.3)',
+  },
+
+  wordButtonWrong: {
+    backgroundColor: 'rgba(232,121,121,0.07)',
+    borderColor: 'rgba(232,121,121,0.3)',
   },
 
   wordButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
+    color: LUXURY.text,
+    fontSize: 13,
+    // fontWeight: '650',
     textAlign: 'center',
   },
 
-  gameBottom: {
-    flexDirection: 'row',
-    gap: 6,
-    paddingVertical: 4,
+  wordTextCorrect: {
+    color: LUXURY.success,
   },
 
-  gameBottomButton: {
+  wordTextWrong: {
+    color: LUXURY.danger,
+  },
+
+  gameBottom: {
+    gap: 8,
+    paddingTop: 4,
+  },
+
+  bottomButton: {
     flex: 1,
-    flexDirection: 'row',
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    borderRadius: 30,
+    gap: 7,
+    borderRadius: 13,
+    backgroundColor: LUXURY.surface,
     borderWidth: 1,
-    minHeight: 36,
+    borderColor: LUXURY.border,
   },
 
-  gameBottomButtonPrimary: {
-    backgroundColor: 'rgba(52,211,153,0.04)',
-  },
-
-  gameBottomButtonText: {
-    fontSize: 12,
+  bottomButtonText: {
+    color: LUXURY.textSecondary,
+    fontSize: 11,
     fontWeight: '600',
   },
 
-  // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(26,10,42,0.90)',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: 18,
+    backgroundColor: 'rgba(3,4,6,0.93)',
   },
 
-  modalContent: {
+  resultCard: {
     width: '100%',
-    maxWidth: 380,
-    borderRadius: 28,
+    maxWidth: 390,
+    borderRadius: 30,
+    padding: 22,
+    backgroundColor: '#111318',
     borderWidth: 1,
-    padding: 24,
+    borderColor: 'rgba(155,109,255,0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.45,
+    shadowRadius: 30,
+    elevation: 12,
+  },
+
+  resultHeader: {
     alignItems: 'center',
   },
 
-  modalIcon: {
-    fontSize: 44,
-    marginBottom: 4,
-  },
-
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-
-  modalStats: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 12,
-    width: '100%',
-  },
-
-  modalStat: {
-    flex: 1,
-    minWidth: '45%',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 8,
+  resultIcon: {
+    width: 68,
+    height: 68,
+    borderRadius: 23,
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.035)',
+    borderWidth: 1,
+    borderColor: LUXURY.border,
+    marginBottom: 14,
   },
 
-  modalStatLabel: {
-    fontSize: 7,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
+  resultIconGold: {
+    backgroundColor: 'rgba(155,109,255,0.08)',
+    borderColor: 'rgba(155,109,255,0.3)',
   },
 
-  modalStatValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginTop: 2,
+  resultEyebrow: {
+    color: LUXURY.gold,
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 2,
+    marginBottom: 5,
   },
 
-  modalStatInterpretation: {
+  resultTitle: {
+    color: LUXURY.text,
+    fontSize: 23,
+    fontWeight: '800',
+  },
+
+  finalScoreContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+
+  finalScoreLabel: {
+    color: LUXURY.textMuted,
     fontSize: 10,
+  },
+
+  finalScore: {
+    color: LUXURY.goldLight,
+    fontSize: 52,
+    fontWeight: '900',
+    letterSpacing: -2,
     marginTop: 1,
   },
 
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 8,
-    width: '100%',
+  scoreDivider: {
+    width: 45,
+    height: 2,
+    borderRadius: 2,
+    backgroundColor: LUXURY.gold,
+    marginTop: 7,
+    opacity: 0.6,
   },
 
-  modalButton: {
+  resultStats: {
+    marginTop: 22,
+    backgroundColor: LUXURY.surface2,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: LUXURY.border,
+    padding: 5,
+  },
+
+  resultStat: {
     flex: 1,
-    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 13,
+  },
+
+  resultStatLabel: {
+    color: LUXURY.textMuted,
+    fontSize: 9,
+    marginTop: 7,
+  },
+
+  resultStatValue: {
+    color: LUXURY.text,
+    fontSize: 15,
+    fontWeight: '800',
+    marginTop: 3,
+  },
+
+  performanceBadge: {
+    alignSelf: 'center',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 13,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 30,
+    backgroundColor: 'rgba(155,109,255,0.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(155,109,255,0.16)',
+  },
+
+  performanceText: {
+    color: LUXURY.goldLight,
+    fontSize: 10,
+    fontWeight: '600',
+  },
+
+  resultActions: {
+    marginTop: 20,
+  },
+
+  resultPrimaryButton: {
+    height: 52,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 14,
-    borderRadius: 60,
+    backgroundColor: LUXURY.gold,
+  },
+
+  resultPrimaryText: {
+    color: LUXURY.background,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+
+  resultSecondaryButton: {
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: LUXURY.surface2,
     borderWidth: 1,
-    borderColor: 'rgba(211,0,209,0.08)',
+    borderColor: LUXURY.border,
   },
 
-  modalButtonPrimary: {
-    backgroundColor: 'rgba(209,0,209,0.08)',
-    borderColor: 'rgba(209,0,209,0.10)',
-  },
-
-  modalButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
+  resultSecondaryText: {
+    color: LUXURY.textSecondary,
+    fontSize: 13,
     fontWeight: '600',
   },
 });
