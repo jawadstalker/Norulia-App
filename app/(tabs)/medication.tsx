@@ -517,6 +517,7 @@ export default function MedicationScreen() {
 
 const styles = StyleSheet.create({
   container: {
+  
     flex: 1,
   },
   scrollContent: {

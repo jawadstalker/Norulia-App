@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingHorizontal: Spacing.lg,
+    paddingTop: 50,
   },
 
   // ===== HEADER =====
