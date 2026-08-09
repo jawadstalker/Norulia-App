@@ -42,6 +42,7 @@ export const translations = {
     send: 'ارسال',
     streak: 'روز متوالی',
     level: 'سطح',
+    xp: 'امتیاز',
     upcoming: 'رویدادهای پیش رو',
     noUpcoming: 'هیچ رویدادی نیست',
     games: 'بازی‌ها',
@@ -75,7 +76,7 @@ export const translations = {
 
     hello: 'سلام',
     howCanHelp: 'امروز چگونه می‌توانم به شما کمک کنم؟',
-    askNova: 'از نوا بپرسید...',
+    askNova: 'از نورولیا بپرسید...',
     thinking: 'در حال فکر کردن...',
     analyzing: 'در حال تحلیل اطلاعات شما...',
     generatingResponse: 'در حال آماده‌سازی پاسخ...',
@@ -119,6 +120,7 @@ export const translations = {
     buildResilience: 'تقویت مقاومت ذهنی',
     startProtocol: 'شروع پروتکل',
     aiPoweredProtocols: 'برنامه‌های شناختی شخصی‌سازی شده با هوش مصنوعی',
+    overallProgress: 'پیشرفت کلی',
 
     // ===== Games & Tasks =====
     psychophysicalGames: 'بازی‌های سایکوفیزیکی',
@@ -141,6 +143,13 @@ export const translations = {
     healthInsight: 'تحلیل سلامت',
     improvement: 'بهبود',
     yourJourney: 'مسیر پیشرفت شما',
+    dashboardNeuroTitle: 'همراه هوش مصنوعی نورولیا',
+    dashboardSubtitle: 'دستیار شخصی سلامت شناختی شما',
+    dashboardReadyHelp: 'آماده کمک به شما ',
+    dashboardWellnessJourney: 'سفر سلامتی با راهنمایی هوش مصنوعی',
+    dashboardCognitiveProgress: 'پیشرفت سلامت شناختی',
+    dashboardKeepGoing: 'نزدیکی، ادامه بده',
+    quickAccess: 'دسترسی سریع',
 
     // ===== Profile =====
     profile: 'پروفایل',
@@ -148,6 +157,8 @@ export const translations = {
     personalInformation: 'اطلاعات شخصی',
     accountSettings: 'تنظیمات حساب',
     notifications: 'اعلان‌ها',
+    premiumMember: 'کاربر ویژه',
+    privacySecurity: 'حریم خصوصی و امنیت',
 
     // ===== Assistant Screen =====
     symptoms: 'علائم',
@@ -165,7 +176,6 @@ export const translations = {
     next: 'بعدی',
     today: 'امروز',
     taken: 'مصرف شده',
-    // pending: 'در انتظار',
     addMedication: 'افزودن دارو',
     august: 'مرداد',
     todaysMedications: 'داروهای امروز',
@@ -243,6 +253,62 @@ export const translations = {
 
     // ===== HOW TO PLAY =====
     howToPlay: 'راهنما',
+
+    // ===== BOTTOM NAV BAR =====
+    home: 'خانه',
+    brain: 'مغز',
+    plan: 'برنامه',
+
+    // ===== CULTURE SCREEN =====
+    weeklyCinema: 'سینمای هفتگی',
+    weeklyCinemaSubtitle: 'فیلمی برای سلامت شناختی شما',
+    thisWeeksPick: 'انتخاب این هفته',
+    exploreMovie: 'مشاهده فیلم',
+    whyThisMovie: 'چرا این فیلم؟',
+    moreForYou: 'بیشتر برای شما',
+    moviesBasedOnInterests: 'فیلم‌های متناسب با علایق شما',
+    seeAll: 'مشاهده همه',
+
+    // 🎬 فیلم‌های جدید
+    weeklyMovieTitle: 'اودیسه',
+    weeklyMovieYear: '۲۰۲۶',
+    weeklyMovieGenre: 'ماجراجویی • حماسی • فانتزی',
+    weeklyMovieDescription:
+      'سفری خیره‌کننده در اساطیر یونان باستان، با موضوعاتی درباره قهرمانی، سرنوشت و روح انسانی.',
+    weeklyMovieReason:
+      'انتخاب این هفته برای برانگیختن کنجکاوی، کاهش خستگی ذهنی و ایجاد نگرشی مثبت‌تر طراحی شده است.',
+
+    rec1Title: 'سندمن',
+    rec1Genre: 'فانتزی • درام • معمایی',
+
+    rec2Title: 'اسپایدرمن: راهی به خانه نیست',
+    rec2Genre: 'اکشن • ماجراجویی • ابرقهرمانی',
+
+    rec3Title: 'جزیره شاتر',
+    rec3Genre: 'معمایی • هیجان‌انگیز • درام',
+
+    // ===== CALENDAR / WEEK DAYS =====
+    daySat: 'شنبه',
+    daySun: 'یکشنبه',
+    dayMon: 'دوشنبه',
+    dayTue: 'سه‌شنبه',
+    dayWed: 'چهارشنبه',
+    dayThu: 'پنج‌شنبه',
+    dayFri: 'جمعه',
+
+    // ===== PERSIAN (SHAMSI) MONTHS =====
+    monthFarvardin: 'فروردین',
+    monthOrdibehesht: 'اردیبهشت',
+    monthKhordad: 'خرداد',
+    monthTir: 'تیر',
+    monthMordad: 'مرداد',
+    monthShahrivar: 'شهریور',
+    monthMehr: 'مهر',
+    monthAban: 'آبان',
+    monthAzar: 'آذر',
+    monthDey: 'دی',
+    monthBahman: 'بهمن',
+    monthEsfand: 'اسفند',
   },
 
   en: {
@@ -288,6 +354,7 @@ export const translations = {
     send: 'Send',
     streak: 'day streak',
     level: 'Level',
+    xp: 'XP',
     upcoming: 'Upcoming Events',
     noUpcoming: 'No upcoming events',
     games: 'Games',
@@ -365,6 +432,7 @@ export const translations = {
     buildResilience: 'Build resilience and coping skills',
     startProtocol: 'Start Protocol',
     aiPoweredProtocols: 'AI powered personalized cognitive programs',
+    overallProgress: 'overall progress',
 
     // ===== Games & Tasks =====
     psychophysicalGames: 'Psychophysical Games',
@@ -387,6 +455,13 @@ export const translations = {
     healthInsight: 'Health Insight',
     improvement: 'Improvement',
     yourJourney: 'Your Journey',
+    dashboardNeuroTitle: 'Neuro AI Companion',
+    dashboardSubtitle: 'Your personal cognitive wellness assistant',
+    dashboardReadyHelp: 'Ready to help you today',
+    dashboardWellnessJourney: 'AI guided wellness journey',
+    dashboardCognitiveProgress: 'Cognitive wellness progress',
+    dashboardKeepGoing: 'Almost there, keep going',
+    quickAccess: 'Quick access',
 
     // ===== Profile =====
     profile: 'Profile',
@@ -394,6 +469,8 @@ export const translations = {
     personalInformation: 'Personal Information',
     accountSettings: 'Account Settings',
     notifications: 'Notifications',
+    premiumMember: 'Premium Member',
+    privacySecurity: 'Privacy & Security',
 
     // ===== Assistant Screen =====
     symptoms: 'Symptoms',
@@ -411,7 +488,6 @@ export const translations = {
     next: 'Next',
     today: 'Today',
     taken: 'Taken',
-    // pending: 'Pending',
     addMedication: 'Add Medication',
     august: 'August',
     todaysMedications: "Today's Medications",
@@ -489,5 +565,61 @@ export const translations = {
 
     // ===== HOW TO PLAY =====
     howToPlay: 'How to play',
+
+    // ===== BOTTOM NAV BAR =====
+    home: 'Home',
+    brain: 'Brain',
+    plan: 'Plan',
+
+    // ===== CULTURE SCREEN =====
+    weeklyCinema: 'Weekly Cinema',
+    weeklyCinemaSubtitle: 'A movie selected for your cognitive wellness',
+    thisWeeksPick: "THIS WEEK'S PICK",
+    exploreMovie: 'Explore Movie',
+    whyThisMovie: 'Why this movie?',
+    moreForYou: 'More for you',
+    moviesBasedOnInterests: 'Movies selected based on your interests',
+    seeAll: 'See all',
+
+    // 🎬 New Movies
+    weeklyMovieTitle: 'The Odyssey',
+    weeklyMovieYear: '2026',
+    weeklyMovieGenre: 'Adventure • Epic • Fantasy',
+    weeklyMovieDescription:
+      'A visually breathtaking journey through ancient Greek mythology, exploring themes of heroism, fate, and the human spirit.',
+    weeklyMovieReason:
+      "This week's selection is designed to inspire curiosity, reduce mental fatigue, and encourage a more positive perspective.",
+
+    rec1Title: 'The Sandman',
+    rec1Genre: 'Fantasy • Drama • Mystery',
+
+    rec2Title: 'Spider-Man: No Way Home',
+    rec2Genre: 'Action • Adventure • Superhero',
+
+    rec3Title: 'Shutter Island',
+    rec3Genre: 'Mystery • Thriller • Drama',
+
+    // ===== CALENDAR / WEEK DAYS =====
+    daySat: 'S',
+    daySun: 'S',
+    dayMon: 'M',
+    dayTue: 'T',
+    dayWed: 'W',
+    dayThu: 'T',
+    dayFri: 'F',
+
+    // ===== PERSIAN (SHAMSI) MONTHS =====
+    monthFarvardin: 'Farvardin',
+    monthOrdibehesht: 'Ordibehesht',
+    monthKhordad: 'Khordad',
+    monthTir: 'Tir',
+    monthMordad: 'Mordad',
+    monthShahrivar: 'Shahrivar',
+    monthMehr: 'Mehr',
+    monthAban: 'Aban',
+    monthAzar: 'Azar',
+    monthDey: 'Dey',
+    monthBahman: 'Bahman',
+    monthEsfand: 'Esfand',
   }
 };

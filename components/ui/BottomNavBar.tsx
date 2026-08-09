@@ -1,17 +1,10 @@
-
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { useTheme } from '../../context/ThemeContext';
-import {
-  Home,
-  Brain,
-  MessageCircle,
-  Calendar,
-  User,
-  Sparkles,
-} from 'lucide-react-native';
+import { useLanguage } from '../../context/LanguageContext';
+import { Home, Brain, MessageCircle, Calendar, User, Sparkles } from 'lucide-react-native';
 import { Spacing, BorderRadius } from '../../constants/theme';
 
 interface NavItem {
@@ -22,32 +15,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  {
-    id: 'home',
-    icon: Home,
-    route: '/(tabs)',
-  },
-  {
-    id: 'brain',
-    icon: Brain,
-    route: '/(tabs)/protocol',
-  },
-  {
-    id: 'assistant',
-    icon: MessageCircle,
-    route: '/(tabs)/assistant',
-    isCenter: true,
-  },
-  {
-    id: 'calendar',
-    icon: Calendar,
-    route: '/(tabs)/schedule',
-  },
-  {
-    id: 'profile',
-    icon: User,
-    route: '/(tabs)/profile',
-  },
+  { id: 'home', icon: Home, route: '/(tabs)' },
+  { id: 'brain', icon: Brain, route: '/(tabs)/protocol' },
+  { id: 'assistant', icon: MessageCircle, route: '/(tabs)/assistant', isCenter: true },
+  { id: 'calendar', icon: Calendar, route: '/(tabs)/schedule' },
+  { id: 'profile', icon: User, route: '/(tabs)/profile' },
 ];
 
 interface BottomNavBarProps {
@@ -55,30 +27,19 @@ interface BottomNavBarProps {
   onNavigate: (route: string) => void;
 }
 
-export function BottomNavBar({
-  currentRoute,
-  onNavigate,
-}: BottomNavBarProps) {
+export function BottomNavBar({ currentRoute, onNavigate }: BottomNavBarProps) {
   const { colors, isDark } = useTheme();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
 
-  // ==========================================
-  // تشخیص صفحه فعال
-  // ==========================================
+  // ===== تشخیص Active Route =====
   const isActiveRoute = (item: NavItem) => {
-    // Home
     if (item.id === 'home') {
-      return (
-        currentRoute === '/(tabs)' ||
-        currentRoute === '/' ||
-        currentRoute === '/(tabs)/index'
-      );
+      // خانه فقط در مسیر اصلی فعال باشد
+      return currentRoute === '/(tabs)' || currentRoute === '/';
     }
-
-    return (
-      currentRoute === item.route ||
-      currentRoute.startsWith(`${item.route}/`)
-    );
+    // بقیه صفحات با نامشان تشخیص داده شوند
+    return currentRoute.includes(item.id);
   };
 
   return (
@@ -113,11 +74,8 @@ export function BottomNavBar({
             activeOpacity={0.7}
           >
             <View style={styles.iconWrapper}>
-
-              {/* =========================
-                  ACTIVE BACKGROUND
-              ========================== */}
-              {isActive && !isCenter && (
+              {/* ===== ACTIVE BACKGROUND ===== */}
+              {isActive && (
                 <MotiView
                   from={{
                     scale: 0.5,
@@ -137,15 +95,15 @@ export function BottomNavBar({
                   style={[
                     styles.activeBackground,
                     {
-                      backgroundColor: colors.primary + '15',
+                      backgroundColor: isCenter 
+                        ? colors.primary + '30' 
+                        : colors.primary + '15',
                     },
                   ]}
                 />
               )}
 
-              {/* =========================
-                  CENTER BUTTON
-              ========================== */}
+              {/* ===== CENTER BUTTON (Nova) ===== */}
               {isCenter ? (
                 <MotiView
                   animate={{
@@ -159,30 +117,19 @@ export function BottomNavBar({
                   style={[
                     styles.centerButton,
                     {
-                      backgroundColor: isActive
-                        ? colors.primary
-                        : colors.surfaceSecondary,
-                      shadowColor: isActive
-                        ? colors.primary
-                        : 'transparent',
+                      backgroundColor: isActive ? colors.primary : colors.surfaceSecondary,
+                      shadowColor: isActive ? colors.primary : 'transparent',
                     },
                   ]}
                 >
-                  <Sparkles
-                    size={24}
-                    color={
-                      isActive
-                        ? '#FFFFFF'
-                        : colors.textTertiary
-                    }
+                  <Sparkles 
+                    size={24} 
+                    color={isActive ? '#FFFFFF' : colors.textTertiary}
                     strokeWidth={isActive ? 2.5 : 2}
                   />
                 </MotiView>
               ) : (
-
-                /* =========================
-                    NORMAL ICON
-                ========================== */
+                /* ===== NORMAL ICON ===== */
                 <MotiView
                   animate={{
                     scale: isActive ? 1.1 : 1,
@@ -195,20 +142,14 @@ export function BottomNavBar({
                 >
                   <Icon
                     size={24}
-                    color={
-                      isActive
-                        ? colors.primary
-                        : colors.textTertiary
-                    }
+                    color={isActive ? colors.primary : colors.textTertiary}
                     strokeWidth={isActive ? 2.5 : 2}
                   />
                 </MotiView>
               )}
             </View>
 
-            {/* =========================
-                LABEL
-            ========================== */}
+            {/* ===== LABEL ===== */}
             {!isCenter && (
               <MotiView
                 animate={{
@@ -222,23 +163,15 @@ export function BottomNavBar({
                 }}
                 style={styles.labelContainer}
               >
-                <Text
-                  style={[
-                    styles.label,
-                    {
-                      color: isActive
-                        ? colors.primary
-                        : colors.textTertiary,
-                    },
-                  ]}
-                >
-                  {item.id === 'home'
-                    ? 'Home'
-                    : item.id === 'brain'
-                    ? 'Brain'
-                    : item.id === 'calendar'
-                    ? 'Plan'
-                    : 'Profile'}
+                <Text style={[
+                  styles.label,
+                  { 
+                    color: isActive ? colors.primary : colors.textTertiary,
+                  }
+                ]}>
+                  {item.id === 'home' ? t.home : 
+                   item.id === 'brain' ? t.brain :
+                   item.id === 'calendar' ? t.plan : t.profile}
                 </Text>
               </MotiView>
             )}
@@ -256,7 +189,6 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.sm,
     borderTopWidth: 1,
   },
-
   navItem: {
     flex: 1,
     alignItems: 'center',
@@ -264,11 +196,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     position: 'relative',
   },
-
   centerItem: {
-    flex: 1.2,
+    flex: 1.2, // کمی بزرگتر
   },
-
   iconWrapper: {
     width: 48,
     height: 48,
@@ -277,38 +207,30 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     position: 'relative',
   },
-
   activeBackground: {
     position: 'absolute',
     width: 48,
     height: 48,
     borderRadius: BorderRadius.lg,
   },
-
   centerButton: {
     width: 56,
     height: 56,
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 6,
   },
-
   labelContainer: {
     position: 'absolute',
     bottom: -2,
   },
-
   label: {
     fontSize: 10,
     fontWeight: '500',
     textAlign: 'center',
   },
 });
-

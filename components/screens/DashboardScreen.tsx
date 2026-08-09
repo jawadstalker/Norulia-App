@@ -33,11 +33,11 @@ const menuItems = [
   { id: 'consultation', titleKey: 'consultation', icon: Video, color: '#F97316', route: '/consultation' },
 ];
 
-function getGreeting() {
+function getGreeting(t: any) {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return t.goodMorning;
+  if (hour < 18) return t.goodAfternoon;
+  return t.goodEvening;
 }
 
 export function DashboardScreen() {
@@ -68,13 +68,13 @@ export function DashboardScreen() {
         >
           <View style={[styles.greetingChip, { backgroundColor: colors.primary + '14' }]}>
             <Sparkles size={12} color={colors.primary} />
-            <Text style={[styles.greetingText, { color: colors.primary }]}>{getGreeting()}</Text>
+            <Text style={[styles.greetingText, { color: colors.primary }]}>{getGreeting(t)}</Text>
           </View>
           <Text style={[styles.dashboardTitle, { color: colors.text }]}>
-            Neuro AI Companion
+            {t.dashboardNeuroTitle}
           </Text>
           <Text style={[styles.dashboardSubtitle, { color: colors.textSecondary }]}>
-            Your personal cognitive wellness assistant
+            {t.dashboardSubtitle}
           </Text>
         </MotiView>
 
@@ -105,10 +105,10 @@ export function DashboardScreen() {
                 <Sparkles size={12} color="#FFFFFF" />
               </View>
               <Text style={styles.characterTitle}>
-                Ready to help you today
+                {t.dashboardReadyHelp}
               </Text>
               <Text style={styles.characterSubtitle}>
-                AI guided wellness journey
+                {t.dashboardWellnessJourney}
               </Text>
             </View>
           </LinearGradient>
@@ -125,7 +125,7 @@ export function DashboardScreen() {
                 <TrendingUp size={18} color={colors.primary} />
               </View>
               <Text style={[styles.progressTitle, { color: colors.text }]}>
-                Cognitive wellness progress
+                {t.dashboardCognitiveProgress}
               </Text>
               <Text style={[styles.progressPercent, { color: colors.primary }]}>82%</Text>
             </View>
@@ -147,7 +147,7 @@ export function DashboardScreen() {
             </View>
             <View style={styles.progressFooter}>
               <Text style={[styles.progressText, { color: colors.textSecondary }]}>
-                Almost there, keep going
+                {t.dashboardKeepGoing}
               </Text>
             </View>
           </Card>
@@ -161,7 +161,7 @@ export function DashboardScreen() {
         >
           <LayoutGrid size={16} color={colors.textSecondary} />
           <Text style={[styles.menuSectionTitle, { color: colors.textSecondary }]}>
-            Quick access
+            {t.quickAccess}
           </Text>
         </MotiView>
 

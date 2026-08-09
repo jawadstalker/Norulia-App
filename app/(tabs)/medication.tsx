@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -45,9 +45,83 @@ interface Medication {
   date: string;
 }
 
+// تابع برای تبدیل تاریخ میلادی به شمسی
+function toPersianDate(date: Date): { year: number; month: number; day: number } {
+  // الگوریتم تبدیل تقویم میلادی به شمسی
+  const gregorianYear = date.getFullYear();
+  const gregorianMonth = date.getMonth() + 1;
+  const gregorianDay = date.getDate();
+
+  // محاسبه روزهای گذشته از ابتدای سال میلادی
+  const daysInMonth = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  let daysPassed = 0;
+  for (let i = 1; i < gregorianMonth; i++) {
+    daysPassed += daysInMonth[i];
+  }
+  daysPassed += gregorianDay;
+
+  // اضافه کردن روز برای سال کبیسه
+  const isLeap = (gregorianYear % 4 === 0 && gregorianYear % 100 !== 0) || (gregorianYear % 400 === 0);
+  if (isLeap && gregorianMonth > 2) {
+    daysPassed += 1;
+  }
+
+  // محاسبه سال شمسی
+  let persianYear = gregorianYear - 622;
+  let persianMonth = 1;
+  let persianDay = daysPassed - 79;
+
+  // تنظیم برای روزهای قبل از شروع سال شمسی
+  if (persianDay <= 0) {
+    persianYear -= 1;
+    persianDay += 365;
+    if ((persianYear + 1) % 4 === 0) {
+      persianDay += 1;
+    }
+  }
+
+  // محاسبه ماه و روز شمسی
+  const persianDaysInMonth = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+  const isPersianLeap = persianYear % 4 === 0;
+  if (isPersianLeap) {
+    persianDaysInMonth[11] = 30;
+  }
+
+  let remainingDays = persianDay;
+  for (let i = 0; i < 12; i++) {
+    if (remainingDays <= persianDaysInMonth[i]) {
+      persianMonth = i + 1;
+      persianDay = remainingDays;
+      break;
+    }
+    remainingDays -= persianDaysInMonth[i];
+  }
+
+  return { year: persianYear, month: persianMonth, day: persianDay };
+}
+
+// تابع برای دریافت نام ماه شمسی
+function getPersianMonthName(month: number, t: any): string {
+  const monthNames = [
+    t.monthFarvardin || 'فروردین',
+    t.monthOrdibehesht || 'اردیبهشت',
+    t.monthKhordad || 'خرداد',
+    t.monthTir || 'تیر',
+    t.monthMordad || 'مرداد',
+    t.monthShahrivar || 'شهریور',
+    t.monthMehr || 'مهر',
+    t.monthAban || 'آبان',
+    t.monthAzar || 'آذر',
+    t.monthDey || 'دی',
+    t.monthBahman || 'بهمن',
+    t.monthEsfand || 'اسفند',
+  ];
+  return monthNames[month - 1] || '';
+}
+
 export default function MedicationScreen() {
   const { colors } = useTheme();
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const { user } = useAuth();
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
@@ -85,6 +159,33 @@ export default function MedicationScreen() {
       date: '2026-08-05',
     },
   ]);
+
+  // دریافت تاریخ فعلی
+  const now = new Date();
+  const persianDate = toPersianDate(now);
+
+  // عنوان تقویم بر اساس زبان
+  const calendarTitle = useMemo(() => {
+    if (isRTL) {
+      // فارسی: نمایش ماه و سال شمسی
+      const monthName = getPersianMonthName(persianDate.month, t);
+      // تبدیل عدد سال شمسی به حروف فارسی
+      const persianYearStr = persianDate.year.toString();
+      const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
+      const persianYear = persianYearStr
+        .split('')
+        .map(d => persianDigits[parseInt(d)] || d)
+        .join('');
+      return `${monthName} ${persianYear}`;
+    } else {
+      // انگلیسی: نمایش ماه و سال میلادی
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      return `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+    }
+  }, [isRTL, persianDate, t, now]);
 
   // محاسبه آمار
   const todayMedications = medications.filter(m => m.date === '2026-08-05');
@@ -176,16 +277,24 @@ export default function MedicationScreen() {
     }
   };
 
-  // داده‌های تقویم
-  const calendarDays = [
-    { day: 'M', taken: true },
-    { day: 'T', taken: true },
-    { day: 'W', taken: true },
-    { day: 'T', taken: true },
-    { day: 'F', taken: false },
-    { day: 'S', taken: false },
-    { day: 'S', taken: false },
+  // داده‌های تقویم - با ترتیب صحیح هفته (شنبه تا جمعه)
+  const baseCalendarDays = [
+    { day: t.daySat, taken: true },    // شنبه - Saturday
+    { day: t.daySun, taken: true },    // یکشنبه - Sunday
+    { day: t.dayMon, taken: true },    // دوشنبه - Monday
+    { day: t.dayTue, taken: true },    // سه‌شنبه - Tuesday
+    { day: t.dayWed, taken: false },   // چهارشنبه - Wednesday
+    { day: t.dayThu, taken: false },   // پنج‌شنبه - Thursday
+    { day: t.dayFri, taken: false },   // جمعه - Friday
   ];
+
+  // بر اساس RTL بودن، ترتیب نمایش را تعیین می‌کنیم
+  const calendarDays = useMemo(() => {
+    if (isRTL) {
+      return [...baseCalendarDays].reverse();
+    }
+    return baseCalendarDays;
+  }, [isRTL, t]);
 
   // دریافت زمان روز برای سلام
   const getGreeting = () => {
@@ -326,7 +435,7 @@ export default function MedicationScreen() {
           <View style={styles.calendarHeader}>
             <Calendar size={20} color={colors.primary} />
             <Text style={[styles.calendarTitle, { color: colors.text }]}>
-              {t.august || 'August'} 2026
+              {calendarTitle}
             </Text>
           </View>
           <View style={styles.calendarGrid}>
@@ -517,7 +626,6 @@ export default function MedicationScreen() {
 
 const styles = StyleSheet.create({
   container: {
-  
     flex: 1,
   },
   scrollContent: {
@@ -777,10 +885,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  // statusText: {
-  //   fontSize: 11,
-  //   fontWeight: '500',
-  // },
   reminderGradient: {
     padding: Spacing.md,
     borderRadius: BorderRadius.lg,
