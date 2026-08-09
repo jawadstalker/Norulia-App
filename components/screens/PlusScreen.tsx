@@ -6,8 +6,11 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
+
+import { useRouter } from 'expo-router';
+
 import {
   BookOpen,
   Gamepad2,
@@ -19,46 +22,57 @@ import {
 import { useTheme } from '../../context/ThemeContext';
 
 export default function PlusScreen() {
-  const navigation = useNavigation<any>();
+  const router = useRouter();
   const { colors, isDark } = useTheme();
 
   const modules = [
     {
       id: 'quran',
       title: 'حفظ قرآن',
+      titleEn: 'Quran Memorization',
       description: 'حفظ آیات و سوره‌ها با تمرین هوشمند',
+      descriptionEn: 'Memorize verses and surahs with smart practice',
       icon: BookOpen,
       iconColor: '#22C55E',
       backgroundLight: '#F0FDF4',
       backgroundDark: 'rgba(34,197,94,0.13)',
-      enabled: false,
+      enabled: true,
+      route: '/quran',
     },
     {
       id: 'games',
       title: 'بازی‌های دوزبانه',
+      titleEn: 'Bilingual Games',
       description: 'یادگیری و تقویت ذهن با بازی‌های جذاب',
+      descriptionEn: 'Learn and train your mind with fun games',
       icon: Gamepad2,
       iconColor: '#F59E0B',
       backgroundLight: '#FFF7DD',
       backgroundDark: 'rgba(245,158,11,0.13)',
-      enabled: false,
+      enabled: true,
+      route: '/bilingual-games',
     },
     {
       id: 'poems',
       title: 'حفظ اشعار',
+      titleEn: 'Poem Memorization',
       description: 'حافظه، ادبیات و درک معنا را تقویت کن',
+      descriptionEn: 'Improve memory, literature and understanding',
       icon: Feather,
       iconColor: '#7C3AED',
       backgroundLight: '#F0EAFE',
       backgroundDark: 'rgba(124,58,237,0.15)',
       enabled: true,
+      route: '/poems',
     },
   ];
 
-  const handleModulePress = (moduleId: string) => {
-    if (moduleId === 'poems') {
-      navigation.navigate('PoemsScreen');
+  const handleModulePress = (module: (typeof modules)[number]) => {
+    if (!module.enabled) {
+      return;
     }
+
+    router.push(module.route as any);
   };
 
   return (
@@ -71,19 +85,23 @@ export default function PlusScreen() {
       style={styles.container}
     >
       <View style={styles.screen}>
+
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerText}>
+
             <View style={styles.badge}>
               <Sparkles
-                size={14}
+                size={15}
                 color={colors.primary}
               />
 
               <Text
                 style={[
                   styles.badgeText,
-                  { color: colors.primary },
+                  {
+                    color: colors.primary,
+                  },
                 ]}
               >
                 یادگیری هوشمند
@@ -93,7 +111,9 @@ export default function PlusScreen() {
             <Text
               style={[
                 styles.title,
-                { color: colors.text },
+                {
+                  color: colors.text,
+                },
               ]}
             >
               ماژول‌ها
@@ -102,11 +122,14 @@ export default function PlusScreen() {
             <Text
               style={[
                 styles.subtitle,
-                { color: colors.textSecondary },
+                {
+                  color: colors.textSecondary,
+                },
               ]}
             >
               مسیر یادگیری مورد علاقه‌ات را انتخاب کن
             </Text>
+
           </View>
         </View>
 
@@ -118,10 +141,12 @@ export default function PlusScreen() {
             return (
               <TouchableOpacity
                 key={module.id}
-                activeOpacity={module.enabled ? 0.85 : 1}
+                activeOpacity={
+                  module.enabled ? 0.85 : 1
+                }
                 disabled={!module.enabled}
                 onPress={() =>
-                  handleModulePress(module.id)
+                  handleModulePress(module)
                 }
                 style={[
                   styles.moduleCard,
@@ -129,11 +154,16 @@ export default function PlusScreen() {
                     backgroundColor: isDark
                       ? 'rgba(255,255,255,0.055)'
                       : '#FFFFFF',
+
                     borderColor: colors.border,
-                    opacity: module.enabled ? 1 : 0.62,
+
+                    opacity: module.enabled
+                      ? 1
+                      : 0.62,
                   },
                 ]}
               >
+                {/* Icon */}
                 <View
                   style={[
                     styles.moduleIcon,
@@ -150,11 +180,14 @@ export default function PlusScreen() {
                   />
                 </View>
 
+                {/* Content */}
                 <View style={styles.moduleContent}>
                   <Text
                     style={[
                       styles.moduleTitle,
-                      { color: colors.text },
+                      {
+                        color: colors.text,
+                      },
                     ]}
                   >
                     {module.title}
@@ -176,7 +209,10 @@ export default function PlusScreen() {
                     <Text
                       style={[
                         styles.comingSoon,
-                        { color: colors.textTertiary },
+                        {
+                          color:
+                            colors.textTertiary,
+                        },
                       ]}
                     >
                       به‌زودی
@@ -184,6 +220,7 @@ export default function PlusScreen() {
                   )}
                 </View>
 
+                {/* Arrow */}
                 {module.enabled && (
                   <View
                     style={[
@@ -205,6 +242,7 @@ export default function PlusScreen() {
             );
           })}
         </View>
+
       </View>
     </LinearGradient>
   );
