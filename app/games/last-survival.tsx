@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   Dimensions,
   Animated,
 } from 'react-native';
-import { MotiView } from 'moti';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Trophy, Zap } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
@@ -16,77 +15,66 @@ import { Spacing, BorderRadius } from '../../constants/theme';
 
 const { width, height } = Dimensions.get('window');
 
-// Play area boundaries used to lay shapes out in non-overlapping lanes,
-// so every visible shape stays fully tappable.
 const PLAY_TOP_MARGIN = 110;
 const PLAY_BOTTOM_MARGIN = 40;
 const PLAY_SIDE_MARGIN = 8;
-const LANE_GAP = 20;
 
 type Level = {
   name: string;
   nameFa: string;
-  speed: number;
-  spawnInterval: number;
-  maxObjects: number;
+  lifeTime: number; // چند میلی‌ثانیه شکل روی صفحه می‌ماند قبل از ناپدید شدن
+  spawnInterval: number; // هر چند وقت یک شکل جدید ظاهر شود
+  maxObjects: number; // حداکثر تعداد شکل هم‌زمان روی صفحه
   objectSize: number;
-  duration: number;
-  directions: string[];
+  duration: number; // مدت کل این مرحله
 };
 
 const LEVELS: Level[] = [
   {
     name: 'Easy',
     nameFa: 'آسان',
-    speed: 2200,
-    spawnInterval: 1300,
+    lifeTime: 1800,
+    spawnInterval: 900,
     maxObjects: 3,
     objectSize: 68,
     duration: 30000,
-    directions: ['right'],
   },
   {
     name: 'Medium',
     nameFa: 'متوسط',
-    speed: 1700,
-    spawnInterval: 950,
+    lifeTime: 1400,
+    spawnInterval: 700,
     maxObjects: 4,
     objectSize: 62,
     duration: 35000,
-    directions: ['right'],
   },
   {
     name: 'Hard',
     nameFa: 'سخت',
-    speed: 1200,
-    spawnInterval: 700,
+    lifeTime: 1100,
+    spawnInterval: 550,
     maxObjects: 5,
     objectSize: 56,
     duration: 40000,
-    directions: ['right', 'left'],
   },
   {
     name: 'Extreme',
     nameFa: 'حرفه‌ای',
-    speed: 850,
-    spawnInterval: 500,
-    maxObjects: 7,
+    lifeTime: 850,
+    spawnInterval: 400,
+    maxObjects: 6,
     objectSize: 50,
     duration: 45000,
-    directions: ['right', 'left', 'top', 'bottom'],
   },
 ];
 
 type GameObject = {
   id: number;
   color: 'green' | 'red';
-  direction: string;
-  position: Animated.ValueXY;
+  x: number;
+  y: number;
   scale: Animated.Value;
   opacity: Animated.Value;
-  rotate: Animated.Value;
-  laneOrientation: 'horizontal' | 'vertical';
-  laneIndex: number;
 };
 
 type ScorePopup = {
@@ -94,20 +82,9 @@ type ScorePopup = {
   x: number;
   y: number;
   value: number;
+  opacity: Animated.Value;
+  translateY: Animated.Value;
 };
-
-type Particle = {
-  id: number;
-  x: number;
-  y: number;
-  angle: number;
-  distance: number;
-  color: string;
-  size: number;
-  anim: Animated.Value;
-};
-
-const PARTICLE_COUNT = 10;
 
 export default function LastSurvivalScreen() {
   const { colors } = useTheme();
@@ -120,400 +97,261 @@ export default function LastSurvivalScreen() {
   const [lives, setLives] = useState(3);
   const [objects, setObjects] = useState<GameObject[]>([]);
   const [popups, setPopups] = useState<ScorePopup[]>([]);
-  const [particles, setParticles] = useState<Particle[]>([]);
   const [gameOver, setGameOver] = useState(false);
   const [completed, setCompleted] = useState(false);
 
   const objectId = useRef(0);
   const popupId = useRef(0);
-  const particleId = useRef(0);
   const removingIds = useRef<Set<number>>(new Set());
-  const spawnTimer = useRef<NodeJS.Timeout | null>(null);
+  const objectTimers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const spawnTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const gameTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hitFlash = useRef(new Animated.Value(0)).current;
-
-  // Rows used by left/right movers, columns used by top/bottom movers.
-  // A lane is reserved the moment a shape spawns into it and freed the
-  // moment that shape leaves the screen or is tapped away, so two shapes
-  // never sit on top of each other and every shape stays tappable.
-  const occupiedRows = useRef<Set<number>>(new Set());
-  const occupiedColumns = useRef<Set<number>>(new Set());
-
-  const releaseLane = (object: GameObject) => {
-    if (object.laneOrientation === 'horizontal') {
-      occupiedRows.current.delete(object.laneIndex);
-    } else {
-      occupiedColumns.current.delete(object.laneIndex);
-    }
-  };
+  const isMounted = useRef(true);
+  const livesRef = useRef(3);
 
   const level = selectedLevel !== null ? LEVELS[selectedLevel] : LEVELS[0];
-  const textAlignStyle = isRTL ? 'right' : 'left';
 
-  const getLevelDescription = (index: number) => {
-    if (language === 'fa') {
-      const descriptions = [
-        'اشیاء آهسته از سمت راست',
-        'اشیاء سریع‌تر و تعداد بیشتر',
-        'اشیاء از هر دو سمت',
-        'اشیاء سریع از همه جهات',
-      ];
-      return descriptions[index] || '';
-    }
-    const descriptions = [
-      'Slow objects from the right',
-      'Faster objects and more targets',
-      'Objects from both sides',
-      'Fast objects from every direction',
-    ];
-    return descriptions[index] || '';
-  };
-
-  const startGame = (levelIndex: number) => {
-    removingIds.current.clear();
-    occupiedRows.current.clear();
-    occupiedColumns.current.clear();
-    setSelectedLevel(levelIndex);
-    setPlaying(true);
-    setGameOver(false);
-    setCompleted(false);
-    setScore(0);
-    setLives(3);
-    setObjects([]);
-    setPopups([]);
-    setParticles([]);
-  };
-
-  const endGame = (success: boolean) => {
+  const clearAllTimers = useCallback(() => {
     if (spawnTimer.current) {
       clearInterval(spawnTimer.current);
       spawnTimer.current = null;
     }
-
-    setPlaying(false);
-    setObjects([]);
-
-    if (success) {
-      setCompleted(true);
-    } else {
-      setGameOver(true);
+    if (gameTimer.current) {
+      clearTimeout(gameTimer.current);
+      gameTimer.current = null;
     }
-  };
+    objectTimers.current.forEach((timer) => clearTimeout(timer));
+    objectTimers.current.clear();
+  }, []);
+
+  const removeObject = useCallback((id: number) => {
+    const timer = objectTimers.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      objectTimers.current.delete(id);
+    }
+    removingIds.current.delete(id);
+    setObjects((prev) => prev.filter((o) => o.id !== id));
+  }, []);
+
+  const endGame = useCallback(
+    (success: boolean) => {
+      clearAllTimers();
+      setPlaying(false);
+      setObjects([]);
+
+      if (success) {
+        setCompleted(true);
+      } else {
+        setGameOver(true);
+      }
+    },
+    [clearAllTimers]
+  );
+
+  const spawnPopup = useCallback((x: number, y: number, value: number) => {
+    const opacity = new Animated.Value(0);
+    const translateY = new Animated.Value(0);
+    const id = popupId.current++;
+
+    setPopups((prev) => [...prev, { id, x, y, value, opacity, translateY }]);
+
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 100, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: -50, duration: 650, useNativeDriver: true }),
+    ]).start(() => {
+      Animated.timing(opacity, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {
+        if (isMounted.current) {
+          setPopups((prev) => prev.filter((p) => p.id !== id));
+        }
+      });
+    });
+  }, []);
+
+  // یک شکل جدید در یک نقطه‌ی تصادفی می‌سازد و ظاهرش می‌کند
+  const spawnObject = useCallback(
+    (currentLevel: Level) => {
+      const size = currentLevel.objectSize;
+      const maxX = width - PLAY_SIDE_MARGIN * 2 - size;
+      const maxY = height - PLAY_TOP_MARGIN - PLAY_BOTTOM_MARGIN - size;
+
+      const x = PLAY_SIDE_MARGIN + Math.random() * Math.max(maxX, 0);
+      const y = PLAY_TOP_MARGIN + Math.random() * Math.max(maxY, 0);
+
+      const id = objectId.current++;
+      const isGreen = Math.random() > 0.35;
+      const scale = new Animated.Value(0);
+      const opacity = new Animated.Value(1);
+
+      const newObject: GameObject = {
+        id,
+        color: isGreen ? 'green' : 'red',
+        x,
+        y,
+        scale,
+        opacity,
+      };
+
+      setObjects((prev) => [...prev, newObject]);
+
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 5,
+        tension: 60,
+        useNativeDriver: true,
+      }).start();
+
+      // اگر کاربر تا مدت مشخصی روی شکل نزد، خودش ناپدید می‌شود
+      const timer = setTimeout(() => {
+        if (!isMounted.current || removingIds.current.has(id)) return;
+        removingIds.current.add(id);
+
+        Animated.parallel([
+          Animated.timing(scale, { toValue: 0, duration: 200, useNativeDriver: true }),
+          Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+        ]).start(() => {
+          removeObject(id);
+        });
+      }, currentLevel.lifeTime);
+
+      objectTimers.current.set(id, timer);
+    },
+    [removeObject]
+  );
+
+  const handleObjectPress = useCallback(
+    (object: GameObject) => {
+      if (!playing) return;
+      if (removingIds.current.has(object.id)) return;
+      removingIds.current.add(object.id);
+
+      const isGreen = object.color === 'green';
+      const delta = isGreen ? 10 : -10;
+      const centerX = object.x + level.objectSize / 2 - 20;
+      const centerY = object.y - 10;
+
+      spawnPopup(centerX, centerY, delta);
+
+      Animated.sequence([
+        Animated.timing(object.scale, { toValue: 1.3, duration: 70, useNativeDriver: true }),
+        Animated.parallel([
+          Animated.timing(object.scale, { toValue: 0, duration: 200, useNativeDriver: true }),
+          Animated.timing(object.opacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+        ]),
+      ]).start(() => {
+        removeObject(object.id);
+      });
+
+      if (isGreen) {
+        setScore((prev) => prev + 10);
+      } else {
+        setScore((prev) => prev - 10);
+
+        Animated.sequence([
+          Animated.timing(hitFlash, { toValue: 1, duration: 70, useNativeDriver: true }),
+          Animated.timing(hitFlash, { toValue: 0, duration: 260, useNativeDriver: true }),
+        ]).start();
+
+        livesRef.current -= 1;
+        setLives(livesRef.current);
+
+        if (livesRef.current <= 0) {
+          setTimeout(() => endGame(false), 120);
+        }
+      }
+    },
+    [playing, level.objectSize, spawnPopup, removeObject, endGame, hitFlash]
+  );
+
+  const startGame = useCallback(
+    (levelIndex: number) => {
+      clearAllTimers();
+      isMounted.current = true;
+      removingIds.current.clear();
+      livesRef.current = 3;
+
+      setSelectedLevel(levelIndex);
+      setPlaying(true);
+      setGameOver(false);
+      setCompleted(false);
+      setScore(0);
+      setLives(3);
+      setObjects([]);
+      setPopups([]);
+    },
+    [clearAllTimers]
+  );
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+      clearAllTimers();
+    };
+  }, [clearAllTimers]);
 
   useEffect(() => {
     if (!playing || selectedLevel === null) return;
 
     const currentLevel = LEVELS[selectedLevel];
 
-    const timer = setTimeout(() => {
+    gameTimer.current = setTimeout(() => {
       endGame(true);
     }, currentLevel.duration);
 
-    const size = currentLevel.objectSize;
-    const rowCount = Math.max(
-      3,
-      Math.floor((height - PLAY_TOP_MARGIN - PLAY_BOTTOM_MARGIN) / (size + LANE_GAP))
-    );
-    const columnCount = Math.max(
-      3,
-      Math.floor((width - PLAY_SIDE_MARGIN * 2) / (size + LANE_GAP))
-    );
-
-    // Picks a lane index that's currently free, or null if every lane
-    // in that orientation is taken (in which case we skip this spawn
-    // rather than stack a shape on top of another one).
-    const pickFreeLane = (occupied: Set<number>, laneCount: number) => {
-      const free: number[] = [];
-      for (let i = 0; i < laneCount; i++) {
-        if (!occupied.has(i)) free.push(i);
-      }
-      if (free.length === 0) return null;
-      return free[Math.floor(Math.random() * free.length)];
-    };
-
     spawnTimer.current = setInterval(() => {
+      if (!isMounted.current) return;
+
       setObjects((prev) => {
-        if (prev.length >= currentLevel.maxObjects) {
-          return prev;
+        if (prev.length >= currentLevel.maxObjects) return prev;
+        return prev;
+      });
+
+      // شمارش فعلی اشکال را جدا چک می‌کنیم تا از closure قدیمی جلوگیری شود
+      setObjects((prev) => {
+        if (prev.length < currentLevel.maxObjects) {
+          spawnObject(currentLevel);
         }
-
-        const direction =
-          currentLevel.directions[
-            Math.floor(Math.random() * currentLevel.directions.length)
-          ];
-
-        const isHorizontalMover = direction === 'left' || direction === 'right';
-
-        const laneIndex = isHorizontalMover
-          ? pickFreeLane(occupiedRows.current, rowCount)
-          : pickFreeLane(occupiedColumns.current, columnCount);
-
-        // No free lane right now — skip this tick, try again next spawn.
-        if (laneIndex === null) {
-          return prev;
-        }
-
-        if (isHorizontalMover) {
-          occupiedRows.current.add(laneIndex);
-        } else {
-          occupiedColumns.current.add(laneIndex);
-        }
-
-        const id = objectId.current++;
-        const isGreen = Math.random() > 0.35;
-
-        const rowY = PLAY_TOP_MARGIN + laneIndex * (size + LANE_GAP);
-        const columnX = PLAY_SIDE_MARGIN + laneIndex * (size + LANE_GAP);
-
-        const position = new Animated.ValueXY({
-          x:
-            direction === 'left'
-              ? width
-              : direction === 'right'
-              ? -size
-              : columnX,
-          y:
-            direction === 'top'
-              ? height
-              : direction === 'bottom'
-              ? -size
-              : rowY,
-        });
-
-        const newObject: GameObject = {
-          id,
-          color: isGreen ? 'green' : 'red',
-          direction,
-          position,
-          scale: new Animated.Value(0),
-          opacity: new Animated.Value(1),
-          rotate: new Animated.Value(0),
-          laneOrientation: isHorizontalMover ? 'horizontal' : 'vertical',
-          laneIndex,
-        };
-
-        requestAnimationFrame(() => {
-          animateObject(newObject, currentLevel);
-        });
-
-        return [...prev, newObject];
+        return prev;
       });
     }, currentLevel.spawnInterval);
 
     return () => {
-      clearTimeout(timer);
       if (spawnTimer.current) {
         clearInterval(spawnTimer.current);
+        spawnTimer.current = null;
+      }
+      if (gameTimer.current) {
+        clearTimeout(gameTimer.current);
+        gameTimer.current = null;
       }
     };
-  }, [playing, selectedLevel]);
+  }, [playing, selectedLevel, endGame, spawnObject]);
 
-  const animateObject = (object: GameObject, currentLevel: Level) => {
-    Animated.spring(object.scale, {
-      toValue: 1,
-      friction: 5,
-      tension: 60,
-      useNativeDriver: true,
-    }).start();
-
-    const targetX =
-      object.direction === 'left'
-        ? -currentLevel.objectSize - 50
-        : width + 50;
-
-    const currentY = (object.position.y as any)._value || 0;
-
-    const targetY =
-      object.direction === 'top'
-        ? -currentLevel.objectSize - 50
-        : object.direction === 'bottom'
-        ? height + 50
-        : currentY;
-
-    if (object.direction === 'right' || object.direction === 'left') {
-      Animated.timing(object.position.x, {
-        toValue: targetX,
-        duration: currentLevel.speed,
-        useNativeDriver: false,
-      }).start(({ finished }) => {
-        if (finished) {
-          releaseLane(object);
-          setObjects((prev) => prev.filter((item) => item.id !== object.id));
-        }
-      });
-    } else {
-      Animated.timing(object.position.y, {
-        toValue: targetY,
-        duration: currentLevel.speed,
-        useNativeDriver: false,
-      }).start(({ finished }) => {
-        if (finished) {
-          releaseLane(object);
-          setObjects((prev) => prev.filter((item) => item.id !== object.id));
-        }
-      });
-    }
-  };
-
-  // Spawns a ring of small particles at the object's last position and
-  // animates them flying outward while fading — the "explosion" burst.
-  const spawnExplosion = (
-    centerX: number,
-    centerY: number,
-    color: string
-  ) => {
-    const newParticles: Particle[] = [];
-
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      const angle =
-        (Math.PI * 2 * i) / PARTICLE_COUNT + (Math.random() * 0.4 - 0.2);
-      const distance = 34 + Math.random() * 46;
-      const size = 6 + Math.random() * 8;
-      const id = particleId.current++;
-      const anim = new Animated.Value(0);
-
-      newParticles.push({
-        id,
-        x: centerX,
-        y: centerY,
-        angle,
-        distance,
-        color,
-        size,
-        anim,
-      });
-    }
-
-    setParticles((prev) => [...prev, ...newParticles]);
-
-    newParticles.forEach((particle) => {
-      Animated.timing(particle.anim, {
-        toValue: 1,
-        duration: 480 + Math.random() * 120,
-        useNativeDriver: true,
-      }).start(({ finished }) => {
-        if (finished) {
-          setParticles((prev) => prev.filter((p) => p.id !== particle.id));
-        }
-      });
-    });
-  };
-
-  const handleObjectPress = (object: GameObject) => {
-    if (!playing) return;
-    if (removingIds.current.has(object.id)) return;
-    removingIds.current.add(object.id);
-
-    const x = (object.position.x as any)._value || 0;
-    const y = (object.position.y as any)._value || 0;
-    const isGreen = object.color === 'green';
-    const delta = isGreen ? 10 : -10;
-    const explosionColor = isGreen ? '#22C55E' : '#EF4444';
-    const centerX = x + level.objectSize / 2;
-    const centerY = y + level.objectSize / 2;
-
-    const newPopupId = popupId.current++;
-    setPopups((prev) => [...prev, { id: newPopupId, x, y, value: delta }]);
-    setTimeout(() => {
-      setPopups((prev) => prev.filter((p) => p.id !== newPopupId));
-    }, 700);
-
-    // Burst of particles flying out from the object's center.
-    spawnExplosion(centerX, centerY, explosionColor);
-
-    // The object itself: a quick punch outward, then it blows apart —
-    // scaling past its own size, spinning, and fading — instead of
-    // simply shrinking away.
-    Animated.sequence([
-      Animated.timing(object.scale, {
-        toValue: 1.3,
-        duration: 70,
-        useNativeDriver: true,
-      }),
-      Animated.parallel([
-        Animated.timing(object.scale, {
-          toValue: 0,
-          duration: 260,
-          useNativeDriver: true,
-        }),
-        Animated.timing(object.opacity, {
-          toValue: 0,
-          duration: 260,
-          useNativeDriver: true,
-        }),
-        Animated.timing(object.rotate, {
-          toValue: isGreen ? 1 : -1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start(() => {
-      releaseLane(object);
-      setObjects((prev) => prev.filter((item) => item.id !== object.id));
-      removingIds.current.delete(object.id);
-    });
-
-    if (isGreen) {
-      setScore((prev) => prev + 10);
-    } else {
-      setScore((prev) => prev - 10);
-
-      Animated.sequence([
-        Animated.timing(hitFlash, { toValue: 1, duration: 70, useNativeDriver: true }),
-        Animated.timing(hitFlash, { toValue: 0, duration: 260, useNativeDriver: true }),
-      ]).start();
-
-      setLives((prev) => {
-        const newLives = prev - 1;
-        if (newLives <= 0) {
-          setTimeout(() => {
-            endGame(false);
-          }, 120);
-        }
-        return newLives;
-      });
-    }
-  };
-
-  // Touch fingerprint tolerance around each shape's actual box — plays
-  // the same role hitSlop used to, just applied manually.
-  const TOUCH_PADDING = 15;
-
-  // A single touch handler for the whole play area. Instead of giving
-  // every moving shape its own Pressable (which breaks down the moment
-  // two shapes' hit regions overlap — only the topmost one ever
-  // responds), we catch every touch here and manually work out which
-  // shape, if any, is under the finger using each shape's live
-  // position. This makes every visible shape reliably tappable,
-  // regardless of how many others are nearby.
-  const handlePlayAreaTouch = (evt: any) => {
-    if (!playing) return;
-
-    const { locationX, locationY } = evt.nativeEvent;
-    const size = level.objectSize;
-
-    // Check from the most recently spawned shape backwards, so that if
-    // two boxes' tolerance zones genuinely overlap, the one drawn on
-    // top (visually in front) wins — matching what the eye expects.
-    for (let i = objects.length - 1; i >= 0; i--) {
-      const object = objects[i];
-      if (removingIds.current.has(object.id)) continue;
-
-      const x = (object.position.x as any)._value || 0;
-      const y = (object.position.y as any)._value || 0;
-
-      const withinX =
-        locationX >= x - TOUCH_PADDING &&
-        locationX <= x + size + TOUCH_PADDING;
-      const withinY =
-        locationY >= y - TOUCH_PADDING &&
-        locationY <= y + size + TOUCH_PADDING;
-
-      if (withinX && withinY) {
-        handleObjectPress(object);
-        return;
+  const getLevelDescription = useCallback(
+    (index: number) => {
+      if (language === 'fa') {
+        const descriptions = [
+          'اشکال آهسته ظاهر می‌شوند',
+          'اشکال بیشتر و سریع‌تر ناپدید می‌شوند',
+          'اشکال بیشتر با زمان کمتر',
+          'اشکال زیاد و زمان خیلی کم',
+        ];
+        return descriptions[index] || '';
       }
-    }
-  };
+      const descriptions = [
+        'Shapes appear slowly',
+        'More shapes, less time',
+        'Even more shapes, faster pace',
+        'Maximum shapes, minimum time',
+      ];
+      return descriptions[index] || '';
+    },
+    [language]
+  );
+
+  const textAlignStyle = isRTL ? 'right' : 'left';
 
   if (!playing && selectedLevel === null) {
     return (
@@ -533,12 +371,7 @@ export default function LastSurvivalScreen() {
             color={colors.text}
             style={isRTL ? { transform: [{ scaleX: -1 }] } : {}}
           />
-          <Text
-            style={[
-              styles.backText,
-              { color: colors.text, textAlign: textAlignStyle },
-            ]}
-          >
+          <Text style={[styles.backText, { color: colors.text, textAlign: textAlignStyle }]}>
             {t.back}
           </Text>
         </TouchableOpacity>
@@ -552,12 +385,7 @@ export default function LastSurvivalScreen() {
             Last Survival
           </Text>
 
-          <Text
-            style={[
-              styles.subtitle,
-              { color: colors.textSecondary, textAlign: 'center' },
-            ]}
-          >
+          <Text style={[styles.subtitle, { color: colors.textSecondary, textAlign: 'center' }]}>
             {language === 'fa'
               ? 'روی اشکال سبز کلیک کنید. از قرمزها دوری کنید.'
               : 'Click the green shapes. Avoid the red ones.'}
@@ -584,20 +412,12 @@ export default function LastSurvivalScreen() {
               </View>
 
               <View style={isRTL ? styles.levelInfoRTL : styles.levelInfo}>
-                <Text
-                  style={[
-                    styles.levelTitle,
-                    { color: colors.text, textAlign: textAlignStyle },
-                  ]}
-                >
+                <Text style={[styles.levelTitle, { color: colors.text, textAlign: textAlignStyle }]}>
                   {language === 'fa' ? item.nameFa : item.name}
                 </Text>
 
                 <Text
-                  style={[
-                    styles.levelDescription,
-                    { color: colors.textSecondary, textAlign: textAlignStyle },
-                  ]}
+                  style={[styles.levelDescription, { color: colors.textSecondary, textAlign: textAlignStyle }]}
                 >
                   {getLevelDescription(index)}
                 </Text>
@@ -605,13 +425,7 @@ export default function LastSurvivalScreen() {
 
               <Zap
                 size={20}
-                color={
-                  index === 0
-                    ? colors.success
-                    : index === 1
-                    ? colors.warning
-                    : colors.error
-                }
+                color={index === 0 ? colors.success : index === 1 ? colors.warning : colors.error}
               />
             </TouchableOpacity>
           ))}
@@ -638,156 +452,84 @@ export default function LastSurvivalScreen() {
         </Text>
       </View>
 
-      <View
-        style={styles.playArea}
-        onStartShouldSetResponder={() => playing}
-        onResponderGrant={handlePlayAreaTouch}
-      >
-        {objects.map((object) => {
-          const rotateInterpolate = object.rotate.interpolate({
-            inputRange: [-1, 0, 1],
-            outputRange: ['-140deg', '0deg', '140deg'],
-          });
-
-          return (
-            <Animated.View
-              key={object.id}
-              pointerEvents="none"
-              style={[
-                styles.movingObject,
-                {
-                  width: level.objectSize,
-                  height: level.objectSize,
-                  backgroundColor: object.color === 'green' ? '#22C55E' : '#EF4444',
-                  opacity: object.opacity,
-                  left: object.position.x,
-                  top: object.position.y,
-                  transform: [
-                    { scale: object.scale },
-                    { rotate: rotateInterpolate },
-                  ],
-                },
-              ]}
+      <View style={styles.playArea}>
+        {objects.map((object) => (
+          <Animated.View
+            key={object.id}
+            style={[
+              styles.movingObject,
+              {
+                left: object.x,
+                top: object.y,
+                width: level.objectSize,
+                height: level.objectSize,
+                backgroundColor: object.color === 'green' ? '#22C55E' : '#EF4444',
+                opacity: object.opacity,
+                transform: [{ scale: object.scale }],
+              },
+            ]}
+          >
+            <TouchableOpacity
+              style={styles.pressableObject}
+              activeOpacity={0.7}
+              onPress={() => handleObjectPress(object)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <View style={styles.pressableObject}>
-                <View style={styles.eyes}>
-                  <View style={styles.eye} />
-                  <View style={styles.eye} />
-                </View>
-
-                {object.color === 'green' ? (
-                  <View style={styles.happyMouth} />
-                ) : (
-                  <View style={styles.angryMouth} />
-                )}
+              <View style={styles.eyes}>
+                <View style={styles.eye} />
+                <View style={styles.eye} />
               </View>
-            </Animated.View>
-          );
-        })}
 
-        {particles.map((particle) => {
-          const translateX = particle.anim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, Math.cos(particle.angle) * particle.distance],
-          });
-          const translateY = particle.anim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, Math.sin(particle.angle) * particle.distance],
-          });
-          const opacity = particle.anim.interpolate({
-            inputRange: [0, 0.7, 1],
-            outputRange: [1, 0.8, 0],
-          });
-          const scale = particle.anim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [1, 0.2],
-          });
-
-          return (
-            <Animated.View
-              key={particle.id}
-              pointerEvents="none"
-              style={[
-                styles.particle,
-                {
-                  left: particle.x,
-                  top: particle.y,
-                  width: particle.size,
-                  height: particle.size,
-                  borderRadius: particle.size / 2,
-                  backgroundColor: particle.color,
-                  opacity,
-                  transform: [{ translateX }, { translateY }, { scale }],
-                },
-              ]}
-            />
-          );
-        })}
+              {object.color === 'green' ? (
+                <View style={styles.happyMouth} />
+              ) : (
+                <View style={styles.angryMouth} />
+              )}
+            </TouchableOpacity>
+          </Animated.View>
+        ))}
 
         {popups.map((p) => (
-          <MotiView
+          <Animated.View
             key={p.id}
             pointerEvents="none"
-            from={{ opacity: 0, translateY: 0, scale: 0.6 }}
-            animate={{ opacity: [1, 1, 0], translateY: -55, scale: 1 }}
-            transition={{ type: 'timing', duration: 700 }}
-            style={[styles.popup, { left: p.x, top: p.y }]}
+            style={[
+              styles.popup,
+              {
+                left: p.x,
+                top: p.y,
+                opacity: p.opacity,
+                transform: [{ translateY: p.translateY }],
+              },
+            ]}
           >
-            <Text
-              style={[
-                styles.popupText,
-                { color: p.value > 0 ? '#22C55E' : '#EF4444' },
-              ]}
-            >
+            <Text style={[styles.popupText, { color: p.value > 0 ? '#22C55E' : '#EF4444' }]}>
               {p.value > 0 ? `+${p.value}` : `${p.value}`}
             </Text>
-          </MotiView>
+          </Animated.View>
         ))}
 
         <Animated.View
           pointerEvents="none"
-          style={[
-            StyleSheet.absoluteFillObject,
-            { backgroundColor: '#EF4444', opacity: hitFlash },
-          ]}
+          style={[StyleSheet.absoluteFillObject, { backgroundColor: '#EF4444', opacity: hitFlash }]}
         />
 
-        <View style={styles.instruction}>
-          <Text
-            style={[
-              styles.instructionText,
-              { color: colors.textSecondary, textAlign: 'center' },
-            ]}
-          >
+        <View style={styles.instruction} pointerEvents="none">
+          <Text style={[styles.instructionText, { color: colors.textSecondary, textAlign: 'center' }]}>
             {language === 'fa' ? 'ضربه به سبز' : 'Tap GREEN'}
           </Text>
-          <Text
-            style={[
-              styles.instructionDanger,
-              { color: colors.error, textAlign: 'center' },
-            ]}
-          >
+          <Text style={[styles.instructionDanger, { color: colors.error, textAlign: 'center' }]}>
             {language === 'fa' ? 'دوری از قرمز' : 'Avoid RED'}
           </Text>
         </View>
       </View>
 
       {(gameOver || completed) && (
-        <View
-          style={[
-            styles.resultOverlay,
-            { backgroundColor: colors.background + 'F5' },
-          ]}
-        >
+        <View style={[styles.resultOverlay, { backgroundColor: colors.background + 'F5' }]}>
           <View style={[styles.resultCard, { backgroundColor: colors.surface }]}>
             <Trophy size={42} color={completed ? colors.success : colors.error} />
 
-            <Text
-              style={[
-                styles.resultTitle,
-                { color: colors.text, textAlign: 'center' },
-              ]}
-            >
+            <Text style={[styles.resultTitle, { color: colors.text, textAlign: 'center' }]}>
               {completed
                 ? language === 'fa'
                   ? 'مرحله کامل شد!'
@@ -797,12 +539,7 @@ export default function LastSurvivalScreen() {
                 : 'Game Over'}
             </Text>
 
-            <Text
-              style={[
-                styles.finalScore,
-                { color: colors.primary, textAlign: 'center' },
-              ]}
-            >
+            <Text style={[styles.finalScore, { color: colors.primary, textAlign: 'center' }]}>
               {score} {language === 'fa' ? 'امتیاز' : 'Points'}
             </Text>
 
@@ -817,18 +554,15 @@ export default function LastSurvivalScreen() {
 
             <TouchableOpacity
               onPress={() => {
+                clearAllTimers();
                 setSelectedLevel(null);
                 setGameOver(false);
                 setCompleted(false);
+                isMounted.current = true;
               }}
               style={[styles.secondaryButton, { borderColor: colors.border }]}
             >
-              <Text
-                style={[
-                  styles.secondaryButtonText,
-                  { color: colors.text, textAlign: 'center' },
-                ]}
-              >
+              <Text style={[styles.secondaryButtonText, { color: colors.text, textAlign: 'center' }]}>
                 {language === 'fa' ? 'انتخاب سطح' : 'Choose Level'}
               </Text>
             </TouchableOpacity>
@@ -949,8 +683,6 @@ const styles = StyleSheet.create({
   },
   movingObject: {
     position: 'absolute',
-    left: 0,
-    top: 0,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 14,
@@ -996,9 +728,6 @@ const styles = StyleSheet.create({
     borderTopColor: '#111827',
     borderRadius: 12,
   },
-  particle: {
-    position: 'absolute',
-  },
   popup: {
     position: 'absolute',
   },
@@ -1014,7 +743,6 @@ const styles = StyleSheet.create({
     top: 25,
     width: '100%',
     alignItems: 'center',
-    pointerEvents: 'none',
   },
   instructionText: {
     fontSize: 18,

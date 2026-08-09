@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { MotiView } from 'moti';
+import { MotiView, AnimatePresence } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -23,11 +23,16 @@ const PARTICLE_COUNT = 16;
 const RING_COUNT = 3;
 const AMBIENT_COUNT = 10;
 
+// Taglines cycle in sync with the brain's core-light pulse (1400ms loop)
+const TAGLINES = ['Norulia App', 'Norulia AI', 'A Friend for Your Mind', 'Norulia Wellness'];
+const TAGLINE_INTERVAL = 1400;
+
 export function SplashScreen({ onComplete }: SplashScreenProps) {
   const { colors, isDark } = useTheme();
   const { t } = useLanguage();
 
   const [stage, setStage] = useState(0);
+  const [taglineIndex, setTaglineIndex] = useState(0);
 
   useEffect(() => {
     const timers = [
@@ -39,6 +44,15 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
     ];
     return () => timers.forEach(clearTimeout);
   }, [onComplete]);
+
+  // Cycle taglines only while the logo/tagline stage is active
+  useEffect(() => {
+    if (stage < 3 || stage >= 4) return;
+    const id = setInterval(() => {
+      setTaglineIndex((i) => (i + 1) % TAGLINES.length);
+    }, TAGLINE_INTERVAL);
+    return () => clearInterval(id);
+  }, [stage]);
 
   const particles = useMemo(
     () =>
@@ -106,16 +120,6 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         }}
         transition={{ type: 'timing', duration: stage === 2 ? 550 : 400 }}
         style={[styles.glowBlob, { backgroundColor: colors.primary }]}
-      />
-
-      <MotiView
-        from={{ opacity: 0, scale: 0.4 }}
-        animate={{
-          opacity: brainOpen ? [0.9, 0] : 0,
-          scale: brainOpen ? 1.8 : 0.4,
-        }}
-        transition={{ type: 'timing', duration: 420 }}
-        style={styles.flash}
       />
 
       <View style={styles.content}>
@@ -212,13 +216,15 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
             scale: exitStage ? 0.85 : stage === 2 ? [1.18, 1] : 1,
             opacity: exitStage ? 0 : 1,
             translateY: brainLift,
+            rotateY: logoStage && !exitStage ? ['-6deg', '6deg', '-6deg'] : '0deg',
           }}
           transition={{
             scale: { type: 'spring', stiffness: 160, damping: 14 },
             opacity: { type: 'timing', duration: 400 },
             translateY: { type: 'timing', duration: 500 },
+            rotateY: { type: 'timing', duration: 3200, loop: logoStage && !exitStage },
           }}
-          style={styles.brainRow}
+          style={[styles.brainRow, { transform: [{ perspective: 900 }] }]}
         >
           <MotiView
             animate={{
@@ -254,7 +260,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
               scale: brainOpen ? 1 : logoStage ? 1 : 0.2,
             }}
             transition={{
-              opacity: { type: 'timing', duration: logoStage ? 1400 : 350, loop: logoStage && !exitStage },
+              opacity: { type: 'timing', duration: logoStage ? TAGLINE_INTERVAL : 350, loop: logoStage && !exitStage },
               scale: { type: 'timing', duration: 350 },
             }}
             style={[styles.coreLight, { backgroundColor: colors.accent }]}
@@ -269,12 +275,25 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           translateY: exitStage ? 12 : logoStage ? 0 : 24,
         }}
         transition={{ type: 'timing', duration: 500 }}
-        style={styles.wordmark}
+        style={[styles.wordmark, { transform: [{ perspective: 600 }] }]}
       >
         <Text style={[styles.title, { color: colors.text }]}>{t.appName}</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Your Mental Wellness Companion
-        </Text>
+
+        <View style={styles.taglineFrame}>
+          <AnimatePresence exitBeforeEnter>
+            <MotiView
+              key={taglineIndex}
+              from={{ opacity: 0, rotateX: '65deg', translateY: 6 }}
+              animate={{ opacity: 1, rotateX: '0deg', translateY: 0 }}
+              exit={{ opacity: 0, rotateX: '-65deg', translateY: -6 }}
+              transition={{ type: 'timing', duration: 380 }}
+            >
+              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                {TAGLINES[taglineIndex]}
+              </Text>
+            </MotiView>
+          </AnimatePresence>
+        </View>
 
         <View style={[styles.progressTrack, { backgroundColor: colors.border }]}>
           <MotiView
@@ -310,13 +329,6 @@ const styles = StyleSheet.create({
     height: 340,
     borderRadius: 200,
     opacity: 0.7,
-  },
-  flash: {
-    position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: '#FFFFFF',
   },
   content: {
     alignItems: 'center',
@@ -385,6 +397,11 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(167,139,250,0.5)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 18,
+  },
+  taglineFrame: {
+    height: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   subtitle: {
     fontSize: 15,
