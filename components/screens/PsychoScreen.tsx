@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+
 import {
   View,
   Text,
@@ -14,7 +15,6 @@ import {
   ArrowLeft,
   Brain,
   Clock,
-  Trophy,
   Heart,
   Compass,
   ChevronLeft,
@@ -28,7 +28,7 @@ import {
   BorderRadius,
 } from '../../constants/theme';
 
-import { Card } from '../../components/ui/Card';
+import { Card } from '../ui/Card';
 
 const categories = [
   {
@@ -52,7 +52,8 @@ const categories = [
     title: 'Adventure Games',
     titleFa: 'بازی‌های ماجراجویی',
     description: 'Explore new worlds and enjoy exciting challenges',
-    descriptionFa: 'دنیاهای جدید را کشف کنید و از چالش‌های هیجان‌انگیز لذت ببرید',
+    descriptionFa:
+      'دنیاهای جدید را کشف کنید و از چالش‌های هیجان‌انگیز لذت ببرید',
     icon: Compass,
   },
 ];
@@ -105,7 +106,7 @@ const games = [
     category: 'stress',
     title: 'Visual Flow',
     titleFa: 'جریان بصری',
-    description: 'Focuse on Flow',
+    description: 'Focus on Flow',
     descriptionFa: 'افزایش قدرت بصری',
     image: require('../../assets/games/game4.png'),
     level: 'Easy',
@@ -114,20 +115,20 @@ const games = [
     timeFa: '۵ دقیقه',
     route: '/games/visual-flow',
   },
-  // {
-  //   id: '5',
-  //   category: 'psychological',
-  //   title: 'Word Puzzle',
-  //   titleFa: 'جمله بندی',
-  //   description: 'Enjoy a peaceful relaxing experience',
-  //   descriptionFa: 'یک تجربه آرام و لذت‌بخش را تجربه کنید',
-  //   image: require('../../assets/games/game8.png'),
-  //   level: 'Easy',
-  //   levelFa: 'آسان',
-  //   time: '10 min',
-  //   timeFa: '۱۰ دقیقه',
-  //   route: '/games/Word',
-  // },
+  {
+    id: '5',
+    category: 'psychological',
+    title: 'Word Puzzle',
+    titleFa: 'جمله بندی',
+    description: 'Enjoy a peaceful relaxing experience',
+    descriptionFa: 'یک تجربه آرام و لذت‌بخش را تجربه کنید',
+    image: require('../../assets/games/game8.png'),
+    level: 'Easy',
+    levelFa: 'آسان',
+    time: '10 min',
+    timeFa: '۱۰ دقیقه',
+    route: '/games/Word',
+  },
   {
     id: '6',
     category: 'stress',
@@ -176,38 +177,55 @@ export default function PsychoScreen() {
   const { colors } = useTheme();
   const { t, language, isRTL } = useLanguage();
   const router = useRouter();
-  const { category } = useLocalSearchParams<{ category?: string }>();
 
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(
-    category === 'stress' ? 'stress' : null
-  );
+  const { category } = useLocalSearchParams<{
+    category?: string;
+  }>();
+
+  const [selectedCategory, setSelectedCategory] = useState<
+    string | null
+  >(category === 'stress' ? 'stress' : null);
 
   const textAlignStyle = isRTL ? 'right' : 'left';
 
   useEffect(() => {
-    if (category === 'stress') {
-      setSelectedCategory('stress');
+    if (
+      category === 'stress' ||
+      category === 'psychological' ||
+      category === 'adventure'
+    ) {
+      setSelectedCategory(category);
     }
   }, [category]);
 
-  const getGameTitle = (game: typeof games[0]) => {
-    return language === 'fa' ? game.titleFa : game.title;
+  const getGameTitle = (game: (typeof games)[0]) => {
+    return language === 'fa'
+      ? game.titleFa
+      : game.title;
   };
 
-  const getGameDescription = (game: typeof games[0]) => {
-    return language === 'fa' ? game.descriptionFa : game.description;
+  const getGameDescription = (
+    game: (typeof games)[0]
+  ) => {
+    return language === 'fa'
+      ? game.descriptionFa
+      : game.description;
   };
 
-  const getGameLevel = (game: typeof games[0]) => {
-    return language === 'fa' ? game.levelFa : game.level;
+  const getGameLevel = (game: (typeof games)[0]) => {
+    return language === 'fa'
+      ? game.levelFa
+      : game.level;
   };
 
-  const getGameTime = (game: typeof games[0]) => {
-    return language === 'fa' ? game.timeFa : game.time;
+  const getGameTime = (game: (typeof games)[0]) => {
+    return language === 'fa'
+      ? game.timeFa
+      : game.time;
   };
 
   const filteredGames = games.filter(
-    game => game.category === selectedCategory
+    (game) => game.category === selectedCategory
   );
 
   const handleBack = () => {
@@ -236,9 +254,12 @@ export default function PsychoScreen() {
             styles.backButton,
             {
               backgroundColor: colors.surface,
-              flexDirection: isRTL ? 'row-reverse' : 'row',
+              flexDirection: isRTL
+                ? 'row-reverse'
+                : 'row',
             },
           ]}
+          activeOpacity={0.8}
         >
           <ArrowLeft
             size={22}
@@ -246,15 +267,12 @@ export default function PsychoScreen() {
             style={
               isRTL
                 ? {
-                    transform: [
-                      {
-                        scaleX: -1,
-                      },
-                    ],
+                    transform: [{ scaleX: -1 }],
                   }
-                : {}
+                : undefined
             }
           />
+
           <Text
             style={[
               styles.backText,
@@ -296,32 +314,40 @@ export default function PsychoScreen() {
               : 'Choose a game category'}
           </Text>
 
-          {categories.map(category => {
-            const Icon = category.icon;
+          {categories.map((item) => {
+            const Icon = item.icon;
 
             return (
               <TouchableOpacity
-                key={category.id}
+                key={item.id}
                 activeOpacity={0.85}
-                onPress={() => setSelectedCategory(category.id)}
+                onPress={() =>
+                  setSelectedCategory(item.id)
+                }
               >
                 <Card style={styles.categoryCard}>
                   <View
                     style={[
                       styles.categoryIcon,
                       {
-                        backgroundColor: colors.primary + '18',
+                        backgroundColor:
+                          colors.primary + '18',
                       },
                     ]}
                   >
-                    <Icon size={34} color={colors.primary} />
+                    <Icon
+                      size={34}
+                      color={colors.primary}
+                    />
                   </View>
 
                   <View
                     style={[
                       styles.categoryInfo,
                       {
-                        alignItems: isRTL ? 'flex-end' : 'flex-start',
+                        alignItems: isRTL
+                          ? 'flex-end'
+                          : 'flex-start',
                       },
                     ]}
                   >
@@ -334,19 +360,24 @@ export default function PsychoScreen() {
                         },
                       ]}
                     >
-                      {language === 'fa' ? category.titleFa : category.title}
+                      {language === 'fa'
+                        ? item.titleFa
+                        : item.title}
                     </Text>
 
                     <Text
                       style={[
                         styles.categoryDescription,
                         {
-                          color: colors.textSecondary,
+                          color:
+                            colors.textSecondary,
                           textAlign: textAlignStyle,
                         },
                       ]}
                     >
-                      {language === 'fa' ? category.descriptionFa : category.description}
+                      {language === 'fa'
+                        ? item.descriptionFa
+                        : item.description}
                     </Text>
                   </View>
 
@@ -362,7 +393,7 @@ export default function PsychoScreen() {
                               },
                             ],
                           }
-                        : {}
+                        : undefined
                     }
                   />
                 </Card>
@@ -375,7 +406,7 @@ export default function PsychoScreen() {
   }
 
   const selectedCategoryData = categories.find(
-    category => category.id === selectedCategory
+    (item) => item.id === selectedCategory
   );
 
   return (
@@ -391,7 +422,9 @@ export default function PsychoScreen() {
         style={[
           styles.gameHeader,
           {
-            flexDirection: isRTL ? 'row-reverse' : 'row',
+            flexDirection: isRTL
+              ? 'row-reverse'
+              : 'row',
           },
         ]}
       >
@@ -399,7 +432,9 @@ export default function PsychoScreen() {
           style={[
             styles.headerTitleContainer,
             {
-              alignItems: isRTL ? 'flex-end' : 'flex-start',
+              alignItems: isRTL
+                ? 'flex-end'
+                : 'flex-start',
             },
           ]}
         >
@@ -426,7 +461,10 @@ export default function PsychoScreen() {
               },
             ]}
           >
-            {filteredGames.length} {language === 'fa' ? 'بازی' : 'games'}
+            {filteredGames.length}{' '}
+            {language === 'fa'
+              ? 'بازی'
+              : 'games'}
           </Text>
         </View>
 
@@ -446,13 +484,9 @@ export default function PsychoScreen() {
             style={
               isRTL
                 ? {
-                    transform: [
-                      {
-                        scaleX: -1,
-                      },
-                    ],
+                    transform: [{ scaleX: -1 }],
                   }
-                : {}
+                : undefined
             }
           />
         </TouchableOpacity>
@@ -462,8 +496,11 @@ export default function PsychoScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        {filteredGames.map(game => (
-          <Card key={game.id} style={styles.card}>
+        {filteredGames.map((game) => (
+          <Card
+            key={game.id}
+            style={styles.card}
+          >
             <Image
               source={game.image}
               style={styles.cover}
@@ -499,17 +536,24 @@ export default function PsychoScreen() {
                 style={[
                   styles.details,
                   {
-                    flexDirection: isRTL ? 'row-reverse' : 'row',
+                    flexDirection: isRTL
+                      ? 'row-reverse'
+                      : 'row',
                   },
                 ]}
               >
                 <View style={styles.detailItem}>
-                  <Brain size={16} color={colors.primary} />
+                  <Brain
+                    size={16}
+                    color={colors.primary}
+                  />
+
                   <Text
                     style={[
                       styles.detailText,
                       {
-                        color: colors.textSecondary,
+                        color:
+                          colors.textSecondary,
                       },
                     ]}
                   >
@@ -518,12 +562,17 @@ export default function PsychoScreen() {
                 </View>
 
                 <View style={styles.detailItem}>
-                  <Clock size={16} color={colors.primary} />
+                  <Clock
+                    size={16}
+                    color={colors.primary}
+                  />
+
                   <Text
                     style={[
                       styles.detailText,
                       {
-                        color: colors.textSecondary,
+                        color:
+                          colors.textSecondary,
                       },
                     ]}
                   >
@@ -536,13 +585,18 @@ export default function PsychoScreen() {
                 style={[
                   styles.button,
                   {
-                    backgroundColor: colors.primary,
+                    backgroundColor:
+                      colors.primary,
                   },
                 ]}
-                onPress={() => router.push(game.route as any)}
+                onPress={() =>
+                  router.push(game.route as any)
+                }
                 activeOpacity={0.8}
               >
-                <Text style={styles.buttonText}>{t.startGame}</Text>
+                <Text style={styles.buttonText}>
+                  {t.startGame}
+                </Text>
               </TouchableOpacity>
             </View>
           </Card>
@@ -556,11 +610,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
   content: {
     paddingTop: 20,
     paddingHorizontal: Spacing.lg,
     paddingBottom: 100,
   },
+
   backButton: {
     alignItems: 'center',
     alignSelf: 'flex-start',
@@ -569,25 +625,28 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginTop: 60,
     marginLeft: Spacing.lg,
-    
+    gap: 7,
   },
+
   backText: {
-    marginLeft: 8,
     fontSize: 15,
     fontWeight: '600',
   },
+
   title: {
     fontSize: 30,
     fontWeight: '800',
     textAlign: 'center',
     marginTop: Spacing.md,
   },
+
   subtitle: {
     fontSize: 15,
     textAlign: 'center',
     marginTop: 8,
     marginBottom: Spacing.lg,
   },
+
   categoryCard: {
     minHeight: 120,
     marginBottom: Spacing.md,
@@ -596,6 +655,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 14,
   },
+
   categoryIcon: {
     width: 64,
     height: 64,
@@ -603,26 +663,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   categoryInfo: {
     flex: 1,
   },
+
   categoryTitle: {
     fontSize: 19,
     fontWeight: '800',
   },
+
   categoryDescription: {
     fontSize: 13,
     marginTop: 5,
     lineHeight: 19,
   },
+
   gameHeader: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.md,
     alignItems: 'center',
     justifyContent: 'space-between',
-    flexDirection: 'row',
   },
+
   headerBackButton: {
     width: 42,
     height: 42,
@@ -630,56 +694,69 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   headerTitleContainer: {
     flex: 1,
   },
+
   headerTitle: {
     fontSize: 21,
     fontWeight: '800',
   },
+
   headerSubtitle: {
     fontSize: 12,
     marginTop: 3,
   },
+
   card: {
     marginBottom: Spacing.lg,
     overflow: 'hidden',
     borderRadius: 18,
   },
+
   cover: {
     width: '100%',
     height: 170,
     borderRadius: 18,
   },
+
   info: {
     padding: Spacing.md,
   },
+
   gameTitle: {
     fontSize: 20,
     fontWeight: '700',
   },
+
   description: {
     marginTop: 6,
     fontSize: 14,
   },
+
   details: {
     marginTop: Spacing.md,
     gap: 20,
   },
+
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
   },
+
   detailText: {
     fontSize: 13,
   },
+
   button: {
     marginTop: Spacing.md,
     paddingVertical: 12,
     borderRadius: BorderRadius.full,
     alignItems: 'center',
   },
+
   buttonText: {
     color: '#fff',
     fontWeight: '700',
