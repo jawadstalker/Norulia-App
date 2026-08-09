@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, StyleSheet, I18nManager } from 'react-native';
+import { View, StyleSheet, I18nManager, ActivityIndicator } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
@@ -17,23 +17,20 @@ import { LanguageProvider, useLanguage } from '../context/LanguageContext';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { AssessmentProvider, useAssessment } from '../context/AssessmentContext';
 import { SplashScreen as AppSplashScreen } from '../components/screens/SplashScreen';
-import { AuthScreen } from '../components/screens/AuthScreen';
-import { AssessmentScreen } from '../components/screens/AssessmentScreen';
 import { BottomNavBar } from '../components/ui/BottomNavBar';
 import { useFrameworkReady } from '../hooks/useFrameworkReady';
 import { useRouter, usePathname } from 'expo-router';
 
-// Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
 function AppContent() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { isCompleted: assessmentCompleted, isLoading: assessmentLoading, completeAssessment } = useAssessment();
+  const { isCompleted: assessmentCompleted, isLoading: assessmentLoading } = useAssessment();
   const { colors, theme } = useTheme();
-  const { isRTL, language } = useLanguage();
-  const [showSplash, setShowSplash] = useState(true);
-  const router = useRouter();
+  const { isRTL } = useLanguage();
   const pathname = usePathname();
+  const router = useRouter();
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     if (isRTL) {
@@ -45,40 +42,45 @@ function AppContent() {
     }
   }, [isRTL]);
 
+  useEffect(() => {
+    if (authLoading || assessmentLoading || showSplash) return;
+    
+    if (!isAuthenticated) {
+      router.replace('/auth');
+    } else if (!assessmentCompleted) {
+      router.replace('/assessment');
+    }
+  }, [authLoading, assessmentLoading, isAuthenticated, assessmentCompleted, showSplash]);
+
   const handleSplashComplete = () => {
     setShowSplash(false);
-    // Hide the native splash screen when our custom splash completes
     SplashScreen.hideAsync();
-  };
-
-  const handleNavigate = (route: string) => {
-    router.push(route as any);
   };
 
   if (showSplash) {
     return <AppSplashScreen onComplete={handleSplashComplete} />;
   }
 
-  if (!isAuthenticated) {
-    return <AuthScreen />;
-  }
-
-  if (assessmentLoading) {
-    return <View style={[styles.container, { backgroundColor: colors.background }]} />;
-  }
-
-  if (!assessmentCompleted) {
-    return <AssessmentScreen onComplete={completeAssessment} />;
+  if (authLoading || assessmentLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
   }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+      <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="settings" />
+        <Stack.Screen name="auth" options={{ headerShown: false }} />
+        <Stack.Screen name="assessment" options={{ headerShown: false }} />
       </Stack>
-      <BottomNavBar currentRoute={pathname} onNavigate={handleNavigate} />
+      {isAuthenticated && assessmentCompleted && (
+        <BottomNavBar currentRoute={pathname} onNavigate={(r) => router.push(r as any)} />
+      )}
     </View>
   );
 }
@@ -93,24 +95,20 @@ export default function RootLayout() {
     Inter_700Bold,
   });
 
-  // Handle splash screen hiding when fonts are ready or if there's an error
   useEffect(() => {
     if (fontsLoaded || fontError) {
-      // Hide the native splash screen
       SplashScreen.hideAsync().catch(error => {
         console.warn('Error hiding splash screen:', error);
       });
     }
   }, [fontsLoaded, fontError]);
 
-  // Log any font loading errors
   useEffect(() => {
     if (fontError) {
       console.error('Font loading error:', fontError);
     }
   }, [fontError]);
 
-  // Show nothing while fonts are loading, but don't block if there's an error
   if (!fontsLoaded && !fontError) {
     return null;
   }

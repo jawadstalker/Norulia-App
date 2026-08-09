@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
+  useWindowDimensions,
   Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -12,8 +12,6 @@ import { ArrowLeft, Trophy, Zap } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Spacing, BorderRadius } from '../../constants/theme';
-
-const { width, height } = Dimensions.get('window');
 
 const PLAY_TOP_MARGIN = 110;
 const PLAY_BOTTOM_MARGIN = 40;
@@ -90,6 +88,8 @@ export default function LastSurvivalScreen() {
   const { colors } = useTheme();
   const { t, language, isRTL } = useLanguage();
   const router = useRouter();
+  // ابعاد واقعی صفحه‌ی نمایش دستگاه (نه اندازه‌ی پنجره‌ی مرورگر در وب)
+  const { width, height } = useWindowDimensions();
 
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -217,7 +217,7 @@ export default function LastSurvivalScreen() {
 
       objectTimers.current.set(id, timer);
     },
-    [removeObject]
+    [removeObject, width, height]
   );
 
   const handleObjectPress = useCallback(

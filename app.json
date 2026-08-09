@@ -35,13 +35,20 @@
       "favicon": "./assets/favicon.png"
     },
 
-    "plugins": [
-      "expo-router",
-      "expo-asset",
-      "expo-build-properties",
-      "expo-font",
-      "expo-web-browser"
-    ],
+ "plugins": [
+  [
+    "expo-build-properties",
+    {
+      "android": {
+        "ndkVersion": "27.3.13750724"
+      }
+    }
+  ],
+  "expo-router",
+  "expo-asset",
+  "expo-font",
+  "expo-web-browser"
+],
 
     "extra": {
       "router": {},

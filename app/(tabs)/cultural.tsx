@@ -34,7 +34,7 @@ const weeklyMovie = {
     'A visually beautiful journey about escaping routine, discovering courage, and finding meaning in everyday life.',
   reason:
     'This week’s selection is designed to inspire curiosity, reduce mental fatigue, and encourage a more positive perspective.',
-  poster: require('../../assets/movies/movie.jpg'),
+  poster: require('../../assets/movies/movie1.jpg'),
 };
 
 const recommendations = [
@@ -43,7 +43,7 @@ const recommendations = [
     title: 'Inside Out',
     genre: 'Animation • Family',
     rating: '8.1',
-    poster: require('../../assets/movies/movie.jpg'),
+    poster: require('../../assets/movies/movie2.jpg'),
   },
   {
     id: '2',

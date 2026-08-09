@@ -9,6 +9,10 @@ import { Brain, Sparkles } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 
+// روی گوشی‌های کوچیک (عرض کمتر از ۴۲۰) همه‌چیز جمع‌وجورتر میشه تا شلوغ نشه
+const scale = Math.max(0.7, Math.min(1, width / 420));
+const isSmallScreen = width < 380;
+
 interface SplashScreenProps {
   onComplete: () => void;
 }
@@ -19,9 +23,13 @@ const T_LOGO = 1750;
 const T_EXIT = 3150;
 const T_DONE = 3450;
 
-const PARTICLE_COUNT = 16;
-const RING_COUNT = 3;
-const AMBIENT_COUNT = 10;
+// تعداد ذرات/حلقه‌ها روی صفحه‌ی کوچیک کمتره
+const PARTICLE_COUNT = isSmallScreen ? 10 : 16;
+const RING_COUNT = isSmallScreen ? 2 : 3;
+const AMBIENT_COUNT = isSmallScreen ? 6 : 10;
+
+const BRAIN_SIZE = 150 * scale;
+const HALF_WIDTH = 75 * scale;
 
 // Taglines cycle in sync with the brain's core-light pulse (1400ms loop)
 const TAGLINES = ['Norulia App', 'Norulia AI', 'A Friend for Your Mind', 'Norulia Wellness'];
@@ -58,7 +66,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
     () =>
       Array.from({ length: PARTICLE_COUNT }).map((_, i) => {
         const angle = (i / PARTICLE_COUNT) * Math.PI * 2;
-        const distance = 110 + ((i * 37) % 60);
+        const distance = (110 + ((i * 37) % 60)) * scale;
         return {
           id: i,
           dx: Math.cos(angle) * distance,
@@ -74,7 +82,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
     () =>
       Array.from({ length: AMBIENT_COUNT }).map((_, i) => {
         const angle = (i / AMBIENT_COUNT) * Math.PI * 2;
-        const distance = 130 + ((i * 53) % 90);
+        const distance = (130 + ((i * 53) % 90)) * scale;
         return {
           id: i,
           x: Math.cos(angle) * distance,
@@ -92,7 +100,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         id: i,
         tilt: -30 + i * 30,
         speed: 5000 + i * 1800,
-        size: 190 + i * 34,
+        size: (190 + i * 34) * scale,
       })),
     []
   );
@@ -203,7 +211,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
             style={styles.particleWrap}
           >
             {p.isSpark ? (
-              <Sparkles size={14} color={colors.accent} />
+              <Sparkles size={14 * scale} color={colors.accent} />
             ) : (
               <View style={[styles.particleDot, { backgroundColor: colors.accent }]} />
             )}
@@ -228,28 +236,28 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         >
           <MotiView
             animate={{
-              translateX: brainOpen ? -34 : 0,
+              translateX: brainOpen ? -34 * scale : 0,
               rotateY: brainOpen ? '-38deg' : '0deg',
             }}
             transition={{ type: 'timing', duration: 500 }}
             style={[styles.halfMask, { transform: [{ perspective: 700 }] }]}
           >
-            <Brain size={150} color="#FFFFFF" strokeWidth={1.8} />
+            <Brain size={BRAIN_SIZE} color="#FFFFFF" strokeWidth={1.8} />
           </MotiView>
 
           <MotiView
             animate={{
-              translateX: brainOpen ? 34 : 0,
+              translateX: brainOpen ? 34 * scale : 0,
               rotateY: brainOpen ? '38deg' : '0deg',
             }}
             transition={{ type: 'timing', duration: 500 }}
             style={[styles.halfMask, styles.halfMaskRight, { transform: [{ perspective: 700 }] }]}
           >
             <Brain
-              size={150}
+              size={BRAIN_SIZE}
               color="#FFFFFF"
               strokeWidth={1.8}
-              style={styles.rightIconOffset}
+              style={{ marginLeft: -HALF_WIDTH }}
             />
           </MotiView>
 
@@ -325,16 +333,16 @@ const styles = StyleSheet.create({
   },
   glowBlob: {
     position: 'absolute',
-    width: 340,
-    height: 340,
-    borderRadius: 200,
+    width: 340 * scale,
+    height: 340 * scale,
+    borderRadius: 200 * scale,
     opacity: 0.7,
   },
   content: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 260,
-    height: 260,
+    width: 260 * scale,
+    height: 260 * scale,
   },
   ambientWrap: {
     position: 'absolute',
@@ -350,9 +358,9 @@ const styles = StyleSheet.create({
   },
   shockwave: {
     position: 'absolute',
-    width: 150,
-    height: 150,
-    borderRadius: 75,
+    width: 150 * scale,
+    height: 150 * scale,
+    borderRadius: 75 * scale,
     borderWidth: 2,
   },
   particleWrap: {
@@ -369,21 +377,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   halfMask: {
-    width: 75,
-    height: 150,
+    width: HALF_WIDTH,
+    height: BRAIN_SIZE,
     overflow: 'hidden',
   },
   halfMaskRight: {
     alignItems: 'flex-end',
   },
-  rightIconOffset: {
-    marginLeft: -75,
-  },
   coreLight: {
     position: 'absolute',
-    width: 26,
-    height: 90,
-    borderRadius: 13,
+    width: 26 * scale,
+    height: 90 * scale,
+    borderRadius: 13 * scale,
   },
   wordmark: {
     position: 'absolute',
@@ -391,7 +396,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 40,
+    fontSize: 40 * scale,
     fontWeight: '800',
     marginBottom: Spacing.sm,
     textShadowColor: 'rgba(167,139,250,0.5)',

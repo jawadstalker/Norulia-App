@@ -1,5 +1,12 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  ViewStyle,
+  TextStyle,
+} from 'react-native';
 import { MotiView } from 'moti';
 import { useTheme } from '../../context/ThemeContext';
 import { Spacing, BorderRadius } from '../../constants/theme';
@@ -77,21 +84,37 @@ export function Button({
   return (
     <MotiView
       from={{ scale: 1 }}
-      animate={{ scale: disabled ? 1 : 1 }}
+      animate={{ scale: disabled ? 0.98 : 1 }}
       transition={{ type: 'timing', duration: 100 }}
     >
       <TouchableOpacity
         onPress={onPress}
         disabled={disabled || loading}
         activeOpacity={0.8}
-        style={[getButtonStyle(), style]}
+        style={[
+          getButtonStyle(),
+          disabled && styles.disabled,
+          style,
+        ]}
       >
         {loading ? (
-          <ActivityIndicator color={variant === 'primary' ? '#FFFFFF' : colors.primary} />
+          <ActivityIndicator
+            color={variant === 'primary' ? '#FFFFFF' : colors.primary}
+          />
         ) : (
           <>
-            {icon && <>{icon}</>}
-            <Text style={[getTextStyle(), icon && { marginLeft: Spacing.sm }, textStyle]}>
+            {icon && (
+              <React.Fragment>
+                {icon}
+              </React.Fragment>
+            )}
+            <Text
+              style={[
+                getTextStyle(),
+                icon ? { marginLeft: Spacing.sm } : undefined,
+                textStyle,
+              ]}
+            >
               {title}
             </Text>
           </>
@@ -100,3 +123,9 @@ export function Button({
     </MotiView>
   );
 }
+
+const styles = StyleSheet.create({
+  disabled: {
+    opacity: 0.5,
+  },
+});

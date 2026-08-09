@@ -4,7 +4,8 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
+  ScrollView,
+  useWindowDimensions,
   Animated,
   LayoutChangeEvent,
 } from 'react-native';
@@ -14,8 +15,6 @@ import { ArrowLeft, Trophy, Zap, Clock } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Spacing, BorderRadius } from '../../constants/theme';
-
-const { width } = Dimensions.get('window');
 
 type ColorDef = {
   key: string;
@@ -67,6 +66,8 @@ type Particle = {
 };
 
 const PARTICLE_COUNT = 10;
+const GRID_HORIZONTAL_PADDING = Spacing.lg;
+const GRID_GAP = 12;
 
 function shuffle<T>(input: T[]): T[] {
   const arr = [...input];
@@ -81,6 +82,13 @@ export default function StroopTestScreen() {
   const { colors } = useTheme();
   const { t, language, isRTL } = useLanguage();
   const router = useRouter();
+  // ابعاد واقعی صفحه‌ی دستگاه؛ همیشه به‌روز است و با اندازه‌ی پنجره‌ی وب اشتباه گرفته نمی‌شود
+  const { width } = useWindowDimensions();
+
+  // اندازه‌ی دقیق هر مربع رنگ را خودمان محاسبه می‌کنیم به‌جای اتکا به ترکیب
+  // درصد + aspectRatio که روی برخی گوشی‌های اندروید در فریم اول درست رندر نمی‌شود
+  const swatchWidth = (width - GRID_HORIZONTAL_PADDING * 2 - GRID_GAP) / 2;
+  const swatchHeight = swatchWidth / 2.1;
 
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -334,7 +342,11 @@ export default function StroopTestScreen() {
 
   if (!playing && selectedLevel === null) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <TouchableOpacity
           onPress={() => router.back()}
           style={[
@@ -350,7 +362,10 @@ export default function StroopTestScreen() {
             color={colors.text}
             style={isRTL ? { transform: [{ scaleX: -1 }] } : {}}
           />
-          <Text style={[styles.backText, { color: colors.text, textAlign: textAlignStyle }]}>
+          <Text
+            allowFontScaling={false}
+            style={[styles.backText, { color: colors.text, textAlign: textAlignStyle }]}
+          >
             {t.back}
           </Text>
         </TouchableOpacity>
@@ -360,13 +375,16 @@ export default function StroopTestScreen() {
             <Zap size={32} color={colors.primary} />
           </View>
 
-          <Text style={[styles.title, { color: colors.text, textAlign: 'center' }]}>
+          <Text allowFontScaling={false} style={[styles.title, { color: colors.text, textAlign: 'center' }]}>
             {language === 'fa' ? 'استروپ دیجیتال' : 'Digital Stroop'}
           </Text>
         </View>
 
         <View style={[styles.instructionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.instructionTitle, { color: colors.text, textAlign: textAlignStyle }]}>
+          <Text
+            allowFontScaling={false}
+            style={[styles.instructionTitle, { color: colors.text, textAlign: textAlignStyle }]}
+          >
             {t.howToPlay || (language === 'fa' ? 'راهنما' : 'How to play')}
           </Text>
 
@@ -384,21 +402,24 @@ export default function StroopTestScreen() {
           ).map((line, i) => (
             <View key={i} style={[styles.instructionRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <View style={[styles.instructionDot, { backgroundColor: colors.primary }]} />
-              <Text style={[styles.instructionText, { color: colors.textSecondary, textAlign: textAlignStyle }]}>
+              <Text
+                allowFontScaling={false}
+                style={[styles.instructionText, { color: colors.textSecondary, textAlign: textAlignStyle }]}
+              >
                 {line}
               </Text>
             </View>
           ))}
 
           <View style={[styles.exampleBox, { borderColor: colors.border }]}>
-            <Text style={[styles.exampleWord, { color: '#3B82F6' }]}>
+            <Text allowFontScaling={false} style={[styles.exampleWord, { color: '#3B82F6' }]}>
               {language === 'fa' ? 'قرمز' : 'RED'}
             </Text>
-            <Text style={[styles.exampleArrow, { color: colors.textSecondary }]}>
+            <Text allowFontScaling={false} style={[styles.exampleArrow, { color: colors.textSecondary }]}>
               {isRTL ? '←' : '→'}
             </Text>
             <View style={[styles.exampleAnswer, { backgroundColor: '#3B82F6' }]}>
-              <Text style={styles.exampleAnswerText}>
+              <Text allowFontScaling={false} style={styles.exampleAnswerText}>
                 {language === 'fa' ? 'آبی' : 'BLUE'}
               </Text>
             </View>
@@ -421,14 +442,22 @@ export default function StroopTestScreen() {
               ]}
             >
               <View style={[styles.levelNumber, { backgroundColor: colors.primary }]}>
-                <Text style={styles.levelNumberText}>{index + 1}</Text>
+                <Text allowFontScaling={false} style={styles.levelNumberText}>
+                  {index + 1}
+                </Text>
               </View>
 
               <View style={isRTL ? styles.levelInfoRTL : styles.levelInfo}>
-                <Text style={[styles.levelTitle, { color: colors.text, textAlign: textAlignStyle }]}>
+                <Text
+                  allowFontScaling={false}
+                  style={[styles.levelTitle, { color: colors.text, textAlign: textAlignStyle }]}
+                >
                   {language === 'fa' ? item.nameFa : item.name}
                 </Text>
-                <Text style={[styles.levelDescription, { color: colors.textSecondary, textAlign: textAlignStyle }]}>
+                <Text
+                  allowFontScaling={false}
+                  style={[styles.levelDescription, { color: colors.textSecondary, textAlign: textAlignStyle }]}
+                >
                   {getLevelDescription(index)}
                 </Text>
               </View>
@@ -446,7 +475,7 @@ export default function StroopTestScreen() {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
@@ -459,18 +488,24 @@ export default function StroopTestScreen() {
     >
       <View style={[styles.gameHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <View style={styles.stat}>
-          <Text style={[styles.lifeIcon, { color: colors.error }]}>❤️</Text>
-          <Text style={[styles.statText, { color: colors.text }]}>{lives}</Text>
+          <Text allowFontScaling={false} style={[styles.lifeIcon, { color: colors.error }]}>
+            ❤️
+          </Text>
+          <Text allowFontScaling={false} style={[styles.statText, { color: colors.text }]}>
+            {lives}
+          </Text>
         </View>
 
         <View style={styles.stat}>
           <Trophy size={20} color={colors.warning} />
-          <Text style={[styles.statText, { color: colors.text }]}>{score}</Text>
+          <Text allowFontScaling={false} style={[styles.statText, { color: colors.text }]}>
+            {score}
+          </Text>
         </View>
 
         <View style={styles.stat}>
           <Clock size={18} color={colors.textSecondary} />
-          <Text style={[styles.statText, { color: colors.text }]}>
+          <Text allowFontScaling={false} style={[styles.statText, { color: colors.text }]}>
             {roundIndex + 1}/{level.totalRounds}
           </Text>
         </View>
@@ -484,6 +519,7 @@ export default function StroopTestScreen() {
 
       <View style={styles.wordArea}>
         <Animated.Text
+          allowFontScaling={false}
           style={[
             styles.wordText,
             { color: inkColor.hex, transform: [{ scale: wordScale }] },
@@ -501,7 +537,10 @@ export default function StroopTestScreen() {
             transition={{ type: 'timing', duration: 700 }}
             style={styles.popup}
           >
-            <Text style={[styles.popupText, { color: p.value > 0 ? '#22C55E' : '#EF4444' }]}>
+            <Text
+              allowFontScaling={false}
+              style={[styles.popupText, { color: p.value > 0 ? '#22C55E' : '#EF4444' }]}
+            >
               {p.value > 0 ? `+${p.value}` : `${p.value}`}
             </Text>
           </MotiView>
@@ -555,9 +594,18 @@ export default function StroopTestScreen() {
               activeOpacity={0.8}
               onLayout={recordLayout(option.key)}
               onPress={() => handleAnswer(option)}
-              style={[styles.swatch, { backgroundColor: option.hex }]}
+              style={[
+                styles.swatch,
+                {
+                  width: swatchWidth,
+                  height: swatchHeight,
+                  backgroundColor: option.hex,
+                },
+              ]}
             >
-              <Text style={styles.swatchLabel}>{colorName(option)}</Text>
+              <Text allowFontScaling={false} style={styles.swatchLabel}>
+                {colorName(option)}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -573,7 +621,10 @@ export default function StroopTestScreen() {
           <View style={[styles.resultCard, { backgroundColor: colors.surface }]}>
             <Trophy size={42} color={completed ? colors.success : colors.error} />
 
-            <Text style={[styles.resultTitle, { color: colors.text, textAlign: 'center' }]}>
+            <Text
+              allowFontScaling={false}
+              style={[styles.resultTitle, { color: colors.text, textAlign: 'center' }]}
+            >
               {completed
                 ? language === 'fa'
                   ? 'مرحله کامل شد!'
@@ -583,7 +634,10 @@ export default function StroopTestScreen() {
                 : 'Game Over'}
             </Text>
 
-            <Text style={[styles.finalScore, { color: colors.primary, textAlign: 'center' }]}>
+            <Text
+              allowFontScaling={false}
+              style={[styles.finalScore, { color: colors.primary, textAlign: 'center' }]}
+            >
               {score} {language === 'fa' ? 'امتیاز' : 'Points'}
             </Text>
 
@@ -591,7 +645,7 @@ export default function StroopTestScreen() {
               onPress={() => selectedLevel !== null && startGame(selectedLevel)}
               style={[styles.resultButton, { backgroundColor: colors.primary }]}
             >
-              <Text style={styles.resultButtonText}>
+              <Text allowFontScaling={false} style={styles.resultButtonText}>
                 {language === 'fa' ? 'دوباره بازی' : 'Play Again'}
               </Text>
             </TouchableOpacity>
@@ -604,7 +658,10 @@ export default function StroopTestScreen() {
               }}
               style={[styles.secondaryButton, { borderColor: colors.border }]}
             >
-              <Text style={[styles.secondaryButtonText, { color: colors.text, textAlign: 'center' }]}>
+              <Text
+                allowFontScaling={false}
+                style={[styles.secondaryButtonText, { color: colors.text, textAlign: 'center' }]}
+              >
                 {language === 'fa' ? 'انتخاب سطح' : 'Choose Level'}
               </Text>
             </TouchableOpacity>
@@ -618,7 +675,10 @@ export default function StroopTestScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
     padding: Spacing.lg,
+    paddingBottom: Spacing.xl * 2,
   },
   backButton: {
     alignItems: 'center',
@@ -805,12 +865,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   swatch: {
-    width: '48%',
-    aspectRatio: 2.1,
     borderRadius: BorderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: GRID_GAP,
     elevation: 6,
     shadowColor: '#000',
     shadowOpacity: 0.2,
