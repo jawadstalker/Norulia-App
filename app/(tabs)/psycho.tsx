@@ -116,6 +116,20 @@ const games = [
   },
   {
     id: '5',
+    category: 'psychological',
+    title: 'Word Puzzle',
+    titleFa: 'جمله بندی',
+    description: 'Enjoy a peaceful relaxing experience',
+    descriptionFa: 'یک تجربه آرام و لذت‌بخش را تجربه کنید',
+    image: require('../../assets/games/game8.png'),
+    level: 'Easy',
+    levelFa: 'آسان',
+    time: '10 min',
+    timeFa: '۱۰ دقیقه',
+    route: '/games/Word',
+  },
+  {
+    id: '6',
     category: 'stress',
     title: 'Relaxing Garden',
     titleFa: 'باغ آرامش',
@@ -129,7 +143,7 @@ const games = [
     route: '/games/Relaxe',
   },
   {
-    id: '6',
+    id: '10',
     category: 'adventure',
     title: 'Lost Island',
     titleFa: 'جزیره گمشده',
@@ -143,7 +157,7 @@ const games = [
     route: '/games/lost-island',
   },
   {
-    id: '7',
+    id: '11',
     category: 'adventure',
     title: 'Forest Adventure',
     titleFa: 'ماجراجویی در جنگل',
