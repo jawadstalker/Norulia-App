@@ -633,6 +633,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.xl,
   },
   header: {
+    paddingTop:40,
     marginBottom: Spacing.lg,
   },
   headerContent: {

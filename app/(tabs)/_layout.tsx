@@ -1,23 +1,55 @@
-import { Tabs } from 'expo-router';
-import { View } from 'react-native';
-import { useTheme } from '../../context/ThemeContext';
+import { Stack } from 'expo-router';
 
 export default function TabsLayout() {
-  const { colors } = useTheme();
-
   return (
-    <Tabs
+    <Stack
+      initialRouteName="index"
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { display: 'none' },
+        animation: 'fade',
       }}
     >
-      <Tabs.Screen name="index" />
-      <Tabs.Screen name="protocol" />
-      <Tabs.Screen name="assistant" />
-      <Tabs.Screen name="schedule" />
-      <Tabs.Screen name="profile" />
-      <Tabs.Screen name="medication" />
-    </Tabs>
+      <Stack.Screen
+        name="index"
+        options={{
+          headerShown: false,
+        }}
+      />
+
+      <Stack.Screen
+        name="protocol"
+        options={{
+          headerShown: false,
+        }}
+      />
+
+      <Stack.Screen
+        name="assistant"
+        options={{
+          headerShown: false,
+        }}
+      />
+
+      <Stack.Screen
+        name="schedule"
+        options={{
+          headerShown: false,
+        }}
+      />
+
+      <Stack.Screen
+        name="profile"
+        options={{
+          headerShown: false,
+        }}
+      />
+
+      <Stack.Screen
+        name="medication"
+        options={{
+          headerShown: false,
+        }}
+      />
+    </Stack>
   );
 }

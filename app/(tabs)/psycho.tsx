@@ -567,8 +567,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 20,
-    marginTop: Spacing.md,
+    marginTop: 60,
     marginLeft: Spacing.lg,
+    
   },
   backText: {
     marginLeft: 8,
