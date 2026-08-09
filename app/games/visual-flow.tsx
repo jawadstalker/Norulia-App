@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Dimensions, Alert, PanResponder } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Dimensions, PanResponder } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, CheckCircle, XCircle, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Palette, Target, Zap, BarChart3 } from 'lucide-react-native';
+import { ArrowLeft, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Palette, Target, Zap, BarChart3 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Spacing, BorderRadius } from '../../constants/theme';
@@ -43,6 +43,7 @@ export default function VisualFlowScreen() {
   const coherenceRef = useRef(0);
   const trialActiveRef = useRef(false);
   const gameEndedRef = useRef(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.94)).current;
@@ -54,20 +55,31 @@ export default function VisualFlowScreen() {
     back: language === 'fa' ? 'بازگشت' : 'Back',
     correct: language === 'fa' ? 'درسته! 🎉' : 'Correct! 🎉',
     wrong: language === 'fa' ? 'اشتباه!' : 'Wrong!',
-    exitTitle: language === 'fa' ? 'خروج از تست' : 'Exit Test',
-    exitMessage: language === 'fa' ? 'آیا از تست خارج می‌شوید؟' : 'Do you want to exit the test?',
-    confirm: language === 'fa' ? 'تایید' : 'Confirm',
-    cancel: language === 'fa' ? 'انصراف' : 'Cancel',
     restart: language === 'fa' ? 'شروع دوباره' : 'Restart',
     round: language === 'fa' ? 'دور' : 'Round',
     score: language === 'fa' ? 'امتیاز' : 'Score',
     difficulty: language === 'fa' ? 'سختی' : 'Difficulty',
-    games: language === 'fa' ? 'بازی' : 'game',
     correctAnswers: language === 'fa' ? 'پاسخ صحیح' : 'Correct answers',
     accuracy: language === 'fa' ? 'دقت' : 'Accuracy',
     reaction: language === 'fa' ? 'میانگین زمان واکنش' : 'Average reaction time',
     finalScore: language === 'fa' ? 'امتیاز نهایی' : 'Final score',
     finished: language === 'fa' ? '🎯 تست تمام شد!' : '🎯 Test completed!',
+  };
+
+  const goBack = () => {
+    if (animationRef.current !== null) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+
+    if (timeoutRef.current !== null) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    if (router.canGoBack()) {
+      router.back();
+    }
   };
 
   useEffect(() => {
@@ -81,33 +93,12 @@ export default function VisualFlowScreen() {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;
       }
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     };
   }, []);
-
-  const goBack = useCallback(() => {
-    if (animationRef.current !== null) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
-
-    trialActiveRef.current = false;
-    gameEndedRef.current = true;
-    setTrialActive(false);
-    setGameEnded(true);
-
-    router.push('/psycho');
-  }, [router]);
-
-  const showExitDialog = useCallback(() => {
-    Alert.alert(
-      t.exitTitle,
-      t.exitMessage,
-      [
-        { text: t.cancel, style: 'cancel' },
-        { text: t.confirm, style: 'destructive', onPress: goBack },
-      ]
-    );
-  }, [t, goBack]);
 
   const generateDots = useCallback((width: number, height: number) => {
     const newDots: Dot[] = [];
@@ -241,7 +232,7 @@ export default function VisualFlowScreen() {
       setInfoType('wrong');
     }
 
-    setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       if (!gameEndedRef.current) {
         if (trialCount >= TOTAL_TRIALS) {
           endGame();
@@ -249,17 +240,24 @@ export default function VisualFlowScreen() {
           startTrial();
         }
       }
+      timeoutRef.current = null;
     }, 800);
   }, [trialCount, t, language, startTrial, endGame]);
 
   useEffect(() => {
     if (trialActive && dots.length > 0) {
-      const timer = setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         const width = Dimensions.get('window').width - Spacing.lg * 2 - 28;
         const height = Math.min(width * 2 / 3, 280);
         animate(width, height);
+        timeoutRef.current = null;
       }, 0);
-      return () => clearTimeout(timer);
+      return () => {
+        if (timeoutRef.current !== null) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+      };
     }
   }, [trialActive, dots.length, animate]);
 
@@ -272,11 +270,12 @@ export default function VisualFlowScreen() {
     setScore(0);
     setResults([]);
 
-    setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       const width = Dimensions.get('window').width - Spacing.lg * 2 - 28;
       const height = Math.min(width * 2 / 3, 280);
       generateDots(width, height);
       startTrial();
+      timeoutRef.current = null;
     }, 300);
   };
 
@@ -284,6 +283,11 @@ export default function VisualFlowScreen() {
     if (animationRef.current !== null) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = null;
+    }
+
+    if (timeoutRef.current !== null) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
 
     gameEndedRef.current = false;
@@ -297,7 +301,7 @@ export default function VisualFlowScreen() {
     setInfo(language === 'fa' ? '👆 جهت حرکت دسته‌ی نقاط را تشخیص بده!' : '👆 Identify the direction of the moving dots!');
     setInfoType('normal');
 
-    setTimeout(startGame, 200);
+    timeoutRef.current = setTimeout(startGame, 200);
   };
 
   const showReport = () => {
@@ -307,16 +311,21 @@ export default function VisualFlowScreen() {
     const correctRT = results.filter(r => r.correct).map(r => r.rt);
     const avgRT = correctRT.length ? correctRT.reduce((a, b) => a + b, 0) / correctRT.length : 0;
 
-    Alert.alert(
-      language === 'fa' ? '📊 گزارش جریان بصری' : '📊 Visual Flow Report',
+    // استفاده از alert ساده
+    alert(
       `${t.correctAnswers}: ${corrects} / ${total}\n${t.accuracy}: ${accuracy.toFixed(1)}%\n${t.reaction}: ${avgRT.toFixed(0)}ms\n${t.finalScore}: ${score}`
     );
   };
 
   useEffect(() => {
     if (gameEnded && results.length >= TOTAL_TRIALS) {
-      const timer = setTimeout(showReport, 350);
-      return () => clearTimeout(timer);
+      timeoutRef.current = setTimeout(showReport, 350);
+      return () => {
+        if (timeoutRef.current !== null) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+      };
     }
   }, [gameEnded, results]);
 
@@ -345,8 +354,16 @@ export default function VisualFlowScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.tutorialHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          <TouchableOpacity onPress={showExitDialog} activeOpacity={0.8} style={[styles.iconButton, { backgroundColor: colors.surface }]}>
-            <ArrowLeft size={22} color={colors.text} style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined} />
+          <TouchableOpacity
+            onPress={goBack}
+            activeOpacity={0.8}
+            style={[styles.iconButton, { backgroundColor: colors.surface }]}
+          >
+            <ArrowLeft
+              size={22}
+              color={colors.text}
+              style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+            />
           </TouchableOpacity>
           <View style={styles.headerSpacer} />
         </View>
@@ -393,8 +410,16 @@ export default function VisualFlowScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-        <TouchableOpacity onPress={showExitDialog} activeOpacity={0.8} style={[styles.iconButton, { backgroundColor: colors.surface }]}>
-          <ArrowLeft size={22} color={colors.text} style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined} />
+        <TouchableOpacity
+          onPress={goBack}
+          activeOpacity={0.8}
+          style={[styles.iconButton, { backgroundColor: colors.surface }]}
+        >
+          <ArrowLeft
+            size={22}
+            color={colors.text}
+            style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+          />
         </TouchableOpacity>
 
         <View style={[styles.titleContainer, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
