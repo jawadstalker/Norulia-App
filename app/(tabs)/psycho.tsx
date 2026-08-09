@@ -30,11 +30,6 @@ import {
 
 import { Card } from '../../components/ui/Card';
 
-
-// ======================================================
-// دسته‌های بازی
-// ======================================================
-
 const categories = [
   {
     id: 'psychological',
@@ -62,233 +57,135 @@ const categories = [
   },
 ];
 
-
-// ======================================================
-// بازی‌های هر دسته
-// ======================================================
-
 const games = [
-  // ---------------- Psychological ----------------
-
   {
     id: '1',
     category: 'psychological',
-
     title: 'Memory Challenge',
     titleFa: 'چالش حافظه',
-
     description: 'Improve memory and cognitive skills',
     descriptionFa: 'بهبود حافظه و مهارت‌های شناختی',
-
     image: require('../../assets/games/game3.png'),
-
     level: 'Easy',
     levelFa: 'آسان',
-
     time: '5 min',
     timeFa: '۵ دقیقه',
-
     route: '/games/memory-challenge',
   },
-
   {
     id: '2',
     category: 'psychological',
-
     title: 'Last Survival',
     titleFa: 'آخرین بازمانده',
-
     description: 'Train attention and concentration',
     descriptionFa: 'تمرین توجه و تمرکز',
-
     image: require('../../assets/games/game2.png'),
-
     level: 'Medium',
     levelFa: 'متوسط',
-
     time: '10 min',
     timeFa: '۱۰ دقیقه',
-
     route: '/games/last-survival',
   },
-
   {
     id: '3',
     category: 'psychological',
-
     title: 'Reaction Test',
     titleFa: 'تست واکنش',
-
     description: 'Improve reaction speed',
     descriptionFa: 'بهبود سرعت واکنش',
-
     image: require('../../assets/games/game4.png'),
-
     level: 'Hard',
     levelFa: 'سخت',
-
     time: '7 min',
     timeFa: '۷ دقیقه',
-
     route: '/games/stroop',
   },
-
-
-  // ---------------- Anti Stress ----------------
-
   {
     id: '4',
     category: 'stress',
-
     title: 'Calm Breathing',
     titleFa: 'تنفس آرام',
-
     description: 'Relax with guided breathing',
     descriptionFa: 'با تمرین تنفس هدایت‌شده آرام شوید',
-
     image: require('../../assets/games/game3.png'),
-
     level: 'Easy',
     levelFa: 'آسان',
-
     time: '5 min',
     timeFa: '۵ دقیقه',
-
     route: '/games/calm-breathing',
   },
-
   {
     id: '5',
     category: 'stress',
-
     title: 'Relaxing Garden',
     titleFa: 'باغ آرامش',
-
     description: 'Enjoy a peaceful relaxing experience',
     descriptionFa: 'یک تجربه آرام و لذت‌بخش را تجربه کنید',
-
     image: require('../../assets/games/game2.png'),
-
     level: 'Easy',
     levelFa: 'آسان',
-
     time: '10 min',
     timeFa: '۱۰ دقیقه',
-
     route: '/games/relaxing-garden',
   },
-
-
-  // ---------------- Adventure ----------------
-
   {
     id: '6',
     category: 'adventure',
-
     title: 'Lost Island',
     titleFa: 'جزیره گمشده',
-
     description: 'Explore a mysterious island',
     descriptionFa: 'یک جزیره مرموز را کشف کنید',
-
     image: require('../../assets/games/game4.png'),
-
     level: 'Medium',
     levelFa: 'متوسط',
-
     time: '15 min',
     timeFa: '۱۵ دقیقه',
-
     route: '/games/lost-island',
   },
-
   {
     id: '7',
     category: 'adventure',
-
     title: 'Forest Adventure',
     titleFa: 'ماجراجویی در جنگل',
-
     description: 'Discover the secrets of the forest',
     descriptionFa: 'رازهای جنگل را کشف کنید',
-
     image: require('../../assets/games/game3.png'),
-
     level: 'Hard',
     levelFa: 'سخت',
-
     time: '20 min',
     timeFa: '۲۰ دقیقه',
-
     route: '/games/forest-adventure',
   },
 ];
-
-
-// ======================================================
-// صفحه اصلی
-// ======================================================
 
 export default function PsychoScreen() {
   const { colors } = useTheme();
   const { t, language, isRTL } = useLanguage();
   const router = useRouter();
 
-  // دسته انتخاب شده
-  const [selectedCategory, setSelectedCategory] =
-    useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-
-  // --------------------------------------------------
-  // متن‌ها
-  // --------------------------------------------------
-
-  const textAlignStyle = isRTL
-    ? 'right'
-    : 'left';
-
+  const textAlignStyle = isRTL ? 'right' : 'left';
 
   const getGameTitle = (game: typeof games[0]) => {
-    return language === 'fa'
-      ? game.titleFa
-      : game.title;
+    return language === 'fa' ? game.titleFa : game.title;
   };
-
 
   const getGameDescription = (game: typeof games[0]) => {
-    return language === 'fa'
-      ? game.descriptionFa
-      : game.description;
+    return language === 'fa' ? game.descriptionFa : game.description;
   };
-
 
   const getGameLevel = (game: typeof games[0]) => {
-    return language === 'fa'
-      ? game.levelFa
-      : game.level;
+    return language === 'fa' ? game.levelFa : game.level;
   };
-
 
   const getGameTime = (game: typeof games[0]) => {
-    return language === 'fa'
-      ? game.timeFa
-      : game.time;
+    return language === 'fa' ? game.timeFa : game.time;
   };
 
-
-  // --------------------------------------------------
-  // بازی‌های دسته انتخاب‌شده
-  // --------------------------------------------------
-
   const filteredGames = games.filter(
-    game =>
-      game.category === selectedCategory
+    game => game.category === selectedCategory
   );
-
-
-  // --------------------------------------------------
-  // تابع بازگشت
-  // --------------------------------------------------
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -298,37 +195,23 @@ export default function PsychoScreen() {
     }
   };
 
-
-  // ======================================================
-  // نمایش دسته‌ها
-  // ======================================================
-
   if (!selectedCategory) {
     return (
       <View
         style={[
           styles.container,
           {
-            backgroundColor:
-              colors.background,
+            backgroundColor: colors.background,
           },
         ]}
       >
-
-        {/* Back */}
-
         <TouchableOpacity
           onPress={handleBack}
           style={[
             styles.backButton,
             {
-              backgroundColor:
-                colors.surface,
-
-              flexDirection:
-                isRTL
-                  ? 'row-reverse'
-                  : 'row',
+              backgroundColor: colors.surface,
+              flexDirection: isRTL ? 'row-reverse' : 'row',
             },
           ]}
         >
@@ -347,16 +230,12 @@ export default function PsychoScreen() {
                 : {}
             }
           />
-
           <Text
             style={[
               styles.backText,
               {
-                color:
-                  colors.text,
-
-                textAlign:
-                  textAlignStyle,
+                color: colors.text,
+                textAlign: textAlignStyle,
               },
             ]}
           >
@@ -364,37 +243,26 @@ export default function PsychoScreen() {
           </Text>
         </TouchableOpacity>
 
-
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={
-            styles.content
-          }
+          contentContainerStyle={styles.content}
         >
-
-          {/* عنوان */}
-
           <Text
             style={[
               styles.title,
               {
-                color:
-                  colors.text,
+                color: colors.text,
               },
             ]}
           >
-            {language === 'fa'
-              ? 'بازی‌ها'
-              : 'Games'}
+            {language === 'fa' ? 'بازی‌ها' : 'Games'}
           </Text>
-
 
           <Text
             style={[
               styles.subtitle,
               {
-                color:
-                  colors.textSecondary,
+                color: colors.textSecondary,
               },
             ]}
           >
@@ -403,191 +271,117 @@ export default function PsychoScreen() {
               : 'Choose a game category'}
           </Text>
 
+          {categories.map(category => {
+            const Icon = category.icon;
 
-          {/* دسته‌ها */}
-
-          {categories.map(
-            category => {
-              const Icon =
-                category.icon;
-
-              return (
-                <TouchableOpacity
-                  key={category.id}
-                  activeOpacity={0.85}
-                  onPress={() =>
-                    setSelectedCategory(
-                      category.id
-                    )
-                  }
-                >
-
-                  <Card
-                    style={
-                      styles.categoryCard
-                    }
+            return (
+              <TouchableOpacity
+                key={category.id}
+                activeOpacity={0.85}
+                onPress={() => setSelectedCategory(category.id)}
+              >
+                <Card style={styles.categoryCard}>
+                  <View
+                    style={[
+                      styles.categoryIcon,
+                      {
+                        backgroundColor: colors.primary + '18',
+                      },
+                    ]}
                   >
+                    <Icon size={34} color={colors.primary} />
+                  </View>
 
-                    <View
+                  <View
+                    style={[
+                      styles.categoryInfo,
+                      {
+                        alignItems: isRTL ? 'flex-end' : 'flex-start',
+                      },
+                    ]}
+                  >
+                    <Text
                       style={[
-                        styles.categoryIcon,
+                        styles.categoryTitle,
                         {
-                          backgroundColor:
-                            colors.primary +
-                            '18',
+                          color: colors.text,
+                          textAlign: textAlignStyle,
                         },
                       ]}
                     >
+                      {language === 'fa' ? category.titleFa : category.title}
+                    </Text>
 
-                      <Icon
-                        size={34}
-                        color={
-                          colors.primary
-                        }
-                      />
-
-                    </View>
-
-
-                    <View
+                    <Text
                       style={[
-                        styles.categoryInfo,
+                        styles.categoryDescription,
                         {
-                          alignItems:
-                            isRTL
-                              ? 'flex-end'
-                              : 'flex-start',
+                          color: colors.textSecondary,
+                          textAlign: textAlignStyle,
                         },
                       ]}
                     >
+                      {language === 'fa' ? category.descriptionFa : category.description}
+                    </Text>
+                  </View>
 
-                      <Text
-                        style={[
-                          styles.categoryTitle,
-                          {
-                            color:
-                              colors.text,
-
-                            textAlign:
-                              textAlignStyle,
-                          },
-                        ]}
-                      >
-                        {language ===
-                        'fa'
-                          ? category.titleFa
-                          : category.title}
-                      </Text>
-
-
-                      <Text
-                        style={[
-                          styles.categoryDescription,
-                          {
-                            color:
-                              colors.textSecondary,
-
-                            textAlign:
-                              textAlignStyle,
-                          },
-                        ]}
-                      >
-                        {language ===
-                        'fa'
-                          ? category.descriptionFa
-                          : category.description}
-                      </Text>
-
-                    </View>
-
-
-                    <ChevronLeft
-                      size={22}
-                      color={
-                        colors.textSecondary
-                      }
-                      style={
-                        isRTL
-                          ? {
-                              transform: [
-                                {
-                                  rotate:
-                                    '180deg',
-                                },
-                              ],
-                            }
-                          : {}
-                      }
-                    />
-
-                  </Card>
-
-                </TouchableOpacity>
-              );
-            }
-          )}
-
+                  <ChevronLeft
+                    size={22}
+                    color={colors.textSecondary}
+                    style={
+                      isRTL
+                        ? {
+                            transform: [
+                              {
+                                rotate: '180deg',
+                              },
+                            ],
+                          }
+                        : {}
+                    }
+                  />
+                </Card>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       </View>
     );
   }
 
-
-  // ======================================================
-  // نمایش بازی‌های دسته انتخاب‌شده
-  // ======================================================
-
-  const selectedCategoryData =
-    categories.find(
-      category =>
-        category.id ===
-        selectedCategory
-    );
-
+  const selectedCategoryData = categories.find(
+    category => category.id === selectedCategory
+  );
 
   return (
     <View
       style={[
         styles.container,
         {
-          backgroundColor:
-            colors.background,
+          backgroundColor: colors.background,
         },
       ]}
     >
-
-      {/* Header */}
-
       <View
         style={[
           styles.gameHeader,
           {
-            flexDirection:
-              isRTL
-                ? 'row-reverse'
-                : 'row',
+            flexDirection: isRTL ? 'row-reverse' : 'row',
           },
         ]}
       >
-
         <TouchableOpacity
-          onPress={() =>
-            setSelectedCategory(null)
-          }
+          onPress={() => setSelectedCategory(null)}
           style={[
             styles.headerBackButton,
             {
-              backgroundColor:
-                colors.surface,
+              backgroundColor: colors.surface,
             },
           ]}
         >
-
           <ArrowLeft
             size={21}
-            color={
-              colors.text
-            }
+            color={colors.text}
             style={
               isRTL
                 ? {
@@ -600,31 +394,22 @@ export default function PsychoScreen() {
                 : {}
             }
           />
-
         </TouchableOpacity>
-
 
         <View
           style={[
             styles.headerTitleContainer,
             {
-              alignItems:
-                isRTL
-                  ? 'flex-end'
-                  : 'flex-start',
+              alignItems: isRTL ? 'flex-end' : 'flex-start',
             },
           ]}
         >
-
           <Text
             style={[
               styles.headerTitle,
               {
-                color:
-                  colors.text,
-
-                textAlign:
-                  textAlignStyle,
+                color: colors.text,
+                textAlign: textAlignStyle,
               },
             ]}
           >
@@ -637,415 +422,262 @@ export default function PsychoScreen() {
             style={[
               styles.headerSubtitle,
               {
-                color:
-                  colors.textSecondary,
-
-                textAlign:
-                  textAlignStyle,
+                color: colors.textSecondary,
+                textAlign: textAlignStyle,
               },
             ]}
           >
-            {filteredGames.length}{' '}
-            {language === 'fa'
-              ? 'بازی'
-              : 'games'}
+            {filteredGames.length} {language === 'fa' ? 'بازی' : 'games'}
           </Text>
-
         </View>
 
+        <TouchableOpacity
+          onPress={handleBack}
+          style={[
+            styles.headerBackButton,
+            {
+              backgroundColor: colors.surface,
+            },
+          ]}
+        >
+          <ArrowLeft
+            size={21}
+            color={colors.text}
+            style={
+              isRTL
+                ? {
+                    transform: [
+                      {
+                        scaleX: -1,
+                      },
+                    ],
+                  }
+                : {}
+            }
+          />
+        </TouchableOpacity>
       </View>
-
-
-      {/* Games */}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={
-          styles.content
-        }
+        contentContainerStyle={styles.content}
       >
+        {filteredGames.map(game => (
+          <Card key={game.id} style={styles.card}>
+            <Image
+              source={game.image}
+              style={styles.cover}
+              resizeMode="cover"
+            />
 
-        {filteredGames.map(
-          game => (
-            <Card
-              key={game.id}
-              style={styles.card}
-            >
+            <View style={styles.info}>
+              <Text
+                style={[
+                  styles.gameTitle,
+                  {
+                    color: colors.text,
+                    textAlign: textAlignStyle,
+                  },
+                ]}
+              >
+                {getGameTitle(game)}
+              </Text>
 
-              <Image
-                source={game.image}
-                style={styles.cover}
-                resizeMode="cover"
-              />
-
+              <Text
+                style={[
+                  styles.description,
+                  {
+                    color: colors.textSecondary,
+                    textAlign: textAlignStyle,
+                  },
+                ]}
+              >
+                {getGameDescription(game)}
+              </Text>
 
               <View
-                style={styles.info}
+                style={[
+                  styles.details,
+                  {
+                    flexDirection: isRTL ? 'row-reverse' : 'row',
+                  },
+                ]}
               >
-
-                <Text
-                  style={[
-                    styles.gameTitle,
-                    {
-                      color:
-                        colors.text,
-
-                      textAlign:
-                        textAlignStyle,
-                    },
-                  ]}
-                >
-                  {getGameTitle(game)}
-                </Text>
-
-
-                <Text
-                  style={[
-                    styles.description,
-                    {
-                      color:
-                        colors.textSecondary,
-
-                      textAlign:
-                        textAlignStyle,
-                    },
-                  ]}
-                >
-                  {getGameDescription(
-                    game
-                  )}
-                </Text>
-
-
-                <View
-                  style={[
-                    styles.details,
-                    {
-                      flexDirection:
-                        isRTL
-                          ? 'row-reverse'
-                          : 'row',
-                    },
-                  ]}
-                >
-
-                  <View
-                    style={
-                      styles.detailItem
-                    }
+                <View style={styles.detailItem}>
+                  <Brain size={16} color={colors.primary} />
+                  <Text
+                    style={[
+                      styles.detailText,
+                      {
+                        color: colors.textSecondary,
+                      },
+                    ]}
                   >
-
-                    <Brain
-                      size={16}
-                      color={
-                        colors.primary
-                      }
-                    />
-
-                    <Text
-                      style={[
-                        styles.detailText,
-                        {
-                          color:
-                            colors.textSecondary,
-                        },
-                      ]}
-                    >
-                      {getGameLevel(
-                        game
-                      )}
-                    </Text>
-
-                  </View>
-
-
-                  <View
-                    style={
-                      styles.detailItem
-                    }
-                  >
-
-                    <Clock
-                      size={16}
-                      color={
-                        colors.primary
-                      }
-                    />
-
-                    <Text
-                      style={[
-                        styles.detailText,
-                        {
-                          color:
-                            colors.textSecondary,
-                        },
-                      ]}
-                    >
-                      {getGameTime(
-                        game
-                      )}
-                    </Text>
-
-                  </View>
-
+                    {getGameLevel(game)}
+                  </Text>
                 </View>
 
-
-                <TouchableOpacity
-                  style={[
-                    styles.button,
-                    {
-                      backgroundColor:
-                        colors.primary,
-                    },
-                  ]}
-                  onPress={() =>
-                    router.replace(
-                      game.route as any
-                    )
-                  }
-                  activeOpacity={0.8}
-                >
-
+                <View style={styles.detailItem}>
+                  <Clock size={16} color={colors.primary} />
                   <Text
-                    style={
-                      styles.buttonText
-                    }
+                    style={[
+                      styles.detailText,
+                      {
+                        color: colors.textSecondary,
+                      },
+                    ]}
                   >
-                    {t.startGame}
+                    {getGameTime(game)}
                   </Text>
-
-                </TouchableOpacity>
-
+                </View>
               </View>
 
-            </Card>
-          )
-        )}
-
+              <TouchableOpacity
+                style={[
+                  styles.button,
+                  {
+                    backgroundColor: colors.primary,
+                  },
+                ]}
+                onPress={() => router.push(game.route as any)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.buttonText}>{t.startGame}</Text>
+              </TouchableOpacity>
+            </View>
+          </Card>
+        ))}
       </ScrollView>
-
     </View>
   );
 }
 
-
-// ======================================================
-// Styles
-// ======================================================
-
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
   },
-
   content: {
     paddingTop: 20,
-    paddingHorizontal:
-      Spacing.lg,
+    paddingHorizontal: Spacing.lg,
     paddingBottom: 100,
   },
-
   backButton: {
     alignItems: 'center',
-    alignSelf:
-      'flex-start',
-
+    alignSelf: 'flex-start',
     paddingHorizontal: 14,
     paddingVertical: 10,
-
     borderRadius: 20,
-
-    marginTop:
-      Spacing.md,
-
-    marginLeft:
-      Spacing.lg,
+    marginTop: Spacing.md,
+    marginLeft: Spacing.lg,
   },
-
   backText: {
     marginLeft: 8,
     fontSize: 15,
     fontWeight: '600',
   },
-
   title: {
     fontSize: 30,
     fontWeight: '800',
     textAlign: 'center',
     marginTop: Spacing.md,
   },
-
   subtitle: {
     fontSize: 15,
     textAlign: 'center',
     marginTop: 8,
-    marginBottom:
-      Spacing.lg,
+    marginBottom: Spacing.lg,
   },
-
-
-  // ------------------------------
-  // Category
-  // ------------------------------
-
   categoryCard: {
     minHeight: 120,
-
-    marginBottom:
-      Spacing.md,
-
-    padding:
-      Spacing.md,
-
-    flexDirection:
-      'row',
-
-    alignItems:
-      'center',
-
+    marginBottom: Spacing.md,
+    padding: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 14,
   },
-
   categoryIcon: {
     width: 64,
     height: 64,
-
     borderRadius: 20,
-
-    alignItems:
-      'center',
-
-    justifyContent:
-      'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-
   categoryInfo: {
     flex: 1,
   },
-
   categoryTitle: {
     fontSize: 19,
     fontWeight: '800',
   },
-
   categoryDescription: {
     fontSize: 13,
     marginTop: 5,
     lineHeight: 19,
   },
-
-
-  // ------------------------------
-  // Games
-  // ------------------------------
-
   gameHeader: {
-    paddingHorizontal:
-      Spacing.lg,
-
-    paddingTop:
-      Spacing.lg,
-
-    paddingBottom:
-      Spacing.md,
-
-    alignItems:
-      'center',
-
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
+    alignItems: 'center',
     gap: 12,
   },
-
   headerBackButton: {
     width: 42,
     height: 42,
-
     borderRadius: 21,
-
-    alignItems:
-      'center',
-
-    justifyContent:
-      'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-
   headerTitleContainer: {
     flex: 1,
   },
-
   headerTitle: {
     fontSize: 21,
     fontWeight: '800',
   },
-
   headerSubtitle: {
     fontSize: 12,
     marginTop: 3,
   },
-
   card: {
-    marginBottom:
-      Spacing.lg,
-
-    overflow:
-      'hidden',
+    marginBottom: Spacing.lg,
+    overflow: 'hidden',
   },
-
   cover: {
     width: '100%',
     height: 170,
   },
-
   info: {
-    padding:
-      Spacing.md,
+    padding: Spacing.md,
   },
-
   gameTitle: {
     fontSize: 20,
     fontWeight: '700',
   },
-
   description: {
     marginTop: 6,
     fontSize: 14,
   },
-
   details: {
-    marginTop:
-      Spacing.md,
+    marginTop: Spacing.md,
     gap: 20,
   },
-
   detailItem: {
-    flexDirection:
-      'row',
-    alignItems:
-      'center',
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 5,
   },
-
   detailText: {
     fontSize: 13,
   },
-
   button: {
-    marginTop:
-      Spacing.md,
-
+    marginTop: Spacing.md,
     paddingVertical: 12,
-
-    borderRadius:
-      BorderRadius.full,
-
-    alignItems:
-      'center',
+    borderRadius: BorderRadius.full,
+    alignItems: 'center',
   },
-
   buttonText: {
     color: '#fff',
     fontWeight: '700',
   },
-
 });

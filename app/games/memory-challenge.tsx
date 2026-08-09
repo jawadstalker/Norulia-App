@@ -206,6 +206,21 @@ export default function MemoryChallenge() {
     }
   }, [currentRound, gameStarted, gameFinished, selectedLevel]);
 
+  const handleBack = () => {
+    console.log('BACK PRESSED');
+    
+    if (gameStarted && !gameFinished) {
+      setGameStarted(false);
+      setGameFinished(false);
+    }
+    
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/psycho');
+    }
+  };
+
   const startGame = () => {
     setScore(0);
     setCorrectAnswers(0);
@@ -289,7 +304,7 @@ export default function MemoryChallenge() {
           contentContainerStyle={styles.content}
         >
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={handleBack}
             style={[
               styles.backButton, 
               { 
@@ -416,10 +431,7 @@ export default function MemoryChallenge() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => {
-              setGameStarted(false);
-              setGameFinished(false);
-            }}
+            onPress={handleBack}
             style={[styles.secondaryButton, { borderColor: colors.border }]}
           >
             <Text style={[styles.secondaryButtonText, { color: colors.text, textAlign: 'center' }]}>
@@ -438,13 +450,24 @@ export default function MemoryChallenge() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.gameHeader, { paddingTop: 50 }]}>
-        <TouchableOpacity onPress={() => setGameStarted(false)}>
-          <ArrowLeft size={24} color={colors.text} style={isRTL ? { transform: [{ scaleX: -1 }] } : {}} />
+        <TouchableOpacity
+          onPress={handleBack}
+          activeOpacity={0.7}
+          hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+          style={styles.gameBackButton}
+        >
+          <ArrowLeft
+            size={24}
+            color={colors.text}
+            style={isRTL ? { transform: [{ scaleX: -1 }] } : {}}
+          />
         </TouchableOpacity>
 
         <View style={styles.scoreContainer}>
           <Trophy size={20} color={colors.primary} />
-          <Text style={[styles.score, { color: colors.text }]}>{score}</Text>
+          <Text style={[styles.score, { color: colors.text }]}>
+            {score}
+          </Text>
         </View>
       </View>
 
@@ -581,6 +604,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  gameBackButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
   },
   scoreContainer: {
     flexDirection: 'row',
