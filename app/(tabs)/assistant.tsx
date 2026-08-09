@@ -1,35 +1,38 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TextInput, 
-  TouchableOpacity, 
-  KeyboardAvoidingView, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
   Platform,
   Image,
-  Dimensions
+  Dimensions,
 } from 'react-native';
-import { MotiView } from 'moti';
+import { MotiView, AnimatePresence } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Spacing, BorderRadius } from '../../constants/theme';
-import { 
-  Send, 
-  Mic, 
-  Brain, 
+import {
+  Send,
+  Mic,
+  Brain,
   Sparkles,
-  Heart,
   Activity,
   Pill,
   Calendar,
   FileText,
-  Plus
+  Plus,
+  ChevronDown,
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
+const MIN_TAP_TARGET = 44;
 
 interface Message {
   id: string;
@@ -47,21 +50,38 @@ const suggestions = [
 
 export default function AssistantScreen() {
   const { colors, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { t, isRTL, language } = useLanguage();
+  const insets = useSafeAreaInsets();
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [placeholderNotice, setPlaceholderNotice] = useState<string | null>(null);
+
   const scrollViewRef = useRef<ScrollView>(null);
+  const inputRef = useRef<TextInput>(null);
+  const isNearBottomRef = useRef(true);
+  const noticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getCurrentTime = () => {
     const now = new Date();
-    return now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    return now.toLocaleTimeString(language === 'fa' ? 'fa-IR' : 'en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const notifyLight = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   };
 
   const handleSend = (text?: string) => {
-    const messageText = text || inputText.trim();
+    const messageText = (text ?? inputText).trim();
     if (!messageText) return;
+
+    notifyLight();
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -70,40 +90,69 @@ export default function AssistantScreen() {
       timestamp: getCurrentTime(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInputText('');
     setIsTyping(true);
     setIsThinking(true);
 
     setTimeout(() => {
       const responses = [
-        t.breathingExercise || "I understand how you're feeling. Let's work through this together. Would you like to try a breathing exercise?",
-        t.mindfulnessSession || "That's a great question! Based on your cognitive patterns, I'd suggest a 5-minute mindfulness session.",
-        t.progressInsight || "I've analyzed your recent activities. You're making excellent progress! Keep up the great work.",
-        t.weeklyReport || "Let me think about that. Your cognitive health is improving steadily. Would you like to see your weekly report?",
-        "That's interesting. I notice you've been consistent with your medication schedule. Well done!",
+        t.breathingExercise,
+        t.mindfulnessSession,
+        t.progressInsight,
+        t.weeklyReport,
       ];
-      
+
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
         text: responses[Math.floor(Math.random() * responses.length)],
         isUser: false,
         timestamp: getCurrentTime(),
       };
-      
-      setMessages(prev => [...prev, botResponse]);
+
+      setMessages((prev) => [...prev, botResponse]);
       setIsTyping(false);
       setIsThinking(false);
     }, 1500 + Math.random() * 1000);
   };
 
+  const showComingSoon = (label: string) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+    if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
+    setPlaceholderNotice(label);
+    noticeTimeoutRef.current = setTimeout(() => setPlaceholderNotice(null), 1800);
+  };
+
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length > 0 && isNearBottomRef.current) {
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
     }
-  }, [messages]);
+  }, [messages, isTyping]);
+
+  useEffect(() => {
+    return () => {
+      if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
+    };
+  }, []);
+
+  const handleScroll = (e: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    const distanceFromBottom =
+      contentSize.height - contentOffset.y - layoutMeasurement.height;
+    const nearBottom = distanceFromBottom < 80;
+    isNearBottomRef.current = nearBottom;
+    setShowScrollToBottom(!nearBottom && messages.length > 0);
+  };
+
+  const scrollToBottom = () => {
+    notifyLight();
+    scrollViewRef.current?.scrollToEnd({ animated: true });
+  };
+
+  const rowDir = isRTL ? 'row-reverse' : 'row';
+  const reverseRowDir = isRTL ? 'row' : 'row-reverse';
 
   return (
     <LinearGradient
@@ -112,10 +161,9 @@ export default function AssistantScreen() {
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={[styles.container, { backgroundColor: 'transparent' }]}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+        style={[styles.container, { paddingTop: insets.top + Spacing.xs }]}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        {/* ===== HEADER ===== */}
         <MotiView
           from={{ opacity: 0, translateY: -30 }}
           animate={{ opacity: 1, translateY: 0 }}
@@ -123,344 +171,359 @@ export default function AssistantScreen() {
           style={styles.header}
         >
           <MotiView
-            animate={{
-              scale: [1, 1.05, 1],
-            }}
-            transition={{
-              loop: true,
-              duration: 2500,
-              type: 'timing',
-            }}
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ loop: true, duration: 2500, type: 'timing' }}
           >
-            <View style={[
-              styles.aiAvatar,
-              {
-                backgroundColor: colors.primary,
-                shadowColor: colors.primary,
-              }
-            ]}>
+            <View
+              style={[
+                styles.aiAvatar,
+                { backgroundColor: colors.primary, shadowColor: colors.primary },
+              ]}
+            >
               <View style={styles.glowRing} />
-              <Image
-                source={require('../../assets/avatars/model 2.jpg')}
-                style={styles.aiAvatarImage}
-              />
+              <Image source={require('../../assets/avatars/model 2.jpg')} style={styles.aiAvatarImage} />
             </View>
           </MotiView>
-          
+
           <Text style={[styles.aiName, { color: colors.text }]}>
-            {t.novaAI || 'Nova AI'} <Text style={styles.aiSparkle}>✨</Text>
+            {t.novaAI} <Text style={styles.aiSparkle}>✨</Text>
           </Text>
           <Text style={[styles.aiSubtitle, { color: colors.textSecondary }]}>
-            {t.cognitiveCompanion || 'Cognitive Companion'}
+            {t.cognitiveCompanion}
           </Text>
-          
-          <View style={styles.statusContainer}>
+
+          <View style={[styles.statusContainer, { flexDirection: rowDir }]}>
             <View style={[styles.statusDot, { backgroundColor: '#4ade80' }]} />
-            <Text style={[styles.statusText, { color: colors.textSecondary }]}>
-              {t.online || 'Online'}
-            </Text>
+            <Text style={[styles.statusText, { color: colors.textSecondary }]}>{t.online}</Text>
           </View>
         </MotiView>
 
-        {/* ===== MEMORY CARD ===== */}
         <MotiView
           from={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 150 }}
-          style={[styles.memoryCard, { 
-            backgroundColor: isDark ? 'rgba(99,102,241,0.12)' : 'rgba(99,102,241,0.06)',
-            borderColor: isDark ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.1)',
-          }]}
+          style={[
+            styles.memoryCard,
+            {
+              backgroundColor: isDark ? 'rgba(99,102,241,0.12)' : 'rgba(99,102,241,0.06)',
+              borderColor: isDark ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.1)',
+            },
+          ]}
         >
-          <View style={styles.memoryHeader}>
+          <View style={[styles.memoryHeader, { flexDirection: rowDir }]}>
             <Brain size={18} color={colors.primary} />
-            <Text style={[styles.memoryTitle, { color: colors.text }]}>
-              {t.memoryActive || 'Memory Active'}
+            <Text
+              style={[
+                styles.memoryTitle,
+                { color: colors.text, marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 },
+              ]}
+            >
+              {t.memoryActive}
             </Text>
           </View>
-          <View style={styles.memoryItems}>
-            <View style={styles.memoryItem}>
+          <View style={[styles.memoryItems, { flexDirection: rowDir }]}>
+            <View style={[styles.memoryItem, { flexDirection: rowDir }]}>
               <Text style={styles.memoryCheck}>✓</Text>
               <Text style={[styles.memoryText, { color: colors.textSecondary }]}>
-                {t.medicationData || 'Medication'}
+                {t.medicationData}
               </Text>
             </View>
-            <View style={styles.memoryItem}>
+            <View style={[styles.memoryItem, { flexDirection: rowDir }]}>
               <Text style={styles.memoryCheck}>✓</Text>
               <Text style={[styles.memoryText, { color: colors.textSecondary }]}>
-                {t.dailyGoals || 'Goals'}
+                {t.dailyGoals}
               </Text>
             </View>
-            <View style={styles.memoryItem}>
+            <View style={[styles.memoryItem, { flexDirection: rowDir }]}>
               <Text style={styles.memoryCheck}>✓</Text>
               <Text style={[styles.memoryText, { color: colors.textSecondary }]}>
-                {t.healthData || 'Health Data'}
+                {t.healthData}
               </Text>
             </View>
           </View>
         </MotiView>
 
-        {/* ===== MESSAGES ===== */}
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.messagesContainer}
-          contentContainerStyle={styles.messagesContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {messages.length === 0 && (
-            <MotiView
-              from={{ opacity: 0, translateY: 20 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ type: 'timing', duration: 500 }}
-              style={styles.welcomeContainer}
-            >
-              <Sparkles size={42} color={colors.primary} />
-              <Text style={[styles.welcomeTitle, { color: colors.text }]}>
-                {t.hello || 'Hello!'} 👋
-              </Text>
-              <Text style={[styles.welcomeText, { color: colors.textSecondary }]}>
-                {t.cognitiveCompanion || "I'm Nova, your cognitive health companion."}
-              </Text>
-              <Text style={[styles.welcomeSubtext, { color: colors.textTertiary }]}>
-                {t.howCanHelp || 'How can I support you today?'}
-              </Text>
+        <View style={{ flex: 1 }}>
+          <ScrollView
+            ref={scrollViewRef}
+            style={styles.messagesContainer}
+            contentContainerStyle={styles.messagesContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            onScroll={handleScroll}
+            scrollEventThrottle={100}
+          >
+            {messages.length === 0 && (
+              <MotiView
+                from={{ opacity: 0, translateY: 20 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ type: 'timing', duration: 500 }}
+                style={styles.welcomeContainer}
+              >
+                <Sparkles size={42} color={colors.primary} />
+                <Text style={[styles.welcomeTitle, { color: colors.text }]}>{t.hello} 👋</Text>
+                <Text style={[styles.welcomeText, { color: colors.textSecondary }]}>
+                  {t.cognitiveCompanion}
+                </Text>
+                <Text style={[styles.welcomeSubtext, { color: colors.textTertiary }]}>
+                  {t.howCanHelp}
+                </Text>
 
-              {/* ===== SUGGESTIONS GRID - 2 Columns 2 Rows ===== */}
-              <View style={styles.suggestionsGrid}>
-                {suggestions.map((suggestion, index) => {
-                  const labelText = t[suggestion.label as keyof typeof t] || suggestion.label;
-                  return (
-                    <MotiView
-                      key={index}
-                      from={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 80 }}
-                      style={styles.suggestionWrapper}
-                    >
-                      <TouchableOpacity
-                        style={[styles.suggestionButton, { 
-                          backgroundColor: isDark ? colors.surface : '#FFFFFF',
-                          borderColor: colors.border,
-                        }]}
-                        onPress={() => handleSend(labelText)}
+                <View style={styles.suggestionsGrid}>
+                  {suggestions.map((suggestion, index) => {
+                    const labelText = t[suggestion.label as keyof typeof t] || suggestion.label;
+                    return (
+                      <MotiView
+                        key={index}
+                        from={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 80 }}
+                        style={styles.suggestionWrapper}
                       >
-                        <View style={[styles.suggestionIconBg, { backgroundColor: suggestion.color + '15' }]}>
-                          <suggestion.icon size={24} color={suggestion.color} />
-                        </View>
-                        <Text style={[styles.suggestionLabel, { color: colors.text }]}>
-                          {labelText}
-                        </Text>
-                      </TouchableOpacity>
-                    </MotiView>
-                  );
-                })}
-              </View>
-            </MotiView>
-          )}
-
-          {messages.map((message, index) => (
-            <MotiView
-              key={message.id}
-              from={{
-                opacity: 0,
-                scale: 0.9,
-                translateY: 20,
-              }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-                translateY: 0,
-              }}
-              transition={{
-                type: 'spring',
-                damping: 20,
-                stiffness: 200,
-                delay: index === messages.length - 1 ? 100 : 0,
-              }}
-              style={[
-                styles.messageWrapper,
-                message.isUser ? styles.userWrapper : styles.botWrapper,
-              ]}
-            >
-              {!message.isUser && (
-                <View style={[styles.avatar, { backgroundColor: colors.surfaceSecondary }]}>
-                  <Image
-                    source={require('../../assets/avatars/model 2.jpg')}
-                    style={styles.avatarImage}
-                  />
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          accessibilityLabel={labelText}
+                          style={[
+                            styles.suggestionButton,
+                            { backgroundColor: isDark ? colors.surface : '#FFFFFF', borderColor: colors.border },
+                          ]}
+                          onPress={() => handleSend(labelText)}
+                        >
+                          <View style={[styles.suggestionIconBg, { backgroundColor: suggestion.color + '15' }]}>
+                            <suggestion.icon size={24} color={suggestion.color} />
+                          </View>
+                          <Text style={[styles.suggestionLabel, { color: colors.text }]}>
+                            {labelText}
+                          </Text>
+                        </TouchableOpacity>
+                      </MotiView>
+                    );
+                  })}
                 </View>
-              )}
+              </MotiView>
+            )}
 
-              <View style={{ maxWidth: '80%' }}>
+            {messages.map((message, index) => (
+              <MotiView
+                key={message.id}
+                from={{ opacity: 0, scale: 0.9, translateY: 20 }}
+                animate={{ opacity: 1, scale: 1, translateY: 0 }}
+                transition={{
+                  type: 'spring',
+                  damping: 20,
+                  stiffness: 200,
+                  delay: index === messages.length - 1 ? 100 : 0,
+                }}
+                style={[
+                  styles.messageWrapper,
+                  { flexDirection: message.isUser ? reverseRowDir : rowDir },
+                ]}
+              >
                 {!message.isUser && (
-                  <Text style={[styles.senderName, { color: colors.textSecondary }]}>
-                    {t.novaAI || 'Nova'}
-                  </Text>
+                  <View style={[styles.avatar, { backgroundColor: colors.surfaceSecondary }]}>
+                    <Image source={require('../../assets/avatars/model 2.jpg')} style={styles.avatarImage} />
+                  </View>
                 )}
-                
-                <View
-                  style={[
-                    styles.messageBubble,
-                    message.isUser ? styles.userBubble : styles.botBubble,
-                    {
-                      backgroundColor: message.isUser ? undefined : (isDark ? colors.surface : '#FFFFFF'),
-                      borderColor: message.isUser ? 'transparent' : colors.border,
-                      borderWidth: message.isUser ? 0 : 1,
-                    },
-                  ]}
-                >
-                  {message.isUser ? (
-                    <LinearGradient
-                      colors={[colors.primary, '#8B5CF6']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.gradientBubble}
+
+                <View style={{ maxWidth: '80%' }}>
+                  {!message.isUser && (
+                    <Text
+                      style={[
+                        styles.senderName,
+                        { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' },
+                      ]}
                     >
-                      <Text style={[styles.messageText, { color: '#FFFFFF' }]}>
-                        {message.text}
-                      </Text>
-                    </LinearGradient>
-                  ) : (
-                    <Text style={[styles.messageText, { color: colors.text }]}>
-                      {message.text}
+                      {t.novaAI}
                     </Text>
                   )}
-                </View>
-                <Text style={[styles.timestamp, { 
-                  color: colors.textTertiary,
-                  textAlign: message.isUser ? 'right' : 'left',
-                  marginHorizontal: message.isUser ? 0 : Spacing.sm,
-                }]}>
-                  {message.timestamp}
-                </Text>
-              </View>
 
-              {message.isUser && (
-                <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-                  <Text style={styles.userAvatarText}>You</Text>
+                  <View
+                    style={[
+                      styles.messageBubble,
+                      message.isUser
+                        ? isRTL
+                          ? styles.userBubbleRTL
+                          : styles.userBubbleLTR
+                        : isRTL
+                        ? styles.botBubbleRTL
+                        : styles.botBubbleLTR,
+                      {
+                        backgroundColor: message.isUser ? undefined : isDark ? colors.surface : '#FFFFFF',
+                        borderColor: message.isUser ? 'transparent' : colors.border,
+                        borderWidth: message.isUser ? 0 : 1,
+                      },
+                    ]}
+                  >
+                    {message.isUser ? (
+                      <LinearGradient
+                        colors={[colors.primary, '#8B5CF6']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={[styles.gradientBubble, isRTL ? styles.userBubbleRTL : styles.userBubbleLTR]}
+                      >
+                        <Text style={[styles.messageText, { color: '#FFFFFF', textAlign: isRTL ? 'right' : 'left' }]}>
+                          {message.text}
+                        </Text>
+                      </LinearGradient>
+                    ) : (
+                      <Text style={[styles.messageText, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
+                        {message.text}
+                      </Text>
+                    )}
+                  </View>
+                  <Text
+                    style={[
+                      styles.timestamp,
+                      {
+                        color: colors.textTertiary,
+                        textAlign: message.isUser ? (isRTL ? 'left' : 'right') : (isRTL ? 'right' : 'left'),
+                        marginHorizontal: message.isUser ? 0 : Spacing.sm,
+                      },
+                    ]}
+                  >
+                    {message.timestamp}
+                  </Text>
                 </View>
-              )}
-            </MotiView>
-          ))}
 
-          {/* ===== TYPING INDICATOR WITH EXPANDING AVATAR ===== */}
-          {isTyping && (
-            <MotiView
-              from={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              style={[styles.messageWrapper, styles.botWrapper]}
-            >
-              <View style={[styles.avatar, { backgroundColor: colors.surfaceSecondary }]}>
-                <MotiView
-                  animate={{
-                    scale: isThinking ? [1, 1.15, 1] : 1,
-                  }}
-                  transition={{
-                    loop: isThinking,
-                    duration: 1200,
-                    type: 'timing',
-                  }}
-                  style={styles.avatarContainer}
+                {message.isUser && (
+                  <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+                    <Text style={styles.userAvatarText}>{language === 'fa' ? 'شما' : 'You'}</Text>
+                  </View>
+                )}
+              </MotiView>
+            ))}
+
+            {isTyping && (
+              <MotiView
+                from={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={[styles.messageWrapper, { flexDirection: rowDir }]}
+              >
+                <View style={[styles.avatar, { backgroundColor: colors.surfaceSecondary }]}>
+                  <MotiView
+                    animate={{ scale: isThinking ? [1, 1.15, 1] : 1 }}
+                    transition={{ loop: isThinking, duration: 1200, type: 'timing' }}
+                    style={styles.avatarContainer}
+                  >
+                    <Image source={require('../../assets/avatars/model 2.jpg')} style={styles.avatarImage} />
+
+                    {isThinking && (
+                      <MotiView
+                        from={{ scale: 1, opacity: 0.6 }}
+                        animate={{ scale: 1.6, opacity: 0 }}
+                        transition={{ loop: true, duration: 1500, type: 'timing', repeatReverse: false }}
+                        style={[styles.expandingRing, { borderColor: colors.primary }]}
+                      />
+                    )}
+                    {isThinking && (
+                      <MotiView
+                        from={{ scale: 1, opacity: 0.4 }}
+                        animate={{ scale: 1.8, opacity: 0 }}
+                        transition={{ loop: true, duration: 1500, delay: 500, type: 'timing', repeatReverse: false }}
+                        style={[styles.expandingRing, { borderColor: colors.primary }]}
+                      />
+                    )}
+                  </MotiView>
+                </View>
+
+                <View style={[styles.typingWrapper, { flexDirection: rowDir }]}>
+                  <Text style={[styles.typingText, { color: colors.textSecondary }]}>
+                    {isThinking ? t.analyzing : t.thinking}
+                  </Text>
+                  <View style={[styles.typingDots, { flexDirection: rowDir }]}>
+                    {[0, 150, 300].map((delay, index) => (
+                      <MotiView
+                        key={index}
+                        from={{ opacity: 0.3, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ loop: true, duration: 600, delay, type: 'timing' }}
+                        style={[styles.typingDot, { backgroundColor: colors.primary }]}
+                      />
+                    ))}
+                  </View>
+                </View>
+              </MotiView>
+            )}
+          </ScrollView>
+
+          <AnimatePresence>
+            {showScrollToBottom && (
+              <MotiView
+                from={{ opacity: 0, translateY: 10, scale: 0.9 }}
+                animate={{ opacity: 1, translateY: 0, scale: 1 }}
+                exit={{ opacity: 0, translateY: 10, scale: 0.9 }}
+                transition={{ type: 'timing', duration: 200 }}
+                style={styles.scrollToBottomWrap}
+              >
+                <TouchableOpacity
+                  onPress={scrollToBottom}
+                  accessibilityRole="button"
+                  accessibilityLabel={language === 'fa' ? 'رفتن به آخرین پیام' : 'Go to latest message'}
+                  style={[styles.scrollToBottomButton, { backgroundColor: colors.primary }]}
                 >
-                  <Image
-                    source={require('../../assets/avatars/model 2.jpg')}
-                    style={styles.avatarImage}
-                  />
-                  
-                  {/* ===== EXPANDING RING OUTSIDE AVATAR ===== */}
-                  {isThinking && (
-                    <MotiView
-                      from={{ 
-                        scale: 1,
-                        opacity: 0.6,
-                      }}
-                      animate={{ 
-                        scale: 1.6,
-                        opacity: 0,
-                      }}
-                      transition={{
-                        loop: true,
-                        duration: 1500,
-                        type: 'timing',
-                        repeatReverse: false,
-                      }}
-                      style={[styles.expandingRing, { borderColor: colors.primary }]}
-                    />
-                  )}
-                  
-                  {/* ===== SECOND EXPANDING RING ===== */}
-                  {isThinking && (
-                    <MotiView
-                      from={{ 
-                        scale: 1,
-                        opacity: 0.4,
-                      }}
-                      animate={{ 
-                        scale: 1.8,
-                        opacity: 0,
-                      }}
-                      transition={{
-                        loop: true,
-                        duration: 1500,
-                        delay: 500,
-                        type: 'timing',
-                        repeatReverse: false,
-                      }}
-                      style={[styles.expandingRing, { borderColor: colors.primary }]}
-                    />
-                  )}
-                </MotiView>
-              </View>
-              
-              <View style={styles.typingWrapper}>
-                <Text style={[styles.typingText, { color: colors.textSecondary }]}>
-                  {isThinking ? (t.analyzing || 'Nova is thinking') : (t.thinking || 'Typing')}
-                </Text>
-                <View style={styles.typingDots}>
-                  {[0, 150, 300].map((delay, index) => (
-                    <MotiView
-                      key={index}
-                      from={{ opacity: 0.3, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{
-                        loop: true,
-                        duration: 600,
-                        delay: delay,
-                        type: 'timing',
-                      }}
-                      style={[styles.typingDot, { backgroundColor: colors.primary }]}
-                    />
-                  ))}
-                </View>
-              </View>
-            </MotiView>
-          )}
-        </ScrollView>
+                  <ChevronDown size={20} color="#FFFFFF" />
+                </TouchableOpacity>
+              </MotiView>
+            )}
+          </AnimatePresence>
 
-        {/* ===== INPUT ===== */}
+          <AnimatePresence>
+            {placeholderNotice && (
+              <MotiView
+                from={{ opacity: 0, translateY: 8 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                exit={{ opacity: 0, translateY: 8 }}
+                transition={{ type: 'timing', duration: 200 }}
+                style={[styles.noticeToast, { backgroundColor: isDark ? colors.surface : '#1F2937' }]}
+              >
+                <Text style={styles.noticeToastText}>{placeholderNotice}</Text>
+              </MotiView>
+            )}
+          </AnimatePresence>
+        </View>
+
         <MotiView
           from={{ opacity: 0, translateY: 20 }}
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ delay: 200 }}
-          style={[styles.inputContainer, {
-            backgroundColor: isDark ? 'rgba(24,24,27,0.95)' : 'rgba(255,255,255,0.95)',
-            borderColor: colors.border,
-          }]}
+          style={[
+            styles.inputContainer,
+            {
+              flexDirection: rowDir,
+              backgroundColor: isDark ? 'rgba(24,24,27,0.95)' : 'rgba(255,255,255,0.95)',
+              borderColor: colors.border,
+              marginBottom: insets.bottom > 0 ? insets.bottom : Spacing.sm,
+            },
+          ]}
         >
-          <TouchableOpacity style={styles.menuButton}>
+          <TouchableOpacity
+            style={styles.menuButton}
+            accessibilityRole="button"
+            accessibilityLabel={language === 'fa' ? 'پیوست فایل' : 'Attach file'}
+            onPress={() => showComingSoon(language === 'fa' ? 'این قابلیت به‌زودی اضافه می‌شود' : 'Coming soon')}
+          >
             <Plus size={22} color={colors.textTertiary} />
           </TouchableOpacity>
 
           <TextInput
-            style={[styles.input, { color: colors.text }]}
+            ref={inputRef}
+            style={[styles.input, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}
             value={inputText}
             onChangeText={setInputText}
-            placeholder={t.askNova || 'Ask Nova...'}
+            placeholder={t.askNova}
             placeholderTextColor={colors.textTertiary}
             multiline
+            returnKeyType="send"
+            blurOnSubmit={false}
+            onSubmitEditing={() => handleSend()}
           />
 
-          <TouchableOpacity style={styles.voiceButton}>
+          <TouchableOpacity
+            style={styles.voiceButton}
+            accessibilityRole="button"
+            accessibilityLabel={language === 'fa' ? 'ورودی صوتی' : 'Voice input'}
+            onPress={() => showComingSoon(language === 'fa' ? 'ورودی صوتی به‌زودی اضافه می‌شود' : 'Voice input coming soon')}
+          >
             <Mic size={22} color={colors.textTertiary} />
           </TouchableOpacity>
 
@@ -472,12 +535,15 @@ export default function AssistantScreen() {
           >
             <TouchableOpacity
               onPress={() => handleSend()}
-              style={[styles.sendButton, { 
-                backgroundColor: inputText.trim().length > 0 ? colors.primary : colors.border 
-              }]}
+              accessibilityRole="button"
+              accessibilityLabel={language === 'fa' ? 'ارسال' : 'Send'}
+              style={[
+                styles.sendButton,
+                { backgroundColor: inputText.trim().length > 0 ? colors.primary : colors.border },
+              ]}
               disabled={!inputText.trim()}
             >
-              <Send size={18} color="#FFFFFF" />
+              <Send size={18} color="#FFFFFF" style={isRTL ? styles.sendIconRTL : undefined} />
             </TouchableOpacity>
           </MotiView>
         </MotiView>
@@ -487,18 +553,12 @@ export default function AssistantScreen() {
 }
 
 const styles = StyleSheet.create({
-  gradientContainer: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    paddingTop: 50,
-  },
+  gradientContainer: { flex: 1 },
+  container: { flex: 1 },
 
-  // ===== HEADER =====
   header: {
     alignItems: 'center',
-    paddingTop: Spacing.md,
+    paddingTop: 50,
     paddingBottom: Spacing.sm,
   },
   aiAvatar: {
@@ -512,11 +572,7 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
   },
-  aiAvatarImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-  },
+  aiAvatarImage: { width: 64, height: 64, borderRadius: 32 },
   glowRing: {
     position: 'absolute',
     width: 76,
@@ -525,93 +581,24 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(99, 102, 241, 0.15)',
   },
-  aiName: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginTop: Spacing.sm,
-  },
-  aiSparkle: {
-    fontSize: 18,
-  },
-  aiSubtitle: {
-    fontSize: 13,
-    fontWeight: '400',
-    marginTop: 2,
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '400',
-  },
+  aiName: { fontSize: 22, fontWeight: '700', marginTop: Spacing.sm },
+  aiSparkle: { fontSize: 18 },
+  aiSubtitle: { fontSize: 13, fontWeight: '400', marginTop: 2 },
+  statusContainer: { alignItems: 'center', marginTop: 4 },
+  statusDot: { width: 6, height: 6, borderRadius: 3, marginHorizontal: 6 },
+  statusText: { fontSize: 12, fontWeight: '400' },
 
-  // ===== MEMORY CARD =====
-  memoryCard: {
-    padding: 14,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginBottom: Spacing.md,
-  },
-  memoryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  memoryTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  memoryItems: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  memoryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  memoryCheck: {
-    fontSize: 12,
-    color: '#4ADE80',
-    marginRight: 4,
-  },
-  memoryText: {
-    fontSize: 12,
-    fontWeight: '400',
-  },
+  memoryCard: { padding: 14, borderRadius: 20, borderWidth: 1, marginBottom: Spacing.md },
+  memoryHeader: { alignItems: 'center', marginBottom: 8 },
+  memoryTitle: { fontSize: 13, fontWeight: '600' },
+  memoryItems: { flexWrap: 'wrap', gap: 12 },
+  memoryItem: { alignItems: 'center', gap: 4 },
+  memoryCheck: { fontSize: 12, color: '#4ADE80' },
+  memoryText: { fontSize: 12, fontWeight: '400' },
 
-  // ===== MESSAGES =====
-  messagesContainer: {
-    flex: 1,
-  },
-  messagesContent: {
-    paddingBottom: Spacing.md,
-  },
-  messageWrapper: {
-    flexDirection: 'row',
-    marginBottom: Spacing.md,
-    alignItems: 'flex-start',
-  },
-  userWrapper: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'flex-start',
-    marginLeft: 40,
-  },
-  botWrapper: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    marginRight: 40,
-  },
+  messagesContainer: { flex: 1 },
+  messagesContent: { paddingBottom: Spacing.md },
+  messageWrapper: { marginBottom: Spacing.md, alignItems: 'flex-start' },
   avatar: {
     width: 32,
     height: 32,
@@ -620,27 +607,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginHorizontal: Spacing.sm,
   },
-  avatarContainer: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
-  userAvatarText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  senderName: {
-    fontSize: 11,
-    fontWeight: '500',
-    marginLeft: 4,
-    marginBottom: 4,
-  },
+  avatarContainer: { position: 'relative', alignItems: 'center', justifyContent: 'center' },
+  avatarImage: { width: 32, height: 32, borderRadius: 16 },
+  userAvatarText: { color: '#FFFFFF', fontSize: 10, fontWeight: '600' },
+  senderName: { fontSize: 11, fontWeight: '500', marginBottom: 4, marginHorizontal: 4 },
   messageBubble: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -651,90 +621,53 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  userBubble: {
-    borderTopRightRadius: 6,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    overflow: 'hidden',
-  },
-  botBubble: {
-    borderTopLeftRadius: 6,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  gradientBubble: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
-    borderTopRightRadius: 6,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  messageText: {
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  timestamp: {
-    fontSize: 10,
-    marginTop: 4,
-    opacity: 0.6,
-  },
+  userBubbleLTR: { borderTopRightRadius: 6, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, overflow: 'hidden' },
+  userBubbleRTL: { borderTopLeftRadius: 6, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, overflow: 'hidden' },
+  botBubbleLTR: { borderTopLeftRadius: 6, borderBottomLeftRadius: 20, borderBottomRightRadius: 20 },
+  botBubbleRTL: { borderTopRightRadius: 6, borderBottomLeftRadius: 20, borderBottomRightRadius: 20 },
+  gradientBubble: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 20 },
+  messageText: { fontSize: 15, lineHeight: 22 },
+  timestamp: { fontSize: 10, marginTop: 4, opacity: 0.6 },
 
-  // ===== TYPING =====
-  typingWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    paddingLeft: 4,
-  },
-  typingText: {
-    fontSize: 13,
-    marginRight: 8,
-  },
-  typingDots: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  typingDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginHorizontal: 2,
-  },
-  
-  // ===== EXPANDING RING =====
-  expandingRing: {
+  typingWrapper: { alignItems: 'center', paddingHorizontal: 4 },
+  typingText: { fontSize: 13, marginHorizontal: 8 },
+  typingDots: { alignItems: 'center' },
+  typingDot: { width: 6, height: 6, borderRadius: 3, marginHorizontal: 2 },
+  expandingRing: { position: 'absolute', width: 32, height: 32, borderRadius: 16, borderWidth: 2 },
+
+  scrollToBottomWrap: {
     position: 'absolute',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2,
+    bottom: Spacing.md,
+    alignSelf: 'center',
   },
-
-  // ===== WELCOME =====
-  welcomeContainer: {
+  scrollToBottomButton: {
+    width: MIN_TAP_TARGET,
+    height: MIN_TAP_TARGET,
+    borderRadius: MIN_TAP_TARGET / 2,
     alignItems: 'center',
-    paddingVertical: Spacing.xl,
-    paddingHorizontal: Spacing.lg,
-  },
-  welcomeTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginTop: Spacing.md,
-    marginBottom: Spacing.xs,
-  },
-  welcomeText: {
-    fontSize: 16,
-    fontWeight: '400',
-    textAlign: 'center',
-  },
-  welcomeSubtext: {
-    fontSize: 14,
-    marginTop: 4,
-    textAlign: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
   },
 
-  // ===== SUGGESTIONS GRID - 2 Columns 2 Rows =====
+  noticeToast: {
+    position: 'absolute',
+    bottom: Spacing.md,
+    alignSelf: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+  },
+  noticeToastText: { color: '#FFFFFF', fontSize: 12, fontWeight: '500' },
+
+  welcomeContainer: { alignItems: 'center', paddingVertical: Spacing.xl, paddingHorizontal: Spacing.lg },
+  welcomeTitle: { fontSize: 28, fontWeight: '700', marginTop: Spacing.md, marginBottom: Spacing.xs },
+  welcomeText: { fontSize: 16, fontWeight: '400', textAlign: 'center' },
+  welcomeSubtext: { fontSize: 14, marginTop: 4, textAlign: 'center' },
+
   suggestionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -743,10 +676,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 4,
   },
-  suggestionWrapper: {
-    width: '48%',
-    marginBottom: 10,
-  },
+  suggestionWrapper: { width: '48%', marginBottom: 10 },
   suggestionButton: {
     height: 80,
     padding: 14,
@@ -763,20 +693,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 6,
   },
-  suggestionLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
+  suggestionLabel: { fontSize: 13, fontWeight: '500' },
 
-  // ===== INPUT =====
   inputContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.sm,
     paddingVertical: 4,
     borderRadius: 24,
     borderWidth: 1,
-    marginVertical: Spacing.sm,
+    marginTop: Spacing.sm,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
@@ -784,29 +709,24 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   menuButton: {
-    width: 40,
-    height: 40,
+    width: MIN_TAP_TARGET,
+    height: MIN_TAP_TARGET,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    paddingVertical: 8,
-    maxHeight: 100,
-    minHeight: 40,
-  },
+  input: { flex: 1, fontSize: 15, paddingVertical: 8, maxHeight: 100, minHeight: 40 },
   voiceButton: {
-    width: 40,
-    height: 40,
+    width: MIN_TAP_TARGET,
+    height: MIN_TAP_TARGET,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: MIN_TAP_TARGET,
+    height: MIN_TAP_TARGET,
+    borderRadius: MIN_TAP_TARGET / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  sendIconRTL: { transform: [{ scaleX: -1 }] },
 });
