@@ -25,7 +25,7 @@ import {
   Moon,
   Sparkles,
 } from 'lucide-react-native';
-import { Spacing } from '../../constants/theme';
+import { Spacing, BorderRadius } from '../../constants/theme';
 import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
@@ -41,9 +41,9 @@ interface Event {
   color: string;
 }
 
-/* -------------------------------------------------------------------------- */
-/* Persian Date                                                               */
-/* -------------------------------------------------------------------------- */
+/* ==========================================================================
+   Persian Date
+   ========================================================================== */
 
 function toPersianDate(
   date: Date
@@ -170,9 +170,9 @@ function getPersianMonthName(month: number): string {
   return monthNames[month - 1] || '';
 }
 
-/* -------------------------------------------------------------------------- */
-/* Persian Digits                                                             */
-/* -------------------------------------------------------------------------- */
+/* ==========================================================================
+   Persian Digits
+   ========================================================================== */
 
 function toPersianDigits(value: string | number): string {
   const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
@@ -188,9 +188,9 @@ function toPersianDigits(value: string | number): string {
     .join('');
 }
 
-/* -------------------------------------------------------------------------- */
-/* Screen                                                                     */
-/* -------------------------------------------------------------------------- */
+/* ==========================================================================
+   Screen
+   ========================================================================== */
 
 export default function ScheduleScreen() {
   const { colors, isDark } = useTheme();
@@ -242,9 +242,9 @@ export default function ScheduleScreen() {
 
   const [isFabOpen, setIsFabOpen] = useState(false);
 
-  /* ------------------------------------------------------------------------ */
-  /* Events                                                                   */
-  /* ------------------------------------------------------------------------ */
+  /* ==========================================================================
+     Events
+     ========================================================================== */
 
   const toggleCompletion = (id: string) => {
     setEvents((prev) =>
@@ -262,9 +262,9 @@ export default function ScheduleScreen() {
   const completedCount = events.filter((event) => event.completed).length;
   const totalCount = events.length;
 
-  /* ------------------------------------------------------------------------ */
-  /* Greeting                                                                 */
-  /* ------------------------------------------------------------------------ */
+  /* ==========================================================================
+     Greeting
+     ========================================================================== */
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -280,9 +280,9 @@ export default function ScheduleScreen() {
     return t.goodEvening || 'Good evening';
   };
 
-  /* ------------------------------------------------------------------------ */
-  /* Date                                                                      */
-  /* ------------------------------------------------------------------------ */
+  /* ==========================================================================
+     Date
+     ========================================================================== */
 
   const getDateDisplay = () => {
     const now = new Date();
@@ -306,9 +306,9 @@ export default function ScheduleScreen() {
     });
   };
 
-  /* ------------------------------------------------------------------------ */
-  /* FAB                                                                       */
-  /* ------------------------------------------------------------------------ */
+  /* ==========================================================================
+     FAB
+     ========================================================================== */
 
   const fabOptions = [
     {
@@ -335,9 +335,9 @@ export default function ScheduleScreen() {
     router.navigate(route as any);
   };
 
-  /* ------------------------------------------------------------------------ */
-  /* Render                                                                    */
-  /* ------------------------------------------------------------------------ */
+  /* ==========================================================================
+     Render
+     ========================================================================== */
 
   return (
     <LinearGradient
@@ -352,9 +352,10 @@ export default function ScheduleScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* ------------------------------------------------------------------ */}
-        {/* Header                                                             */}
-        {/* ------------------------------------------------------------------ */}
+        {/* ==================================================================
+            Hero Avatar Card
+            دقیقاً با ساختار کارت Profile
+            ================================================================== */}
 
         <MotiView
           from={{
@@ -369,76 +370,126 @@ export default function ScheduleScreen() {
             type: 'timing',
             duration: 500,
           }}
-          style={styles.header}
+          style={styles.heroWrapper}
         >
-          <MotiView
-            from={{
-              scale: 0.8,
-              opacity: 0,
-            }}
-            animate={{
-              scale: 1,
-              opacity: 1,
-            }}
-            transition={{
-              type: 'spring',
-              damping: 12,
-            }}
+          <LinearGradient
+            colors={[
+              colors.primary,
+              colors.accent || colors.primary,
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
             style={[
-              styles.avatarContainer,
+              styles.hero,
               {
-                backgroundColor: colors.primary,
+                borderColor: 'rgba(255,255,255,0.18)',
               },
             ]}
           >
-            <Image
-              source={require('../../assets/avatars/model3.png')}
-              style={styles.avatar}
+            {/* Decorative blobs - همان Profile */}
+
+            <View
+              style={[
+                styles.heroBlobA,
+                {
+                  backgroundColor: '#FFFFFF',
+                },
+              ]}
             />
-          </MotiView>
 
-          <Text
-            style={[
-              styles.greeting,
-              {
-                color: colors.textSecondary,
-              },
-              isRTL && styles.textRTL,
-            ]}
-          >
-            {getGreeting()}, Alex
-          </Text>
+            <View
+              style={[
+                styles.heroBlobB,
+                {
+                  backgroundColor: '#FFFFFF',
+                },
+              ]}
+            />
 
-          <Text
-            style={[
-              styles.title,
-              {
-                color: colors.text,
-              },
-              isRTL && styles.textRTL,
-            ]}
-          >
-            {t.dailyPlanner || 'Daily Planner AI'}
-          </Text>
+            {/* Avatar */}
 
-          <Text
-            style={[
-              styles.subtitle,
-              {
-                color: colors.textTertiary,
-              },
-              isRTL && styles.textRTL,
-            ]}
-          >
-            {t.activitiesToday || 'You have'}{' '}
-            {toPersianDigits(totalCount - completedCount)}{' '}
-            {t.activitiesToday?.toLowerCase() || 'activities today'}
-          </Text>
+            <MotiView
+              from={{
+                opacity: 0,
+                scale: 0.85,
+                translateY: 12,
+              }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                translateY: 0,
+              }}
+              transition={{
+                type: 'spring',
+                damping: 14,
+                stiffness: 140,
+              }}
+            >
+              <View style={styles.avatarContainer}>
+                <Image
+                  source={require('../../assets/avatars/model3.png')}
+                  style={styles.avatar}
+                />
+              </View>
+            </MotiView>
+
+            {/* Greeting */}
+
+            <MotiView
+              from={{
+                opacity: 0,
+                translateY: 10,
+              }}
+              animate={{
+                opacity: 1,
+                translateY: 0,
+              }}
+              transition={{
+                type: 'timing',
+                duration: 450,
+                delay: 120,
+              }}
+            >
+              <Text
+                style={[
+                  styles.greeting,
+                  isRTL && styles.textRTL,
+                ]}
+              >
+                {getGreeting()}, Alex
+              </Text>
+
+              <Text
+                style={[
+                  styles.title,
+                  isRTL && styles.textRTL,
+                ]}
+              >
+                {t.dailyPlanner || 'Daily Planner AI'}
+              </Text>
+
+              <Text
+                style={[
+                  styles.subtitle,
+                  isRTL && styles.textRTL,
+                ]}
+              >
+                {t.activitiesToday || 'You have'}{' '}
+                {isRTL
+                  ? toPersianDigits(
+                      totalCount - completedCount
+                    )
+                  : totalCount - completedCount}{' '}
+                {t.activitiesToday?.toLowerCase() ||
+                  'activities today'}
+              </Text>
+            </MotiView>
+          </LinearGradient>
         </MotiView>
 
-        {/* ------------------------------------------------------------------ */}
-        {/* Date Card                                                          */}
-        {/* ------------------------------------------------------------------ */}
+        {/* ==================================================================
+            Date Card
+            ================================================================== */}
 
         <MotiView
           from={{
@@ -483,7 +534,8 @@ export default function ScheduleScreen() {
                 <View
                   style={[
                     styles.dateTextContainer,
-                    isRTL && styles.dateTextContainerRTL,
+                    isRTL &&
+                      styles.dateTextContainerRTL,
                   ]}
                 >
                   <Text
@@ -527,8 +579,13 @@ export default function ScheduleScreen() {
                     },
                   ]}
                 >
-                  {toPersianDigits(completedCount)}/
-                  {toPersianDigits(totalCount)}
+                  {isRTL
+                    ? toPersianDigits(completedCount)
+                    : completedCount}
+                  /
+                  {isRTL
+                    ? toPersianDigits(totalCount)
+                    : totalCount}
                 </Text>
               </MotiView>
             </View>
@@ -541,7 +598,9 @@ export default function ScheduleScreen() {
                 animate={{
                   width: `${
                     totalCount > 0
-                      ? (completedCount / totalCount) * 100
+                      ? (completedCount /
+                          totalCount) *
+                        100
                       : 0
                   }%`,
                 }}
@@ -553,7 +612,8 @@ export default function ScheduleScreen() {
                 style={[
                   styles.progressBar,
                   {
-                    backgroundColor: colors.primary,
+                    backgroundColor:
+                      colors.primary,
                   },
                 ]}
               />
@@ -561,9 +621,9 @@ export default function ScheduleScreen() {
           </Card>
         </MotiView>
 
-        {/* ------------------------------------------------------------------ */}
-        {/* Timeline                                                           */}
-        {/* ------------------------------------------------------------------ */}
+        {/* ==================================================================
+            Timeline
+            ================================================================== */}
 
         <View
           style={[
@@ -596,56 +656,76 @@ export default function ScheduleScreen() {
                 <View
                   style={[
                     styles.timelineItem,
-                    isRTL && styles.timelineItemRTL,
+                    isRTL &&
+                      styles.timelineItemRTL,
                   ]}
                 >
                   {/* Timeline Line */}
+
                   {index < events.length - 1 && (
                     <View
                       style={[
                         styles.timelineLine,
                         {
-                          backgroundColor: colors.border,
+                          backgroundColor:
+                            colors.border,
                         },
-                        isRTL && styles.timelineLineRTL,
+                        isRTL &&
+                          styles.timelineLineRTL,
                       ]}
                     />
                   )}
 
                   {/* Timeline Dot */}
+
                   <View
                     style={[
                       styles.timelineDot,
                       {
-                        backgroundColor: event.color,
+                        backgroundColor:
+                          event.color,
                       },
-                      isRTL && styles.timelineDotRTL,
+                      isRTL &&
+                        styles.timelineDotRTL,
                     ]}
                   />
 
                   {/* Event Card */}
+
                   <Card
                     style={{
                       ...styles.eventCard,
                       backgroundColor: isDark
                         ? colors.surface
                         : '#ffffff',
-                      borderLeftColor: event.completed
-                        ? '#10B981'
-                        : event.color,
-                      borderLeftWidth: isRTL ? 0 : 4,
-                      borderRightWidth: isRTL ? 4 : 0,
+
+                      borderLeftColor:
+                        event.completed
+                          ? '#10B981'
+                          : event.color,
+
+                      borderLeftWidth:
+                        isRTL ? 0 : 4,
+
+                      borderRightWidth:
+                        isRTL ? 4 : 0,
+
                       borderRightColor: isRTL
                         ? event.completed
                           ? '#10B981'
                           : event.color
                         : 'transparent',
-                      opacity: event.completed ? 0.8 : 1,
+
+                      opacity: event.completed
+                        ? 0.8
+                        : 1,
                     }}
                   >
                     <TouchableOpacity
                       onPress={() =>
-                        toggleCompletion(event.id)
+                        toggleCompletion(
+                          event.id
+                        )
                       }
                       style={[
                         styles.eventContent,
@@ -655,12 +735,14 @@ export default function ScheduleScreen() {
                       activeOpacity={0.7}
                     >
                       {/* Event Icon */}
+
                       <View
                         style={[
                           styles.eventIconContainer,
                           {
                             backgroundColor:
-                              event.color + '20',
+                              event.color +
+                              '20',
                           },
                           isRTL &&
                             styles.eventIconContainerRTL,
@@ -673,6 +755,7 @@ export default function ScheduleScreen() {
                       </View>
 
                       {/* Event Text */}
+
                       <View
                         style={[
                           styles.eventTextContainer,
@@ -680,9 +763,7 @@ export default function ScheduleScreen() {
                             styles.eventTextContainerRTL,
                         ]}
                       >
-                        {/* -------------------------------------------------- */}
-                        {/* Event Header                                        */}
-                        {/* -------------------------------------------------- */}
+                        {/* Event Header */}
 
                         <View
                           style={[
@@ -696,7 +777,8 @@ export default function ScheduleScreen() {
                             style={[
                               styles.eventTitle,
                               {
-                                color: colors.text,
+                                color:
+                                  colors.text,
                                 textDecorationLine:
                                   event.completed
                                     ? 'line-through'
@@ -709,7 +791,8 @@ export default function ScheduleScreen() {
                             {event.title}
                           </Text>
 
-                          {/* Status Icon Wrapper */}
+                          {/* Status Icon */}
+
                           <View
                             style={[
                               styles.eventStatusIcon,
@@ -746,9 +829,7 @@ export default function ScheduleScreen() {
                           </View>
                         </View>
 
-                        {/* -------------------------------------------------- */}
-                        {/* Event Details                                       */}
-                        {/* -------------------------------------------------- */}
+                        {/* Event Details */}
 
                         <View
                           style={[
@@ -759,7 +840,9 @@ export default function ScheduleScreen() {
                         >
                           <Clock
                             size={14}
-                            color={colors.textTertiary}
+                            color={
+                              colors.textTertiary
+                            }
                           />
 
                           <Text
@@ -780,9 +863,7 @@ export default function ScheduleScreen() {
                           </Text>
                         </View>
 
-                        {/* -------------------------------------------------- */}
-                        {/* Category                                            */}
-                        {/* -------------------------------------------------- */}
+                        {/* Category */}
 
                         <View
                           style={[
@@ -815,9 +896,9 @@ export default function ScheduleScreen() {
         </View>
       </ScrollView>
 
-      {/* -------------------------------------------------------------------- */}
-      {/* FAB Menu                                                             */}
-      {/* -------------------------------------------------------------------- */}
+      {/* ====================================================================
+          FAB Menu
+          ==================================================================== */}
 
       <AnimatePresence>
         {isFabOpen && (
@@ -870,18 +951,22 @@ export default function ScheduleScreen() {
                     onPress={() => {
                       setIsFabOpen(false);
 
-                      if (option.id === 'task') {
+                      if (
+                        option.id === 'task'
+                      ) {
                         handleNavigate(
                           '/schedule/add'
                         );
                       } else if (
-                        option.id === 'medication'
+                        option.id ===
+                        'medication'
                       ) {
                         handleNavigate(
                           '/medication/add'
                         );
                       } else if (
-                        option.id === 'consultation'
+                        option.id ===
+                        'consultation'
                       ) {
                         handleNavigate(
                           '/consultation/add'
@@ -901,7 +986,8 @@ export default function ScheduleScreen() {
                       {
                         color: '#FFFFFF',
                       },
-                      isRTL && styles.textRTL,
+                      isRTL &&
+                        styles.textRTL,
                     ]}
                   >
                     {option.label}
@@ -913,9 +999,9 @@ export default function ScheduleScreen() {
         )}
       </AnimatePresence>
 
-      {/* -------------------------------------------------------------------- */}
-      {/* FAB                                                                   */}
-      {/* -------------------------------------------------------------------- */}
+      {/* ====================================================================
+          FAB
+          ==================================================================== */}
 
       <TouchableOpacity
         style={[
@@ -951,9 +1037,9 @@ export default function ScheduleScreen() {
   );
 }
 
-/* ========================================================================== */
-/* Styles                                                                     */
-/* ========================================================================== */
+/* ==========================================================================
+   Styles
+   ========================================================================== */
 
 const styles = StyleSheet.create({
   container: {
@@ -961,64 +1047,146 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    paddingTop: 80,
+    paddingTop: Spacing.lg,
     paddingHorizontal: Spacing.lg,
     paddingBottom: 160,
   },
 
-  /* ------------------------------------------------------------------------ */
-  /* Header                                                                   */
-  /* ------------------------------------------------------------------------ */
+  /* ==========================================================================
+     Hero Card
+     ========================================================================== */
 
-  header: {
-    alignItems: 'center',
+  heroWrapper: {
+    width: '100%',
     marginBottom: Spacing.lg,
   },
 
-  avatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    overflow: 'hidden',
+  hero: {
+    width: '100%',
+    minHeight: 290,
+
+    paddingTop: 42,
+    paddingBottom: 36,
+
     alignItems: 'center',
     justifyContent: 'center',
+
+    borderRadius: 32,
+
+    borderWidth: 1,
+
+    overflow: 'hidden',
+
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+
+  /*
+   * دقیقاً مشابه Profile
+   */
+
+  heroBlobA: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    opacity: 0.08,
+    top: -60,
+    right: -40,
+  },
+
+  heroBlobB: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    opacity: 0.08,
+    bottom: -30,
+    left: -30,
+  },
+
+  /* ==========================================================================
+     Avatar
+     ========================================================================== */
+
+  /*
+   * مهم:
+   * دیگر هیچ کارت، حلقه یا Border دور Avatar وجود ندارد.
+   * Avatar مستقیماً داخل Hero Card قرار گرفته است.
+   */
+
+  avatarContainer: {
+    width: 120,
+    height: 120,
+
+    borderRadius: 60,
+
+    overflow: 'hidden',
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    backgroundColor: 'rgba(255,255,255,0.16)',
+
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.20,
+    shadowRadius: 16,
+    elevation: 8,
+
     marginBottom: Spacing.sm,
   },
 
   avatar: {
-    width: 100,
-    height: 100,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
   },
+
+  /* ==========================================================================
+     Hero Text
+     ========================================================================== */
 
   greeting: {
     fontSize: 14,
     fontWeight: '500',
-    marginTop: Spacing.xs,
+    color: 'rgba(255,255,255,0.75)',
+    textAlign: 'center',
+    marginTop: Spacing.sm,
   },
 
   title: {
     fontSize: 28,
     fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'center',
     marginTop: Spacing.xs,
   },
 
   subtitle: {
     fontSize: 14,
+    color: 'rgba(255,255,255,0.75)',
+    textAlign: 'center',
     marginTop: Spacing.xs,
   },
-
-  /* ------------------------------------------------------------------------ */
-  /* RTL Text                                                                 */
-  /* ------------------------------------------------------------------------ */
 
   textRTL: {
     writingDirection: 'rtl',
     textAlign: 'right',
   },
 
-  /* ------------------------------------------------------------------------ */
-  /* Date Card                                                                */
-  /* ------------------------------------------------------------------------ */
+  /* ==========================================================================
+     Date Card
+     ========================================================================== */
 
   dateCard: {
     marginBottom: Spacing.lg,
@@ -1090,9 +1258,9 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
 
-  /* ------------------------------------------------------------------------ */
-  /* Timeline                                                                 */
-  /* ------------------------------------------------------------------------ */
+  /* ==========================================================================
+     Timeline
+     ========================================================================== */
 
   timeline: {
     paddingTop: Spacing.sm,
@@ -1143,9 +1311,9 @@ const styles = StyleSheet.create({
     right: 0,
   },
 
-  /* ------------------------------------------------------------------------ */
-  /* Event Card                                                               */
-  /* ------------------------------------------------------------------------ */
+  /* ==========================================================================
+     Event Card
+     ========================================================================== */
 
   eventCard: {
     marginLeft: Spacing.md,
@@ -1166,9 +1334,12 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
+
     alignItems: 'center',
     justifyContent: 'center',
+
     marginRight: Spacing.md,
+
     flexShrink: 0,
   },
 
@@ -1177,9 +1348,9 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.md,
   },
 
-  /* ------------------------------------------------------------------------ */
-  /* Event Text                                                               */
-  /* ------------------------------------------------------------------------ */
+  /* ==========================================================================
+     Event Text
+     ========================================================================== */
 
   eventTextContainer: {
     flex: 1,
@@ -1190,9 +1361,9 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
   },
 
-  /* ------------------------------------------------------------------------ */
-  /* Event Header                                                             */
-  /* ------------------------------------------------------------------------ */
+  /* ==========================================================================
+     Event Header
+     ========================================================================== */
 
   eventHeader: {
     flexDirection: 'row',
@@ -1205,23 +1376,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
   },
 
+  /*
+   * عنوان فضای قابل انعطاف می‌گیرد.
+   * این باعث می‌شود متن فارسی به تیک نچسبد.
+   */
+
   eventTitle: {
     flex: 1,
     minWidth: 0,
+
     fontSize: 16,
     fontWeight: '600',
     lineHeight: 23,
+
+    paddingHorizontal: 0,
   },
 
   /*
-   * مهم:
-   * فاصله تیک از متن دیگر با margin روی eventTitle کنترل نمی‌شود.
-   * این wrapper باعث می‌شود در RTL و LTR فاصله همیشه ثابت بماند.
+   * فاصله تیک از متن به صورت مستقل کنترل می‌شود.
+   * بنابراین در RTL هم تیک به متن نمی‌چسبد.
    */
 
   eventStatusIcon: {
+    width: 28,
+    height: 28,
+
     marginLeft: Spacing.md,
+
     flexShrink: 0,
+
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1231,9 +1414,9 @@ const styles = StyleSheet.create({
     marginRight: Spacing.md,
   },
 
-  /* ------------------------------------------------------------------------ */
-  /* Event Details                                                            */
-  /* ------------------------------------------------------------------------ */
+  /* ==========================================================================
+     Event Details
+     ========================================================================== */
 
   eventDetails: {
     flexDirection: 'row',
@@ -1256,9 +1439,9 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
 
-  /* ------------------------------------------------------------------------ */
-  /* Event Category                                                           */
-  /* ------------------------------------------------------------------------ */
+  /* ==========================================================================
+     Category
+     ========================================================================== */
 
   eventCategory: {
     marginTop: 4,
@@ -1272,19 +1455,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
-  /* ------------------------------------------------------------------------ */
-  /* FAB                                                                      */
-  /* ------------------------------------------------------------------------ */
+  /* ==========================================================================
+     FAB
+     ========================================================================== */
 
   fab: {
     position: 'absolute',
+
     bottom: 30,
     right: 30,
+
     width: 60,
     height: 60,
+
     borderRadius: 30,
+
     alignItems: 'center',
     justifyContent: 'center',
+
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -1292,7 +1480,9 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 8,
+
     elevation: 6,
+
     zIndex: 10,
   },
 
@@ -1303,22 +1493,29 @@ const styles = StyleSheet.create({
 
   fabMenu: {
     position: 'absolute',
+
     bottom: 100,
     right: 20,
+
     alignItems: 'flex-end',
+
     zIndex: 5,
   },
 
   fabMenuRTL: {
     right: 'auto',
     left: 20,
+
     alignItems: 'flex-start',
   },
 
   fabOption: {
     alignItems: 'center',
+
     marginBottom: 12,
+
     flexDirection: 'row',
+
     gap: 8,
   },
 
@@ -1329,9 +1526,12 @@ const styles = StyleSheet.create({
   fabOptionButton: {
     width: 50,
     height: 50,
+
     borderRadius: 25,
+
     alignItems: 'center',
     justifyContent: 'center',
+
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -1339,16 +1539,21 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 4,
+
     elevation: 4,
   },
 
   fabOptionLabel: {
     fontSize: 14,
     fontWeight: '500',
+
     backgroundColor: 'rgba(0,0,0,0.7)',
+
     paddingHorizontal: 12,
     paddingVertical: 4,
+
     borderRadius: 8,
+
     overflow: 'hidden',
   },
 });

@@ -64,8 +64,11 @@ const recommendations = [
 
 export default function CulturalScreen() {
   const { colors, isDark } = useTheme();
-  const { t, isRTL } = useLanguage(); // اضافه کردن isRTL
+  const { t, isRTL } = useLanguage();
   const router = useRouter();
+
+  const textAlign = isRTL ? 'right' : 'left';
+  const rowDirection = isRTL ? 'row-reverse' : 'row';
 
   return (
     <LinearGradient
@@ -76,68 +79,143 @@ export default function CulturalScreen() {
       }
       style={styles.container}
     >
-      {/* Back Button */}
-      <TouchableOpacity
-        onPress={() => router.back()}
-        style={[
-          styles.backButton,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-            flexDirection: isRTL ? 'row-reverse' : 'row',
-          },
-        ]}
-      >
-        <ArrowLeft
-          size={22}
-          color={colors.text}
-          style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-        />
-        <Text style={[styles.backText, { color: colors.text, marginLeft: isRTL ? 0 : 6, marginRight: isRTL ? 6 : 0 }]}>
-          {t.back || 'Back'}
-        </Text>
-      </TouchableOpacity>
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        {/* Header */}
+        {/* ============================================================= */}
+        {/* HEADER                                                         */}
+        {/* ============================================================= */}
+
         <MotiView
-          from={{ opacity: 0, translateY: -20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ duration: 500 }}
+          from={{
+            opacity: 0,
+            translateY: -15,
+          }}
+          animate={{
+            opacity: 1,
+            translateY: 0,
+          }}
+          transition={{
+            type: 'timing',
+            duration: 450,
+          }}
+          style={styles.header}
         >
-          <View style={[styles.header, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <View style={{ alignItems: isRTL ? 'flex-end' : 'flex-start' }}>
-              <View style={[styles.titleRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                <Film size={22} color={colors.primary} />
-                <Text style={[styles.title, { color: colors.text, marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }]}>
+          <View
+            style={[
+              styles.headerRow,
+              {
+                flexDirection: rowDirection,
+              },
+            ]}
+          >
+            {/* Title */}
+            <View
+              style={[
+                styles.headerTextContainer,
+                {
+                  alignItems: isRTL ? 'flex-end' : 'flex-start',
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.titleRow,
+                  {
+                    flexDirection: rowDirection,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.titleIconContainer,
+                    {
+                      backgroundColor: isDark
+                        ? 'rgba(167,139,250,0.15)'
+                        : 'rgba(124,58,237,0.10)',
+                    },
+                  ]}
+                >
+                  <Film
+                    size={20}
+                    color={colors.primary}
+                    strokeWidth={2.4}
+                  />
+                </View>
+
+                <Text
+                  style={[
+                    styles.title,
+                    {
+                      color: colors.text,
+                      textAlign,
+                    },
+                  ]}
+                >
                   {t.weeklyCinema || 'Weekly Cinema'}
                 </Text>
               </View>
 
-              <Text style={[styles.subtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
-                {t.weeklyCinemaSubtitle || 'A movie selected for your cognitive wellness'}
+              <Text
+                style={[
+                  styles.subtitle,
+                  {
+                    color: colors.textSecondary,
+                    textAlign,
+                  },
+                ]}
+              >
+                {t.weeklyCinemaSubtitle ||
+                  'A movie selected for your cognitive wellness'}
               </Text>
             </View>
 
-            <View
-              style={[styles.avatarContainer, { backgroundColor: colors.primary }]}
+            {/* Back Icon */}
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel={t.back || 'Back'}
+              style={[
+                styles.backButton,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255,255,255,0.08)'
+                    : '#FFFFFF',
+                  borderColor: isDark
+                    ? 'rgba(255,255,255,0.14)'
+                    : colors.border,
+                },
+              ]}
             >
-              <Image
-                source={require('../../assets/avatars/model 2.jpg')}
-                style={styles.avatar}
+              <ArrowLeft
+                size={22}
+                color={colors.text}
+                strokeWidth={2.5}
               />
-            </View>
+            </TouchableOpacity>
           </View>
         </MotiView>
 
-        {/* Weekly Label */}
+        {/* ============================================================= */}
+        {/* WEEKLY BADGE                                                   */}
+        {/* ============================================================= */}
+
         <MotiView
-          from={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 150 }}
+          from={{
+            opacity: 0,
+            scale: 0.95,
+          }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+          }}
+          transition={{
+            delay: 120,
+            type: 'spring',
+            damping: 16,
+          }}
         >
           <View
             style={[
@@ -150,82 +228,235 @@ export default function CulturalScreen() {
               },
             ]}
           >
-            <Sparkles size={16} color={colors.primary} />
-            <Text style={[styles.weekBadgeText, { color: colors.primary }]}>
+            <Sparkles
+              size={15}
+              color={colors.primary}
+              strokeWidth={2.4}
+            />
+
+            <Text
+              style={[
+                styles.weekBadgeText,
+                {
+                  color: colors.primary,
+                  marginLeft: isRTL ? 0 : 6,
+                  marginRight: isRTL ? 6 : 0,
+                },
+              ]}
+            >
               {t.thisWeeksPick || "THIS WEEK'S PICK"}
             </Text>
           </View>
         </MotiView>
 
-        {/* Featured Movie */}
+        {/* ============================================================= */}
+        {/* FEATURED MOVIE                                                 */}
+        {/* ============================================================= */}
+
         <MotiView
-          from={{ opacity: 0, translateY: 30, scale: 0.96 }}
-          animate={{ opacity: 1, translateY: 0, scale: 1 }}
-          transition={{ type: 'spring', damping: 18, stiffness: 140, delay: 250 }}
+          from={{
+            opacity: 0,
+            translateY: 25,
+            scale: 0.97,
+          }}
+          animate={{
+            opacity: 1,
+            translateY: 0,
+            scale: 1,
+          }}
+          transition={{
+            type: 'spring',
+            damping: 18,
+            stiffness: 140,
+            delay: 220,
+          }}
         >
           <View
             style={[
               styles.featuredCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
             ]}
           >
-            <Image source={weeklyMovie.poster} style={styles.poster} />
+            <Image
+              source={weeklyMovie.poster}
+              style={styles.poster}
+            />
 
             <LinearGradient
               colors={[
                 'transparent',
-                isDark ? 'rgba(26,24,37,0.75)' : 'rgba(255,255,255,0.7)',
+                isDark
+                  ? 'rgba(26,24,37,0.82)'
+                  : 'rgba(255,255,255,0.75)',
               ]}
               style={styles.posterOverlay}
             />
 
-            <View style={[styles.featuredContent, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-              <Text style={[styles.movieTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
-                {t.weeklyMovieTitle || weeklyMovie.title}
+            <View
+              style={[
+                styles.featuredContent,
+                {
+                  alignItems: isRTL
+                    ? 'flex-end'
+                    : 'flex-start',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.movieTitle,
+                  {
+                    color: colors.text,
+                    textAlign,
+                  },
+                ]}
+              >
+                {t.weeklyMovieTitle ||
+                  weeklyMovie.title}
               </Text>
 
-              <Text style={[styles.movieMeta, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
-                {t.weeklyMovieYear || weeklyMovie.year} • {t.weeklyMovieGenre || weeklyMovie.genre}
+              <Text
+                style={[
+                  styles.movieMeta,
+                  {
+                    color: colors.textSecondary,
+                    textAlign,
+                  },
+                ]}
+              >
+                {t.weeklyMovieYear ||
+                  weeklyMovie.year}{' '}
+                •{' '}
+                {t.weeklyMovieGenre ||
+                  weeklyMovie.genre}
               </Text>
 
-              <View style={[styles.statsRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                <View style={styles.stat}>
-                  <Star size={15} color={colors.warning} fill={colors.warning} />
-                  <Text style={[styles.statText, { color: colors.text }]}>
+              <View
+                style={[
+                  styles.statsRow,
+                  {
+                    flexDirection: rowDirection,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.stat,
+                    {
+                      flexDirection: rowDirection,
+                    },
+                  ]}
+                >
+                  <Star
+                    size={15}
+                    color={colors.warning}
+                    fill={colors.warning}
+                  />
+
+                  <Text
+                    style={[
+                      styles.statText,
+                      {
+                        color: colors.text,
+                      },
+                    ]}
+                  >
                     {weeklyMovie.rating}
                   </Text>
                 </View>
 
-                <View style={styles.stat}>
-                  <Clock size={15} color={colors.textSecondary} />
-                  <Text style={[styles.statText, { color: colors.textSecondary }]}>
+                <View
+                  style={[
+                    styles.stat,
+                    {
+                      flexDirection: rowDirection,
+                    },
+                  ]}
+                >
+                  <Clock
+                    size={15}
+                    color={colors.textSecondary}
+                  />
+
+                  <Text
+                    style={[
+                      styles.statText,
+                      {
+                        color: colors.textSecondary,
+                      },
+                    ]}
+                  >
                     {weeklyMovie.duration}
                   </Text>
                 </View>
               </View>
 
-              <Text style={[styles.description, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
-                {t.weeklyMovieDescription || weeklyMovie.description}
+              <Text
+                style={[
+                  styles.description,
+                  {
+                    color: colors.textSecondary,
+                    textAlign,
+                  },
+                ]}
+              >
+                {t.weeklyMovieDescription ||
+                  weeklyMovie.description}
               </Text>
 
               <TouchableOpacity
                 activeOpacity={0.85}
-                style={[styles.watchButton, { backgroundColor: colors.primary }]}
+                style={[
+                  styles.watchButton,
+                  {
+                    backgroundColor: colors.primary,
+                    flexDirection: rowDirection,
+                  },
+                ]}
               >
-                <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
-                <Text style={styles.watchButtonText}>
-                  {t.exploreMovie || 'Explore Movie'}
+                <Play
+                  size={18}
+                  color="#FFFFFF"
+                  fill="#FFFFFF"
+                />
+
+                <Text
+                  style={[
+                    styles.watchButtonText,
+                    {
+                      marginLeft: isRTL ? 0 : 8,
+                      marginRight: isRTL ? 8 : 0,
+                    },
+                  ]}
+                >
+                  {t.exploreMovie ||
+                    'Explore Movie'}
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
         </MotiView>
 
-        {/* Why this movie */}
+        {/* ============================================================= */}
+        {/* WHY THIS MOVIE                                                 */}
+        {/* ============================================================= */}
+
         <MotiView
-          from={{ opacity: 0, translateY: 20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ delay: 400 }}
+          from={{
+            opacity: 0,
+            translateY: 18,
+          }}
+          animate={{
+            opacity: 1,
+            translateY: 0,
+          }}
+          transition={{
+            delay: 360,
+            duration: 400,
+          }}
         >
           <View
             style={[
@@ -237,111 +468,301 @@ export default function CulturalScreen() {
                 borderColor: isDark
                   ? 'rgba(167,139,250,0.2)'
                   : 'rgba(124,58,237,0.12)',
-                flexDirection: isRTL ? 'row-reverse' : 'row',
+                flexDirection: rowDirection,
               },
             ]}
           >
-            <View style={[styles.reasonIcon, { backgroundColor: colors.primary }]}>
-              <Brain size={20} color="#FFFFFF" />
+            <View
+              style={[
+                styles.reasonIcon,
+                {
+                  backgroundColor: colors.primary,
+                },
+              ]}
+            >
+              <Brain
+                size={20}
+                color="#FFFFFF"
+              />
             </View>
 
-            <View style={[styles.reasonContent, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-              <Text style={[styles.reasonTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
-                {t.whyThisMovie || 'Why this movie?'}
+            <View
+              style={[
+                styles.reasonContent,
+                {
+                  alignItems: isRTL
+                    ? 'flex-end'
+                    : 'flex-start',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.reasonTitle,
+                  {
+                    color: colors.text,
+                    textAlign,
+                  },
+                ]}
+              >
+                {t.whyThisMovie ||
+                  'Why this movie?'}
               </Text>
-              <Text style={[styles.reasonText, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
-                {t.weeklyMovieReason || weeklyMovie.reason}
+
+              <Text
+                style={[
+                  styles.reasonText,
+                  {
+                    color: colors.textSecondary,
+                    textAlign,
+                  },
+                ]}
+              >
+                {t.weeklyMovieReason ||
+                  weeklyMovie.reason}
               </Text>
             </View>
           </View>
         </MotiView>
 
-        {/* Recommendations */}
-        <View style={[styles.sectionHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          <View style={{ alignItems: isRTL ? 'flex-end' : 'flex-start' }}>
-            <Text style={[styles.sectionTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
+        {/* ============================================================= */}
+        {/* RECOMMENDATIONS HEADER                                         */}
+        {/* ============================================================= */}
+
+        <View
+          style={[
+            styles.sectionHeader,
+            {
+              flexDirection: rowDirection,
+            },
+          ]}
+        >
+          <View
+            style={{
+              alignItems: isRTL
+                ? 'flex-end'
+                : 'flex-start',
+              flex: 1,
+            }}
+          >
+            <Text
+              style={[
+                styles.sectionTitle,
+                {
+                  color: colors.text,
+                  textAlign,
+                },
+              ]}
+            >
               {t.moreForYou || 'More for you'}
             </Text>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
-              {t.moviesBasedOnInterests || 'Movies selected based on your interests'}
+
+            <Text
+              style={[
+                styles.sectionSubtitle,
+                {
+                  color: colors.textSecondary,
+                  textAlign,
+                },
+              ]}
+            >
+              {t.moviesBasedOnInterests ||
+                'Movies selected based on your interests'}
             </Text>
           </View>
 
-          <TouchableOpacity>
-            <Text style={[styles.seeAll, { color: colors.primary }]}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={styles.seeAllButton}
+          >
+            <Text
+              style={[
+                styles.seeAll,
+                {
+                  color: colors.primary,
+                },
+              ]}
+            >
               {t.seeAll || 'See all'}
             </Text>
+
+            <ChevronRight
+              size={16}
+              color={colors.primary}
+              style={
+                isRTL
+                  ? {
+                      transform: [
+                        { scaleX: -1 },
+                      ],
+                    }
+                  : undefined
+              }
+            />
           </TouchableOpacity>
         </View>
+
+        {/* ============================================================= */}
+        {/* MOVIE LIST                                                     */}
+        {/* ============================================================= */}
 
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.horizontalList, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+          contentContainerStyle={[
+            styles.horizontalList,
+            {
+              flexDirection: rowDirection,
+            },
+          ]}
         >
-          {recommendations.map((movie, index) => {
-            // انتخاب عنوان و ژانر ترجمه شده بر اساس id
-            let translatedTitle = movie.title;
-            let translatedGenre = movie.genre;
+          {recommendations.map(
+            (movie, index) => {
+              let translatedTitle =
+                movie.title;
+              let translatedGenre =
+                movie.genre;
 
-            if (movie.id === '1') {
-              translatedTitle = t.rec1Title || movie.title;
-              translatedGenre = t.rec1Genre || movie.genre;
-            } else if (movie.id === '2') {
-              translatedTitle = t.rec2Title || movie.title;
-              translatedGenre = t.rec2Genre || movie.genre;
-            } else if (movie.id === '3') {
-              translatedTitle = t.rec3Title || movie.title;
-              translatedGenre = t.rec3Genre || movie.genre;
-            }
+              if (movie.id === '1') {
+                translatedTitle =
+                  t.rec1Title || movie.title;
+                translatedGenre =
+                  t.rec1Genre || movie.genre;
+              } else if (movie.id === '2') {
+                translatedTitle =
+                  t.rec2Title || movie.title;
+                translatedGenre =
+                  t.rec2Genre || movie.genre;
+              } else if (movie.id === '3') {
+                translatedTitle =
+                  t.rec3Title || movie.title;
+                translatedGenre =
+                  t.rec3Genre || movie.genre;
+              }
 
-            return (
-              <MotiView
-                key={movie.id}
-                from={{ opacity: 0, translateX: 30 }}
-                animate={{ opacity: 1, translateX: 0 }}
-                transition={{ delay: 500 + index * 100 }}
-              >
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  style={[
-                    styles.movieCard,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                  ]}
+              return (
+                <MotiView
+                  key={movie.id}
+                  from={{
+                    opacity: 0,
+                    translateX: 25,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    translateX: 0,
+                  }}
+                  transition={{
+                    delay:
+                      470 + index * 100,
+                  }}
                 >
-                  <Image source={movie.poster} style={styles.smallPoster} />
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    style={[
+                      styles.movieCard,
+                      {
+                        backgroundColor:
+                          colors.surface,
+                        borderColor:
+                          colors.border,
+                      },
+                    ]}
+                  >
+                    <Image
+                      source={movie.poster}
+                      style={styles.smallPoster}
+                    />
 
-                  <View style={[styles.movieCardContent, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-                    <Text
-                      numberOfLines={1}
-                      style={[styles.smallMovieTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}
+                    <View
+                      style={[
+                        styles.movieCardContent,
+                        {
+                          alignItems: isRTL
+                            ? 'flex-end'
+                            : 'flex-start',
+                        },
+                      ]}
                     >
-                      {translatedTitle}
-                    </Text>
-
-                    <Text
-                      numberOfLines={1}
-                      style={[styles.smallMovieGenre, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}
-                    >
-                      {translatedGenre}
-                    </Text>
-
-                    <View style={[styles.ratingRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                      <Star size={13} color={colors.warning} fill={colors.warning} />
-                      <Text style={[styles.ratingText, { color: colors.text }]}>
-                        {movie.rating}
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.smallMovieTitle,
+                          {
+                            color: colors.text,
+                            textAlign,
+                          },
+                        ]}
+                      >
+                        {translatedTitle}
                       </Text>
-                      <ChevronRight
-                        size={16}
-                        color={colors.textTertiary}
-                        style={[styles.chevron, isRTL ? { transform: [{ scaleX: -1 }] } : undefined]}
-                      />
+
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.smallMovieGenre,
+                          {
+                            color:
+                              colors.textSecondary,
+                            textAlign,
+                          },
+                        ]}
+                      >
+                        {translatedGenre}
+                      </Text>
+
+                      <View
+                        style={[
+                          styles.ratingRow,
+                          {
+                            flexDirection:
+                              rowDirection,
+                          },
+                        ]}
+                      >
+                        <Star
+                          size={13}
+                          color={colors.warning}
+                          fill={colors.warning}
+                        />
+
+                        <Text
+                          style={[
+                            styles.ratingText,
+                            {
+                              color:
+                                colors.text,
+                            },
+                          ]}
+                        >
+                          {movie.rating}
+                        </Text>
+
+                        <ChevronRight
+                          size={16}
+                          color={
+                            colors.textTertiary
+                          }
+                          style={[
+                            styles.chevron,
+                            isRTL
+                              ? {
+                                  transform: [
+                                    {
+                                      scaleX:
+                                        -1,
+                                    },
+                                  ],
+                                }
+                              : undefined,
+                          ]}
+                        />
+                      </View>
                     </View>
-                  </View>
-                </TouchableOpacity>
-              </MotiView>
-            );
-          })}
+                  </TouchableOpacity>
+                </MotiView>
+              );
+            }
+          )}
         </ScrollView>
 
         <View style={styles.bottomSpace} />
@@ -354,174 +775,260 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  backButton: {
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    marginTop: Spacing.xxl,
-    marginLeft: Spacing.lg,
-    marginBottom: -Spacing.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-  },
-  backText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
+
   content: {
-    padding: Spacing.lg,
-    paddingTop: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: 40,
+    paddingBottom: 100,
   },
+
+  /* ================================================================ */
+  /* HEADER                                                            */
+  /* ================================================================ */
+
   header: {
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: Spacing.lg,
   },
+
+  headerRow: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 58,
+  },
+
+  headerTextContainer: {
+    flex: 1,
+    paddingRight: Spacing.md,
+  },
+
   titleRow: {
     alignItems: 'center',
   },
+
+  titleIconContainer: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   title: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '800',
+    marginLeft: 9,
   },
+
   subtitle: {
-    fontSize: 13,
-    marginTop: 6,
-    maxWidth: 270,
-    lineHeight: 19,
+    fontSize: 12.5,
+    marginTop: 7,
+    lineHeight: 18,
+    maxWidth: 280,
   },
-  avatarContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    overflow: 'hidden',
+
+  /* ================================================================ */
+  /* BACK BUTTON                                                       */
+  /* ================================================================ */
+
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    flexShrink: 0,
+
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  avatar: {
-    width: 48,
-    height: 48,
-  },
+
+  /* ================================================================ */
+  /* WEEK BADGE                                                        */
+  /* ================================================================ */
+
   weekBadge: {
+    minHeight: 34,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: BorderRadius.full,
     marginBottom: Spacing.md,
   },
+
   weekBadgeText: {
     fontSize: 11,
     fontWeight: '800',
-    marginLeft: 6,
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
+
+  /* ================================================================ */
+  /* FEATURED MOVIE                                                    */
+  /* ================================================================ */
+
   featuredCard: {
     borderRadius: BorderRadius.xl,
     overflow: 'hidden',
     borderWidth: 1,
     marginBottom: Spacing.lg,
   },
+
   poster: {
     width: '100%',
     height: 270,
   },
+
   posterOverlay: {
     position: 'absolute',
     left: 0,
     right: 0,
-    top: 160,
-    height: 110,
+    top: 155,
+    height: 115,
   },
+
   featuredContent: {
     padding: Spacing.lg,
   },
+
   movieTitle: {
     fontSize: 24,
     fontWeight: '800',
   },
+
   movieMeta: {
     fontSize: 13,
     marginTop: 6,
   },
+
   statsRow: {
     alignItems: 'center',
     marginTop: 12,
     gap: 18,
   },
+
   stat: {
-    flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
   },
+
   statText: {
     fontSize: 13,
     fontWeight: '600',
   },
+
   description: {
     fontSize: 14,
     lineHeight: 21,
     marginTop: Spacing.md,
   },
+
   watchButton: {
+    width: '100%',
     height: 48,
     borderRadius: BorderRadius.lg,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: Spacing.lg,
-    gap: 8,
   },
+
   watchButtonText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
   },
+
+  /* ================================================================ */
+  /* REASON CARD                                                       */
+  /* ================================================================ */
+
   reasonCard: {
+    width: '100%',
     padding: Spacing.md,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     marginBottom: Spacing.xl,
+    alignItems: 'flex-start',
   },
+
   reasonIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.md,
+    flexShrink: 0,
   },
+
   reasonContent: {
     flex: 1,
+    marginHorizontal: Spacing.md,
   },
+
   reasonTitle: {
     fontSize: 15,
     fontWeight: '700',
     marginBottom: 5,
   },
+
   reasonText: {
     fontSize: 13,
     lineHeight: 19,
   },
+
+  /* ================================================================ */
+  /* SECTION                                                           */
+  /* ================================================================ */
+
   sectionHeader: {
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: Spacing.md,
   },
+
   sectionTitle: {
     fontSize: 20,
     fontWeight: '800',
   },
+
   sectionSubtitle: {
     fontSize: 12,
     marginTop: 4,
+    lineHeight: 18,
   },
+
+  seeAllButton: {
+    minHeight: 36,
+    paddingHorizontal: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+  },
+
   seeAll: {
     fontSize: 13,
     fontWeight: '700',
   },
+
+  /* ================================================================ */
+  /* MOVIE CARDS                                                       */
+  /* ================================================================ */
+
   horizontalList: {
     paddingRight: Spacing.lg,
+    paddingBottom: 4,
   },
+
   movieCard: {
     width: 180,
     borderRadius: BorderRadius.lg,
@@ -529,33 +1036,44 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginRight: Spacing.md,
   },
+
   smallPoster: {
     width: '100%',
     height: 220,
   },
+
   movieCardContent: {
     padding: Spacing.sm + 2,
   },
+
   smallMovieTitle: {
+    width: '100%',
     fontSize: 14,
     fontWeight: '700',
   },
+
   smallMovieGenre: {
+    width: '100%',
     fontSize: 11,
     marginTop: 4,
   },
+
   ratingRow: {
+    width: '100%',
     alignItems: 'center',
     marginTop: 10,
   },
+
   ratingText: {
     fontSize: 12,
     fontWeight: '700',
     marginLeft: 4,
   },
+
   chevron: {
     marginLeft: 'auto',
   },
+
   bottomSpace: {
     height: 100,
   },

@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  Dimensions,
+} from 'react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,13 +22,13 @@ import {
   Shield,
   ChevronRight,
   ChevronDown,
-  Sparkles,
   Check,
   PartyPopper,
 } from 'lucide-react-native';
 import { Spacing } from '../../constants/theme';
 
-// ===== Daily task content per protocol (not in translations.ts yet — local fa/en pair) =====
+const { width } = Dimensions.get('window');
+
 const DAILY_TASKS: Record<string, { fa: string[]; en: string[] }> = {
   cognitive: {
     fa: [
@@ -33,7 +41,7 @@ const DAILY_TASKS: Record<string, { fa: string[]; en: string[] }> = {
       '10 min working memory drill',
       'Solve one logic puzzle',
       '5 min focused breathing',
-      'Review yesterday\u2019s notes',
+      'Review yesterday’s notes',
     ],
   },
   focus: {
@@ -58,7 +66,7 @@ const DAILY_TASKS: Record<string, { fa: string[]; en: string[] }> = {
       'هدف ۷ ساعت خواب امشب',
     ],
     en: [
-      'Recall 5 items from yesterday\u2019s list',
+      'Recall 5 items from yesterday’s list',
       'Memory sequence exercise',
       'Read a short passage and retell it',
       'Aim for 7 hours of sleep tonight',
@@ -80,20 +88,17 @@ const DAILY_TASKS: Record<string, { fa: string[]; en: string[] }> = {
   },
 };
 
-const todayKey = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+const todayKey = () => new Date().toISOString().slice(0, 10);
 const STORAGE_KEY = (date: string) => `@neurolia_protocol_tasks_${date}`;
 
-// taskState: { [protocolId]: { [taskIndex]: boolean } }
 type TaskState = Record<string, Record<number, boolean>>;
 
 export default function ProtocolScreen() {
   const { colors, isDark } = useTheme();
   const { t, isRTL, language } = useLanguage();
-
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [taskState, setTaskState] = useState<TaskState>({});
   const [loaded, setLoaded] = useState(false);
-
   const rowDir = isRTL ? 'row-reverse' : 'row';
 
   const protocols = [
@@ -132,21 +137,23 @@ export default function ProtocolScreen() {
   ];
 
   const avgProgress = Math.round(
-    protocols.reduce((sum, p) => sum + p.progress, 0) / protocols.length
+    protocols.reduce((sum, protocol) => sum + protocol.progress, 0) / protocols.length
   );
 
-  // Load today's checklist state on mount (auto-resets daily since the key includes the date)
   useEffect(() => {
-    (async () => {
+    const loadTasks = async () => {
       try {
         const raw = await AsyncStorage.getItem(STORAGE_KEY(todayKey()));
-        if (raw) setTaskState(JSON.parse(raw));
+        if (raw) {
+          setTaskState(JSON.parse(raw));
+        }
       } catch (error) {
         console.error('Error loading protocol tasks:', error);
       } finally {
         setLoaded(true);
       }
-    })();
+    };
+    loadTasks();
   }, []);
 
   const persist = async (next: TaskState) => {
@@ -161,10 +168,9 @@ export default function ProtocolScreen() {
     const current = taskState[protocolId] || {};
     const wasDone = !!current[taskIndex];
     const nextForProtocol = { ...current, [taskIndex]: !wasDone };
-    const next = { ...taskState, [protocolId]: nextForProtocol };
+    const next: TaskState = { ...taskState, [protocolId]: nextForProtocol };
     setTaskState(next);
     persist(next);
-
     const doneCount = Object.values(nextForProtocol).filter(Boolean).length;
     if (!wasDone && doneCount === totalTasks) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -175,7 +181,7 @@ export default function ProtocolScreen() {
 
   const toggleExpand = (protocolId: string) => {
     Haptics.selectionAsync().catch(() => {});
-    setExpandedId((cur) => (cur === protocolId ? null : protocolId));
+    setExpandedId((current) => (current === protocolId ? null : protocolId));
   };
 
   const getDoneCount = (protocolId: string) =>
@@ -186,35 +192,70 @@ export default function ProtocolScreen() {
       colors={isDark ? ['#0a0a0f', '#14141e'] : ['#eef2ff', '#ffffff']}
       style={styles.container}
     >
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
         <MotiView
-          from={{ opacity: 0, translateY: -14 }}
+          from={{ opacity: 0, translateY: -30 }}
           animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 400 }}
+          transition={{ type: 'timing', duration: 500 }}
           style={styles.header}
         >
-          <View style={styles.avatarRing}>
-            <View style={[styles.avatarContainer, { backgroundColor: colors.primary }]}>
-              <Image source={require('../../assets/avatars/model3.png')} style={styles.avatar} />
-            </View>
-            <View style={[styles.avatarBadge, { backgroundColor: colors.primary }]}>
-              <Sparkles size={12} color="#FFFFFF" />
-            </View>
-          </View>
-
-          <Text style={[styles.title, { color: colors.text }]}>
-            {t.smartProtocol || 'Smart Personal Protocol'}
-          </Text>
-
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            {t.aiPoweredProtocols || 'AI powered personalized cognitive programs'}
-          </Text>
-
-          <View style={[styles.overallChip, { backgroundColor: colors.primary + '14' }]}>
-            <Text style={[styles.overallChipText, { color: colors.primary }]}>
-              {avgProgress}% {language === 'fa' ? 'پیشرفت کلی' : 'overall progress'}
-            </Text>
-          </View>
+          <LinearGradient
+            colors={[colors.primary, colors.accent || colors.primary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[
+              styles.heroCard,
+              { borderColor: 'rgba(255,255,255,0.18)' },
+            ]}
+          >
+            <View style={[styles.heroBlobA, { backgroundColor: '#FFFFFF' }]} />
+            <View style={[styles.heroBlobB, { backgroundColor: '#FFFFFF' }]} />
+            <MotiView
+              from={{ opacity: 0, scale: 0.85, translateY: 12 }}
+              animate={{ opacity: 1, scale: 1, translateY: 0 }}
+              transition={{ type: 'spring', damping: 14, stiffness: 140 }}
+              style={styles.avatarWrapper}
+            >
+              <LinearGradient
+                colors={['#FFFFFF', 'rgba(255,255,255,0.4)']}
+                style={styles.avatarRing}
+              >
+                <View style={styles.avatarInner}>
+                  <Image
+                    source={require('../../assets/avatars/model3.png')}
+                    style={styles.avatar}
+                  />
+                </View>
+              </LinearGradient>
+            </MotiView>
+            <MotiView
+              from={{ opacity: 0, translateY: 10 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ type: 'timing', duration: 450, delay: 120 }}
+              style={styles.heroTextContainer}
+            >
+              <Text style={[styles.title, isRTL && styles.textRTL]}>
+                {t.smartProtocol || 'Smart Personal Protocol'}
+              </Text>
+              <Text style={[styles.subtitle, isRTL && styles.textRTL]}>
+                {t.aiPoweredProtocols || 'AI powered personalized cognitive programs'}
+              </Text>
+              <View
+                style={[
+                  styles.progressBadge,
+                  { backgroundColor: 'rgba(255,255,255,0.18)' },
+                ]}
+              >
+                <Text style={styles.progressBadgeText}>{avgProgress}%</Text>
+                <Text style={styles.progressBadgeLabel}>
+                  {language === 'fa' ? 'پیشرفت کلی' : 'overall progress'}
+                </Text>
+              </View>
+            </MotiView>
+          </LinearGradient>
         </MotiView>
 
         {protocols.map((item, index) => {
@@ -222,6 +263,7 @@ export default function ProtocolScreen() {
           const doneCount = getDoneCount(item.id);
           const allDone = loaded && doneCount === tasks.length;
           const isExpanded = expandedId === item.id;
+          const EventIcon = item.icon;
 
           return (
             <MotiView
@@ -237,34 +279,86 @@ export default function ProtocolScreen() {
                   shadowColor: item.color,
                 }}
               >
-                <View style={[styles.cardHeader, { flexDirection: rowDir }]}>
-                  <View style={[styles.iconBox, { backgroundColor: item.color + '18' }]}>
-                    <item.icon size={26} color={item.color} />
+                <View
+                  style={[
+                    styles.cardHeader,
+                    { flexDirection: rowDir },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.iconBox,
+                      { backgroundColor: item.color + '18' },
+                    ]}
+                  >
+                    <EventIcon size={26} color={item.color} />
                   </View>
-
                   <View
                     style={[
                       styles.textContent,
-                      { marginLeft: isRTL ? 0 : Spacing.md, marginRight: isRTL ? Spacing.md : 0 },
+                      {
+                        marginLeft: isRTL ? 0 : Spacing.md,
+                        marginRight: isRTL ? Spacing.md : 0,
+                      },
                     ]}
                   >
-                    <View style={[styles.titleRow, { flexDirection: rowDir }]}>
-                      <Text style={[styles.cardTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
+                    <View
+                      style={[
+                        styles.titleRow,
+                        { flexDirection: rowDir },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.cardTitle,
+                          {
+                            color: colors.text,
+                            textAlign: isRTL ? 'right' : 'left',
+                          },
+                        ]}
+                      >
                         {item.title}
                       </Text>
-                      <Text style={[styles.progressLabel, { color: item.color }]}>{item.progress}%</Text>
+                      <Text
+                        style={[
+                          styles.progressLabel,
+                          { color: item.color },
+                        ]}
+                      >
+                        {item.progress}%
+                      </Text>
                     </View>
-
-                    <Text style={[styles.cardDesc, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                    <Text
+                      style={[
+                        styles.cardDesc,
+                        {
+                          color: colors.textSecondary,
+                          textAlign: isRTL ? 'right' : 'left',
+                        },
+                      ]}
+                    >
                       {item.desc}
                     </Text>
-
-                    <View style={[styles.progressBackground, { backgroundColor: isDark ? '#2A2A38' : '#e9e9f2' }]}>
+                    <View
+                      style={[
+                        styles.progressBackground,
+                        {
+                          backgroundColor: isDark ? '#2A2A38' : '#e9e9f2',
+                        },
+                      ]}
+                    >
                       <MotiView
                         from={{ width: '0%' }}
                         animate={{ width: `${item.progress}%` }}
-                        transition={{ type: 'timing', duration: 900, delay: 300 + index * 100 }}
-                        style={[styles.progress, { backgroundColor: item.color }]}
+                        transition={{
+                          type: 'timing',
+                          duration: 900,
+                          delay: 300 + index * 100,
+                        }}
+                        style={[
+                          styles.progress,
+                          { backgroundColor: item.color },
+                        ]}
                       />
                     </View>
                   </View>
@@ -285,14 +379,16 @@ export default function ProtocolScreen() {
                 >
                   {allDone ? (
                     <>
-                      <PartyPopper size={18} color="#fff" />
+                      <PartyPopper size={18} color="#FFFFFF" />
                       <Text style={styles.buttonText}>
                         {language === 'fa' ? 'امروز کامل شد!' : 'Completed today!'}
                       </Text>
                     </>
                   ) : (
                     <>
-                      <Text style={styles.buttonText}>{t.startProtocol || 'Start Protocol'}</Text>
+                      <Text style={styles.buttonText}>
+                        {t.startProtocol || 'Start Protocol'}
+                      </Text>
                       {loaded && (
                         <View style={styles.countBadge}>
                           <Text style={styles.countBadgeText}>
@@ -301,15 +397,18 @@ export default function ProtocolScreen() {
                         </View>
                       )}
                       {isExpanded ? (
-                        <ChevronDown size={18} color="#fff" />
+                        <ChevronDown size={18} color="#FFFFFF" />
                       ) : (
-                        <ChevronRight size={18} color="#fff" style={isRTL ? styles.chevronRTL : undefined} />
+                        <ChevronRight
+                          size={18}
+                          color="#FFFFFF"
+                          style={isRTL ? styles.chevronRTL : undefined}
+                        />
                       )}
                     </>
                   )}
                 </TouchableOpacity>
 
-                {/* ===== DAILY CHECKLIST ===== */}
                 <AnimatePresence>
                   {isExpanded && (
                     <MotiView
@@ -319,20 +418,32 @@ export default function ProtocolScreen() {
                       transition={{ type: 'timing', duration: 220 }}
                       style={styles.checklist}
                     >
-                      <Text style={[styles.checklistHeading, { color: colors.textSecondary }]}>
+                      <Text
+                        style={[
+                          styles.checklistHeading,
+                          {
+                            color: colors.textSecondary,
+                            textAlign: isRTL ? 'right' : 'left',
+                          },
+                        ]}
+                      >
                         {language === 'fa' ? 'کارهای امروز' : "Today's tasks"}
                       </Text>
-
                       {tasks.map((taskLabel, taskIndex) => {
                         const isDone = !!taskState[item.id]?.[taskIndex];
                         return (
                           <TouchableOpacity
                             key={taskIndex}
                             activeOpacity={0.7}
-                            onPress={() => toggleTask(item.id, taskIndex, tasks.length)}
+                            onPress={() =>
+                              toggleTask(item.id, taskIndex, tasks.length)
+                            }
                             accessibilityRole="checkbox"
                             accessibilityState={{ checked: isDone }}
-                            style={[styles.taskRow, { flexDirection: rowDir }]}
+                            style={[
+                              styles.taskRow,
+                              { flexDirection: rowDir },
+                            ]}
                           >
                             <View
                               style={[
@@ -343,7 +454,9 @@ export default function ProtocolScreen() {
                                 },
                               ]}
                             >
-                              {isDone && <Check size={14} color="#fff" strokeWidth={3} />}
+                              {isDone && (
+                                <Check size={14} color="#FFFFFF" strokeWidth={3} />
+                              )}
                             </View>
                             <Text
                               style={[
@@ -377,70 +490,121 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: Spacing.lg,
-    paddingBottom: 100,
     paddingTop: 80,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: 100,
   },
   header: {
     alignItems: 'center',
     marginBottom: Spacing.xl,
   },
-  avatarRing: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
+  heroCard: {
+    width: width - Spacing.lg * 2,
+    minHeight: 330,
+    marginHorizontal: Spacing.lg,
+    paddingTop: 42,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    borderRadius: 32,
+    borderWidth: 1,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  heroBlobA: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    opacity: 0.08,
+    top: -60,
+    right: -40,
+  },
+  heroBlobB: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    opacity: 0.08,
+    bottom: -30,
+    left: -30,
+  },
+  avatarWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    overflow: 'hidden',
+  avatarRing: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
   },
-  avatar: {
-    width: 100,
-    height: 100,
-  },
-  avatarBadge: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+  avatarInner: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
+    backgroundColor: '#FFFFFF',
+  },
+  avatar: {
+    width: 106,
+    height: 106,
+    borderRadius: 53,
+  },
+  heroTextContainer: {
+    alignItems: 'center',
+    width: '100%',
   },
   title: {
     fontSize: 26,
     fontWeight: '700',
-    marginTop: Spacing.md,
+    color: '#FFFFFF',
     textAlign: 'center',
+    marginTop: Spacing.md,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 14,
+    fontWeight: '400',
+    color: 'rgba(255,255,255,0.75)',
     textAlign: 'center',
-    marginTop: Spacing.sm,
+    marginTop: 5,
+    maxWidth: 300,
   },
-  overallChip: {
+  progressBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingVertical: 7,
+    borderRadius: 20,
     marginTop: Spacing.md,
+    gap: 5,
   },
-  overallChipText: {
-    fontSize: 12,
+  progressBadgeText: {
+    fontSize: 13,
     fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  progressBadgeLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  textRTL: {
+    writingDirection: 'rtl',
+    textAlign: 'center',
   },
   card: {
     marginBottom: Spacing.md,
@@ -458,13 +622,16 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   textContent: {
     flex: 1,
+    minWidth: 0,
   },
   titleRow: {
     alignItems: 'center',
     justifyContent: 'space-between',
+    width: '100%',
   },
   cardTitle: {
     fontSize: 17,
@@ -475,9 +642,11 @@ const styles = StyleSheet.create({
   progressLabel: {
     fontSize: 13,
     fontWeight: '700',
+    marginLeft: 8,
   },
   cardDesc: {
     fontSize: 13,
+    lineHeight: 19,
   },
   progressBackground: {
     height: 6,
@@ -498,7 +667,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   buttonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontWeight: '700',
   },
   countBadge: {
@@ -508,15 +677,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   countBadgeText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '700',
   },
   chevronRTL: {
     transform: [{ scaleX: -1 }],
   },
-
-  // ===== CHECKLIST =====
   checklist: {
     marginTop: Spacing.md,
     gap: 4,
@@ -538,6 +705,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   taskLabel: {
     fontSize: 13,
