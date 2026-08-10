@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { MotiView } from 'moti';
@@ -14,23 +13,36 @@ interface SplashScreenProps {
   onComplete: () => void;
 }
 
-/* ---------------------------------- */
-/* Timing                              */
-/* ---------------------------------- */
+/* ================================================= */
+/* TIMELINE                                           */
+/* ================================================= */
 
-const T_OPEN = 500;
-const T_REFORM = 1350;
-const T_LOGO = 1900;
-const T_EXIT = 3350;
-const T_DONE = 3650;
+const T_OPEN = 450;
+const T_REFORM = 1250;
+const T_LOGO = 1750;
 
-/* ---------------------------------- */
-/* Animation settings                  */
-/* ---------------------------------- */
+/*
+ * مهم:
+ * تمام دایره‌ها قبل از شروع حرکت مغز حذف می‌شوند.
+ *
+ * stage 1 -> باز شدن مغز
+ * stage 2 -> برگشت مغز
+ * stage 3 -> حذف کامل دایره‌ها + حرکت مغز به بالا
+ */
+const T_EXIT = 3150;
+const T_DONE = 3450;
 
-const PARTICLE_COUNT = 12;
+/* ================================================= */
+/* ANIMATION COUNTS                                  */
+/* ================================================= */
+
+const PARTICLE_COUNT = 14;
 const RING_COUNT = 3;
 const AMBIENT_COUNT = 8;
+
+/* ================================================= */
+/* SPLASH SCREEN                                     */
+/* ================================================= */
 
 export function SplashScreen({ onComplete }: SplashScreenProps) {
   const { colors, isDark } = useTheme();
@@ -38,9 +50,9 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 
   const [stage, setStage] = useState(0);
 
-  /* -------------------------------- */
-  /* Timeline                          */
-  /* -------------------------------- */
+  /* ----------------------------------------------- */
+  /* Timeline                                         */
+  /* ----------------------------------------------- */
 
   useEffect(() => {
     const timers = [
@@ -54,76 +66,94 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
     return () => timers.forEach(clearTimeout);
   }, [onComplete]);
 
-  /* -------------------------------- */
-  /* Main particles                   */
-  /* -------------------------------- */
+  /* ----------------------------------------------- */
+  /* Particles                                        */
+  /* ----------------------------------------------- */
 
   const particles = useMemo(
     () =>
       Array.from({ length: PARTICLE_COUNT }).map((_, i) => {
         const angle = (i / PARTICLE_COUNT) * Math.PI * 2;
-
-        // Smaller orbit for mobile
-        const distance = 82 + ((i * 29) % 42);
+        const distance = 85 + ((i * 37) % 45);
 
         return {
           id: i,
           dx: Math.cos(angle) * distance,
           dy: Math.sin(angle) * distance,
-          delay: (i % 4) * 45,
-          duration: 700 + (i % 3) * 100,
+          delay: (i % 5) * 25,
           isSpark: i % 4 === 0,
         };
       }),
     []
   );
 
-  /* -------------------------------- */
-  /* Ambient particles                 */
-  /* -------------------------------- */
+  /* ----------------------------------------------- */
+  /* Ambient particles                                */
+  /* ----------------------------------------------- */
 
   const ambientParticles = useMemo(
     () =>
       Array.from({ length: AMBIENT_COUNT }).map((_, i) => {
         const angle = (i / AMBIENT_COUNT) * Math.PI * 2;
-
-        // Much smaller than original
-        const distance = 100 + ((i * 37) % 55);
+        const distance = 105 + ((i * 53) % 55);
 
         return {
           id: i,
           x: Math.cos(angle) * distance,
           y: Math.sin(angle) * distance,
-          delay: i * 120,
-          duration: 2600 + (i % 4) * 450,
+          delay: i * 80,
+          duration: 2200 + (i % 4) * 300,
         };
       }),
     []
   );
 
-  /* -------------------------------- */
-  /* Rings                             */
-  /* -------------------------------- */
+  /* ----------------------------------------------- */
+  /* Rings                                            */
+  /* ----------------------------------------------- */
 
   const rings = useMemo(
     () =>
       Array.from({ length: RING_COUNT }).map((_, i) => ({
         id: i,
-        tilt: -24 + i * 24,
-        speed: 6500 + i * 1600,
+        tilt: -25 + i * 25,
+        speed: 5000 + i * 1600,
 
-        // Smaller rings for phone screens
-        size: 135 + i * 25,
+        // کوچک‌تر برای موبایل
+        size: 135 + i * 24,
       })),
     []
   );
 
+  /* ================================================= */
+  /* STATES                                             */
+  /* ================================================= */
+
   const brainOpen = stage === 1;
+
   const logoStage = stage >= 3;
+
+  /*
+   * این متغیر بسیار مهم است:
+   *
+   * از stage 3 به بعد:
+   * - تمام رینگ‌ها حذف
+   * - تمام shockwaveها حذف
+   * - تمام particleها حذف
+   * - ambient particleها حذف
+   * - glow پشت مغز حذف
+   *
+   * سپس مغز به بالا حرکت می‌کند.
+   */
+  const circlesGone = stage >= 3;
+
   const exitStage = stage >= 4;
 
-  // Smaller movement on mobile
-  const brainLift = logoStage ? -38 : 0;
+  /*
+   * مغز فقط بعد از حذف کامل دایره‌ها
+   * به سمت بالا می‌رود.
+   */
+  const brainLift = exitStage ? -42 : 0;
 
   return (
     <LinearGradient
@@ -134,35 +164,34 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
       }
       style={styles.container}
     >
-      {/* =========================================
-          MAIN GLOW
-          ========================================= */}
+
+      {/* =================================================
+          BACKGROUND GLOW
+          ================================================= */}
 
       <MotiView
         from={{
           opacity: 0,
-          scale: 0.7,
+          scale: 0.6,
         }}
         animate={{
-          opacity: exitStage
+          /*
+           * به محض شروع stage 3،
+           * دایره/Glow پشت مغز کاملاً حذف می‌شود.
+           */
+          opacity: circlesGone
             ? 0
             : stage >= 2
-              ? logoStage
-                ? 0.24
-                : 0.42
-              : 0.72,
+              ? 0.5
+              : 0.85,
 
           scale: stage === 1
-            ? 1.22
-            : logoStage
-              ? 0.72
-              : 1,
-
-          translateY: brainLift,
+            ? 1.35
+            : 1,
         }}
         transition={{
           type: 'timing',
-          duration: stage === 2 ? 650 : 450,
+          duration: 400,
         }}
         style={[
           styles.glowBlob,
@@ -172,64 +201,43 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         ]}
       />
 
-      {/* =========================================
-          SECONDARY GLOW
-          ========================================= */}
-
-      <MotiView
-        from={{
-          opacity: 0,
-          scale: 0.6,
-        }}
-        animate={{
-          opacity: exitStage
-            ? 0
-            : logoStage
-              ? [0.12, 0.28, 0.12]
-              : [0.18, 0.32, 0.18],
-
-          scale: logoStage
-            ? [0.9, 1.08, 0.9]
-            : [0.85, 1, 0.85],
-        }}
-        transition={{
-          type: 'timing',
-          duration: 2600,
-          loop: !exitStage,
-        }}
-        style={[
-          styles.secondaryGlow,
-          {
-            backgroundColor: colors.accent,
-          },
-        ]}
-      />
-
-      {/* =========================================
+      {/* =================================================
           OPENING FLASH
-          ========================================= */}
+          ================================================= */}
 
       <MotiView
         from={{
           opacity: 0,
-          scale: 0.3,
+          scale: 0.4,
         }}
         animate={{
-          opacity: brainOpen ? [0.8, 0] : 0,
-          scale: brainOpen ? 1.45 : 0.3,
+          opacity: brainOpen
+            ? [0.9, 0]
+            : 0,
+
+          scale: brainOpen
+            ? 1.55
+            : 0.4,
         }}
         transition={{
           type: 'timing',
-          duration: 650,
+          duration: 420,
         }}
         style={styles.flash}
       />
 
+      {/* =================================================
+          MAIN CONTENT
+          ================================================= */}
+
       <View style={styles.content}>
 
-        {/* =======================================
-            AMBIENT FLOATING DOTS
-            ======================================= */}
+        {/* =================================================
+            AMBIENT DOTS
+
+            به محض stage 3 کاملاً حذف می‌شوند.
+            هیچ loopی وجود ندارد.
+            ================================================= */}
 
         {ambientParticles.map((p) => (
           <MotiView
@@ -238,42 +246,30 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
               opacity: 0,
               translateX: p.x,
               translateY: p.y,
-              scale: 0.45,
+              scale: 0.5,
             }}
             animate={{
-              opacity: exitStage
+              opacity: circlesGone
                 ? 0
-                : [0, 0.55, 0.15, 0.65, 0],
+                : [0, 0.6, 0],
 
-              translateX: exitStage
-                ? p.x
-                : [
-                    p.x,
-                    p.x + 5,
-                    p.x - 4,
-                    p.x + 2,
-                    p.x,
-                  ],
+              translateX: p.x,
+              translateY: p.y,
 
-              translateY: exitStage
-                ? p.y
-                : [
-                    p.y,
-                    p.y - 12,
-                    p.y - 5,
-                    p.y - 15,
-                    p.y,
-                  ],
-
-              scale: exitStage
-                ? 0.4
-                : [0.45, 0.8, 0.55, 0.9, 0.45],
+              scale: circlesGone
+                ? 0.5
+                : [0.5, 1, 0.5],
             }}
             transition={{
               type: 'timing',
               duration: p.duration,
               delay: p.delay,
-              loop: !exitStage,
+
+              /*
+               * قبل از stage 3 فقط یک بار.
+               * دیگر motion دائمی نداریم.
+               */
+              loop: false,
             }}
             style={styles.ambientWrap}
           >
@@ -288,9 +284,15 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           </MotiView>
         ))}
 
-        {/* =======================================
-            ROTATING RINGS
-            ======================================= */}
+        {/* =================================================
+            RINGS
+
+            مهم‌ترین تغییر:
+            stage 3 = opacity 0
+
+            بنابراین درست قبل از بالا رفتن مغز،
+            تمام حلقه‌ها از بین رفته‌اند.
+            ================================================= */}
 
         {rings.map((ring) => (
           <MotiView
@@ -298,45 +300,41 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
             from={{
               opacity: 0,
               rotateZ: '0deg',
-              scale: 0.82,
+              scale: 0.9,
             }}
             animate={{
-              opacity: exitStage
+              opacity: circlesGone
                 ? 0
                 : stage === 1 || stage === 2
-                  ? 0.38
+                  ? 0.5
                   : 0,
 
               rotateZ: '360deg',
 
-              scale:
-                stage === 1
-                  ? [0.82, 1, 0.94, 1]
-                  : 1,
-
-              translateY: brainLift,
+              scale: stage === 1
+                ? 1
+                : 0.9,
             }}
             transition={{
               opacity: {
                 type: 'timing',
-                duration: 500,
-              },
-
-              translateY: {
-                type: 'timing',
-                duration: 600,
+                duration: circlesGone ? 180 : 400,
               },
 
               scale: {
                 type: 'timing',
-                duration: 1800,
-                loop: stage === 1 && !exitStage,
+                duration: 450,
               },
 
               rotateZ: {
                 type: 'timing',
                 duration: ring.speed,
-                loop: true,
+
+                /*
+                 * فقط تا زمانی که دایره‌ها
+                 * روی صفحه هستند.
+                 */
+                loop: !circlesGone,
               },
             }}
             style={[
@@ -360,32 +358,34 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           />
         ))}
 
-        {/* =======================================
+        {/* =================================================
             SHOCKWAVES
-            ======================================= */}
 
-        {[0, 1, 2].map((i) => (
+            همه قبل از حرکت مغز حذف می‌شوند.
+            ================================================= */}
+
+        {[0, 1].map((i) => (
           <MotiView
             key={`wave-${i}`}
             from={{
               opacity: 0,
-              scale: 0.25,
+              scale: 0.3,
             }}
             animate={{
-              opacity:
-                stage === 1
-                  ? [0.5, 0]
+              opacity: circlesGone
+                ? 0
+                : stage === 1
+                  ? [0.55, 0]
                   : 0,
 
-              scale:
-                stage >= 1
-                  ? 2.15 + i * 0.42
-                  : 0.25,
+              scale: stage >= 1
+                ? 2.45 + i * 0.45
+                : 0.3,
             }}
             transition={{
               type: 'timing',
-              duration: 1100,
-              delay: i * 170,
+              duration: 800,
+              delay: i * 120,
             }}
             style={[
               styles.shockwave,
@@ -396,9 +396,11 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           />
         ))}
 
-        {/* =======================================
-            EXPLOSION PARTICLES
-            ======================================= */}
+        {/* =================================================
+            PARTICLES
+
+            قبل از بالا رفتن مغز کاملاً حذف می‌شوند.
+            ================================================= */}
 
         {particles.map((p) => (
           <MotiView
@@ -407,40 +409,30 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
               opacity: 0,
               translateX: 0,
               translateY: 0,
-              scale: 0.3,
+              scale: 0.4,
             }}
             animate={{
-              opacity:
-                stage === 1
+              opacity: circlesGone
+                ? 0
+                : stage === 1
                   ? [0, 1, 0]
                   : 0,
 
-              translateX:
-                stage >= 1
-                  ? [
-                      0,
-                      p.dx * 0.55,
-                      p.dx,
-                    ]
-                  : 0,
+              translateX: stage >= 1
+                ? p.dx
+                : 0,
 
-              translateY:
-                stage >= 1
-                  ? [
-                      0,
-                      p.dy * 0.55 - 6,
-                      p.dy,
-                    ]
-                  : 0,
+              translateY: stage >= 1
+                ? p.dy
+                : 0,
 
-              scale:
-                stage === 1
-                  ? [0.3, 1, 0.5]
-                  : 0.3,
+              scale: stage === 1
+                ? 1
+                : 0.4,
             }}
             transition={{
               type: 'timing',
-              duration: p.duration,
+              duration: 750,
               delay: p.delay,
             }}
             style={styles.particleWrap}
@@ -463,9 +455,19 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           </MotiView>
         ))}
 
-        {/* =======================================
+        {/* =================================================
             BRAIN
-            ======================================= */}
+
+            مغز در stage 3 هنوز وسط است.
+
+            circlesGone = true
+            ↓
+            همه دایره‌ها حذف
+            ↓
+            سپس stage 4
+            ↓
+            مغز به بالا می‌رود
+            ================================================= */}
 
         <MotiView
           from={{
@@ -474,9 +476,9 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           }}
           animate={{
             scale: exitStage
-              ? 0.76
+              ? 0.82
               : stage === 2
-                ? [1.08, 1, 1.025, 1]
+                ? [1.12, 1]
                 : 1,
 
             opacity: exitStage
@@ -488,64 +490,43 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           transition={{
             scale: {
               type: 'spring',
-              stiffness: 150,
-              damping: 15,
+              stiffness: 160,
+              damping: 14,
             },
 
             opacity: {
               type: 'timing',
-              duration: 450,
+              duration: 350,
             },
 
+            /*
+             * این حرکت بعد از حذف دایره‌ها انجام می‌شود.
+             */
             translateY: {
               type: 'timing',
-              duration: 600,
+              duration: 500,
             },
           }}
           style={styles.brainRow}
         >
 
-          {/* LEFT HALF */}
+          {/* =================================================
+              LEFT BRAIN HALF
+              ================================================= */}
 
           <MotiView
             animate={{
               translateX: brainOpen
-                ? -22
+                ? -28
                 : 0,
 
-              translateY: brainOpen
-                ? -3
-                : [0, -2, 0, 2, 0],
-
               rotateY: brainOpen
-                ? '-32deg'
-                : '0deg',
-
-              rotateZ: brainOpen
-                ? '-2deg'
+                ? '-38deg'
                 : '0deg',
             }}
             transition={{
-              translateX: {
-                type: 'timing',
-                duration: 550,
-              },
-
-              translateY: {
-                type: 'timing',
-                duration: 2200,
-                loop: !brainOpen && !exitStage,
-              },
-
-              rotateY: {
-                type: 'timing',
-                duration: 550,
-              },
-
-              rotateZ: {
-                type: 'timing',
-                duration: 500,
-              },
+              type: 'timing',
+              duration: 500,
             }}
             style={[
               styles.halfMask,
@@ -561,51 +542,27 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
             <Brain
               size={108}
               color="#FFFFFF"
-              strokeWidth={1.7}
+              strokeWidth={1.8}
             />
           </MotiView>
 
-          {/* RIGHT HALF */}
+          {/* =================================================
+              RIGHT BRAIN HALF
+              ================================================= */}
 
           <MotiView
             animate={{
               translateX: brainOpen
-                ? 22
+                ? 28
                 : 0,
 
-              translateY: brainOpen
-                ? 3
-                : [0, 2, 0, -2, 0],
-
               rotateY: brainOpen
-                ? '32deg'
-                : '0deg',
-
-              rotateZ: brainOpen
-                ? '2deg'
+                ? '38deg'
                 : '0deg',
             }}
             transition={{
-              translateX: {
-                type: 'timing',
-                duration: 550,
-              },
-
-              translateY: {
-                type: 'timing',
-                duration: 2200,
-                loop: !brainOpen && !exitStage,
-              },
-
-              rotateY: {
-                type: 'timing',
-                duration: 550,
-              },
-
-              rotateZ: {
-                type: 'timing',
-                duration: 500,
-              },
+              type: 'timing',
+              duration: 500,
             }}
             style={[
               styles.halfMask,
@@ -622,14 +579,17 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
             <Brain
               size={108}
               color="#FFFFFF"
-              strokeWidth={1.7}
+              strokeWidth={1.8}
               style={styles.rightIconOffset}
             />
           </MotiView>
 
-          {/* =====================================
-              CENTER ENERGY
-              ===================================== */}
+          {/* =================================================
+              CENTER LIGHT
+
+              این هم جزو عناصر دایره‌ای محسوب می‌شود،
+              بنابراین قبل از حرکت مغز حذف می‌شود.
+              ================================================= */}
 
           <MotiView
             from={{
@@ -637,31 +597,25 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
               scale: 0.2,
             }}
             animate={{
-              opacity: exitStage
+              opacity: circlesGone
                 ? 0
                 : brainOpen
-                  ? [0.5, 1, 0.75]
-                  : logoStage
-                    ? [0.35, 0.9, 0.35]
-                    : 0,
+                  ? 1
+                  : 0,
 
               scale: brainOpen
-                ? [0.8, 1.12, 1]
-                : logoStage
-                  ? [0.85, 1.05, 0.85]
-                  : 0.2,
+                ? 1
+                : 0.2,
             }}
             transition={{
               opacity: {
                 type: 'timing',
-                duration: logoStage ? 1800 : 600,
-                loop: logoStage && !exitStage,
+                duration: circlesGone ? 150 : 350,
               },
 
               scale: {
                 type: 'timing',
-                duration: 900,
-                loop: logoStage && !exitStage,
+                duration: 350,
               },
             }}
             style={[
@@ -672,48 +626,18 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
             ]}
           />
 
-          {/* Small center pulse */}
-
-          <MotiView
-            from={{
-              opacity: 0,
-              scale: 0.5,
-            }}
-            animate={{
-              opacity: logoStage
-                ? [0, 0.7, 0]
-                : 0,
-
-              scale: logoStage
-                ? [0.7, 1.5, 0.7]
-                : 0.5,
-            }}
-            transition={{
-              type: 'timing',
-              duration: 1700,
-              loop: logoStage && !exitStage,
-            }}
-            style={[
-              styles.centerPulse,
-              {
-                borderColor: colors.accent,
-              },
-            ]}
-          />
-
         </MotiView>
 
       </View>
 
-      {/* =========================================
+      {/* =================================================
           WORDMARK
-          ========================================= */}
+          ================================================= */}
 
       <MotiView
         from={{
           opacity: 0,
-          translateY: 22,
-          scale: 0.96,
+          translateY: 24,
         }}
         animate={{
           opacity: exitStage
@@ -723,30 +647,14 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
               : 0,
 
           translateY: exitStage
-            ? 8
+            ? 12
             : logoStage
               ? 0
-              : 22,
-
-          scale: logoStage
-            ? [0.96, 1.015, 1]
-            : 0.96,
+              : 24,
         }}
         transition={{
-          opacity: {
-            type: 'timing',
-            duration: 550,
-          },
-
-          translateY: {
-            type: 'timing',
-            duration: 550,
-          },
-
-          scale: {
-            type: 'timing',
-            duration: 900,
-          },
+          type: 'timing',
+          duration: 500,
         }}
         style={styles.wordmark}
       >
@@ -772,9 +680,9 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           {t.dashboardSubtitle}
         </Text>
 
-        {/* =====================================
+        {/* =================================================
             PROGRESS BAR
-            ===================================== */}
+            ================================================= */}
 
         <View
           style={[
@@ -795,8 +703,8 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
             }}
             transition={{
               type: 'timing',
-              duration: 1400,
-              delay: 120,
+              duration: 1300,
+              delay: 150,
             }}
             style={[
               styles.progressFill,
@@ -808,13 +716,13 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 
           <MotiView
             from={{
-              translateX: -35,
+              translateX: -40,
               opacity: 0,
             }}
             animate={{
               translateX: logoStage
                 ? width * 0.42
-                : -35,
+                : -40,
 
               opacity: logoStage
                 ? [0, 0.9, 0]
@@ -822,7 +730,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
             }}
             transition={{
               type: 'timing',
-              duration: 1200,
+              duration: 1300,
               delay: 150,
             }}
             style={[
@@ -834,12 +742,13 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           />
         </View>
       </MotiView>
+
     </LinearGradient>
   );
 }
 
 /* ================================================= */
-/* STYLES                                            */
+/* STYLES                                             */
 /* ================================================= */
 
 const styles = StyleSheet.create({
@@ -857,55 +766,48 @@ const styles = StyleSheet.create({
   glowBlob: {
     position: 'absolute',
 
-    // Was 340
     width: 230,
     height: 230,
 
-    borderRadius: 120,
+    borderRadius: 115,
+
     opacity: 0.7,
-  },
-
-  secondaryGlow: {
-    position: 'absolute',
-
-    width: 155,
-    height: 155,
-
-    borderRadius: 80,
-    opacity: 0.25,
   },
 
   flash: {
     position: 'absolute',
 
-    // Smaller opening flash
     width: 150,
     height: 150,
 
     borderRadius: 75,
+
     backgroundColor: '#FFFFFF',
   },
 
   /* ----------------------------------------------- */
-  /* Main content                                      */
+  /* Content                                           */
   /* ----------------------------------------------- */
 
   content: {
     alignItems: 'center',
     justifyContent: 'center',
 
-    // Smaller animation area for phones
     width: 220,
     height: 220,
   },
+
+  /* ----------------------------------------------- */
+  /* Ambient dots                                      */
+  /* ----------------------------------------------- */
 
   ambientWrap: {
     position: 'absolute',
   },
 
   ambientDot: {
-    width: 2.5,
-    height: 2.5,
+    width: 3,
+    height: 3,
     borderRadius: 2,
   },
 
@@ -915,7 +817,7 @@ const styles = StyleSheet.create({
 
   ring: {
     position: 'absolute',
-    borderWidth: 1.2,
+    borderWidth: 1.5,
   },
 
   /* ----------------------------------------------- */
@@ -925,10 +827,11 @@ const styles = StyleSheet.create({
   shockwave: {
     position: 'absolute',
 
-    width: 110,
-    height: 110,
+    width: 120,
+    height: 120,
 
-    borderRadius: 55,
+    borderRadius: 60,
+
     borderWidth: 1.5,
   },
 
@@ -941,8 +844,8 @@ const styles = StyleSheet.create({
   },
 
   particleDot: {
-    width: 5,
-    height: 5,
+    width: 6,
+    height: 6,
     borderRadius: 3,
   },
 
@@ -957,7 +860,6 @@ const styles = StyleSheet.create({
   },
 
   halfMask: {
-    // 108px icon -> half
     width: 54,
     height: 108,
 
@@ -973,29 +875,16 @@ const styles = StyleSheet.create({
   },
 
   /* ----------------------------------------------- */
-  /* Center energy                                     */
+  /* Center light                                      */
   /* ----------------------------------------------- */
 
   coreLight: {
     position: 'absolute',
 
     width: 18,
-    height: 66,
+    height: 68,
 
     borderRadius: 9,
-
-    opacity: 0.8,
-  },
-
-  centerPulse: {
-    position: 'absolute',
-
-    width: 38,
-    height: 38,
-
-    borderRadius: 19,
-
-    borderWidth: 1,
   },
 
   /* ----------------------------------------------- */
@@ -1017,14 +906,14 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
 
     textShadowColor:
-      'rgba(167,139,250,0.45)',
+      'rgba(167,139,250,0.5)',
 
     textShadowOffset: {
       width: 0,
       height: 0,
     },
 
-    textShadowRadius: 14,
+    textShadowRadius: 16,
   },
 
   subtitle: {
@@ -1065,9 +954,10 @@ const styles = StyleSheet.create({
 
     top: 0,
 
-    width: 26,
+    width: 28,
     height: '100%',
 
     borderRadius: BorderRadius.full,
   },
 });
+
