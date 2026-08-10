@@ -45,10 +45,23 @@ export function DashboardScreen() {
   const { t, isRTL } = useLanguage();
   const router = useRouter();
   const [refreshing, setRefreshing] = React.useState(false);
+  const refreshTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1500);
+
+    refreshTimerRef.current = setTimeout(() => {
+      setRefreshing(false);
+      refreshTimerRef.current = null;
+    }, 1500);
+  }, []);
+
+  React.useEffect(() => {
+    return () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
+    };
   }, []);
 
   return (
