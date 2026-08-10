@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   View,
@@ -8,31 +7,21 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
-
 import { useRouter } from 'expo-router';
-
 import {
-  ArrowLeft,
   Brain,
   Clock,
   Languages,
   ChevronLeft,
   Play,
 } from 'lucide-react-native';
-
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-
 import {
   Spacing,
   BorderRadius,
 } from '../../constants/theme';
-
 import { Card } from '../../components/ui/Card';
-
-// --------------------------------------------------
-// DATA
-// --------------------------------------------------
 
 const bilingualGames = [
   {
@@ -82,10 +71,6 @@ const bilingualGames = [
   },
 ];
 
-// --------------------------------------------------
-// SCREEN
-// --------------------------------------------------
-
 export default function BilingualGamesScreen() {
   const { colors } = useTheme();
   const { t, language, isRTL } = useLanguage();
@@ -124,10 +109,6 @@ export default function BilingualGamesScreen() {
         },
       ]}
     >
-      {/* ------------------------------------------------
-          HEADER
-      ------------------------------------------------ */}
-
       <View
         style={[
           styles.header,
@@ -220,23 +201,20 @@ export default function BilingualGamesScreen() {
             },
           ]}
         >
-          <ArrowLeft
-            size={20}
+          <ChevronLeft
+            size={26}
+            strokeWidth={2.5}
             color={colors.text}
             style={
               isRTL
-                ? {
-                    transform: [{ scaleX: -1 }],
+                ? undefined
+                : {
+                    transform: [{ rotate: '180deg' }],
                   }
-                : undefined
             }
           />
         </TouchableOpacity>
       </View>
-
-      {/* ------------------------------------------------
-          INTRO
-      ------------------------------------------------ */}
 
       <View
         style={[
@@ -304,10 +282,6 @@ export default function BilingualGamesScreen() {
         </View>
       </View>
 
-      {/* ------------------------------------------------
-          GAMES
-      ------------------------------------------------ */}
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
@@ -317,8 +291,6 @@ export default function BilingualGamesScreen() {
           key={game.id}
           style={styles.card}
         >
-            {/* IMAGE */}
-
             <View style={styles.imageWrapper}>
               <Image
                 source={game.image}
@@ -355,8 +327,6 @@ export default function BilingualGamesScreen() {
               </View>
             </View>
 
-            {/* INFO */}
-
             <View style={styles.info}>
               <Text
                 style={[
@@ -382,8 +352,6 @@ export default function BilingualGamesScreen() {
               >
                 {getDescription(game)}
               </Text>
-
-              {/* DETAILS */}
 
               <View
                 style={[
@@ -459,8 +427,6 @@ export default function BilingualGamesScreen() {
                 </View>
               </View>
 
-              {/* START BUTTON */}
-
               <TouchableOpacity
                 style={[
                   styles.button,
@@ -510,18 +476,10 @@ export default function BilingualGamesScreen() {
   );
 }
 
-// --------------------------------------------------
-// STYLES
-// --------------------------------------------------
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-
-  // ------------------------------------------------
-  // HEADER
-  // ------------------------------------------------
 
   header: {
     paddingHorizontal: Spacing.lg,
@@ -568,16 +526,11 @@ const styles = StyleSheet.create({
   backButton: {
     width: 44,
     height: 44,
-    borderRadius: 15,
+    borderRadius: 22,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  // ------------------------------------------------
-  // INTRO
-  // ------------------------------------------------
-
   introCard: {
     marginHorizontal: Spacing.lg,
     marginTop: 5,
@@ -612,19 +565,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  // ------------------------------------------------
-  // CONTENT
-  // ------------------------------------------------
-
   content: {
     paddingTop: 14,
     paddingHorizontal: Spacing.lg,
     paddingBottom: 110,
   },
-
-  // ------------------------------------------------
-  // GAME CARD
-  // ------------------------------------------------
 
   card: {
     marginBottom: 18,
@@ -675,10 +620,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  // ------------------------------------------------
-  // DETAILS
-  // ------------------------------------------------
-
   details: {
     marginTop: 14,
     alignItems: 'center',
@@ -699,10 +640,6 @@ const styles = StyleSheet.create({
     width: 1,
     height: 15,
   },
-
-  // ------------------------------------------------
-  // BUTTON
-  // ------------------------------------------------
 
   button: {
     marginTop: 17,

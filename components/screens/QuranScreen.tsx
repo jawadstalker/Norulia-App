@@ -36,10 +36,6 @@ import {
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 
-// --------------------------------------------------
-// TYPES
-// --------------------------------------------------
-
 interface QuranVerse {
   number: number;
   arabic: string;
@@ -59,10 +55,6 @@ interface Surah {
   juz: number;
   revelation: 'مکی' | 'مدنی';
 }
-
-// --------------------------------------------------
-// SAMPLE DATA
-// --------------------------------------------------
 
 const quranData: Surah[] = [
   {
@@ -305,10 +297,6 @@ const quranData: Surah[] = [
   },
 ];
 
-// --------------------------------------------------
-// COMPONENT
-// --------------------------------------------------
-
 export default function QuranScreen() {
   const { colors, isDark } = useTheme();
   const { t } = useLanguage();
@@ -367,10 +355,6 @@ export default function QuranScreen() {
   const scaleAnim =
     useRef(new Animated.Value(0.96)).current;
 
-  // --------------------------------------------------
-  // FILTER
-  // --------------------------------------------------
-
   const filteredSurahs = useMemo(() => {
     const query = searchQuery.trim();
 
@@ -386,10 +370,6 @@ export default function QuranScreen() {
     });
   }, [surahs, searchQuery]);
 
-  // --------------------------------------------------
-  // STATS
-  // --------------------------------------------------
-
   const completedCount = surahs.filter(
     surah => surah.completed,
   ).length;
@@ -399,10 +379,6 @@ export default function QuranScreen() {
       surah.progress > 0 &&
       !surah.completed,
   ).length;
-
-  // --------------------------------------------------
-  // SELECT SURAH
-  // --------------------------------------------------
 
   const handleSurahSelect = (
     surah: Surah,
@@ -422,10 +398,6 @@ export default function QuranScreen() {
     setIsFillCorrect(null);
     setTotalScore(0);
   };
-
-  // --------------------------------------------------
-  // BACK
-  // --------------------------------------------------
 
   const handleBack = () => {
     if (currentStep === 'surah') {
@@ -450,10 +422,6 @@ export default function QuranScreen() {
     }
   };
 
-  // --------------------------------------------------
-  // ANIMATION
-  // --------------------------------------------------
-
   useEffect(() => {
     fadeAnim.setValue(0);
     scaleAnim.setValue(0.96);
@@ -474,10 +442,6 @@ export default function QuranScreen() {
     ]).start();
   }, [currentStep]);
 
-  // --------------------------------------------------
-  // AUDIO
-  // --------------------------------------------------
-
   const handlePlayAudio = () => {
     if (isPlaying) return;
 
@@ -487,10 +451,6 @@ export default function QuranScreen() {
       setIsPlaying(false);
     }, 2500);
   };
-
-  // --------------------------------------------------
-  // QUIZ
-  // --------------------------------------------------
 
   const quizQuestions = useMemo(() => {
     if (!selectedSurah) return [];
@@ -543,10 +503,6 @@ export default function QuranScreen() {
   const currentQuiz =
     quizQuestions[quizIndex];
 
-  // --------------------------------------------------
-  // NEXT QUESTION
-  // --------------------------------------------------
-
   const goToNextQuestion = (
     correct: boolean,
   ) => {
@@ -598,10 +554,6 @@ export default function QuranScreen() {
     setCurrentStep('result');
   };
 
-  // --------------------------------------------------
-  // CHOICE
-  // --------------------------------------------------
-
   const handleOptionSelect = (
     index: number,
   ) => {
@@ -636,10 +588,6 @@ export default function QuranScreen() {
     }, 1100);
   };
 
-  // --------------------------------------------------
-  // FILL
-  // --------------------------------------------------
-
   const handleFillSubmit = () => {
     if (
       !fillAnswer.trim() ||
@@ -672,36 +620,16 @@ export default function QuranScreen() {
     }, 1100);
   };
 
-  // --------------------------------------------------
-  // HEADER
-  // --------------------------------------------------
-
-  const renderTopBar = (
-    title?: string,
-  ) => (
+  const renderTopBar = (title?: string) => (
     <View style={styles.topBar}>
       <View style={styles.topBarLeft}>
-        <View
-          style={[
-            styles.logoContainer,
-            {
-              backgroundColor: isDark
-                ? 'rgba(34,197,94,0.15)'
-                : '#ECFDF5',
-            },
-          ]}
-        >
-          <BookOpen
-            size={21}
-            color="#22C55E"
-          />
-        </View>
-
         {title && (
           <Text
             style={[
               styles.topBarTitle,
-              { color: colors.text },
+              {
+                color: colors.text,
+              },
             ]}
             numberOfLines={1}
           >
@@ -723,17 +651,13 @@ export default function QuranScreen() {
           },
         ]}
       >
-        <ChevronRight
+        <ChevronLeft
           size={22}
           color={colors.text}
         />
       </TouchableOpacity>
     </View>
   );
-
-  // --------------------------------------------------
-  // LIST
-  // --------------------------------------------------
 
   const renderList = () => (
     <Animated.View
@@ -1304,10 +1228,6 @@ export default function QuranScreen() {
     </Animated.View>
   );
 
-  // --------------------------------------------------
-  // SURAH DETAIL
-  // --------------------------------------------------
-
   const renderSurah = () => {
     if (!selectedSurah) return null;
 
@@ -1735,10 +1655,6 @@ export default function QuranScreen() {
       </Animated.View>
     );
   };
-
-  // --------------------------------------------------
-  // QUIZ
-  // --------------------------------------------------
 
   const renderQuiz = () => {
     if (
@@ -2259,10 +2175,6 @@ export default function QuranScreen() {
     );
   };
 
-  // --------------------------------------------------
-  // RESULT
-  // --------------------------------------------------
-
   const renderResult = () => {
     const correctCount =
       quizAnswers.filter(
@@ -2609,10 +2521,6 @@ export default function QuranScreen() {
     );
   };
 
-  // --------------------------------------------------
-  // MAIN
-  // --------------------------------------------------
-
   return (
     <LinearGradient
       colors={
@@ -2644,10 +2552,6 @@ export default function QuranScreen() {
   );
 }
 
-// --------------------------------------------------
-// STYLES
-// --------------------------------------------------
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -2666,10 +2570,6 @@ const styles = StyleSheet.create({
     paddingBottom: 130,
   },
 
-  // -----------------------------------------------
-  // TOP BAR
-  // -----------------------------------------------
-
   topBar: {
     minHeight: 54,
     paddingHorizontal: 18,
@@ -2680,39 +2580,28 @@ const styles = StyleSheet.create({
   },
 
   topBarLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
     flex: 1,
-  },
-
-  logoContainer: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'center',
   },
 
   topBarTitle: {
-    flex: 1,
     fontSize: 17,
     fontWeight: '700',
     textAlign: 'right',
-    marginRight: 11,
   },
 
   backCircle: {
+    
     width: 42,
     height: 42,
-    borderRadius: 14,
+    borderRadius: 21,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 12,
+    marginTop: 19,
   },
-
-  // -----------------------------------------------
-  // HERO
-  // -----------------------------------------------
 
   heroSection: {
     marginTop: 12,
@@ -2745,10 +2634,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     lineHeight: 23,
   },
-
-  // -----------------------------------------------
-  // STATS
-  // -----------------------------------------------
 
   statsCard: {
     minHeight: 82,
@@ -2792,10 +2677,6 @@ const styles = StyleSheet.create({
     height: 38,
   },
 
-  // -----------------------------------------------
-  // SEARCH
-  // -----------------------------------------------
-
   searchContainer: {
     height: 52,
     borderRadius: 16,
@@ -2813,10 +2694,6 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
 
-  // -----------------------------------------------
-  // SECTIONS
-  // -----------------------------------------------
-
   sectionHeader: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -2833,10 +2710,6 @@ const styles = StyleSheet.create({
   resultCount: {
     fontSize: 12,
   },
-
-  // -----------------------------------------------
-  // SURAHS
-  // -----------------------------------------------
 
   surahsContainer: {
     gap: 10,
@@ -2939,10 +2812,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 
-  // -----------------------------------------------
-  // EMPTY
-  // -----------------------------------------------
-
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -2960,10 +2829,6 @@ const styles = StyleSheet.create({
     marginTop: 5,
     textAlign: 'center',
   },
-
-  // -----------------------------------------------
-  // DETAIL
-  // -----------------------------------------------
 
   detailHeader: {
     flexDirection: 'row-reverse',
@@ -3013,10 +2878,6 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
 
-  // -----------------------------------------------
-  // MEMORY HINT
-  // -----------------------------------------------
-
   memoryHint: {
     borderWidth: 1,
     borderRadius: 18,
@@ -3051,10 +2912,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: 'right',
   },
-
-  // -----------------------------------------------
-  // VERSES
-  // -----------------------------------------------
 
   verseCard: {
     borderWidth: 1,
@@ -3116,10 +2973,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 
-  // -----------------------------------------------
-  // ACTIONS
-  // -----------------------------------------------
-
   actionBar: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -3152,10 +3005,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
-
-  // -----------------------------------------------
-  // QUIZ
-  // -----------------------------------------------
 
   quizProgressHeader: {
     flexDirection: 'row-reverse',
@@ -3330,10 +3179,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textAlign: 'right',
   },
-
-  // -----------------------------------------------
-  // RESULT
-  // -----------------------------------------------
 
   resultScroll: {
     paddingHorizontal: 18,

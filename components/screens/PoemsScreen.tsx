@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import {
   View,
@@ -45,7 +46,8 @@ const poems: Poem[] = [
     poet: 'Memory Practice',
     poetFa: 'تمرین حافظه',
     text: 'Learn the lines one by one and try to remember them.',
-    textFa: 'بیت‌ها را یکی‌یکی بخوانید و سعی کنید آن‌ها را به خاطر بسپارید.',
+    textFa:
+      'بیت‌ها را یکی‌یکی بخوانید و سعی کنید آن‌ها را به خاطر بسپارید.',
   },
   {
     id: '2',
@@ -53,8 +55,10 @@ const poems: Poem[] = [
     titleFa: 'سخنان زیبا',
     poet: 'Memory Practice',
     poetFa: 'تمرین حافظه',
-    text: 'Read carefully, close your eyes, and repeat the lines from memory.',
-    textFa: 'با دقت بخوانید، چشمان خود را ببندید و بیت‌ها را از حفظ تکرار کنید.',
+    text:
+      'Read carefully, close your eyes, and repeat the lines from memory.',
+    textFa:
+      'با دقت بخوانید، چشمان خود را ببندید و بیت‌ها را از حفظ تکرار کنید.',
   },
   {
     id: '3',
@@ -62,8 +66,10 @@ const poems: Poem[] = [
     titleFa: 'شعر روزانه',
     poet: 'Memory Practice',
     poetFa: 'تمرین حافظه',
-    text: 'Practice a small part every day to strengthen your memory.',
-    textFa: 'هر روز بخش کوچکی را تمرین کنید تا حافظه شما تقویت شود.',
+    text:
+      'Practice a small part every day to strengthen your memory.',
+    textFa:
+      'هر روز بخش کوچکی را تمرین کنید تا حافظه شما تقویت شود.',
   },
 ];
 
@@ -72,7 +78,9 @@ export default function PoemsScreen() {
   const { language, isRTL } = useLanguage();
   const router = useRouter();
 
-  const [selectedPoem, setSelectedPoem] = useState<Poem | null>(null);
+  const [selectedPoem, setSelectedPoem] =
+    useState<Poem | null>(null);
+
   const [showAnswer, setShowAnswer] = useState(false);
   const [userAnswer, setUserAnswer] = useState('');
 
@@ -80,7 +88,10 @@ export default function PoemsScreen() {
 
   const currentPoem = selectedPoem;
 
-  const title = language === 'fa' ? 'حفظ شعر' : 'Poem Memorization';
+  const title =
+    language === 'fa'
+      ? 'حفظ شعر'
+      : 'Poem Memorization';
 
   const subtitle =
     language === 'fa'
@@ -123,6 +134,12 @@ export default function PoemsScreen() {
     }
   };
 
+  /*
+   * ==========================================
+   * صفحه تمرین یک شعر
+   * ==========================================
+   */
+
   if (currentPoem) {
     return (
       <View
@@ -133,6 +150,7 @@ export default function PoemsScreen() {
           },
         ]}
       >
+        {/* Header درس */}
         <View
           style={[
             styles.header,
@@ -141,26 +159,21 @@ export default function PoemsScreen() {
             },
           ]}
         >
+          {/* دکمه بازگشت داخل درس */}
           <TouchableOpacity
             onPress={handleBack}
+            activeOpacity={0.8}
             style={[
               styles.backButton,
               {
                 backgroundColor: colors.surface,
               },
             ]}
-            activeOpacity={0.8}
           >
             <ArrowLeft
               size={22}
               color={colors.text}
-              style={
-                isRTL
-                  ? {
-                      transform: [{ scaleX: -1 }],
-                    }
-                  : undefined
-              }
+              strokeWidth={2.4}
             />
           </TouchableOpacity>
 
@@ -168,7 +181,9 @@ export default function PoemsScreen() {
             style={[
               styles.headerTitleContainer,
               {
-                alignItems: isRTL ? 'flex-end' : 'flex-start',
+                alignItems: isRTL
+                  ? 'flex-end'
+                  : 'flex-start',
               },
             ]}
           >
@@ -207,13 +222,15 @@ export default function PoemsScreen() {
               style={[
                 styles.iconContainer,
                 {
-                  backgroundColor: colors.primary + '18',
+                  backgroundColor:
+                    colors.primary + '18',
                 },
               ]}
             >
               <BookOpen
                 size={34}
                 color={colors.primary}
+                strokeWidth={2}
               />
             </View>
 
@@ -271,7 +288,9 @@ export default function PoemsScreen() {
                   backgroundColor: colors.primary,
                 },
               ]}
-              onPress={() => setShowAnswer(!showAnswer)}
+              onPress={() =>
+                setShowAnswer(!showAnswer)
+              }
               activeOpacity={0.85}
             >
               <Text style={styles.primaryButtonText}>
@@ -308,7 +327,9 @@ export default function PoemsScreen() {
                   ? 'متن را از حفظ بنویسید...'
                   : 'Write the poem from memory...'
               }
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={
+                colors.textSecondary
+              }
               style={[
                 styles.input,
                 {
@@ -330,7 +351,11 @@ export default function PoemsScreen() {
               ]}
               activeOpacity={0.8}
             >
-              <Check size={20} color={colors.primary} />
+              <Check
+                size={20}
+                color={colors.primary}
+                strokeWidth={2.5}
+              />
 
               <Text
                 style={[
@@ -354,6 +379,7 @@ export default function PoemsScreen() {
               <RotateCcw
                 size={17}
                 color={colors.textSecondary}
+                strokeWidth={2.2}
               />
 
               <Text
@@ -375,6 +401,12 @@ export default function PoemsScreen() {
     );
   }
 
+  /*
+   * ==========================================
+   * صفحه لیست شعرها
+   * ==========================================
+   */
+
   return (
     <View
       style={[
@@ -384,40 +416,26 @@ export default function PoemsScreen() {
         },
       ]}
     >
+      {/* دکمه بازگشت - همان جای قبلی */}
       <TouchableOpacity
         onPress={handleBack}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={
+          language === 'fa' ? 'بازگشت' : 'Back'
+        }
         style={[
           styles.topBackButton,
           {
             backgroundColor: colors.surface,
-            flexDirection: isRTL ? 'row-reverse' : 'row',
           },
         ]}
-        activeOpacity={0.8}
       >
         <ArrowLeft
-          size={21}
+          size={22}
           color={colors.text}
-          style={
-            isRTL
-              ? {
-                  transform: [{ scaleX: -1 }],
-                }
-              : undefined
-          }
+          strokeWidth={2.4}
         />
-
-        <Text
-          style={[
-            styles.backText,
-            {
-              color: colors.text,
-              textAlign: textAlignStyle,
-            },
-          ]}
-        >
-          {language === 'fa' ? 'بازگشت' : 'Back'}
-        </Text>
       </TouchableOpacity>
 
       <ScrollView
@@ -455,18 +473,29 @@ export default function PoemsScreen() {
               resetPractice();
             }}
           >
-            <Card style={styles.poemCard}>
+            <Card
+              style={[
+                styles.poemCard,
+                {
+                  flexDirection: isRTL
+                    ? 'row-reverse'
+                    : 'row',
+                },
+              ]}
+            >
               <View
                 style={[
                   styles.cardIcon,
                   {
-                    backgroundColor: colors.primary + '18',
+                    backgroundColor:
+                      colors.primary + '18',
                   },
                 ]}
               >
                 <BookOpen
                   size={30}
                   color={colors.primary}
+                  strokeWidth={2}
                 />
               </View>
 
@@ -508,13 +537,7 @@ export default function PoemsScreen() {
               <ArrowLeft
                 size={21}
                 color={colors.textSecondary}
-                style={
-                  isRTL
-                    ? undefined
-                    : {
-                        transform: [{ rotate: '180deg' }],
-                      }
-                }
+                strokeWidth={2.2}
               />
             </Card>
           </TouchableOpacity>
@@ -529,26 +552,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  /*
+   * دکمه بازگشت صفحه اصلی
+   * دقیقاً مثل نسخه قبلی:
+   * بالا 60
+   * سمت چپ Spacing.lg
+   */
+  topBackButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
+    marginTop: 60,
+    marginLeft: Spacing.lg,
+  },
+
   content: {
     paddingTop: 20,
     paddingHorizontal: Spacing.lg,
     paddingBottom: 100,
-  },
-
-  topBackButton: {
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginTop: 60,
-    marginLeft: Spacing.lg,
-    gap: 7,
-  },
-
-  backText: {
-    fontSize: 15,
-    fontWeight: '600',
   },
 
   title: {
@@ -570,7 +593,6 @@ const styles = StyleSheet.create({
     minHeight: 105,
     marginBottom: Spacing.md,
     padding: Spacing.md,
-    flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
   },
@@ -597,6 +619,9 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
 
+  /*
+   * Header داخل درس
+   */
   header: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
@@ -673,6 +698,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     borderRadius: BorderRadius.full,
     alignItems: 'center',
+    justifyContent: 'center',
   },
 
   primaryButtonText: {
@@ -727,3 +753,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+

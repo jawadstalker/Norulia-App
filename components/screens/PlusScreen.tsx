@@ -6,19 +6,16 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-
 import { LinearGradient } from 'expo-linear-gradient';
-
 import { useRouter } from 'expo-router';
-
 import {
   BookOpen,
   Gamepad2,
   Feather,
   ChevronLeft,
   Sparkles,
+  ArrowLeft,
 } from 'lucide-react-native';
-
 import { useTheme } from '../../context/ThemeContext';
 
 export default function PlusScreen() {
@@ -71,7 +68,6 @@ export default function PlusScreen() {
     if (!module.enabled) {
       return;
     }
-
     router.push(module.route as any);
   };
 
@@ -85,57 +81,81 @@ export default function PlusScreen() {
       style={styles.container}
     >
       <View style={styles.screen}>
-
-        {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerText}>
-
-            <View style={styles.badge}>
-              <Sparkles
-                size={15}
-                color={colors.primary}
+          <View style={styles.headerRow}>
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="بازگشت"
+              hitSlop={{
+                top: 10,
+                bottom: 10,
+                left: 10,
+                right: 10,
+              }}
+              style={[
+                styles.backButton,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255,255,255,0.08)'
+                    : '#FFFFFF',
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <ArrowLeft
+                size={22}
+                strokeWidth={2.4}
+                color={colors.text}
               />
+            </TouchableOpacity>
+
+            <View style={styles.headerText}>
+              <View style={styles.badge}>
+                <Sparkles
+                  size={15}
+                  color={colors.primary}
+                />
+                <Text
+                  style={[
+                    styles.badgeText,
+                    {
+                      color: colors.primary,
+                    },
+                  ]}
+                >
+                  یادگیری هوشمند
+                </Text>
+              </View>
 
               <Text
                 style={[
-                  styles.badgeText,
+                  styles.title,
                   {
-                    color: colors.primary,
+                    color: colors.text,
                   },
                 ]}
               >
-                یادگیری هوشمند
+                ماژول‌ها
+              </Text>
+
+              <Text
+                style={[
+                  styles.subtitle,
+                  {
+                    color: colors.textSecondary,
+                  },
+                ]}
+              >
+                مسیر یادگیری مورد علاقه‌ات را انتخاب کن
               </Text>
             </View>
-
-            <Text
-              style={[
-                styles.title,
-                {
-                  color: colors.text,
-                },
-              ]}
-            >
-              ماژول‌ها
-            </Text>
-
-            <Text
-              style={[
-                styles.subtitle,
-                {
-                  color: colors.textSecondary,
-                },
-              ]}
-            >
-              مسیر یادگیری مورد علاقه‌ات را انتخاب کن
-            </Text>
-
           </View>
         </View>
 
-        {/* Modules */}
         <View style={styles.modules}>
-          {modules.map(module => {
+          {modules.map((module) => {
             const Icon = module.icon;
 
             return (
@@ -154,16 +174,13 @@ export default function PlusScreen() {
                     backgroundColor: isDark
                       ? 'rgba(255,255,255,0.055)'
                       : '#FFFFFF',
-
                     borderColor: colors.border,
-
                     opacity: module.enabled
                       ? 1
                       : 0.62,
                   },
                 ]}
               >
-                {/* Icon */}
                 <View
                   style={[
                     styles.moduleIcon,
@@ -180,7 +197,6 @@ export default function PlusScreen() {
                   />
                 </View>
 
-                {/* Content */}
                 <View style={styles.moduleContent}>
                   <Text
                     style={[
@@ -220,7 +236,6 @@ export default function PlusScreen() {
                   )}
                 </View>
 
-                {/* Arrow */}
                 {module.enabled && (
                   <View
                     style={[
@@ -242,7 +257,6 @@ export default function PlusScreen() {
             );
           })}
         </View>
-
       </View>
     </LinearGradient>
   );
@@ -252,52 +266,58 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-
   screen: {
     flex: 1,
-    paddingTop:
-      Platform.OS === 'ios' ? 58 : 32,
+    paddingTop: 80,
     paddingHorizontal: 20,
   },
-
   header: {
-    paddingTop: 12,
+   
     marginBottom: 28,
   },
-
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    marginRight: 14,
+  },
   headerText: {
+    flex: 1,
     alignItems: 'flex-end',
   },
-
   badge: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 10,
+    marginBottom: 6,
   },
-
   badgeText: {
     fontSize: 12,
     fontWeight: '700',
   },
-
   title: {
     fontSize: 30,
     fontWeight: '900',
     textAlign: 'right',
   },
-
   subtitle: {
     fontSize: 14,
     lineHeight: 23,
     marginTop: 7,
     textAlign: 'right',
   },
-
   modules: {
     gap: 13,
   },
-
   moduleCard: {
     minHeight: 112,
     borderRadius: 22,
@@ -306,7 +326,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'center',
   },
-
   moduleIcon: {
     width: 52,
     height: 52,
@@ -315,31 +334,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 13,
   },
-
   moduleContent: {
     flex: 1,
     alignItems: 'flex-end',
   },
-
   moduleTitle: {
     fontSize: 17,
     fontWeight: '800',
     textAlign: 'right',
   },
-
   moduleDescription: {
     fontSize: 12,
     lineHeight: 20,
     marginTop: 4,
     textAlign: 'right',
   },
-
   comingSoon: {
     fontSize: 10,
     fontWeight: '700',
     marginTop: 5,
   },
-
   arrowCircle: {
     width: 34,
     height: 34,

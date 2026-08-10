@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Image,
   RefreshControl,
-  Dimensions,
   Alert,
 } from 'react-native';
 import { MotiView } from 'moti';
@@ -21,19 +20,15 @@ import { Spacing, BorderRadius } from '../../constants/theme';
 import {
   Pill,
   Clock,
-  Bell,
   Plus,
   CheckCircle,
-  AlertCircle,
   Calendar,
   Flame,
   Brain,
   ChevronRight,
+  ChevronLeft,
 } from 'lucide-react-native';
 
-const { width } = Dimensions.get('window');
-
-// نوع داده برای دارو
 interface Medication {
   id: number;
   name: string;
@@ -45,62 +40,98 @@ interface Medication {
   date: string;
 }
 
-// تابع برای تبدیل تاریخ میلادی به شمسی
-function toPersianDate(date: Date): { year: number; month: number; day: number } {
-  // الگوریتم تبدیل تقویم میلادی به شمسی
+function toPersianDate(
+  date: Date
+): { year: number; month: number; day: number } {
   const gregorianYear = date.getFullYear();
   const gregorianMonth = date.getMonth() + 1;
   const gregorianDay = date.getDate();
 
-  // محاسبه روزهای گذشته از ابتدای سال میلادی
-  const daysInMonth = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const daysInMonth = [
+    0,
+    31,
+    28,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ];
+
   let daysPassed = 0;
+
   for (let i = 1; i < gregorianMonth; i++) {
     daysPassed += daysInMonth[i];
   }
+
   daysPassed += gregorianDay;
 
-  // اضافه کردن روز برای سال کبیسه
-  const isLeap = (gregorianYear % 4 === 0 && gregorianYear % 100 !== 0) || (gregorianYear % 400 === 0);
+  const isLeap =
+    (gregorianYear % 4 === 0 && gregorianYear % 100 !== 0) ||
+    gregorianYear % 400 === 0;
+
   if (isLeap && gregorianMonth > 2) {
     daysPassed += 1;
   }
 
-  // محاسبه سال شمسی
   let persianYear = gregorianYear - 622;
   let persianMonth = 1;
   let persianDay = daysPassed - 79;
 
-  // تنظیم برای روزهای قبل از شروع سال شمسی
   if (persianDay <= 0) {
     persianYear -= 1;
     persianDay += 365;
+
     if ((persianYear + 1) % 4 === 0) {
       persianDay += 1;
     }
   }
 
-  // محاسبه ماه و روز شمسی
-  const persianDaysInMonth = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+  const persianDaysInMonth = [
+    31,
+    31,
+    31,
+    31,
+    31,
+    31,
+    30,
+    30,
+    30,
+    30,
+    30,
+    29,
+  ];
+
   const isPersianLeap = persianYear % 4 === 0;
+
   if (isPersianLeap) {
     persianDaysInMonth[11] = 30;
   }
 
   let remainingDays = persianDay;
+
   for (let i = 0; i < 12; i++) {
     if (remainingDays <= persianDaysInMonth[i]) {
       persianMonth = i + 1;
       persianDay = remainingDays;
       break;
     }
+
     remainingDays -= persianDaysInMonth[i];
   }
 
-  return { year: persianYear, month: persianMonth, day: persianDay };
+  return {
+    year: persianYear,
+    month: persianMonth,
+    day: persianDay,
+  };
 }
 
-// تابع برای دریافت نام ماه شمسی
 function getPersianMonthName(month: number, t: any): string {
   const monthNames = [
     t.monthFarvardin || 'فروردین',
@@ -116,6 +147,7 @@ function getPersianMonthName(month: number, t: any): string {
     t.monthBahman || 'بهمن',
     t.monthEsfand || 'اسفند',
   ];
+
   return monthNames[month - 1] || '';
 }
 
@@ -124,9 +156,9 @@ export default function MedicationScreen() {
   const { t, isRTL } = useLanguage();
   const { user } = useAuth();
   const router = useRouter();
+
   const [refreshing, setRefreshing] = useState(false);
 
-  // State برای مدیریت داروها
   const [medications, setMedications] = useState<Medication[]>([
     {
       id: 1,
@@ -160,295 +192,537 @@ export default function MedicationScreen() {
     },
   ]);
 
-  // دریافت تاریخ فعلی
   const now = new Date();
   const persianDate = toPersianDate(now);
 
-  // عنوان تقویم بر اساس زبان
   const calendarTitle = useMemo(() => {
     if (isRTL) {
-      // فارسی: نمایش ماه و سال شمسی
       const monthName = getPersianMonthName(persianDate.month, t);
-      // تبدیل عدد سال شمسی به حروف فارسی
-      const persianYearStr = persianDate.year.toString();
-      const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
-      const persianYear = persianYearStr
-        .split('')
-        .map(d => persianDigits[parseInt(d)] || d)
-        .join('');
-      return `${monthName} ${persianYear}`;
-    } else {
-      // انگلیسی: نمایش ماه و سال میلادی
-      const monthNames = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-      ];
-      return `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
-    }
-  }, [isRTL, persianDate, t, now]);
 
-  // محاسبه آمار
-  const todayMedications = medications.filter(m => m.date === '2026-08-05');
-  const takenCount = todayMedications.filter(m => m.status === 'taken').length;
-  const pendingCount = todayMedications.filter(m => m.status === 'pending').length;
-  const missedCount = todayMedications.filter(m => m.status === 'missed').length;
+      const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
+
+      const persianYear = persianDate.year
+        .toString()
+        .split('')
+        .map((d) => persianDigits[parseInt(d)] || d)
+        .join('');
+
+      return `${monthName} ${persianYear}`;
+    }
+
+    const monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    return `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+  }, [isRTL, persianDate, t]);
+
+  const todayMedications = medications.filter(
+    (m) => m.date === '2026-08-05'
+  );
+
+  const takenCount = todayMedications.filter(
+    (m) => m.status === 'taken'
+  ).length;
+
+  const pendingCount = todayMedications.filter(
+    (m) => m.status === 'pending'
+  ).length;
+
   const totalToday = todayMedications.length;
 
-  // تابع برای علامت زدن داروی مصرف شده
   const markAsTaken = (id: number) => {
-    setMedications(prev =>
-      prev.map(item =>
+    setMedications((prev) =>
+      prev.map((item) =>
         item.id === id
-          ? { ...item, status: 'taken' as const, adherence: Math.min(100, item.adherence + 5) }
+          ? {
+              ...item,
+              status: 'taken' as const,
+              adherence: Math.min(100, item.adherence + 5),
+            }
           : item
       )
     );
-    
-    // نمایش پیام تأیید
-    const med = medications.find(m => m.id === id);
+
+    const med = medications.find((m) => m.id === id);
+
     if (med) {
       Alert.alert(
         `✅ ${t.medicationTaken || 'Medication Taken'}`,
-        `${med.name} (${med.dosage}) ${t.medicationTakenMessage || 'marked as taken!'}`,
+        `${med.name} (${med.dosage}) ${
+          t.medicationTakenMessage || 'marked as taken!'
+        }`,
         [{ text: t.great || 'Great!' }]
       );
     }
   };
 
-  // تابع برای حذف دارو
-  const removeMedication = (id: number) => {
-    Alert.alert(
-      t.removeMedication || 'Remove Medication',
-      t.areYouSureRemove || 'Are you sure you want to remove this medication?',
-      [
-        { text: t.cancel || 'Cancel', style: 'cancel' },
-        {
-          text: t.delete || 'Remove',
-          style: 'destructive',
-          onPress: () => {
-            setMedications(prev => prev.filter(item => item.id !== id));
-          },
-        },
-      ]
-    );
-  };
-
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1500);
+
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1200);
   }, []);
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'taken':
-        return <CheckCircle size={22} color="#10B981" />;
-      case 'pending':
-        return <Clock size={22} color="#F59E0B" />;
-      case 'missed':
-        return <AlertCircle size={22} color="#EF4444" />;
-      default:
-        return null;
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'taken':
-        return t.taken || 'Taken';
-      case 'pending':
-        return t.pending || 'Pending';
-      case 'missed':
-        return t.missed || 'Missed';
-      default:
-        return '';
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'taken':
         return '#10B981';
+
       case 'pending':
         return '#F59E0B';
+
       case 'missed':
         return '#EF4444';
+
       default:
         return colors.primary;
     }
   };
 
-  // داده‌های تقویم - با ترتیب صحیح هفته (شنبه تا جمعه)
-  const baseCalendarDays = [
-    { day: t.daySat, taken: true },    // شنبه - Saturday
-    { day: t.daySun, taken: true },    // یکشنبه - Sunday
-    { day: t.dayMon, taken: true },    // دوشنبه - Monday
-    { day: t.dayTue, taken: true },    // سه‌شنبه - Tuesday
-    { day: t.dayWed, taken: false },   // چهارشنبه - Wednesday
-    { day: t.dayThu, taken: false },   // پنج‌شنبه - Thursday
-    { day: t.dayFri, taken: false },   // جمعه - Friday
-  ];
-
-  // بر اساس RTL بودن، ترتیب نمایش را تعیین می‌کنیم
-  const calendarDays = useMemo(() => {
-    if (isRTL) {
-      return [...baseCalendarDays].reverse();
-    }
-    return baseCalendarDays;
-  }, [isRTL, t]);
-
-  // دریافت زمان روز برای سلام
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return t.goodMorning || 'Good morning';
-    if (hour < 17) return t.goodAfternoon || 'Good afternoon';
+
+    if (hour < 12) {
+      return t.goodMorning || 'Good morning';
+    }
+
+    if (hour < 17) {
+      return t.goodAfternoon || 'Good afternoon';
+    }
+
     return t.goodEvening || 'Good evening';
   };
 
+  const baseCalendarDays = [
+    { day: t.daySat || 'Sat', taken: true },
+    { day: t.daySun || 'Sun', taken: true },
+    { day: t.dayMon || 'Mon', taken: true },
+    { day: t.dayTue || 'Tue', taken: true },
+    { day: t.dayWed || 'Wed', taken: false },
+    { day: t.dayThu || 'Thu', taken: false },
+    { day: t.dayFri || 'Fri', taken: false },
+  ];
+
+  const calendarDays = useMemo(() => {
+    return isRTL
+      ? [...baseCalendarDays].reverse()
+      : baseCalendarDays;
+  }, [isRTL, t]);
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.background,
+        },
+      ]}
+    >
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+          />
         }
       >
-        {/* Header */}
         <MotiView
-          from={{ opacity: 0, translateY: -20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 400 }}
+          from={{
+            opacity: 0,
+            translateY: -15,
+          }}
+          animate={{
+            opacity: 1,
+            translateY: 0,
+          }}
+          transition={{
+            type: 'timing',
+            duration: 400,
+          }}
           style={styles.header}
         >
-          <View style={styles.headerContent}>
-            <View style={styles.headerTextContainer}>
-              <Text style={[styles.greeting, { color: colors.text }]}>
-                {getGreeting()}, {user?.name || t.there || 'there'} 
+          <View
+            style={[
+              styles.headerContent,
+              {
+                flexDirection: 'row',
+              },
+            ]}
+          >
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel={t.back || 'Back'}
+              hitSlop={{
+                top: 10,
+                bottom: 10,
+                left: 10,
+                right: 10,
+              }}
+              style={[
+                styles.backButton,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <ChevronLeft
+                size={26}
+                strokeWidth={3}
+                color={colors.text}
+              />
+            </TouchableOpacity>
+
+            <View
+              style={[
+                styles.headerTextContainer,
+                {
+                  alignItems: isRTL ? 'flex-end' : 'flex-start',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.greeting,
+                  {
+                    color: colors.text,
+                    textAlign: isRTL ? 'right' : 'left',
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {getGreeting()}, {user?.name || t.there || 'there'}
               </Text>
-              <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-                {t.yourMedicationJourney || 'Your medication journey'}
+
+              <Text
+                style={[
+                  styles.headerSubtitle,
+                  {
+                    color: colors.textSecondary,
+                    textAlign: isRTL ? 'right' : 'left',
+                  },
+                ]}
+              >
+                {t.yourMedicationJourney ||
+                  'Your medication journey'}
               </Text>
-              <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+
+              <Text
+                style={[
+                  styles.headerSubtitle,
+                  {
+                    color: colors.textSecondary,
+                    textAlign: isRTL ? 'right' : 'left',
+                  },
+                ]}
+              >
                 {t.isUnderControl || 'is under control'}
               </Text>
             </View>
-            
-            <View style={[styles.avatarWrapper, { backgroundColor: colors.primary + '20' }]}>
+
+            <View
+              style={[
+                styles.avatarWrapper,
+                {
+                  backgroundColor: colors.primary + '18',
+                },
+              ]}
+            >
               <Image
                 source={require('../../assets/avatars/model1.jpg')}
                 style={styles.characterImage}
               />
-              <MotiView
-                from={{ opacity: 0.3, scale: 0.8 }}
-                animate={{ opacity: 0.6, scale: 1.2 }}
-                transition={{
-                  type: 'timing',
-                  duration: 2000,
-                  loop: true,
-                  repeatReverse: true,
-                }}
-                style={[styles.glowRing, { borderColor: colors.primary }]}
-              />
             </View>
           </View>
 
-          <View style={styles.statusBar}>
+          <View
+            style={[
+              styles.statusBar,
+              {
+                backgroundColor: colors.primary + '08',
+              },
+            ]}
+          >
             <View style={styles.statusItem}>
-              <Flame size={20} color="#F97316" />
-              <Text style={[styles.statusText, { color: colors.text }]}>
+              <Flame size={19} color="#F97316" />
+
+              <Text
+                style={[
+                  styles.statusText,
+                  {
+                    color: colors.text,
+                  },
+                ]}
+              >
                 7 {t.daysPerfect || 'days perfect'}
               </Text>
             </View>
-            <View style={styles.statusDivider} />
+
+            <View
+              style={[
+                styles.statusDivider,
+                {
+                  backgroundColor: colors.primary + '20',
+                },
+              ]}
+            />
+
             <View style={styles.statusItem}>
-              <Pill size={20} color={colors.primary} />
-              <Text style={[styles.statusText, { color: colors.text }]}>
-                {totalToday} {t.medicinesToday || 'medicines today'}
+              <Pill size={19} color={colors.primary} />
+
+              <Text
+                style={[
+                  styles.statusText,
+                  {
+                    color: colors.text,
+                  },
+                ]}
+              >
+                {totalToday}{' '}
+                {t.medicinesToday || 'medicines today'}
               </Text>
             </View>
-            <View style={styles.statusDivider} />
+
+            <View
+              style={[
+                styles.statusDivider,
+                {
+                  backgroundColor: colors.primary + '20',
+                },
+              ]}
+            />
+
             <View style={styles.statusItem}>
-              <Clock size={20} color="#3B82F6" />
-              <Text style={[styles.statusText, { color: colors.text }]}>
-                {t.next || 'Next'} {medications.find(m => m.status === 'pending')?.time || '—'}
+              <Clock size={19} color="#3B82F6" />
+
+              <Text
+                style={[
+                  styles.statusText,
+                  {
+                    color: colors.text,
+                  },
+                ]}
+              >
+                {t.next || 'Next'}{' '}
+                {medications.find(
+                  (m) => m.status === 'pending'
+                )?.time || '—'}
               </Text>
             </View>
           </View>
         </MotiView>
 
-        {/* Quick Stats */}
         <View style={styles.statsGrid}>
           <LinearGradient
             colors={['#7C3AED', '#6D28D9']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            start={{
+              x: 0,
+              y: 0,
+            }}
+            end={{
+              x: 1,
+              y: 1,
+            }}
             style={styles.gradientCard}
           >
             <View style={styles.statContent}>
               <Pill size={24} color="#FFFFFF" />
-              <Text style={styles.statNumberWhite}>{totalToday}</Text>
-              <Text style={styles.statLabelWhite}>{t.today || 'Today'}</Text>
+
+              <Text style={styles.statNumberWhite}>
+                {totalToday}
+              </Text>
+
+              <Text style={styles.statLabelWhite}>
+                {t.today || 'Today'}
+              </Text>
             </View>
           </LinearGradient>
 
-          <Card style={{ flex: 1, padding: Spacing.md, alignItems: 'center' }}>
-            <View style={[styles.statIconContainer, { backgroundColor: '#10B98120' }]}>
+          <Card
+            style={{
+              flex: 1,
+              padding: Spacing.md,
+              alignItems: 'center',
+            }}
+          >
+            <View
+              style={[
+                styles.statIconContainer,
+                {
+                  backgroundColor: '#10B98120',
+                },
+              ]}
+            >
               <CheckCircle size={24} color="#10B981" />
             </View>
-            <Text style={[styles.statNumber, { color: '#10B981' }]}>{takenCount}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+
+            <Text
+              style={[
+                styles.statNumber,
+                {
+                  color: '#10B981',
+                },
+              ]}
+            >
+              {takenCount}
+            </Text>
+
+            <Text
+              style={[
+                styles.statLabel,
+                {
+                  color: colors.textSecondary,
+                },
+              ]}
+            >
               {t.taken || 'Taken'}
             </Text>
           </Card>
 
-          <Card style={{ flex: 1, padding: Spacing.md, alignItems: 'center' }}>
-            <View style={[styles.statIconContainer, { backgroundColor: '#F59E0B20' }]}>
+          <Card
+            style={{
+              flex: 1,
+              padding: Spacing.md,
+              alignItems: 'center',
+            }}
+          >
+            <View
+              style={[
+                styles.statIconContainer,
+                {
+                  backgroundColor: '#F59E0B20',
+                },
+              ]}
+            >
               <Clock size={24} color="#F59E0B" />
             </View>
-            <Text style={[styles.statNumber, { color: '#F59E0B' }]}>{pendingCount}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+
+            <Text
+              style={[
+                styles.statNumber,
+                {
+                  color: '#F59E0B',
+                },
+              ]}
+            >
+              {pendingCount}
+            </Text>
+
+            <Text
+              style={[
+                styles.statLabel,
+                {
+                  color: colors.textSecondary,
+                },
+              ]}
+            >
               {t.pending || 'Pending'}
             </Text>
           </Card>
         </View>
 
-        {/* Add Medication Button */}
         <TouchableOpacity
-          onPress={() => router.push('/medication/add' as any)}
+          activeOpacity={0.85}
+          onPress={() =>
+            router.push('/medication/add' as any)
+          }
           style={styles.addButtonWrapper}
         >
           <LinearGradient
             colors={['#7C3AED', '#3B82F6']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
+            start={{
+              x: 0,
+              y: 0,
+            }}
+            end={{
+              x: 1,
+              y: 0,
+            }}
             style={styles.addButton}
           >
             <Plus size={20} color="#FFFFFF" />
+
             <Text style={styles.addButtonText}>
               {t.addMedication || 'Add Medication'}
             </Text>
           </LinearGradient>
         </TouchableOpacity>
 
-        {/* Calendar */}
-        <Card style={{ padding: Spacing.md, marginBottom: Spacing.md }}>
-          <View style={styles.calendarHeader}>
-            <Calendar size={20} color={colors.primary} />
-            <Text style={[styles.calendarTitle, { color: colors.text }]}>
+        <Card
+          style={{
+            padding: Spacing.md,
+            marginBottom: Spacing.md,
+          }}
+        >
+          <View
+            style={[
+              styles.calendarHeader,
+              {
+                flexDirection: isRTL
+                  ? 'row-reverse'
+                  : 'row',
+              },
+            ]}
+          >
+            <Calendar
+              size={20}
+              color={colors.primary}
+            />
+
+            <Text
+              style={[
+                styles.calendarTitle,
+                {
+                  color: colors.text,
+                },
+              ]}
+            >
               {calendarTitle}
             </Text>
           </View>
+
           <View style={styles.calendarGrid}>
             {calendarDays.map((day, index) => (
-              <View key={index} style={styles.calendarDay}>
-                <Text style={[styles.calendarDayText, { color: colors.textSecondary }]}>
+              <View
+                key={index}
+                style={styles.calendarDay}
+              >
+                <Text
+                  style={[
+                    styles.calendarDayText,
+                    {
+                      color: colors.textSecondary,
+                    },
+                  ]}
+                >
                   {day.day}
                 </Text>
+
                 <View
                   style={[
                     styles.calendarDot,
                     {
-                      backgroundColor: day.taken ? '#10B981' : colors.border,
+                      backgroundColor: day.taken
+                        ? '#10B981'
+                        : colors.border,
                     },
                   ]}
                 />
@@ -457,166 +731,328 @@ export default function MedicationScreen() {
           </View>
         </Card>
 
-        {/* Medication List */}
         <View style={styles.medicationSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {t.todaysMedications || "Today's Medications"}
-            </Text>
-            <TouchableOpacity 
-              onPress={() => router.push('/medication/history' as any)}
-              style={styles.viewAllButton}
+          <View
+            style={[
+              styles.sectionHeader,
+              {
+                flexDirection: isRTL
+                  ? 'row-reverse'
+                  : 'row',
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.sectionTitle,
+                {
+                  color: colors.text,
+                },
+              ]}
             >
-              <Text style={[styles.viewAll, { color: colors.primary }]}>
+              {t.todaysMedications ||
+                "Today's Medications"}
+            </Text>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() =>
+                router.push('/medication/history' as any)
+              }
+              style={[
+                styles.viewAllButton,
+                {
+                  flexDirection: isRTL
+                    ? 'row-reverse'
+                    : 'row',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.viewAll,
+                  {
+                    color: colors.primary,
+                  },
+                ]}
+              >
                 {t.viewAll || 'View All'}
               </Text>
-              <ChevronRight size={16} color={colors.primary} />
+
+              <ChevronRight
+                size={16}
+                color={colors.primary}
+                style={
+                  isRTL
+                    ? {
+                        transform: [{ scaleX: -1 }],
+                      }
+                    : undefined
+                }
+              />
             </TouchableOpacity>
           </View>
 
-          {medications.filter(m => m.date === '2026-08-05').map((med, index) => (
-            <MotiView
-              key={med.id}
-              from={{ opacity: 0, translateX: -20 }}
-              animate={{ opacity: 1, translateX: 0 }}
-              transition={{ delay: index * 100 }}
-            >
-              <Card style={styles.medicationCard}>
-                <View style={styles.medicationRow}>
-                  <View style={[styles.medicationIcon, { backgroundColor: colors.primary + '20' }]}>
-                    <Pill size={24} color={colors.primary} />
-                  </View>
-                  
-                  <View style={styles.medicationInfo}>
-                    <Text style={[styles.medicationName, { color: colors.text }]}>
-                      {med.name}
-                    </Text>
-                    <View style={styles.medicationDetails}>
-                      <Text style={[styles.medicationDosage, { color: colors.textSecondary }]}>
-                        {med.dosage}
-                      </Text>
-                      <View style={styles.medicationType}>
-                        <Brain size={14} color={colors.primary} />
-                        <Text style={[styles.medicationTypeText, { color: colors.textSecondary }]}>
-                          {med.type}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={styles.timeContainer}>
-                      <Clock size={14} color={colors.textSecondary} />
-                      <Text style={[styles.medicationTime, { color: colors.textSecondary }]}>
-                        {med.time}
-                      </Text>
-                    </View>
-                    <View style={styles.adherenceContainer}>
-                      <View style={[styles.adherenceBar, { backgroundColor: colors.border }]}>
-                        <View
-                          style={[
-                            styles.adherenceFill,
-                            {
-                              width: `${med.adherence}%`,
-                              backgroundColor: getStatusColor(med.status),
-                            },
-                          ]}
-                        />
-                      </View>
-                      <Text style={[styles.adherenceText, { color: colors.textSecondary }]}>
-                        {med.adherence}% {t.adherence || 'adherence'}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Status Button - Clickable */}
-                  <TouchableOpacity
-                    onPress={() => med.status === 'pending' && markAsTaken(med.id)}
-                    style={styles.statusButton}
-                    disabled={med.status === 'taken'}
-                  >
-                    {med.status === 'taken' ? (
-                      <View style={styles.statusContainer}>
-                        <CheckCircle size={22} color="#10B981" />
-                        <Text style={[styles.statusText, { color: '#10B981' }]}>
-                          {t.taken || 'Taken'}
-                        </Text>
-                      </View>
-                    ) : (
-                      <View style={styles.statusContainer}>
-                        <Clock size={22} color="#F59E0B" />
-                        <Text style={[styles.statusText, { color: '#F59E0B' }]}>
-                          {t.tapToTake || 'Tap to take'}
-                        </Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </Card>
-            </MotiView>
-          ))}
-        </View>
-
-        {/* Smart Reminder */}
-        <MotiView
-          from={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 300 }}
-        >
-          <LinearGradient
-            colors={['#7C3AED', '#EC4899']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.reminderGradient}
-          >
-            <View style={styles.reminderContent}>
-              <View style={styles.reminderIconContainer}>
-                <Bell size={28} color="#FFFFFF" />
-                <MotiView
-                  from={{ scale: 0.8, opacity: 0.3 }}
-                  animate={{ scale: 1.2, opacity: 0.8 }}
-                  transition={{
-                    type: 'timing',
-                    duration: 1000,
-                    loop: true,
-                    repeatReverse: true,
-                  }}
-                  style={styles.pulseRing}
-                />
-              </View>
-              <View style={styles.reminderTextContainer}>
-                <Text style={styles.reminderTitle}>
-                  {t.nextMedication || 'Next Medication'}
-                </Text>
-                <Text style={styles.reminderMedication}>
-                  {medications.find(m => m.status === 'pending')?.name || t.allTaken || 'All taken! 🎉'}
-                </Text>
-                <Text style={styles.reminderTime}>
-                  {medications.find(m => m.status === 'pending')?.time || '—'}
-                </Text>
-              </View>
-              <TouchableOpacity 
-                style={styles.takeNowButton}
-                onPress={() => {
-                  const pending = medications.find(m => m.status === 'pending');
-                  if (pending) markAsTaken(pending.id);
+          {medications
+            .filter((m) => m.date === '2026-08-05')
+            .map((med, index) => (
+              <MotiView
+                key={med.id}
+                from={{
+                  opacity: 0,
+                  translateY: 15,
+                }}
+                animate={{
+                  opacity: 1,
+                  translateY: 0,
+                }}
+                transition={{
+                  delay: index * 100,
+                  type: 'timing',
+                  duration: 350,
                 }}
               >
-                <Text style={styles.takeNowText}>
-                  {t.takeNow || 'Take Now'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </LinearGradient>
-        </MotiView>
+                <Card
+                  style={[
+                    styles.medicationCard,
+                    {
+                      marginBottom: Spacing.sm,
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.medicationRow,
+                      {
+                        flexDirection: isRTL
+                          ? 'row-reverse'
+                          : 'row',
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.medicationIcon,
+                        {
+                          backgroundColor:
+                            colors.primary + '20',
+                        },
+                      ]}
+                    >
+                      <Pill
+                        size={24}
+                        color={colors.primary}
+                      />
+                    </View>
 
-        {/* AI Button */}
-        <TouchableOpacity
-          style={[styles.aiButton, { backgroundColor: colors.primary }]}
-          onPress={() => router.push('/ai' as any)}
-        >
-          <Brain size={24} color="#FFFFFF" />
-          <Text style={styles.aiButtonText}>
-            {t.askNeuroliaAI || 'Ask Neurolia AI'}
-          </Text>
-        </TouchableOpacity>
+                    <View style={styles.medicationInfo}>
+                      <Text
+                        style={[
+                          styles.medicationName,
+                          {
+                            color: colors.text,
+                            textAlign: isRTL
+                              ? 'right'
+                              : 'left',
+                          },
+                        ]}
+                      >
+                        {med.name}
+                      </Text>
+
+                      <View
+                        style={[
+                          styles.medicationDetails,
+                          {
+                            flexDirection: isRTL
+                              ? 'row-reverse'
+                              : 'row',
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.medicationDosage,
+                            {
+                              color:
+                                colors.textSecondary,
+                            },
+                          ]}
+                        >
+                          {med.dosage}
+                        </Text>
+
+                        <View
+                          style={[
+                            styles.medicationType,
+                            {
+                              flexDirection: isRTL
+                                ? 'row-reverse'
+                                : 'row',
+                            },
+                          ]}
+                        >
+                          <Brain
+                            size={14}
+                            color={colors.primary}
+                          />
+
+                          <Text
+                            style={[
+                              styles.medicationTypeText,
+                              {
+                                color:
+                                  colors.textSecondary,
+                              },
+                            ]}
+                          >
+                            {med.type}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View
+                        style={[
+                          styles.timeContainer,
+                          {
+                            flexDirection: isRTL
+                              ? 'row-reverse'
+                              : 'row',
+                          },
+                        ]}
+                      >
+                        <Clock
+                          size={14}
+                          color={
+                            colors.textSecondary
+                          }
+                        />
+
+                        <Text
+                          style={[
+                            styles.medicationTime,
+                            {
+                              color:
+                                colors.textSecondary,
+                            },
+                          ]}
+                        >
+                          {med.time}
+                        </Text>
+                      </View>
+
+                      <View
+                        style={[
+                          styles.adherenceContainer,
+                          {
+                            flexDirection: isRTL
+                              ? 'row-reverse'
+                              : 'row',
+                          },
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.adherenceBar,
+                            {
+                              backgroundColor:
+                                colors.border,
+                            },
+                          ]}
+                        >
+                          <View
+                            style={[
+                              styles.adherenceFill,
+                              {
+                                width: `${med.adherence}%`,
+                                backgroundColor:
+                                  getStatusColor(
+                                    med.status
+                                  ),
+                              },
+                            ]}
+                          />
+                        </View>
+
+                        <Text
+                          style={[
+                            styles.adherenceText,
+                            {
+                              color:
+                                colors.textSecondary,
+                            },
+                          ]}
+                        >
+                          {med.adherence}%{' '}
+                          {t.adherence ||
+                            'adherence'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <TouchableOpacity
+                      activeOpacity={
+                        med.status === 'pending'
+                          ? 0.7
+                          : 1
+                      }
+                      onPress={() =>
+                        med.status === 'pending' &&
+                        markAsTaken(med.id)
+                      }
+                      disabled={
+                        med.status === 'taken'
+                      }
+                      style={styles.statusButton}
+                    >
+                      {med.status === 'taken' ? (
+                        <View
+                          style={styles.statusContainer}
+                        >
+                          <CheckCircle
+                            size={22}
+                            color="#10B981"
+                          />
+
+                          <Text
+                            style={[
+                              styles.statusText,
+                              {
+                                color: '#10B981',
+                              },
+                            ]}
+                          >
+                            {t.taken || 'Taken'}
+                          </Text>
+                        </View>
+                      ) : (
+                        <View
+                          style={styles.statusContainer}
+                        >
+                          <Clock
+                            size={22}
+                            color="#F59E0B"
+                          />
+
+                          <Text
+                            style={[
+                              styles.statusText,
+                              {
+                                color: '#F59E0B',
+                              },
+                            ]}
+                          >
+                            {t.tapToTake ||
+                              'Tap to take'}
+                          </Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </Card>
+              </MotiView>
+            ))}
+        </View>
 
         <View style={styles.bottomSpace} />
       </ScrollView>
@@ -630,74 +1066,79 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xl,
+    paddingTop: 0,
+    paddingBottom: 40,
   },
   header: {
-    paddingTop:40,
+    paddingTop: 40,
     marginBottom: Spacing.lg,
   },
   headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    width: '100%',
+    alignItems: 'center',
+    minHeight: 82,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    marginRight: Spacing.md,
   },
   headerTextContainer: {
     flex: 1,
+    justifyContent: 'center',
+    minWidth: 0,
   },
   greeting: {
-    fontSize: 24,
+    fontSize: 23,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 5,
   },
   headerSubtitle: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 19,
   },
   avatarWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
+    overflow: 'hidden',
+    flexShrink: 0,
+    marginLeft: Spacing.md,
   },
   characterImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    borderWidth: 2,
-    borderColor: 'white',
-  },
-  glowRing: {
-    position: 'absolute',
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    borderWidth: 2,
-    opacity: 0.5,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
   },
   statusBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
     marginTop: Spacing.md,
-    paddingVertical: Spacing.sm,
-    backgroundColor: 'rgba(124, 58, 237, 0.05)',
+    paddingVertical: Spacing.sm + 2,
     borderRadius: BorderRadius.lg,
   },
   statusItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    flex: 1,
+    justifyContent: 'center',
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
   },
   statusDivider: {
     width: 1,
     height: 20,
-    backgroundColor: 'rgba(124, 58, 237, 0.2)',
   },
   statsGrid: {
     flexDirection: 'row',
@@ -719,6 +1160,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: '#FFFFFF',
+    marginTop: 3,
   },
   statLabelWhite: {
     fontSize: 12,
@@ -760,7 +1202,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   calendarHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
     marginBottom: Spacing.md,
@@ -790,7 +1231,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   sectionHeader: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: Spacing.md,
@@ -800,20 +1240,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   viewAllButton: {
-    flexDirection: 'row',
     alignItems: 'center',
+    gap: 2,
   },
   viewAll: {
     fontSize: 14,
     fontWeight: '500',
-    marginRight: 2,
   },
   medicationCard: {
     padding: Spacing.md,
-    marginBottom: Spacing.sm,
   },
   medicationRow: {
-    flexDirection: 'row',
     alignItems: 'flex-start',
   },
   medicationIcon: {
@@ -822,10 +1259,11 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.md,
+    marginHorizontal: Spacing.sm,
   },
   medicationInfo: {
     flex: 1,
+    minWidth: 0,
   },
   medicationName: {
     fontSize: 16,
@@ -833,7 +1271,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   medicationDetails: {
-    flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     marginBottom: 4,
@@ -842,7 +1279,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   medicationType: {
-    flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
@@ -850,7 +1286,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   timeContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     marginBottom: 6,
@@ -859,7 +1294,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   adherenceContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
@@ -877,79 +1311,16 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   statusButton: {
-    marginLeft: Spacing.sm,
     paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     borderRadius: BorderRadius.md,
+    marginLeft: 4,
+    minWidth: 62,
   },
   statusContainer: {
     alignItems: 'center',
-    gap: 4,
-  },
-  reminderGradient: {
-    padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.md,
-  },
-  reminderContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  reminderIconContainer: {
-    position: 'relative',
-    marginRight: Spacing.md,
-  },
-  pulseRing: {
-    position: 'absolute',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    top: -6,
-    left: -6,
-  },
-  reminderTextContainer: {
-    flex: 1,
-  },
-  reminderTitle: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    opacity: 0.8,
-  },
-  reminderMedication: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  reminderTime: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    opacity: 0.9,
-  },
-  takeNowButton: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
-  },
-  takeNowText: {
-    color: '#7C3AED',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  aiButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
-  aiButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    gap: 4,
   },
   bottomSpace: {
     height: 100,
