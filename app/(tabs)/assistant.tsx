@@ -64,6 +64,8 @@ export default function AssistantScreen() {
   const inputRef = useRef<TextInput>(null);
   const isNearBottomRef = useRef(true);
   const noticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const responseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getCurrentTime = () => {
     const now = new Date();
@@ -95,12 +97,17 @@ export default function AssistantScreen() {
     setIsTyping(true);
     setIsThinking(true);
 
-    setTimeout(() => {
+    responseTimerRef.current = setTimeout(() => {
       const responses = [
-        t.breathingExercise,
-        t.mindfulnessSession,
-        t.progressInsight,
-        t.weeklyReport,
+        t.breathingExercise ||
+          "I understand how you're feeling. Let's work through this together. Would you like to try a breathing exercise?",
+        t.mindfulnessSession ||
+          "That's a great question! Based on your cognitive patterns, I'd suggest a 5-minute mindfulness session.",
+        t.progressInsight ||
+          "I've analyzed your recent activities. You're making excellent progress! Keep up the great work.",
+        t.weeklyReport ||
+          "Let me think about that. Your cognitive health is improving steadily. Would you like to see your weekly report?",
+        "That's interesting. I notice you've been consistent with your medication schedule. Well done!",
       ];
 
       const botResponse: Message = {
@@ -113,6 +120,7 @@ export default function AssistantScreen() {
       setMessages((prev) => [...prev, botResponse]);
       setIsTyping(false);
       setIsThinking(false);
+      responseTimerRef.current = null;
     }, 1500 + Math.random() * 1000);
   };
 
@@ -124,16 +132,25 @@ export default function AssistantScreen() {
   };
 
   useEffect(() => {
-    if (messages.length > 0 && isNearBottomRef.current) {
-      setTimeout(() => {
+    if (messages.length > 0) {
+      scrollTimerRef.current = setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
+        scrollTimerRef.current = null;
       }, 100);
     }
-  }, [messages, isTyping]);
+    return () => {
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+        scrollTimerRef.current = null;
+      }
+    };
+  }, [messages]);
 
   useEffect(() => {
     return () => {
       if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
+      if (responseTimerRef.current) clearTimeout(responseTimerRef.current);
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
     };
   }, []);
 
@@ -555,7 +572,6 @@ export default function AssistantScreen() {
 const styles = StyleSheet.create({
   gradientContainer: { flex: 1 },
   container: { flex: 1 },
-
   header: {
     alignItems: 'center',
     paddingTop: 50,
@@ -587,7 +603,6 @@ const styles = StyleSheet.create({
   statusContainer: { alignItems: 'center', marginTop: 4 },
   statusDot: { width: 6, height: 6, borderRadius: 3, marginHorizontal: 6 },
   statusText: { fontSize: 12, fontWeight: '400' },
-
   memoryCard: { padding: 14, borderRadius: 20, borderWidth: 1, marginBottom: Spacing.md },
   memoryHeader: { alignItems: 'center', marginBottom: 8 },
   memoryTitle: { fontSize: 13, fontWeight: '600' },
@@ -595,7 +610,6 @@ const styles = StyleSheet.create({
   memoryItem: { alignItems: 'center', gap: 4 },
   memoryCheck: { fontSize: 12, color: '#4ADE80' },
   memoryText: { fontSize: 12, fontWeight: '400' },
-
   messagesContainer: { flex: 1 },
   messagesContent: { paddingBottom: Spacing.md },
   messageWrapper: { marginBottom: Spacing.md, alignItems: 'flex-start' },
@@ -628,13 +642,11 @@ const styles = StyleSheet.create({
   gradientBubble: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 20 },
   messageText: { fontSize: 15, lineHeight: 22 },
   timestamp: { fontSize: 10, marginTop: 4, opacity: 0.6 },
-
   typingWrapper: { alignItems: 'center', paddingHorizontal: 4 },
   typingText: { fontSize: 13, marginHorizontal: 8 },
   typingDots: { alignItems: 'center' },
   typingDot: { width: 6, height: 6, borderRadius: 3, marginHorizontal: 2 },
   expandingRing: { position: 'absolute', width: 32, height: 32, borderRadius: 16, borderWidth: 2 },
-
   scrollToBottomWrap: {
     position: 'absolute',
     bottom: Spacing.md,
@@ -652,7 +664,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-
   noticeToast: {
     position: 'absolute',
     bottom: Spacing.md,
@@ -662,12 +673,10 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
   },
   noticeToastText: { color: '#FFFFFF', fontSize: 12, fontWeight: '500' },
-
   welcomeContainer: { alignItems: 'center', paddingVertical: Spacing.xl, paddingHorizontal: Spacing.lg },
   welcomeTitle: { fontSize: 28, fontWeight: '700', marginTop: Spacing.md, marginBottom: Spacing.xs },
   welcomeText: { fontSize: 16, fontWeight: '400', textAlign: 'center' },
   welcomeSubtext: { fontSize: 14, marginTop: 4, textAlign: 'center' },
-
   suggestionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -694,7 +703,6 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   suggestionLabel: { fontSize: 13, fontWeight: '500' },
-
   inputContainer: {
     alignItems: 'center',
     paddingHorizontal: Spacing.sm,

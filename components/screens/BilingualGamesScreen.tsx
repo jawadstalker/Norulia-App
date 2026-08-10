@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   View,
@@ -16,6 +17,7 @@ import {
   Clock,
   Languages,
   ChevronLeft,
+  Play,
 } from 'lucide-react-native';
 
 import { useTheme } from '../../context/ThemeContext';
@@ -37,8 +39,10 @@ const bilingualGames = [
     id: 'word',
     title: 'Word Puzzle',
     titleFa: 'جمله بندی',
-    description: 'Build sentences and improve your language skills',
-    descriptionFa: 'جمله‌ها را بساز و مهارت زبانی خود را تقویت کن',
+    description:
+      'Build sentences and improve your language skills',
+    descriptionFa:
+      'جمله‌ها را بساز و مهارت زبانی خود را تقویت کن',
     image: require('../../assets/games/game8.png'),
     level: 'Easy',
     levelFa: 'آسان',
@@ -50,8 +54,10 @@ const bilingualGames = [
     id: 'memory-bilingual',
     title: 'Bilingual Memory',
     titleFa: 'حافظه دوزبانه',
-    description: 'Train your memory with two languages',
-    descriptionFa: 'حافظه خود را با دو زبان تقویت کن',
+    description:
+      'Train your memory with two languages',
+    descriptionFa:
+      'حافظه خود را با دو زبان تقویت کن',
     image: require('../../assets/games/game3.png'),
     level: 'Medium',
     levelFa: 'متوسط',
@@ -63,8 +69,10 @@ const bilingualGames = [
     id: 'language-challenge',
     title: 'Language Challenge',
     titleFa: 'چالش زبان',
-    description: 'Improve vocabulary and language recognition',
-    descriptionFa: 'دایره لغات و تشخیص زبان خود را تقویت کن',
+    description:
+      'Improve vocabulary and language recognition',
+    descriptionFa:
+      'دایره لغات و تشخیص زبان خود را تقویت کن',
     image: require('../../assets/games/game9.png'),
     level: 'Hard',
     levelFa: 'سخت',
@@ -85,29 +93,19 @@ export default function BilingualGamesScreen() {
 
   const textAlignStyle = isRTL ? 'right' : 'left';
 
-  const getTitle = (game: (typeof bilingualGames)[0]) => {
-    return language === 'fa' ? game.titleFa : game.title;
-  };
+  const getTitle = (game: (typeof bilingualGames)[0]) =>
+    language === 'fa' ? game.titleFa : game.title;
 
-  const getDescription = (
-    game: (typeof bilingualGames)[0],
-  ) => {
-    return language === 'fa'
+  const getDescription = (game: (typeof bilingualGames)[0]) =>
+    language === 'fa'
       ? game.descriptionFa
       : game.description;
-  };
 
-  const getLevel = (game: (typeof bilingualGames)[0]) => {
-    return language === 'fa'
-      ? game.levelFa
-      : game.level;
-  };
+  const getLevel = (game: (typeof bilingualGames)[0]) =>
+    language === 'fa' ? game.levelFa : game.level;
 
-  const getTime = (game: (typeof bilingualGames)[0]) => {
-    return language === 'fa'
-      ? game.timeFa
-      : game.time;
-  };
+  const getTime = (game: (typeof bilingualGames)[0]) =>
+    language === 'fa' ? game.timeFa : game.time;
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -126,25 +124,23 @@ export default function BilingualGamesScreen() {
         },
       ]}
     >
-      {/* HEADER */}
+      {/* ------------------------------------------------
+          HEADER
+      ------------------------------------------------ */}
 
       <View
         style={[
           styles.header,
           {
-            flexDirection: isRTL
-              ? 'row-reverse'
-              : 'row',
+            flexDirection: isRTL ? 'row-reverse' : 'row',
           },
         ]}
       >
         <View
           style={[
-            styles.headerTitleContainer,
+            styles.headerContent,
             {
-              alignItems: isRTL
-                ? 'flex-end'
-                : 'flex-start',
+              alignItems: isRTL ? 'flex-end' : 'flex-start',
             },
           ]}
         >
@@ -163,7 +159,7 @@ export default function BilingualGamesScreen() {
                 styles.headerIcon,
                 {
                   backgroundColor:
-                    colors.primary + '18',
+                    colors.primary + '16',
                 },
               ]}
             >
@@ -201,16 +197,13 @@ export default function BilingualGamesScreen() {
                 style={[
                   styles.headerSubtitle,
                   {
-                    color:
-                      colors.textSecondary,
+                    color: colors.textSecondary,
                     textAlign: textAlignStyle,
                   },
                 ]}
               >
                 {bilingualGames.length}{' '}
-                {language === 'fa'
-                  ? 'بازی'
-                  : 'games'}
+                {language === 'fa' ? 'بازی برای یادگیری' : 'games to learn'}
               </Text>
             </View>
           </View>
@@ -218,27 +211,22 @@ export default function BilingualGamesScreen() {
 
         <TouchableOpacity
           onPress={handleBack}
-          activeOpacity={0.7}
+          activeOpacity={0.75}
           style={[
             styles.backButton,
             {
-              backgroundColor:
-                colors.surface,
+              backgroundColor: colors.surface,
               borderColor: colors.border,
             },
           ]}
         >
           <ArrowLeft
-            size={21}
+            size={20}
             color={colors.text}
             style={
               isRTL
                 ? {
-                    transform: [
-                      {
-                        scaleX: -1,
-                      },
-                    ],
+                    transform: [{ scaleX: -1 }],
                   }
                 : undefined
             }
@@ -246,16 +234,19 @@ export default function BilingualGamesScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* INTRO */}
+      {/* ------------------------------------------------
+          INTRO
+      ------------------------------------------------ */}
 
       <View
         style={[
           styles.introCard,
           {
-            backgroundColor:
-              colors.primary + '0C',
-            borderColor:
-              colors.primary + '20',
+            backgroundColor: colors.primary + '0B',
+            borderColor: colors.primary + '20',
+            flexDirection: isRTL
+              ? 'row-reverse'
+              : 'row',
           },
         ]}
       >
@@ -263,13 +254,12 @@ export default function BilingualGamesScreen() {
           style={[
             styles.introIcon,
             {
-              backgroundColor:
-                colors.primary + '18',
+              backgroundColor: colors.primary + '18',
             },
           ]}
         >
           <Languages
-            size={24}
+            size={23}
             color={colors.primary}
           />
         </View>
@@ -302,37 +292,68 @@ export default function BilingualGamesScreen() {
             style={[
               styles.introDescription,
               {
-                color:
-                  colors.textSecondary,
+                color: colors.textSecondary,
                 textAlign: textAlignStyle,
               },
             ]}
           >
             {language === 'fa'
-              ? 'مهارت‌های زبانی، حافظه و تمرکز خود را با بازی‌های دوزبانه تقویت کنید.'
-              : 'Improve your language, memory and attention skills through bilingual games.'}
+              ? 'مهارت‌های زبان، حافظه و تمرکز خود را با بازی تقویت کنید.'
+              : 'Improve your language, memory and focus through fun games.'}
           </Text>
         </View>
       </View>
 
-      {/* GAMES */}
+      {/* ------------------------------------------------
+          GAMES
+      ------------------------------------------------ */}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        {bilingualGames.map(game => (
+        {bilingualGames.map((game) => (
           <Card
-            key={game.id}
-            style={styles.card}
-          >
+          key={game.id}
+          style={styles.card}
+        >
             {/* IMAGE */}
 
-            <Image
-              source={game.image}
-              style={styles.cover}
-              resizeMode="cover"
-            />
+            <View style={styles.imageWrapper}>
+              <Image
+                source={game.image}
+                style={styles.cover}
+                resizeMode="cover"
+              />
+
+              <View
+                style={[
+                  styles.imageBadge,
+                  {
+                    backgroundColor:
+                      colors.background + 'E8',
+                  },
+                ]}
+              >
+                <Languages
+                  size={13}
+                  color={colors.primary}
+                />
+
+                <Text
+                  style={[
+                    styles.imageBadgeText,
+                    {
+                      color: colors.text,
+                    },
+                  ]}
+                >
+                  {language === 'fa'
+                    ? 'دوزبانه'
+                    : 'Bilingual'}
+                </Text>
+              </View>
+            </View>
 
             {/* INFO */}
 
@@ -342,8 +363,7 @@ export default function BilingualGamesScreen() {
                   styles.gameTitle,
                   {
                     color: colors.text,
-                    textAlign:
-                      textAlignStyle,
+                    textAlign: textAlignStyle,
                   },
                 ]}
               >
@@ -354,12 +374,11 @@ export default function BilingualGamesScreen() {
                 style={[
                   styles.description,
                   {
-                    color:
-                      colors.textSecondary,
-                    textAlign:
-                      textAlignStyle,
+                    color: colors.textSecondary,
+                    textAlign: textAlignStyle,
                   },
                 ]}
+                numberOfLines={2}
               >
                 {getDescription(game)}
               </Text>
@@ -380,15 +399,14 @@ export default function BilingualGamesScreen() {
                   style={[
                     styles.detailItem,
                     {
-                      flexDirection:
-                        isRTL
-                          ? 'row-reverse'
-                          : 'row',
+                      flexDirection: isRTL
+                        ? 'row-reverse'
+                        : 'row',
                     },
                   ]}
                 >
                   <Brain
-                    size={16}
+                    size={15}
                     color={colors.primary}
                   />
 
@@ -396,8 +414,7 @@ export default function BilingualGamesScreen() {
                     style={[
                       styles.detailText,
                       {
-                        color:
-                          colors.textSecondary,
+                        color: colors.textSecondary,
                       },
                     ]}
                   >
@@ -407,46 +424,25 @@ export default function BilingualGamesScreen() {
 
                 <View
                   style={[
-                    styles.detailItem,
+                    styles.detailDivider,
                     {
-                      flexDirection:
-                        isRTL
-                          ? 'row-reverse'
-                          : 'row',
+                      backgroundColor: colors.border,
                     },
                   ]}
-                >
-                  <Clock
-                    size={16}
-                    color={colors.primary}
-                  />
-
-                  <Text
-                    style={[
-                      styles.detailText,
-                      {
-                        color:
-                          colors.textSecondary,
-                      },
-                    ]}
-                  >
-                    {getTime(game)}
-                  </Text>
-                </View>
+                />
 
                 <View
                   style={[
                     styles.detailItem,
                     {
-                      flexDirection:
-                        isRTL
-                          ? 'row-reverse'
-                          : 'row',
+                      flexDirection: isRTL
+                        ? 'row-reverse'
+                        : 'row',
                     },
                   ]}
                 >
-                  <Languages
-                    size={16}
+                  <Clock
+                    size={15}
                     color={colors.primary}
                   />
 
@@ -454,14 +450,11 @@ export default function BilingualGamesScreen() {
                     style={[
                       styles.detailText,
                       {
-                        color:
-                          colors.textSecondary,
+                        color: colors.textSecondary,
                       },
                     ]}
                   >
-                    {language === 'fa'
-                      ? 'دوزبانه'
-                      : 'Bilingual'}
+                    {getTime(game)}
                   </Text>
                 </View>
               </View>
@@ -472,22 +465,23 @@ export default function BilingualGamesScreen() {
                 style={[
                   styles.button,
                   {
-                    backgroundColor:
-                      colors.primary,
+                    backgroundColor: colors.primary,
                   },
                 ]}
                 onPress={() =>
-                  router.push(
-                    game.route as any,
-                  )
+                  router.push(game.route as any)
                 }
-                activeOpacity={0.8}
+                activeOpacity={0.82}
               >
-                <Text
-                  style={
-                    styles.buttonText
-                  }
-                >
+                <View style={styles.buttonIcon}>
+                  <Play
+                    size={14}
+                    color={colors.primary}
+                    fill={colors.primary}
+                  />
+                </View>
+
+                <Text style={styles.buttonText}>
                   {t.startGame ||
                     (language === 'fa'
                       ? 'شروع بازی'
@@ -495,24 +489,14 @@ export default function BilingualGamesScreen() {
                 </Text>
 
                 <ChevronLeft
-                  size={18}
+                  size={17}
                   color="#FFFFFF"
                   style={
                     isRTL
-                      ? {
-                          transform: [
-                            {
-                              rotate:
-                                '0deg',
-                            },
-                          ],
-                        }
+                      ? undefined
                       : {
                           transform: [
-                            {
-                              rotate:
-                                '180deg',
-                            },
+                            { rotate: '180deg' },
                           ],
                         }
                   }
@@ -541,26 +525,26 @@ const styles = StyleSheet.create({
 
   header: {
     paddingHorizontal: Spacing.lg,
-    paddingTop:
-      Spacing.lg + 35,
+    paddingTop: Spacing.lg + 35,
     paddingBottom: Spacing.md,
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
   },
 
-  headerTitleContainer: {
+  headerContent: {
     flex: 1,
   },
 
   titleRow: {
     alignItems: 'center',
-    gap: 10,
+    gap: 11,
   },
 
   headerIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 46,
+    height: 46,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -572,11 +556,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: '900',
+    letterSpacing: -0.4,
   },
 
   headerSubtitle: {
     fontSize: 12,
-    marginTop: 3,
+    marginTop: 4,
+    fontWeight: '500',
   },
 
   backButton: {
@@ -594,20 +580,19 @@ const styles = StyleSheet.create({
 
   introCard: {
     marginHorizontal: Spacing.lg,
-    marginTop: 6,
-    marginBottom: 5,
+    marginTop: 5,
+    marginBottom: 7,
     padding: 15,
-    borderRadius: 19,
+    borderRadius: 20,
     borderWidth: 1,
-    flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 12,
   },
 
   introIcon: {
-    width: 45,
-    height: 45,
-    borderRadius: 14,
+    width: 46,
+    height: 46,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -632,9 +617,9 @@ const styles = StyleSheet.create({
   // ------------------------------------------------
 
   content: {
-    paddingTop: 15,
+    paddingTop: 14,
     paddingHorizontal: Spacing.lg,
-    paddingBottom: 100,
+    paddingBottom: 110,
   },
 
   // ------------------------------------------------
@@ -642,30 +627,52 @@ const styles = StyleSheet.create({
   // ------------------------------------------------
 
   card: {
-    marginBottom: Spacing.lg,
+    marginBottom: 18,
     overflow: 'hidden',
-    borderRadius: 20,
+    borderRadius: 22,
+    borderWidth: 1,
+  },
+
+  imageWrapper: {
+    position: 'relative',
   },
 
   cover: {
     width: '100%',
     height: 175,
-    borderRadius: 18,
+  },
+
+  imageBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+
+  imageBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
 
   info: {
-    padding: Spacing.md,
+    padding: 16,
   },
 
   gameTitle: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: 19,
+    fontWeight: '900',
+    letterSpacing: -0.2,
   },
 
   description: {
     marginTop: 7,
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 13,
+    lineHeight: 20,
   },
 
   // ------------------------------------------------
@@ -673,10 +680,9 @@ const styles = StyleSheet.create({
   // ------------------------------------------------
 
   details: {
-    marginTop: Spacing.md,
-    gap: 14,
+    marginTop: 14,
     alignItems: 'center',
-    flexWrap: 'wrap',
+    gap: 11,
   },
 
   detailItem: {
@@ -686,6 +692,12 @@ const styles = StyleSheet.create({
 
   detailText: {
     fontSize: 12,
+    fontWeight: '600',
+  },
+
+  detailDivider: {
+    width: 1,
+    height: 15,
   },
 
   // ------------------------------------------------
@@ -693,19 +705,30 @@ const styles = StyleSheet.create({
   // ------------------------------------------------
 
   button: {
-    marginTop: Spacing.md,
-    minHeight: 48,
-    paddingHorizontal: 16,
+    marginTop: 17,
+    minHeight: 50,
+    paddingHorizontal: 14,
     borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row-reverse',
-    gap: 6,
+    flexDirection: 'row',
+    gap: 8,
+  },
+
+  buttonIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   buttonText: {
+    flex: 1,
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
+    textAlign: 'center',
   },
 });
