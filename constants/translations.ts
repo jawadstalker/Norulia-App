@@ -309,6 +309,26 @@ export const translations = {
     monthDey: 'دی',
     monthBahman: 'بهمن',
     monthEsfand: 'اسفند',
+
+    // ================================================================
+    // ===== NEW KEYS ADDED FOR CULTURAL SCREEN (FIX ERRORS) =====
+    // ================================================================
+
+    // Cultural Journey Section
+    monthlyJourney: 'سفر ۴ هفته‌ای شما',
+    chooseWeek: 'پیشنهادات فرهنگی این ماه را کشف کنید',
+    week: 'هفته',
+    movie: 'فیلم',
+    book: 'کتاب',
+    exploreBook: 'کاوش در کتاب',
+    whyThisWeek: 'چرا این هفته؟',
+    culturalWellness: 'لحظات کوچک فرهنگ می‌توانند لحظات معناداری برای ذهن ایجاد کنند.',
+
+    // NEW KEYS FOR THE NEW CULTURAL SCREEN
+    current: 'شروع',
+    explore: 'کاوش',
+    recommendations: 'پیشنهادات هفتگی شما',
+    previous: 'قبلی',
   },
 
   en: {
@@ -621,5 +641,25 @@ export const translations = {
     monthDey: 'Dey',
     monthBahman: 'Bahman',
     monthEsfand: 'Esfand',
+
+    // ================================================================
+    // ===== NEW KEYS ADDED FOR CULTURAL SCREEN (FIX ERRORS) =====
+    // ================================================================
+
+    // Cultural Journey Section
+    monthlyJourney: 'Your 4-Week Journey',
+    chooseWeek: "Explore this month's cultural recommendations",
+    week: 'Week',
+    movie: 'MOVIE',
+    book: 'BOOK',
+    exploreBook: 'Explore Book',
+    whyThisWeek: 'Why this week?',
+    culturalWellness: 'Small moments of culture can create meaningful moments for the mind.',
+
+    // NEW KEYS FOR THE NEW CULTURAL SCREEN
+    current: 'START',
+    explore: 'Explore',
+    recommendations: 'Your weekly recommendations',
+    previous: 'Previous',
   }
 };
