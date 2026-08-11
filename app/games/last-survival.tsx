@@ -106,19 +106,6 @@ const LEVELS: Level[] = [
   },
 ];
 
-/* ================================================================
-   SHARED BACK BUTTON
-
-   این دکمه در تمام حالت‌های صفحه استفاده می‌شود.
-
-   قوانین:
-   - همیشه سمت چپ
-   - جهت ArrowLeft همیشه ثابت
-   - RTL هیچ تغییری در position ایجاد نمی‌کند
-   - بدون row-reverse
-   - بدون scaleX
-   - بدون right
-================================================================ */
 
 interface BackButtonProps {
   onPress: () => void;
@@ -156,18 +143,7 @@ function BackButton({
         strokeWidth={2.5}
       />
 
-      {showLabel && label ? (
-        <Text
-          style={[
-            styles.backText,
-            {
-              color: colors.text,
-            },
-          ]}
-        >
-          {label}
-        </Text>
-      ) : null}
+
     </TouchableOpacity>
   );
 }
