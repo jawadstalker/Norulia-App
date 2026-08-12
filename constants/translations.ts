@@ -49,6 +49,7 @@ export const translations = {
     tasks: 'تسک‌ها',
     completed: 'تکمیل شده',
     pending: 'در انتظار',
+    medications: 'داروها',
 
     // ===== Common Actions =====
     add: 'افزودن',
@@ -194,6 +195,7 @@ export const translations = {
     cognitive: 'شناختی',
     supplement: 'مکمل',
     missed: 'فراموش شده',
+    noMedicationsToday: 'هیچ دارویی برای امروز ثبت نشده است',
 
     // ===== Add Medication =====
     addMedicationTitle: 'افزودن دارو 💊',
@@ -381,6 +383,7 @@ export const translations = {
     tasks: 'Tasks',
     completed: 'Completed',
     pending: 'Pending',
+    medications: 'Medications',
 
     // ===== Common Actions =====
     add: 'Add',
@@ -526,6 +529,7 @@ export const translations = {
     cognitive: 'Cognitive',
     supplement: 'Supplement',
     missed: 'Missed',
+    noMedicationsToday: 'No medications scheduled for today',
 
     // ===== Add Medication =====
     addMedicationTitle: 'Add Medication 💊',
