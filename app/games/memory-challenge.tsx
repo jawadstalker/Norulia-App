@@ -356,6 +356,134 @@ const ShapeComponent = ({
   }
 };
 
+/* ================================================================
+   SHARED HEADER
+   ================================================================
+
+   دقیقاً مشابه Header در PsychoScreen
+
+   ساختار فیزیکی همیشه:
+
+   ┌──────┐ ┌─────────────────────────────┐
+   │  ←   │ │ عنوان                       │
+   └──────┘ │ توضیحات                     │
+            └─────────────────────────────┘
+
+   دکمه همیشه سمت چپ است.
+   RTL فقط روی متن تأثیر دارد.
+================================================================ */
+
+interface PageHeaderProps {
+  title: string;
+  subtitle?: string;
+  onBack: () => void;
+  colors: any;
+  isRTL: boolean;
+  backLabel?: string;
+}
+
+function PageHeader({
+  title,
+  subtitle,
+  onBack,
+  colors,
+  isRTL,
+  backLabel = 'Back',
+}: PageHeaderProps) {
+  return (
+    <View
+      style={[
+        styles.pageHeader,
+        {
+          borderBottomColor: colors.border,
+        },
+      ]}
+    >
+      {/* ==========================================================
+         BACK BUTTON
+
+         این دکمه هیچ وابستگی به RTL ندارد.
+
+         نه row-reverse
+         نه scaleX
+         نه right
+         نه position وابسته به RTL
+
+         بنابراین همیشه سمت چپ می‌ماند.
+      ========================================================== */}
+
+      <TouchableOpacity
+        onPress={onBack}
+        activeOpacity={0.75}
+        accessibilityRole="button"
+        accessibilityLabel={backLabel}
+        style={[
+          styles.unifiedBackButton,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+          },
+        ]}
+      >
+        <MaterialCommunityIcons
+          name="arrow-left"
+          size={23}
+          color={colors.text}
+        />
+      </TouchableOpacity>
+
+      {/* ==========================================================
+         TITLE AREA
+
+         این قسمت مستقل از دکمه برگشت است.
+         RTL فقط این بخش را راست‌چین می‌کند.
+      ========================================================== */}
+
+      <View
+        style={[
+          styles.pageHeaderText,
+          {
+            alignItems: isRTL
+              ? 'flex-end'
+              : 'flex-start',
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.pageHeaderTitle,
+            {
+              color: colors.text,
+              textAlign: isRTL
+                ? 'right'
+                : 'left',
+            },
+          ]}
+          numberOfLines={2}
+        >
+          {title}
+        </Text>
+
+        {subtitle ? (
+          <Text
+            style={[
+              styles.pageHeaderSubtitle,
+              {
+                color: colors.textSecondary,
+                textAlign: isRTL
+                  ? 'right'
+                  : 'left',
+              },
+            ]}
+          >
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 export default function MemoryChallenge() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -410,7 +538,24 @@ export default function MemoryChallenge() {
     selectedLevel,
   ]);
 
+  /* ================================================================
+     BACK HANDLER
+     
+     منطق یکپارچه برای برگشت در همه حالت‌ها
+  ================================================================ */
+
   const handleBack = () => {
+    // اگر بازی در حال انجام است یا تمام شده، اول به صفحه شروع برگرد
+    if (gameStarted || gameFinished) {
+      setGameStarted(false);
+      setGameFinished(false);
+      setCurrentRound(1);
+      setScore(0);
+      setCorrectAnswers(0);
+      return;
+    }
+
+    // اگر در صفحه شروع هستیم، به صفحه قبلی برو
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -588,6 +733,10 @@ export default function MemoryChallenge() {
   const textAlignStyle =
     isRTL ? 'right' : 'left';
 
+  /* ================================================================
+     PAGE 1 — START
+  ================================================================ */
+
   if (!gameStarted) {
     return (
       <View
@@ -599,40 +748,35 @@ export default function MemoryChallenge() {
           },
         ]}
       >
+        {/* ======================================================
+           SHARED HEADER — دقیقاً مثل PsychoScreen
+        ====================================================== */}
+
+        <PageHeader
+          title={
+            language === 'fa'
+              ? 'چالش حافظه'
+              : 'Memory Challenge'
+          }
+          subtitle={
+            language === 'fa'
+              ? 'سطح مورد نظر خود را انتخاب کنید'
+              : 'Choose your level'
+          }
+          onBack={handleBack}
+          colors={colors}
+          isRTL={isRTL}
+          backLabel={language === 'fa' ? 'بازگشت' : 'Back'}
+        />
+
         <ScrollView
           showsVerticalScrollIndicator={
             false
           }
           contentContainerStyle={
-            styles.startContent
+            styles.content
           }
         >
-          <TouchableOpacity
-            onPress={handleBack}
-            activeOpacity={0.8}
-            style={[
-              styles.startBackButton,
-              {
-                backgroundColor:
-                  colors.surface,
-                borderColor:
-                  colors.border,
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={
-              language === 'fa'
-                ? 'بازگشت'
-                : 'Back'
-            }
-          >
-            <MaterialCommunityIcons
-              name="arrow-left"
-              size={23}
-              color={colors.text}
-            />
-          </TouchableOpacity>
-
           <MotiView
             from={{
               opacity: 0,
@@ -647,34 +791,6 @@ export default function MemoryChallenge() {
               duration: 500,
             }}
           >
-            <View
-              style={styles.header}
-            >
-              <Text
-                style={[
-                  styles.title,
-                  {
-                    color: colors.text,
-                    textAlign: 'center',
-                  },
-                ]}
-              >
-                {t.memoryGame}
-              </Text>
-
-              <Text
-                style={[
-                  styles.subtitle,
-                  {
-                    color: colors.textSecondary,
-                    textAlign: 'center',
-                  },
-                ]}
-              >
-                {t.cognitiveGames}
-              </Text>
-            </View>
-
             <View
               style={
                 styles.levelsContainer
@@ -846,6 +962,10 @@ export default function MemoryChallenge() {
     );
   }
 
+  /* ================================================================
+     PAGE 2 — RESULT
+  ================================================================ */
+
   if (gameFinished) {
     const maxScore =
       TOTAL_ROUNDS * 20;
@@ -871,195 +991,229 @@ export default function MemoryChallenge() {
           },
         ]}
       >
-        <MotiView
-          from={{
-            opacity: 0,
-            scale: 0.9,
-          }}
-          animate={{
-            opacity: 1,
-            scale: 1,
-          }}
-          transition={{
-            type: 'spring',
-            damping: 20,
-          }}
-          style={
-            styles.resultContainer
+        {/* ======================================================
+           SHARED HEADER — دقیقاً مثل PsychoScreen
+        ====================================================== */}
+
+        <PageHeader
+          title={
+            language === 'fa'
+              ? 'پایان بازی'
+              : 'Game Over'
+          }
+          subtitle={
+            language === 'fa'
+              ? 'نتیجه شما'
+              : 'Your result'
+          }
+          onBack={handleBack}
+          colors={colors}
+          isRTL={isRTL}
+          backLabel={language === 'fa' ? 'بازگشت' : 'Back'}
+        />
+
+        <ScrollView
+          showsVerticalScrollIndicator={
+            false
+          }
+          contentContainerStyle={
+            styles.resultContent
           }
         >
-          <View
+          <MotiView
+            from={{
+              opacity: 0,
+              scale: 0.9,
+            }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+            }}
+            transition={{
+              type: 'spring',
+              damping: 20,
+            }}
             style={
-              styles.resultHeader
+              styles.resultContainer
             }
           >
             <View
-              style={[
-                styles.resultIconBox,
-                {
-                  backgroundColor:
-                    colors.primary +
-                    '15',
-                },
-              ]}
+              style={
+                styles.resultHeader
+              }
             >
-              <MaterialCommunityIcons
-                name="trophy"
-                size={48}
-                color={colors.primary}
-              />
+              <View
+                style={[
+                  styles.resultIconBox,
+                  {
+                    backgroundColor:
+                      colors.primary +
+                      '15',
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="trophy"
+                  size={48}
+                  color={colors.primary}
+                />
+              </View>
+
+              <Text
+                style={[
+                  styles.resultEmoji,
+                  {
+                    color:
+                      colors.text,
+                  },
+                ]}
+              >
+                {emoji}
+              </Text>
             </View>
 
             <Text
               style={[
-                styles.resultEmoji,
+                styles.resultTitle,
                 {
                   color:
                     colors.text,
                 },
               ]}
             >
-              {emoji}
+              {t.gameCompleted}
             </Text>
-          </View>
 
-          <Text
-            style={[
-              styles.resultTitle,
-              {
-                color:
-                  colors.text,
-              },
-            ]}
-          >
-            {t.gameCompleted}
-          </Text>
-
-          <View
-            style={[
-              styles.resultScoreContainer,
-              {
-                backgroundColor:
-                  colors.surface,
-                borderColor:
-                  colors.border,
-              },
-            ]}
-          >
-            <Text
+            <View
               style={[
-                styles.resultScore,
+                styles.resultScoreContainer,
                 {
-                  color:
-                    colors.primary,
+                  backgroundColor:
+                    colors.surface,
+                  borderColor:
+                    colors.border,
                 },
               ]}
             >
-              {score}
-            </Text>
+              <Text
+                style={[
+                  styles.resultScore,
+                  {
+                    color:
+                      colors.primary,
+                  },
+                ]}
+              >
+                {score}
+              </Text>
+
+              <Text
+                style={[
+                  styles.resultMaxScore,
+                  {
+                    color:
+                      colors.textSecondary,
+                  },
+                ]}
+              >
+                / {maxScore}
+              </Text>
+            </View>
 
             <Text
               style={[
-                styles.resultMaxScore,
+                styles.resultDescription,
                 {
                   color:
                     colors.textSecondary,
                 },
               ]}
             >
-              / {maxScore}
+              {correctAnswers}{' '}
+              {language === 'fa'
+                ? 'از'
+                : 'of'}{' '}
+              {TOTAL_ROUNDS}{' '}
+              {language === 'fa'
+                ? 'پاسخ صحیح'
+                : 'answers were correct'}
             </Text>
-          </View>
 
-          <Text
-            style={[
-              styles.resultDescription,
-              {
-                color:
-                  colors.textSecondary,
-              },
-            ]}
-          >
-            {correctAnswers}{' '}
-            {language === 'fa'
-              ? 'از'
-              : 'of'}{' '}
-            {TOTAL_ROUNDS}{' '}
-            {language === 'fa'
-              ? 'پاسخ صحیح'
-              : 'answers were correct'}
-          </Text>
-
-          <Text
-            style={[
-              styles.feedbackText,
-              {
-                color:
-                  colors.text,
-              },
-            ]}
-          >
-            {feedback}
-          </Text>
-
-          <View
-            style={[
-              styles.percentageBar,
-              {
-                backgroundColor:
-                  colors.border,
-              },
-            ]}
-          >
-            <MotiView
-              animate={{
-                width: `${percentage}%`,
-              }}
-              transition={{
-                type: 'spring',
-                damping: 15,
-              }}
+            <Text
               style={[
-                styles.percentageFill,
+                styles.feedbackText,
+                {
+                  color:
+                    colors.text,
+                },
+              ]}
+            >
+              {feedback}
+            </Text>
+
+            <View
+              style={[
+                styles.percentageBar,
+                {
+                  backgroundColor:
+                    colors.border,
+                },
+              ]}
+            >
+              <MotiView
+                animate={{
+                  width: `${percentage}%`,
+                }}
+                transition={{
+                  type: 'spring',
+                  damping: 15,
+                }}
+                style={[
+                  styles.percentageFill,
+                  {
+                    backgroundColor:
+                      colors.primary,
+                  },
+                ]}
+              />
+            </View>
+
+            <TouchableOpacity
+              onPress={resetGame}
+              activeOpacity={0.85}
+              style={[
+                styles.startButton,
                 {
                   backgroundColor:
                     colors.primary,
+                  marginTop:
+                    Spacing.lg,
                 },
               ]}
-            />
-          </View>
-
-          <TouchableOpacity
-            onPress={resetGame}
-            activeOpacity={0.85}
-            style={[
-              styles.startButton,
-              {
-                backgroundColor:
-                  colors.primary,
-                marginTop:
-                  Spacing.lg,
-              },
-            ]}
-          >
-            <MaterialCommunityIcons
-              name="reload"
-              size={21}
-              color="#FFFFFF"
-            />
-
-            <Text
-              style={
-                styles.startText
-              }
             >
-              {t.tryAgain}
-            </Text>
-          </TouchableOpacity>
-        </MotiView>
+              <MaterialCommunityIcons
+                name="reload"
+                size={21}
+                color="#FFFFFF"
+              />
+
+              <Text
+                style={
+                  styles.startText
+                }
+              >
+                {t.tryAgain}
+              </Text>
+            </TouchableOpacity>
+          </MotiView>
+        </ScrollView>
       </View>
     );
   }
+
+  /* ================================================================
+     PAGE 3 — GAME PLAY
+  ================================================================ */
 
   const targetShapeName =
     getShapeName(target.shape);
@@ -1082,39 +1236,23 @@ export default function MemoryChallenge() {
         },
       ]}
     >
-      <View
-        style={styles.gameHeader}
-      >
-        <View
-          style={[
-            styles.scoreContainer,
-            {
-              backgroundColor:
-                colors.surface,
-              borderColor:
-                colors.border,
-            },
-          ]}
-        >
-          <MaterialCommunityIcons
-            name="trophy"
-            size={20}
-            color={colors.primary}
-          />
+      {/* ======================================================
+         SHARED HEADER — دقیقاً مثل PsychoScreen
+         با نمایش امتیاز در subtitle
+      ====================================================== */}
 
-          <Text
-            style={[
-              styles.score,
-              {
-                color:
-                  colors.text,
-              },
-            ]}
-          >
-            {score}
-          </Text>
-        </View>
-      </View>
+      <PageHeader
+        title={
+          language === 'fa'
+            ? 'چالش حافظه'
+            : 'Memory Challenge'
+        }
+        subtitle={`${roundLabel} ${currentRound} / ${TOTAL_ROUNDS} • ${t.score}: ${score}`}
+        onBack={handleBack}
+        colors={colors}
+        isRTL={isRTL}
+        backLabel={language === 'fa' ? 'بازگشت' : 'Back'}
+      />
 
       <View
         style={
@@ -1132,22 +1270,6 @@ export default function MemoryChallenge() {
             },
           ]}
         >
-          <Text
-            style={[
-              styles.roundText,
-              {
-                color:
-                  colors.text,
-                textAlign:
-                  textAlignStyle,
-              },
-            ]}
-          >
-            {roundLabel}{' '}
-            {currentRound} /{' '}
-            {TOTAL_ROUNDS}
-          </Text>
-
           <Text
             style={[
               styles.correctText,
@@ -1269,45 +1391,100 @@ export default function MemoryChallenge() {
   );
 }
 
+/* ================================================================
+   STYLES
+================================================================ */
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
 
-  startContent: {
-    paddingHorizontal:
-      Spacing.lg,
+  /* ================================================================
+     SHARED HEADER — دقیقاً مثل PsychoScreen
+
+     هر سه صفحه دقیقاً از همین Header استفاده می‌کنند.
+
+     ترتیب فیزیکی:
+     
+     [ BACK ] [ TITLE / SUBTITLE ]
+
+     بنابراین در RTL هم دکمه سمت چپ باقی می‌ماند.
+  ================================================================ */
+
+  pageHeader: {
+    width: '100%',
+
+    paddingHorizontal: Spacing.lg,
+    paddingTop: 60,
+    paddingBottom: 15,
+
+    flexDirection: 'row',
+    alignItems: 'center',
+
+    borderBottomWidth:
+      StyleSheet.hairlineWidth,
+  },
+
+  unifiedBackButton: {
+    width: 44,
+    height: 44,
+
+    borderRadius: 22,
+
+    borderWidth: 1,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    flexShrink: 0,
+
+    /*
+     * مهم:
+     * این margin همیشه یکسان است.
+     * RTL روی آن تأثیر نمی‌گذارد.
+     */
+    marginRight: 12,
+  },
+
+  pageHeaderText: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  pageHeaderTitle: {
+    fontSize: 21,
+    fontWeight: '800',
+
+    lineHeight: 27,
+  },
+
+  pageHeaderSubtitle: {
+    fontSize: 12,
+
+    marginTop: 3,
+
+    lineHeight: 18,
+  },
+
+  /* ================================================================
+     CONTENT
+  ================================================================ */
+
+  content: {
     paddingTop: 20,
+    paddingHorizontal: Spacing.lg,
     paddingBottom: 100,
   },
 
-  startBackButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 15,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 48,
-    alignSelf: 'flex-start',
-    marginBottom: 28,
+  resultContent: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: 100,
   },
 
-  header: {
-    alignItems: 'center',
-    marginTop: 10,
-    marginBottom: Spacing.xl,
-  },
-
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-  },
-
-  subtitle: {
-    marginTop: 6,
-    fontSize: 15,
-  },
+  /* ================================================================
+     LEVELS
+  ================================================================ */
 
   levelsContainer: {
     gap: 0,
@@ -1369,6 +1546,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
 
+  /* ================================================================
+     BUTTONS
+  ================================================================ */
+
   startButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1387,48 +1568,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  gameHeader: {
-    paddingHorizontal:
-      Spacing.lg,
-    paddingTop: 50,
-    paddingBottom:
-      Spacing.md,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-
-  scoreContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-
-  score: {
-    fontSize: 20,
-    fontWeight: '800',
-  },
+  /* ================================================================
+     GAME PLAY
+  ================================================================ */
 
   progressContainer: {
     paddingHorizontal:
       Spacing.lg,
+    paddingTop:
+      Spacing.md,
     paddingBottom:
       Spacing.sm,
   },
 
   progressHeader: {
     justifyContent:
-      'space-between',
+      'flex-end',
     marginBottom: 7,
-  },
-
-  roundText: {
-    fontSize: 14,
-    fontWeight: '600',
   },
 
   correctText: {
@@ -1487,6 +1643,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
+  /* ================================================================
+     SHAPES
+  ================================================================ */
+
   circleShape: {
     borderRadius: 999,
   },
@@ -1523,12 +1683,13 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
 
+  /* ================================================================
+     RESULT
+  ================================================================ */
+
   resultContainer: {
-    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    padding:
-      Spacing.xl,
+    paddingTop: Spacing.xl,
   },
 
   resultHeader: {
