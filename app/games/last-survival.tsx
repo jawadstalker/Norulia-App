@@ -1438,10 +1438,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  /* ================================================================
-     LEVEL HEADER
-  ================================================================= */
-
   levelHeader: {
     alignItems: 'center',
     marginTop: 45,
