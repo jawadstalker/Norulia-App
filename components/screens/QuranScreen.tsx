@@ -19,13 +19,12 @@ import {
   Heart,
   Volume2,
   ChevronLeft,
-  ChevronRight,
+  Search,
   Star,
   Trophy,
   RefreshCw,
   CheckCircle,
   XCircle,
-  Search,
   Sparkles,
   Target,
   Award,
@@ -620,44 +619,58 @@ export default function QuranScreen() {
     }, 1100);
   };
 
-  const renderTopBar = (title?: string) => (
-    <View style={styles.topBar}>
-      <View style={styles.topBarLeft}>
-        {title && (
-          <Text
-            style={[
-              styles.topBarTitle,
-              {
-                color: colors.text,
-              },
-            ]}
-            numberOfLines={1}
-          >
-            {title}
-          </Text>
-        )}
-      </View>
+  const renderTopBar = (title?: string) => {
+    return (
+      <View style={styles.topBar}>
+        {/* عنوان صفحه — همیشه سمت راست */}
+        <View style={styles.topBarTitleContainer}>
+          {title ? (
+            <Text
+              style={[
+                styles.topBarTitle,
+                {
+                  color: colors.text,
+                },
+              ]}
+              numberOfLines={1}
+            >
+              {title}
+            </Text>
+          ) : null}
+        </View>
 
-      <TouchableOpacity
-        activeOpacity={0.75}
-        onPress={handleBack}
-        style={[
-          styles.backCircle,
-          {
-            backgroundColor: isDark
-              ? 'rgba(255,255,255,0.08)'
-              : '#FFFFFF',
-            borderColor: colors.border,
-          },
-        ]}
-      >
-        <ChevronLeft
-          size={22}
-          color={colors.text}
-        />
-      </TouchableOpacity>
-    </View>
-  );
+        {/* دکمه بازگشت — همیشه سمت چپ */}
+        <TouchableOpacity
+          activeOpacity={0.78}
+          onPress={handleBack}
+          hitSlop={{
+            top: 8,
+            bottom: 8,
+            left: 8,
+            right: 8,
+          }}
+          style={[
+            styles.backButton,
+            {
+              backgroundColor: isDark
+                ? 'rgba(255,255,255,0.07)'
+                : '#FFFFFF',
+
+              borderColor: isDark
+                ? 'rgba(255,255,255,0.10)'
+                : colors.border,
+            },
+          ]}
+        >
+          <ChevronLeft
+            size={21}
+            strokeWidth={2.2}
+            color={colors.text}
+          />
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   const renderList = () => (
     <Animated.View
@@ -2561,149 +2574,239 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop:
       Platform.OS === 'ios'
-        ? 54
-        : 30,
+        ? 46
+        : 24,
   },
 
-  scrollContent: {
-    paddingHorizontal: 18,
-    paddingBottom: 130,
-  },
+  /*
+   * =========================================================
+   * FIXED HEADER
+   * =========================================================
+   *
+   * RTL layout:
+   *
+   *       عنوان صفحه          ← فضای اصلی
+   *
+   *                              [ ← ]
+   *                              Back
+   *
+   * عنوان همیشه راست
+   * دکمه همیشه چپ
+   *
+   * هیچ margin دستی روی دکمه وجود ندارد.
+   */
 
   topBar: {
-    minHeight: 54,
+    height: 56,
+
+    width: '100%',
+
     paddingHorizontal: 18,
+
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     justifyContent: 'space-between',
-    marginBottom: 8,
+
+    marginBottom: 4,
   },
 
-  topBarLeft: {
+  topBarTitleContainer: {
     flex: 1,
+
+    minWidth: 0,
+
     alignItems: 'flex-end',
+
     justifyContent: 'center',
+
+    paddingLeft: 12,
   },
 
   topBarTitle: {
     fontSize: 17,
-    fontWeight: '700',
+
+    fontWeight: '800',
+
     textAlign: 'right',
+
+    includeFontPadding: false,
   },
 
-  backCircle: {
-    
+  backButton: {
     width: 42,
+
     height: 42,
-    borderRadius: 21,
+
+    borderRadius: 13,
+
     borderWidth: 1,
+
     alignItems: 'center',
+
     justifyContent: 'center',
-    marginRight: 12,
-    marginTop: 19,
+
+    flexShrink: 0,
+  },
+
+  /*
+   * =========================================================
+   * CONTENT
+   * =========================================================
+   */
+
+  scrollContent: {
+    paddingHorizontal: 18,
+
+    paddingBottom: 130,
   },
 
   heroSection: {
     marginTop: 12,
+
     marginBottom: 20,
   },
 
   heroBadge: {
     alignSelf: 'flex-end',
+
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     gap: 6,
+
     marginBottom: 9,
   },
 
   heroBadgeText: {
     fontSize: 12,
+
     fontWeight: '700',
   },
 
   heroTitle: {
     fontSize: 30,
+
     fontWeight: '900',
+
     textAlign: 'right',
+
     letterSpacing: -0.5,
   },
 
   heroSubtitle: {
     fontSize: 14,
+
     marginTop: 7,
+
     textAlign: 'right',
+
     lineHeight: 23,
   },
 
   statsCard: {
     minHeight: 82,
+
     borderWidth: 1,
+
     borderRadius: 20,
+
     paddingHorizontal: 10,
+
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     justifyContent: 'space-around',
+
     marginBottom: 14,
   },
 
   statItem: {
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     gap: 7,
   },
 
   statIcon: {
     width: 36,
+
     height: 36,
+
     borderRadius: 11,
+
     alignItems: 'center',
+
     justifyContent: 'center',
   },
 
   statValue: {
     fontSize: 17,
+
     fontWeight: '800',
+
     textAlign: 'right',
   },
 
   statLabel: {
     fontSize: 10,
+
     marginTop: 1,
+
     textAlign: 'right',
   },
 
   statDivider: {
     width: 1,
+
     height: 38,
   },
 
   searchContainer: {
     height: 52,
+
     borderRadius: 16,
+
     borderWidth: 1,
+
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     paddingHorizontal: 14,
+
     marginBottom: 20,
   },
 
   searchInput: {
     flex: 1,
+
     fontSize: 14,
+
     marginHorizontal: 10,
+
     paddingVertical: 0,
   },
 
   sectionHeader: {
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     justifyContent: 'space-between',
+
     marginBottom: 10,
   },
 
   sectionTitle: {
     fontSize: 17,
+
     fontWeight: '800',
+
     textAlign: 'right',
   },
 
@@ -2717,27 +2820,37 @@ const styles = StyleSheet.create({
 
   surahCard: {
     borderRadius: 20,
+
     borderWidth: 1,
+
     padding: 15,
+
     marginBottom: 1,
   },
 
   surahCardTop: {
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
   },
 
   surahNumber: {
     width: 43,
+
     height: 43,
+
     borderRadius: 14,
+
     alignItems: 'center',
+
     justifyContent: 'center',
+
     marginLeft: 10,
   },
 
   surahNumberText: {
     fontSize: 15,
+
     fontWeight: '900',
   },
 
@@ -2747,18 +2860,23 @@ const styles = StyleSheet.create({
 
   surahArabic: {
     fontSize: 18,
+
     fontWeight: '800',
+
     textAlign: 'right',
   },
 
   surahName: {
     fontSize: 11,
+
     marginTop: 3,
+
     textAlign: 'right',
   },
 
   surahMeta: {
     alignItems: 'flex-end',
+
     marginLeft: 7,
   },
 
@@ -2768,43 +2886,57 @@ const styles = StyleSheet.create({
 
   surahRevelation: {
     fontSize: 10,
+
     marginTop: 3,
   },
 
   progressRow: {
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     gap: 8,
+
     marginTop: 13,
   },
 
   progressTrack: {
     flex: 1,
+
     height: 5,
+
     borderRadius: 3,
+
     overflow: 'hidden',
   },
 
   progressFill: {
     height: 5,
+
     borderRadius: 3,
   },
 
   progressPercent: {
     width: 38,
+
     fontSize: 11,
+
     textAlign: 'left',
   },
 
   cardFooter: {
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     justifyContent: 'space-between',
+
     marginTop: 10,
   },
 
   cardStatus: {
     fontSize: 12,
+
     fontWeight: '700',
   },
 
@@ -2814,85 +2946,120 @@ const styles = StyleSheet.create({
 
   emptyState: {
     alignItems: 'center',
+
     justifyContent: 'center',
+
     paddingVertical: 60,
   },
 
   emptyTitle: {
     fontSize: 17,
+
     fontWeight: '700',
+
     marginTop: 12,
   },
 
   emptyText: {
     fontSize: 13,
+
     marginTop: 5,
+
     textAlign: 'center',
   },
 
   detailHeader: {
     flexDirection: 'row-reverse',
+
     alignItems: 'flex-start',
+
     justifyContent: 'space-between',
+
     marginTop: 12,
+
     marginBottom: 12,
   },
 
   detailArabicTitle: {
     fontSize: 28,
+
     fontWeight: '900',
+
     textAlign: 'right',
   },
 
   detailPoet: {
     fontSize: 13,
+
     marginTop: 5,
+
     textAlign: 'right',
   },
 
   scoreBadge: {
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     gap: 4,
+
     paddingHorizontal: 10,
+
     paddingVertical: 7,
+
     borderRadius: 11,
+
     backgroundColor:
       'rgba(245,185,66,0.12)',
   },
 
   scoreBadgeText: {
     fontSize: 13,
+
     fontWeight: '700',
   },
 
   detailProgressTrack: {
     height: 6,
+
     borderRadius: 3,
+
     overflow: 'hidden',
+
     marginBottom: 14,
   },
 
   detailProgressFill: {
     height: 6,
+
     borderRadius: 3,
   },
 
   memoryHint: {
     borderWidth: 1,
+
     borderRadius: 18,
+
     padding: 13,
+
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     marginBottom: 13,
   },
 
   memoryHintIcon: {
     width: 38,
+
     height: 38,
+
     borderRadius: 12,
+
     alignItems: 'center',
+
     justifyContent: 'center',
+
     marginLeft: 10,
   },
 
@@ -2902,182 +3069,258 @@ const styles = StyleSheet.create({
 
   memoryHintTitle: {
     fontSize: 13,
+
     fontWeight: '800',
+
     textAlign: 'right',
   },
 
   memoryHintText: {
     fontSize: 11,
+
     lineHeight: 19,
+
     marginTop: 2,
+
     textAlign: 'right',
   },
 
   verseCard: {
     borderWidth: 1,
+
     borderRadius: 20,
+
     padding: 16,
+
     marginBottom: 10,
   },
 
   verseHeader: {
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     marginBottom: 14,
   },
 
   verseNumber: {
     width: 32,
+
     height: 32,
+
     borderRadius: 10,
+
     alignItems: 'center',
+
     justifyContent: 'center',
   },
 
   verseNumberText: {
     fontSize: 12,
+
     fontWeight: '800',
   },
 
   verseLabel: {
     fontSize: 11,
+
     marginRight: 7,
   },
 
   quranArabic: {
     fontSize: 23,
+
     lineHeight: 43,
+
     textAlign: 'right',
+
     writingDirection: 'rtl',
+
     fontWeight: '600',
   },
 
   translationBox: {
     marginTop: 15,
+
     paddingTop: 13,
+
     borderTopWidth: 1,
+
     borderTopColor:
       'rgba(128,128,128,0.15)',
   },
 
   translationLabel: {
     fontSize: 12,
+
     fontWeight: '800',
+
     textAlign: 'right',
+
     marginBottom: 5,
   },
 
   translationText: {
     fontSize: 13,
+
     lineHeight: 23,
+
     textAlign: 'right',
   },
 
   actionBar: {
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     gap: 9,
+
     marginTop: 8,
+
     paddingBottom: 10,
   },
 
   iconAction: {
     width: 48,
+
     height: 48,
+
     borderRadius: 15,
+
     borderWidth: 1,
+
     alignItems: 'center',
+
     justifyContent: 'center',
   },
 
   quizButton: {
     flex: 1,
+
     minHeight: 48,
+
     borderRadius: 15,
+
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     justifyContent: 'center',
+
     gap: 7,
   },
 
   quizButtonText: {
     color: '#FFFFFF',
+
     fontSize: 14,
+
     fontWeight: '800',
   },
 
   quizProgressHeader: {
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     justifyContent: 'space-between',
+
     marginTop: 10,
+
     marginBottom: 12,
   },
 
   quizEyebrow: {
     fontSize: 12,
+
     textAlign: 'right',
   },
 
   quizTitle: {
     fontSize: 25,
+
     fontWeight: '900',
+
     textAlign: 'right',
+
     marginTop: 2,
   },
 
   quizNumber: {
     minWidth: 58,
+
     height: 42,
+
     borderRadius: 14,
+
     flexDirection: 'row',
+
     alignItems: 'center',
+
     justifyContent: 'center',
   },
 
   quizNumberText: {
     fontSize: 17,
+
     fontWeight: '900',
   },
 
   quizNumberTotal: {
     fontSize: 12,
+
     fontWeight: '600',
   },
 
   quizProgressTrack: {
     height: 5,
+
     borderRadius: 3,
+
     overflow: 'hidden',
+
     marginBottom: 18,
   },
 
   quizProgressFill: {
     height: 5,
+
     borderRadius: 3,
   },
 
   questionCard: {
     borderRadius: 20,
+
     borderWidth: 1,
+
     padding: 17,
+
     marginBottom: 13,
   },
 
   questionIcon: {
     width: 40,
+
     height: 40,
+
     borderRadius: 13,
+
     alignItems: 'center',
+
     justifyContent: 'center',
+
     alignSelf: 'flex-end',
+
     marginBottom: 12,
   },
 
   questionText: {
     fontSize: 18,
+
     fontWeight: '700',
+
     lineHeight: 29,
+
     textAlign: 'right',
   },
 
@@ -3087,148 +3330,211 @@ const styles = StyleSheet.create({
 
   optionButton: {
     minHeight: 62,
+
     borderRadius: 17,
+
     borderWidth: 1,
+
     padding: 11,
+
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     gap: 11,
   },
 
   optionIndex: {
     width: 36,
+
     height: 36,
+
     borderRadius: 11,
+
     alignItems: 'center',
+
     justifyContent: 'center',
   },
 
   optionIndexText: {
     fontSize: 13,
+
     fontWeight: '800',
   },
 
   optionText: {
     flex: 1,
+
     fontSize: 14,
+
     lineHeight: 23,
+
     fontWeight: '500',
+
     textAlign: 'right',
   },
 
   fillCard: {
     borderWidth: 1,
+
     borderRadius: 19,
+
     padding: 17,
   },
 
   fillHint: {
     fontSize: 13,
+
     lineHeight: 22,
+
     textAlign: 'right',
   },
 
   fillTranslation: {
     fontSize: 15,
+
     lineHeight: 26,
+
     textAlign: 'right',
+
     marginTop: 10,
+
     marginBottom: 16,
+
     fontWeight: '600',
   },
 
   fillInput: {
     minHeight: 150,
+
     borderWidth: 1,
+
     borderRadius: 14,
+
     paddingHorizontal: 14,
+
     paddingVertical: 13,
+
     fontSize: 18,
+
     lineHeight: 34,
   },
 
   primaryButton: {
     minHeight: 52,
+
     borderRadius: 16,
+
     marginTop: 14,
+
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     justifyContent: 'center',
+
     gap: 7,
   },
 
   primaryButtonText: {
     color: '#FFFFFF',
+
     fontSize: 14,
+
     fontWeight: '800',
   },
 
   resultMessage: {
     minHeight: 54,
+
     borderRadius: 15,
+
     marginTop: 13,
+
     paddingHorizontal: 15,
+
     flexDirection: 'row-reverse',
+
     alignItems: 'center',
+
     justifyContent: 'center',
+
     gap: 8,
   },
 
   resultMessageText: {
     fontSize: 13,
+
     fontWeight: '800',
+
     textAlign: 'right',
   },
 
   resultScroll: {
     paddingHorizontal: 18,
+
     paddingBottom: 100,
+
     paddingTop: 15,
   },
 
   resultHero: {
     borderWidth: 1,
+
     borderRadius: 25,
+
     padding: 24,
+
     alignItems: 'center',
   },
 
   resultIconCircle: {
     width: 92,
+
     height: 92,
+
     borderRadius: 46,
+
     alignItems: 'center',
+
     justifyContent: 'center',
+
     marginBottom: 15,
   },
 
   resultTitle: {
     fontSize: 28,
+
     fontWeight: '900',
+
     textAlign: 'center',
   },
 
   resultSubtitle: {
     fontSize: 13,
+
     marginTop: 6,
+
     textAlign: 'center',
   },
 
   resultPercentage: {
     alignItems: 'center',
+
     marginTop: 22,
   },
 
   resultPercentageText: {
     fontSize: 48,
+
     fontWeight: '900',
   },
 
   resultPercentageLabel: {
     fontSize: 12,
+
     marginTop: -2,
   },
-
   resultProgressTrack: {
     width: '100%',
     height: 8,
@@ -3236,18 +3542,15 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginTop: 16,
   },
-
   resultProgressFill: {
     height: 8,
     borderRadius: 4,
   },
-
   resultStats: {
     flexDirection: 'row',
     gap: 10,
     marginTop: 12,
   },
-
   resultStatCard: {
     flex: 1,
     minHeight: 125,
@@ -3256,18 +3559,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   resultStatValue: {
     fontSize: 22,
     fontWeight: '900',
     marginTop: 7,
   },
-
   resultStatLabel: {
     fontSize: 11,
     marginTop: 3,
   },
-
   resultButton: {
     minHeight: 54,
     borderRadius: 17,
@@ -3277,13 +3577,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-
   resultButtonText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
   },
-
   secondaryButton: {
     minHeight: 52,
     borderRadius: 17,
@@ -3294,7 +3592,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 7,
   },
-
   secondaryButtonText: {
     fontSize: 14,
     fontWeight: '800',
