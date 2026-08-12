@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import {
   View,
@@ -8,24 +7,22 @@ import {
   TouchableOpacity,
   TextInput,
 } from 'react-native';
-
 import { useRouter } from 'expo-router';
-
 import {
   ArrowLeft,
+  ArrowRight,
   BookOpen,
   Check,
   RotateCcw,
 } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-
 import {
   Spacing,
   BorderRadius,
 } from '../../constants/theme';
-
 import { Card } from '../ui/Card';
 
 type Poem = {
@@ -84,9 +81,9 @@ export default function PoemsScreen() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [userAnswer, setUserAnswer] = useState('');
 
-  const textAlignStyle = isRTL ? 'right' : 'left';
-
   const currentPoem = selectedPoem;
+
+  const textAlignStyle = isRTL ? 'right' : 'left';
 
   const title =
     language === 'fa'
@@ -120,6 +117,11 @@ export default function PoemsScreen() {
     setUserAnswer('');
   };
 
+  /**
+   * ------------------------------------------
+   * BACK LOGIC
+   * ------------------------------------------
+   */
   const handleBack = () => {
     if (currentPoem) {
       setSelectedPoem(null);
@@ -134,65 +136,77 @@ export default function PoemsScreen() {
     }
   };
 
-  /*
-   * ==========================================
-   * صفحه تمرین یک شعر
-   * ==========================================
+  /**
+   * ------------------------------------------
+   * BACK ICON
+   *
+   * نکته:
+   * جهت این آیکون را تغییر نمی‌دهیم.
+   * همان ArrowLeft است که در صفحه اول درست بود.
+   * ------------------------------------------
    */
+  const BackIcon = ArrowLeft;
 
+  /**
+   * ------------------------------------------
+   * صفحه تمرین شعر
+   * ------------------------------------------
+   */
   if (currentPoem) {
     return (
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           {
             backgroundColor: colors.background,
           },
         ]}
+        edges={['top']}
       >
-        {/* Header درس */}
-        <View
-          style={[
-            styles.header,
-            {
-              flexDirection: isRTL ? 'row-reverse' : 'row',
-            },
-          ]}
-        >
-          {/* دکمه بازگشت داخل درس */}
+        {/* ======================================
+            HEADER
+           ====================================== */}
+
+        <View style={styles.detailHeader}>
+          {/* دکمه برگشت - همیشه سمت چپ */}
           <TouchableOpacity
             onPress={handleBack}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={
+              language === 'fa'
+                ? 'بازگشت'
+                : 'Back'
+            }
+            hitSlop={{
+              top: 10,
+              bottom: 10,
+              left: 10,
+              right: 10,
+            }}
             style={[
               styles.backButton,
               {
                 backgroundColor: colors.surface,
+                borderColor: colors.border,
               },
             ]}
           >
-            <ArrowLeft
-              size={22}
+            <BackIcon
+              size={23}
               color={colors.text}
-              strokeWidth={2.4}
+              strokeWidth={2.5}
             />
           </TouchableOpacity>
 
-          <View
-            style={[
-              styles.headerTitleContainer,
-              {
-                alignItems: isRTL
-                  ? 'flex-end'
-                  : 'flex-start',
-              },
-            ]}
-          >
+          {/* عنوان وسط Header */}
+          <View style={styles.detailHeaderCenter}>
             <Text
+              numberOfLines={1}
               style={[
-                styles.headerTitle,
+                styles.detailHeaderTitle,
                 {
                   color: colors.text,
-                  textAlign: textAlignStyle,
                 },
               ]}
             >
@@ -200,22 +214,29 @@ export default function PoemsScreen() {
             </Text>
 
             <Text
+              numberOfLines={1}
               style={[
-                styles.headerSubtitle,
+                styles.detailHeaderSubtitle,
                 {
                   color: colors.textSecondary,
-                  textAlign: textAlignStyle,
                 },
               ]}
             >
               {getPoemPoet(currentPoem)}
             </Text>
           </View>
+
+          {/* فضای متقارن سمت راست */}
+          <View style={styles.headerSidePlaceholder} />
         </View>
+
+        {/* ======================================
+            CONTENT
+           ====================================== */}
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={styles.detailContent}
         >
           <Card style={styles.practiceCard}>
             <View
@@ -239,7 +260,6 @@ export default function PoemsScreen() {
                 styles.practiceTitle,
                 {
                   color: colors.text,
-                  textAlign: textAlignStyle,
                 },
               ]}
             >
@@ -253,7 +273,6 @@ export default function PoemsScreen() {
                 styles.practiceSubtitle,
                 {
                   color: colors.textSecondary,
-                  textAlign: textAlignStyle,
                 },
               ]}
             >
@@ -299,8 +318,8 @@ export default function PoemsScreen() {
                     ? 'مخفی کردن متن'
                     : 'Hide Text'
                   : language === 'fa'
-                  ? 'مشاهده متن'
-                  : 'Show Text'}
+                    ? 'مشاهده متن'
+                    : 'Show Text'}
               </Text>
             </TouchableOpacity>
 
@@ -397,62 +416,84 @@ export default function PoemsScreen() {
             </TouchableOpacity>
           </Card>
         </ScrollView>
-      </View>
+      </SafeAreaView>
     );
   }
 
-  /*
-   * ==========================================
-   * صفحه لیست شعرها
-   * ==========================================
+  /**
+   * ------------------------------------------
+   * صفحه اصلی لیست شعرها
+   * ------------------------------------------
    */
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         {
           backgroundColor: colors.background,
         },
       ]}
+      edges={['top']}
     >
-      {/* دکمه بازگشت - همان جای قبلی */}
-      <TouchableOpacity
-        onPress={handleBack}
-        activeOpacity={0.8}
-        accessibilityRole="button"
-        accessibilityLabel={
-          language === 'fa' ? 'بازگشت' : 'Back'
-        }
-        style={[
-          styles.topBackButton,
-          {
-            backgroundColor: colors.surface,
-          },
-        ]}
-      >
-        <ArrowLeft
-          size={22}
-          color={colors.text}
-          strokeWidth={2.4}
-        />
-      </TouchableOpacity>
+      {/* ======================================
+          HEADER اصلی
+         ====================================== */}
+
+      <View style={styles.mainHeader}>
+        {/* دکمه برگشت - سمت چپ */}
+        <TouchableOpacity
+          onPress={handleBack}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={
+            language === 'fa'
+              ? 'بازگشت'
+              : 'Back'
+          }
+          hitSlop={{
+            top: 10,
+            bottom: 10,
+            left: 10,
+            right: 10,
+          }}
+          style={[
+            styles.backButton,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <BackIcon
+            size={23}
+            color={colors.text}
+            strokeWidth={2.5}
+          />
+        </TouchableOpacity>
+
+        {/* عنوان واقعی وسط */}
+        <View style={styles.mainHeaderCenter}>
+          <Text
+            style={[
+              styles.mainHeaderTitle,
+              {
+                color: colors.text,
+              },
+            ]}
+          >
+            {title}
+          </Text>
+        </View>
+
+        {/* فضای متقارن */}
+        <View style={styles.headerSidePlaceholder} />
+      </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        <Text
-          style={[
-            styles.title,
-            {
-              color: colors.text,
-            },
-          ]}
-        >
-          {title}
-        </Text>
-
         <Text
           style={[
             styles.subtitle,
@@ -534,61 +575,144 @@ export default function PoemsScreen() {
                 </Text>
               </View>
 
-              <ArrowLeft
-                size={21}
-                color={colors.textSecondary}
-                strokeWidth={2.2}
-              />
+              {/* فلش ورود به صفحه شعر */}
+              {isRTL ? (
+                <ArrowLeft
+                  size={21}
+                  color={colors.textSecondary}
+                  strokeWidth={2.2}
+                />
+              ) : (
+                <ArrowRight
+                  size={21}
+                  color={colors.textSecondary}
+                  strokeWidth={2.2}
+                />
+              )}
             </Card>
           </TouchableOpacity>
         ))}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    paddingTop:50,
     flex: 1,
   },
 
-  /*
-   * دکمه بازگشت صفحه اصلی
-   * دقیقاً مثل نسخه قبلی:
-   * بالا 60
-   * سمت چپ Spacing.lg
-   */
-  topBackButton: {
+  mainHeader: {
+    height: 64,
+    paddingHorizontal: Spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  detailHeader: {
+    height: 64,
+    paddingHorizontal: Spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
     width: 44,
     height: 44,
+    borderRadius: BorderRadius.full,
+
+    borderWidth: 1,
+
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 22,
-    marginTop: 60,
-    marginLeft: Spacing.lg,
+
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+
+    elevation: 2,
   },
 
+  /**
+   * فضای دو طرف Header
+   */
+  headerSidePlaceholder: {
+    width: 44,
+    height: 44,
+  },
+
+  /**
+   * مرکز Header صفحه اصلی
+   */
+  mainHeaderCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  mainHeaderTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+
+  /**
+   * مرکز Header صفحه تمرین
+   */
+  detailHeaderCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.sm,
+  },
+
+  detailHeaderTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+
+  detailHeaderSubtitle: {
+    fontSize: 11,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+
+  /**
+   * ==========================================
+   * CONTENT
+   * ==========================================
+   */
   content: {
-    paddingTop: 20,
     paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
     paddingBottom: 100,
   },
 
-  title: {
-    fontSize: 30,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginTop: Spacing.md,
+  detailContent: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    paddingBottom: 100,
   },
 
   subtitle: {
     fontSize: 15,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: 4,
     marginBottom: Spacing.lg,
     lineHeight: 22,
   },
 
+  /**
+   * ==========================================
+   * POEM CARDS
+   * ==========================================
+   */
   poemCard: {
     minHeight: 105,
     marginBottom: Spacing.md,
@@ -619,39 +743,11 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
 
-  /*
-   * Header داخل درس
+  /**
+   * ==========================================
+   * PRACTICE CARD
+   * ==========================================
    */
-  header: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.md,
-    alignItems: 'center',
-    gap: 12,
-  },
-
-  backButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  headerTitleContainer: {
-    flex: 1,
-  },
-
-  headerTitle: {
-    fontSize: 21,
-    fontWeight: '800',
-  },
-
-  headerSubtitle: {
-    fontSize: 12,
-    marginTop: 3,
-  },
-
   practiceCard: {
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
@@ -753,4 +849,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
