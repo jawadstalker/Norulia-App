@@ -36,13 +36,7 @@ export default function ConsultationScreen() {
   const { colors, isDark } = useTheme();
   const { isRTL } = useLanguage();
 
-  /**
-   * در فارسی:
-   * فلش برگشت به سمت راست است.
-   *
-   * در انگلیسی:
-   * فلش برگشت به سمت چپ است.
-   */
+
   const BackArrow = isRTL ? ArrowLeft : ArrowRight;
 
   const handleBack = () => {
@@ -433,98 +427,61 @@ export default function ConsultationScreen() {
   );
 }
 
-/* =========================================================
-   STYLES
-========================================================= */
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-
   safeArea: {
     flex: 1,
   },
-
-  /* =========================
-     HEADER
-  ========================== */
 
   header: {
     minHeight: 58,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
-
     paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.sm,
+    paddingTop: 50,
     paddingBottom: Spacing.xs,
   },
-
   headerTitleContainer: {
     flex: 1,
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
-
   headerTitle: {
     fontSize: 18,
     fontWeight: '800',
     textAlign: 'right',
   },
-
-  /*
-   * دکمه برگشت:
-   * دایره‌ای، تمیز و مشابه دکمه‌های استاندارد
-   * صفحات داخلی برنامه
-   */
   backButton: {
     width: 42,
     height: 42,
-
     borderRadius: BorderRadius.full,
     borderWidth: 1,
-
     alignItems: 'center',
     justifyContent: 'center',
-
     marginLeft: Spacing.xs,
-
     shadowOffset: {
       width: 0,
       height: 2,
     },
-
     shadowOpacity: 0.06,
     shadowRadius: 6,
-
     elevation: 2,
   },
-
-  /* =========================
-     SCROLL
-  ========================== */
-
   scrollContent: {
     paddingHorizontal: Spacing.md,
     paddingBottom: Spacing.xl,
 
     alignItems: 'center',
   },
-
-  /* =========================
-     HERO
-  ========================== */
-
   hero: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-
     width: '100%',
-
     marginTop: Spacing.md,
     marginBottom: Spacing.lg,
-
     gap: Spacing.sm,
   },
 
