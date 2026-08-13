@@ -373,9 +373,7 @@ export default function PsychoScreen() {
     ? 'right'
     : 'left';
 
-  /* ================================================================
-     CATEGORY PARAMETER
-  ================================================================ */
+
 
   useEffect(() => {
     if (category === 'stress') {
@@ -383,9 +381,7 @@ export default function PsychoScreen() {
     }
   }, [category]);
 
-  /* ================================================================
-     LOCALIZATION HELPERS
-  ================================================================ */
+
 
   const getGameTitle = (
     game: typeof games[0],
@@ -425,19 +421,13 @@ export default function PsychoScreen() {
       selectedCategory,
   );
 
-  /* ================================================================
-     DETAIL PAGE BACK
-     
-     فقط دسته‌بندی را می‌بندد.
-  ================================================================ */
+
 
   const handleBack = () => {
     setSelectedCategory(null);
   };
 
-  /* ================================================================
-     PAGE 1 — CATEGORIES
-  ================================================================ */
+
 
   if (!selectedCategory) {
     return (
