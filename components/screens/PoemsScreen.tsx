@@ -51,7 +51,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
-const CONTENT_HORIZONTAL = width < 360 ? 14 : 18;
+const CONTENT_HORIZONTAL = 18;
 
 type ViewType = 'home' | 'study' | 'plan' | 'session' | 'result';
 
@@ -717,22 +717,67 @@ export default function HafezScreen() {
     return poemStats[currentPoem.id] || { mastered: 0, total: currentPoem.couplets.length, percent: 0 };
   }, [currentPoem, poemStats]);
 
+  // ─── HEADER ───────────────────────────────────────────────
+
   const renderHeader = () => {
-    if (currentView === 'home') return null;
-    let title = 'حافظ‌یار';
-    if (currentView === 'study') title = 'آموزش شعر';
+    if (currentView === 'home') {
+      return (
+        <View style={[styles.mainHeader, { borderBottomColor: subtleBorder }]}>
+          <View style={styles.headerSidePlaceholder} />
+
+          <View style={styles.mainHeaderCenter}>
+            <View style={styles.brandRow}>
+              <View
+                style={[
+                  styles.brandIcon,
+                  { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : `${primary}18` },
+                ]}
+              >
+                <BookOpen size={20} color={primary} strokeWidth={2} />
+              </View>
+              <Text style={[styles.mainHeaderTitle, { color: colors.text }]}>حافظ‌یار</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+            style={[
+              styles.backButton,
+              {
+                backgroundColor: isDark ? 'rgba(255,255,255,0.055)' : '#FFFFFF',
+                borderColor: subtleBorder,
+              },
+            ]}
+          >
+            <ArrowLeft size={20} color={colors.text} strokeWidth={2.2} />
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    let title = 'آموزش شعر';
     if (currentView === 'plan') title = 'مسیر یادگیری';
-    if (currentView === 'session') title = 'تمرین';
+    if (currentView === 'session') title = 'تمرین حافظه';
     if (currentView === 'result') title = 'نتیجه جلسه';
+
     return (
       <View style={[styles.header, { borderBottomColor: subtleBorder }]}>
-        <TouchableOpacity onPress={goBack} activeOpacity={0.75} style={[styles.headerButton, { backgroundColor: mutedSurface }]}>
+        <TouchableOpacity
+          onPress={goBack}
+          activeOpacity={0.75}
+          style={[
+            styles.backButton,
+            {
+              backgroundColor: isDark ? 'rgba(255,255,255,0.055)' : '#FFFFFF',
+              borderColor: subtleBorder,
+            },
+          ]}
+        >
           <ArrowLeft size={20} color={colors.text} strokeWidth={2.2} />
         </TouchableOpacity>
+
         <View style={styles.headerRight}>
-          <View style={[styles.headerIcon, { backgroundColor: mutedSurface }]}>
-            <BookOpen size={17} color={primary} strokeWidth={2.2} />
-          </View>
           <View style={styles.headerTitleContainer}>
             <Text numberOfLines={1} style={[styles.headerTitle, { color: colors.text }]}>
               {title}
@@ -744,60 +789,56 @@ export default function HafezScreen() {
             )}
           </View>
         </View>
+
+        <View style={styles.headerSidePlaceholder} />
       </View>
     );
   };
 
+  // ─── PROGRESS BAR ─────────────────────────────────────────
+
   const renderProgressBar = (value: number, height = 6) => (
     <View style={[styles.progressTrack, { height, backgroundColor: mutedSurface }]}>
-      <View style={[styles.progressFill, { height, width: `${Math.min(100, Math.max(0, value))}%`, backgroundColor: primary }]} />
+      <View
+        style={[
+          styles.progressFill,
+          { height, width: `${Math.min(100, Math.max(0, value))}%`, backgroundColor: primary },
+        ]}
+      />
     </View>
   );
 
+  // ─── HOME ──────────────────────────────────────────────────
+
   const renderHome = () => {
     return (
-      <Animated.View style={[styles.screen, { opacity: fadeAnim, transform: [{ translateY: translateAnim }] }]}>
- <View style={styles.homeHeader}>
-  <View style={styles.homeHeaderText}>
-    <Text
-      style={[
-        styles.homeHeaderTitle,
-        { color: colors.text },
-      ]}
-    >
-      حافظ‌یار
-    </Text>
-  </View>
-  <TouchableOpacity
-    onPress={() => router.back()}
-    activeOpacity={0.75}
-    style={[
-      styles.homeBackButton,
-      { backgroundColor: mutedSurface },
-    ]}
-  >
-    <ArrowLeft
-      size={21}
-      color={colors.text}
-      strokeWidth={2.2}
-    />
-  </TouchableOpacity>
-</View>
-
-        <View style={styles.homeIntro}>
-          <Text style={[styles.homeDescription, { color: colors.textSecondary }]}>
+      <Animated.View
+        style={[styles.screen, { opacity: fadeAnim, transform: [{ translateY: translateAnim }] }]}
+      >
+        <View style={styles.homeHero}>
+          <View style={[styles.homeHeroIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : `${primary}18` }]}>
+            <BookOpen size={32} color={primary} strokeWidth={2} />
+          </View>
+          <Text style={[styles.homeHeroTitle, { color: colors.text }]}>حافظ‌یار</Text>
+          <Text style={[styles.homeHeroSubtitle, { color: colors.textSecondary }]}>
             شعر را بخوانید، مرور کنید و با تمرین‌های کوتاه به خاطر بسپارید.
           </Text>
         </View>
+
         <View style={styles.sectionHeading}>
           <View>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>مجموعه شعرها</Text>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>یک شعر را برای شروع انتخاب کنید.</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>غزل‌های منتخب</Text>
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+              یک غزل را برای شروع انتخاب کنید.
+            </Text>
           </View>
           <View style={[styles.countBadge, { backgroundColor: mutedSurface }]}>
-            <Text style={[styles.countBadgeText, { color: colors.textSecondary }]}>{POEMS.length} شعر</Text>
+            <Text style={[styles.countBadgeText, { color: colors.textSecondary }]}>
+              {POEMS.length} غزل
+            </Text>
           </View>
         </View>
+
         <View style={styles.poemList}>
           {POEMS.map((poem) => {
             const stats = poemStats[poem.id] || { mastered: 0, total: poem.couplets.length, percent: 0 };
@@ -806,39 +847,52 @@ export default function HafezScreen() {
                 key={poem.id}
                 activeOpacity={0.82}
                 onPress={() => openPoem(poem.id)}
-                style={[styles.poemCard, { backgroundColor: subtleSurface, borderColor: subtleBorder }]}
+                style={[
+                  styles.poemCard,
+                  {
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.055)' : '#FFFFFF',
+                    borderColor: subtleBorder,
+                  },
+                ]}
               >
-                <View style={[styles.poemAccent, { backgroundColor: primary }]} />
-                <View style={styles.poemCardMain}>
-                  <View style={styles.poemCardTop}>
-                    <View style={[styles.poemNumber, { backgroundColor: mutedSurface }]}>
-                      <Text style={[styles.poemNumberText, { color: primary }]}>{poem.id + 1}</Text>
-                    </View>
-                    <View style={styles.poemCardTitles}>
-                      <Text numberOfLines={1} style={[styles.poemTitle, { color: colors.text }]}>
-                        {poem.fullTitle}
-                      </Text>
-                      <Text style={[styles.poemSubtitle, { color: colors.textSecondary }]}>{poem.poet}</Text>
-                    </View>
-                    <ChevronLeft size={20} color={colors.textSecondary} />
-                  </View>
-                  <View style={styles.poemMetaRow}>
-                    <View style={styles.poemMetaItem}>
-                      <Hash size={13} color={colors.textSecondary} />
-                      <Text style={[styles.poemMetaText, { color: colors.textSecondary }]}>{poem.couplets.length} بیت</Text>
-                    </View>
-                    <View style={styles.poemMetaItem}>
-                      <Award size={13} color={colors.textSecondary} />
-                      <Text style={[styles.poemMetaText, { color: colors.textSecondary }]}>{stats.percent}٪ تسلط</Text>
-                    </View>
-                  </View>
-                  {renderProgressBar(stats.percent, 5)}
+                <View
+                  style={[
+                    styles.poemIcon,
+                    { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : `${primary}14` },
+                  ]}
+                >
+                  <BookOpen size={24} color={primary} strokeWidth={2} />
                 </View>
+
+                <View style={styles.poemInfo}>
+                  <Text numberOfLines={1} style={[styles.poemTitle, { color: colors.text }]}>
+                    {poem.fullTitle}
+                  </Text>
+                  <Text style={[styles.poemPoet, { color: colors.textSecondary }]}>{poem.poet}</Text>
+                  <View style={styles.poemStats}>
+                    <Text style={[styles.poemStat, { color: colors.textSecondary }]}>
+                      {poem.couplets.length} بیت
+                    </Text>
+                    <Text style={[styles.poemStat, { color: primary }]}>{stats.percent}٪ تسلط</Text>
+                  </View>
+                  {renderProgressBar(stats.percent, 6)}
+                </View>
+
+                <ChevronLeft size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             );
           })}
         </View>
-        <View style={[styles.homeInfo, { backgroundColor: mutedSurface, borderColor: subtleBorder }]}>
+
+        <View
+          style={[
+            styles.homeInfo,
+            {
+              backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.035)',
+              borderColor: subtleBorder,
+            },
+          ]}
+        >
           <Sparkles size={17} color={primary} />
           <Text style={[styles.homeInfoText, { color: colors.textSecondary }]}>
             تمرین‌ها بر اساس میزان تسلط شما تنظیم می‌شوند.
@@ -848,35 +902,78 @@ export default function HafezScreen() {
     );
   };
 
+  // ─── STUDY ─────────────────────────────────────────────────
+
   const renderStudy = () => {
     if (!currentPoem) return null;
+
     return (
-      <Animated.View style={[styles.screen, { opacity: fadeAnim, transform: [{ translateY: translateAnim }] }]}>
-        <View style={[styles.studyHero, { backgroundColor: subtleSurface, borderColor: subtleBorder }]}>
-          <View style={[styles.studyHeroIcon, { backgroundColor: mutedSurface }]}>
-            <BookOpen size={23} color={primary} />
+      <Animated.View
+        style={[styles.screen, { opacity: fadeAnim, transform: [{ translateY: translateAnim }] }]}
+      >
+        <View
+          style={[
+            styles.studyHero,
+            {
+              backgroundColor: isDark ? 'rgba(255,255,255,0.055)' : '#FFFFFF',
+              borderColor: subtleBorder,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.studyHeroIcon,
+              { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : `${primary}14` },
+            ]}
+          >
+            <BookOpen size={28} color={primary} strokeWidth={2} />
           </View>
           <View style={styles.studyHeroText}>
-            <Text style={[styles.studyPoet, { color: colors.textSecondary }]}>{currentPoem.poet}</Text>
-            <Text style={[styles.studyTitle, { color: colors.text }]}>{currentPoem.fullTitle}</Text>
+            <Text style={[styles.studyPoet, { color: colors.textSecondary }]}>
+              {currentPoem.poet}
+            </Text>
+            <Text style={[styles.studyTitle, { color: colors.text }]}>
+              {currentPoem.fullTitle}
+            </Text>
             <Text style={[styles.studyStats, { color: colors.textSecondary }]}>
-              {currentPoem.couplets.length} بیت  •  {currentStats.percent}٪ تسلط
+              {currentPoem.couplets.length} بیت • {currentStats.percent}٪ تسلط
             </Text>
           </View>
+          {renderProgressBar(currentStats.percent, 7)}
         </View>
+
         <View style={styles.contentSection}>
           <View style={styles.sectionHeading}>
-            <View>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>متن غزل</Text>
-              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>شعر را با آرامش بخوانید.</Text>
-            </View>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>متن غزل</Text>
           </View>
-          <View style={[styles.poemTextCard, { backgroundColor: subtleSurface, borderColor: subtleBorder }]}>
+          <View
+            style={[
+              styles.poemTextCard,
+              {
+                backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.82)',
+                borderColor: subtleBorder,
+              },
+            ]}
+          >
             {currentPoem.couplets.map((couplet, index) => {
               const parts = getCoupletParts(couplet);
               return (
-                <View key={index} style={[styles.couplet, index !== currentPoem.couplets.length - 1 && { borderBottomWidth: 1, borderBottomColor: subtleBorder }]}>
-                  <View style={[styles.coupletNumber, { backgroundColor: mutedSurface }]}>
+                <View
+                  key={index}
+                  style={[
+                    styles.couplet,
+                    index !== currentPoem.couplets.length - 1 && {
+                      borderBottomWidth: StyleSheet.hairlineWidth,
+                      borderBottomColor: subtleBorder,
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.coupletNumber,
+                      { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : `${primary}14` },
+                    ]}
+                  >
                     <Text style={[styles.coupletNumberText, { color: primary }]}>{index + 1}</Text>
                   </View>
                   <View style={styles.coupletContent}>
@@ -888,6 +985,7 @@ export default function HafezScreen() {
             })}
           </View>
         </View>
+
         <View style={styles.contentSection}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>آشنایی با غزل</Text>
           <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginTop: 3 }]}>
@@ -899,7 +997,7 @@ export default function HafezScreen() {
               title="معنی روان"
               text={currentPoem.meaning.summary}
               colors={colors}
-              backgroundColor={subtleSurface}
+              backgroundColor={isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.82)'}
               borderColor={subtleBorder}
             />
             <InfoCard
@@ -907,7 +1005,7 @@ export default function HafezScreen() {
               title="مفهوم اصلی"
               text={currentPoem.meaning.coreMessage}
               colors={colors}
-              backgroundColor={subtleSurface}
+              backgroundColor={isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.82)'}
               borderColor={subtleBorder}
             />
             <InfoCard
@@ -915,7 +1013,7 @@ export default function HafezScreen() {
               title="تفسیر"
               text={currentPoem.meaning.interpretation}
               colors={colors}
-              backgroundColor={subtleSurface}
+              backgroundColor={isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.82)'}
               borderColor={subtleBorder}
             />
             <InfoCard
@@ -923,43 +1021,96 @@ export default function HafezScreen() {
               title="پیام"
               text={currentPoem.meaning.moral}
               colors={colors}
-              backgroundColor={subtleSurface}
+              backgroundColor={isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.82)'}
               borderColor={subtleBorder}
             />
           </View>
         </View>
+
         {currentPoem.meaning.vocabulary.length > 0 && (
           <View style={styles.contentSection}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>واژگان مهم</Text>
-            <View style={[styles.vocabularyCard, { backgroundColor: subtleSurface, borderColor: subtleBorder }]}>
+            <View
+              style={[
+                styles.vocabularyCard,
+                {
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.82)',
+                  borderColor: subtleBorder,
+                },
+              ]}
+            >
               {currentPoem.meaning.vocabulary.map((item, index) => (
-                <View key={item.word} style={[styles.vocabularyItem, index !== currentPoem.meaning.vocabulary.length - 1 && { borderBottomWidth: 1, borderBottomColor: subtleBorder }]}>
+                <View
+                  key={item.word}
+                  style={[
+                    styles.vocabularyItem,
+                    index !== currentPoem.meaning.vocabulary.length - 1 && {
+                      borderBottomWidth: StyleSheet.hairlineWidth,
+                      borderBottomColor: subtleBorder,
+                    },
+                  ]}
+                >
                   <Text style={[styles.vocabularyWord, { color: colors.text }]}>{item.word}</Text>
-                  <Text style={[styles.vocabularyMeaning, { color: colors.textSecondary }]}>{item.meaning}</Text>
+                  <Text style={[styles.vocabularyMeaning, { color: colors.textSecondary }]}>
+                    {item.meaning}
+                  </Text>
                 </View>
               ))}
             </View>
           </View>
         )}
-        <View style={[styles.learningCta, { backgroundColor: subtleSurface, borderColor: subtleBorder }]}>
+
+        <View
+          style={[
+            styles.learningCta,
+            {
+              backgroundColor: isDark ? 'rgba(255,255,255,0.055)' : '#FFFFFF',
+              borderColor: subtleBorder,
+            },
+          ]}
+        >
           <View style={styles.learningCtaHeader}>
             <View>
               <Text style={[styles.learningEyebrow, { color: primary }]}>مسیر یادگیری</Text>
-              <Text style={[styles.learningTitle, { color: colors.text }]}>آماده حفظ این غزل هستید؟</Text>
+              <Text style={[styles.learningTitle, { color: colors.text }]}>
+                آماده حفظ این غزل هستید؟
+              </Text>
             </View>
-            <View style={[styles.learningIcon, { backgroundColor: mutedSurface }]}>
+            <View
+              style={[
+                styles.learningIcon,
+                { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : `${primary}14` },
+              ]}
+            >
               <Target size={20} color={primary} />
             </View>
           </View>
           <Text style={[styles.learningDescription, { color: colors.textSecondary }]}>
-            برنامه ۳۰ جلسه‌ای، شعر را به بخش‌های کوتاه تقسیم می‌کند و با مرور تدریجی به تثبیت آن کمک می‌کند.
+            برنامه ۳۰ جلسه‌ای، شعر را به بخش‌های کوتاه تقسیم می‌کند و با مرور تدریجی به تثبیت آن کمک
+            می‌کند.
           </Text>
           <View style={styles.learningMeta}>
-            <LearningMeta icon={<CalendarDays size={15} color={colors.textSecondary} />} text="۳۰ جلسه" color={colors.textSecondary} />
-            <LearningMeta icon={<Clock3 size={15} color={colors.textSecondary} />} text="جلسه‌های کوتاه" color={colors.textSecondary} />
-            <LearningMeta icon={<ListChecks size={15} color={colors.textSecondary} />} text="تمرین هوشمند" color={colors.textSecondary} />
+            <LearningMeta
+              icon={<CalendarDays size={15} color={colors.textSecondary} />}
+              text="۳۰ جلسه"
+              color={colors.textSecondary}
+            />
+            <LearningMeta
+              icon={<Clock3 size={15} color={colors.textSecondary} />}
+              text="جلسه‌های کوتاه"
+              color={colors.textSecondary}
+            />
+            <LearningMeta
+              icon={<ListChecks size={15} color={colors.textSecondary} />}
+              text="تمرین هوشمند"
+              color={colors.textSecondary}
+            />
           </View>
-          <TouchableOpacity activeOpacity={0.85} onPress={startPlan} style={[styles.primaryButton, { backgroundColor: primary }]}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={startPlan}
+            style={[styles.primaryButton, { backgroundColor: primary }]}
+          >
             <Text style={styles.primaryButtonText}>شروع یادگیری</Text>
             <ChevronLeft size={19} color="#FFFFFF" />
           </TouchableOpacity>
@@ -968,31 +1119,63 @@ export default function HafezScreen() {
     );
   };
 
+  // ─── PLAN ──────────────────────────────────────────────────
+
   const renderPlan = () => {
     if (!currentPoem) return null;
+
     const sessionCount = todaySessionData?.items.length || 0;
     const tasks = todaySessionData?.tasks || [];
     const todayDone = completedDays[selectedDay];
+
     return (
-      <Animated.View style={[styles.screen, { opacity: fadeAnim, transform: [{ translateY: translateAnim }] }]}>
-        <View style={[styles.planOverview, { backgroundColor: subtleSurface, borderColor: subtleBorder }]}>
+      <Animated.View
+        style={[styles.screen, { opacity: fadeAnim, transform: [{ translateY: translateAnim }] }]}
+      >
+        <View
+          style={[
+            styles.planOverview,
+            {
+              backgroundColor: isDark ? 'rgba(255,255,255,0.055)' : '#FFFFFF',
+              borderColor: subtleBorder,
+            },
+          ]}
+        >
           <View style={styles.planOverviewTop}>
             <View>
               <Text style={[styles.planEyebrow, { color: primary }]}>مسیر یادگیری</Text>
-              <Text style={[styles.planTitle, { color: colors.text }]}>{currentPoem.fullTitle}</Text>
+              <Text style={[styles.planTitle, { color: colors.text }]}>
+                {currentPoem.fullTitle}
+              </Text>
             </View>
-            <View style={[styles.planPercent, { backgroundColor: mutedSurface }]}>
-              <Text style={[styles.planPercentValue, { color: primary }]}>{currentStats.percent}٪</Text>
+            <View
+              style={[
+                styles.planPercent,
+                { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : `${primary}14` },
+              ]}
+            >
+              <Text style={[styles.planPercentValue, { color: primary }]}>
+                {currentStats.percent}٪
+              </Text>
               <Text style={[styles.planPercentLabel, { color: colors.textSecondary }]}>تسلط</Text>
             </View>
           </View>
           {renderProgressBar(currentStats.percent, 7)}
           <View style={styles.planStats}>
-            <PlanStat value={`${currentStats.mastered}`} label="بیت مسلط" colors={colors} />
+            <PlanStat
+              value={`${currentStats.mastered}`}
+              label="بیت مسلط"
+              colors={colors}
+            />
             <PlanStat value={`${currentStats.total}`} label="کل بیت‌ها" colors={colors} />
-            <PlanStat value={`${Math.max(0, 30 - selectedDay + 1)}`} label="جلسه باقی‌مانده" colors={colors} />
+            <PlanStat
+              value={`${Math.max(0, 30 - selectedDay + 1)}`}
+              label="جلسه باقی‌مانده"
+              colors={colors}
+            />
           </View>
         </View>
+
         <View style={[styles.todayPlan, { backgroundColor: primary }]}>
           <View style={styles.todayPlanTop}>
             <View>
@@ -1022,16 +1205,25 @@ export default function HafezScreen() {
               </View>
             )}
           </View>
-          <TouchableOpacity activeOpacity={0.86} onPress={startTodaySession} style={styles.todayStartButton}>
+          <TouchableOpacity
+            activeOpacity={0.86}
+            onPress={startTodaySession}
+            style={styles.todayStartButton}
+          >
             <Play size={18} color={primary} fill={primary} />
-            <Text style={[styles.todayStartText, { color: primary }]}>{todayDone ? 'مرور دوباره' : 'شروع جلسه'}</Text>
+            <Text style={[styles.todayStartText, { color: primary }]}>
+              {todayDone ? 'مرور دوباره' : 'شروع جلسه'}
+            </Text>
           </TouchableOpacity>
         </View>
+
         <View style={styles.roadmapSection}>
           <View style={styles.sectionHeading}>
             <View>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>برنامه ۳۰ جلسه‌ای</Text>
-              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>جلسه موردنظر را انتخاب کنید.</Text>
+              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+                جلسه موردنظر را انتخاب کنید.
+              </Text>
             </View>
           </View>
           <View style={styles.roadmap}>
@@ -1047,17 +1239,50 @@ export default function HafezScreen() {
                   style={[
                     styles.roadmapItem,
                     {
-                      backgroundColor: active ? (isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.045)') : 'transparent',
+                      backgroundColor: active
+                        ? isDark
+                          ? 'rgba(255,255,255,0.07)'
+                          : `${primary}08`
+                        : 'transparent',
                       borderColor: active ? primary : subtleBorder,
                     },
                   ]}
                 >
                   <View style={styles.roadmapLeft}>
-                    <View style={[styles.dayCircle, { backgroundColor: done ? success : active ? primary : mutedSurface }]}>
-                      {done ? <Check size={14} color="#FFFFFF" strokeWidth={2.5} /> : <Text style={[styles.dayNumber, { color: active ? '#FFFFFF' : colors.textSecondary }]}>{day}</Text>}
+                    <View
+                      style={[
+                        styles.dayCircle,
+                        {
+                          backgroundColor: done
+                            ? success
+                            : active
+                              ? primary
+                              : mutedSurface,
+                        },
+                      ]}
+                    >
+                      {done ? (
+                        <Check size={14} color="#FFFFFF" strokeWidth={2.5} />
+                      ) : (
+                        <Text
+                          style={[
+                            styles.dayNumber,
+                            { color: active ? '#FFFFFF' : colors.textSecondary },
+                          ]}
+                        >
+                          {day}
+                        </Text>
+                      )}
                     </View>
                     <View>
-                      <Text style={[styles.dayTitle, { color: active ? primary : colors.text }]}>جلسه {day}</Text>
+                      <Text
+                        style={[
+                          styles.dayTitle,
+                          { color: active ? primary : colors.text },
+                        ]}
+                      >
+                        جلسه {day}
+                      </Text>
                       <Text style={[styles.daySubtitle, { color: colors.textSecondary }]}>
                         {done ? 'تکمیل شده' : active ? 'جلسه فعلی' : 'آماده یادگیری'}
                       </Text>
@@ -1073,10 +1298,14 @@ export default function HafezScreen() {
     );
   };
 
+  // ─── SESSION ───────────────────────────────────────────────
+
   const renderSession = () => {
     if (!currentPoem || !sessionQueue.length) return null;
+
     const exercise = sessionQueue[sessionIndex];
     if (!exercise) return null;
+
     const stageNames: Record<ExerciseType, string> = {
       choose_misra: 'تشخیص مصرع',
       fill_blank: 'تکمیل جای خالی',
@@ -1088,42 +1317,92 @@ export default function HafezScreen() {
       concept: 'مفهوم بیت',
       order_number: 'شماره بیت',
     };
-    const isChoice = ['choose_misra', 'meaning_to_verse', 'choose_meaning', 'concept', 'order_number'].includes(exercise.type);
+
+    const isChoice = ['choose_misra', 'meaning_to_verse', 'choose_meaning', 'concept', 'order_number'].includes(
+      exercise.type
+    );
+
     let correctIndex = -1;
     if (exercise.options) {
       correctIndex = exercise.options.indexOf(exercise.correct);
     }
+
     const progressPercent = sessionTotal ? ((sessionIndex + 1) / sessionTotal) * 100 : 0;
+
     return (
-      <Animated.View style={[styles.screen, styles.sessionScreen, { opacity: fadeAnim, transform: [{ translateY: translateAnim }] }]}>
+      <Animated.View
+        style={[
+          styles.screen,
+          styles.sessionScreen,
+          { opacity: fadeAnim, transform: [{ translateY: translateAnim }] },
+        ]}
+      >
         <View style={styles.sessionTop}>
           <View>
-            <Text style={[styles.sessionEyebrow, { color: primary }]}>{stageNames[exercise.type]}</Text>
-            <Text style={[styles.sessionCounter, { color: colors.text }]}>تمرین {sessionIndex + 1} از {sessionTotal}</Text>
+            <Text style={[styles.sessionEyebrow, { color: primary }]}>
+              {stageNames[exercise.type]}
+            </Text>
+            <Text style={[styles.sessionCounter, { color: colors.text }]}>
+              تمرین {sessionIndex + 1} از {sessionTotal}
+            </Text>
           </View>
-          <View style={[styles.sessionIndexBadge, { backgroundColor: mutedSurface }]}>
-            <Text style={[styles.sessionIndexText, { color: primary }]}>{Math.round(progressPercent)}٪</Text>
+          <View
+            style={[
+              styles.sessionIndexBadge,
+              { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : `${primary}14` },
+            ]}
+          >
+            <Text style={[styles.sessionIndexText, { color: primary }]}>
+              {Math.round(progressPercent)}٪
+            </Text>
           </View>
         </View>
         {renderProgressBar(progressPercent, 6)}
-        <View style={[styles.questionCard, { backgroundColor: subtleSurface, borderColor: subtleBorder }]}>
-          <View style={[styles.questionIcon, { backgroundColor: mutedSurface }]}>
+
+        <View
+          style={[
+            styles.questionCard,
+            {
+              backgroundColor: isDark ? 'rgba(255,255,255,0.055)' : '#FFFFFF',
+              borderColor: subtleBorder,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.questionIcon,
+              { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : `${primary}14` },
+            ]}
+          >
             <Target size={20} color={primary} />
           </View>
           <Text style={[styles.questionText, { color: colors.text }]}>{exercise.question}</Text>
           {exercise.display && (
-            <View style={[styles.questionVerse, { backgroundColor: mutedSurface, borderColor: subtleBorder }]}>
-              <Text style={[styles.questionVerseText, { color: colors.text }]}>{exercise.display}</Text>
+            <View
+              style={[
+                styles.questionVerse,
+                {
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.04)',
+                  borderColor: subtleBorder,
+                },
+              ]}
+            >
+              <Text style={[styles.questionVerseText, { color: colors.text }]}>
+                {exercise.display}
+              </Text>
             </View>
           )}
         </View>
+
         {isChoice && exercise.options && (
           <View style={styles.optionsList}>
             {exercise.options.map((option, index) => {
               const isSelected = index === selectedChoiceIdx;
               const isCorrect = index === correctIndex;
+
               let borderColor = subtleBorder;
-              let backgroundColor = subtleSurface;
+              let backgroundColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.6)';
+
               if (submitted && isCorrect) {
                 borderColor = success;
                 backgroundColor = isDark ? 'rgba(34,197,94,0.10)' : 'rgba(34,197,94,0.06)';
@@ -1134,6 +1413,7 @@ export default function HafezScreen() {
                 borderColor = primary;
                 backgroundColor = isDark ? 'rgba(139,92,246,0.10)' : 'rgba(139,92,246,0.06)';
               }
+
               return (
                 <TouchableOpacity
                   key={`${index}-${String(option)}`}
@@ -1142,11 +1422,29 @@ export default function HafezScreen() {
                   onPress={() => handleChoice(index, correctIndex, exercise)}
                   style={[styles.optionButton, { backgroundColor, borderColor }]}
                 >
-                  <View style={[styles.optionNumber, { backgroundColor: submitted && isCorrect ? success : submitted && isSelected ? danger : isSelected ? primary : mutedSurface }]}>
+                  <View
+                    style={[
+                      styles.optionNumber,
+                      {
+                        backgroundColor: submitted && isCorrect
+                          ? success
+                          : submitted && isSelected
+                            ? danger
+                            : isSelected
+                              ? primary
+                              : mutedSurface,
+                      },
+                    ]}
+                  >
                     {submitted && isCorrect ? (
                       <Check size={14} color="#FFFFFF" />
                     ) : (
-                      <Text style={[styles.optionNumberText, { color: isSelected ? '#FFFFFF' : colors.textSecondary }]}>
+                      <Text
+                        style={[
+                          styles.optionNumberText,
+                          { color: isSelected ? '#FFFFFF' : colors.textSecondary },
+                        ]}
+                      >
                         {String.fromCharCode(65 + index)}
                       </Text>
                     )}
@@ -1159,6 +1457,7 @@ export default function HafezScreen() {
             })}
           </View>
         )}
+
         {!isChoice && (
           <View style={styles.answerArea}>
             {exercise.type === 'write_full' ? (
@@ -1172,7 +1471,14 @@ export default function HafezScreen() {
                   textAlignVertical="top"
                   placeholder="مصرع اول را بنویسید"
                   placeholderTextColor={colors.textSecondary}
-                  style={[styles.answerInput, { color: colors.text, backgroundColor: subtleSurface, borderColor: subtleBorder }]}
+                  style={[
+                    styles.answerInput,
+                    {
+                      color: colors.text,
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.6)',
+                      borderColor: subtleBorder,
+                    },
+                  ]}
                 />
                 <TextInput
                   value={userAnswer2}
@@ -1183,7 +1489,14 @@ export default function HafezScreen() {
                   textAlignVertical="top"
                   placeholder="مصرع دوم را بنویسید"
                   placeholderTextColor={colors.textSecondary}
-                  style={[styles.answerInput, { color: colors.text, backgroundColor: subtleSurface, borderColor: subtleBorder }]}
+                  style={[
+                    styles.answerInput,
+                    {
+                      color: colors.text,
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.6)',
+                      borderColor: subtleBorder,
+                    },
+                  ]}
                 />
               </>
             ) : (
@@ -1196,37 +1509,99 @@ export default function HafezScreen() {
                 textAlignVertical="top"
                 placeholder="پاسخ خود را بنویسید..."
                 placeholderTextColor={colors.textSecondary}
-                style={[styles.answerInput, styles.largeAnswerInput, { color: colors.text, backgroundColor: subtleSurface, borderColor: subtleBorder }]}
+                style={[
+                  styles.answerInput,
+                  styles.largeAnswerInput,
+                  {
+                    color: colors.text,
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.6)',
+                    borderColor: subtleBorder,
+                  },
+                ]}
               />
             )}
             {!submitted && (
-              <TouchableOpacity activeOpacity={0.85} onPress={() => handleSubmitAnswer(exercise)} style={[styles.primaryButton, { backgroundColor: primary }]}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => handleSubmitAnswer(exercise)}
+                style={[styles.primaryButton, { backgroundColor: primary }]}
+              >
                 <Check size={18} color="#FFFFFF" />
                 <Text style={styles.primaryButtonText}>بررسی پاسخ</Text>
               </TouchableOpacity>
             )}
           </View>
         )}
+
         {submitted && (
-          <View style={[styles.feedbackCard, { backgroundColor: feedbackType === 'correct' ? (isDark ? 'rgba(34,197,94,0.09)' : 'rgba(34,197,94,0.06)') : (isDark ? 'rgba(239,68,68,0.09)' : 'rgba(239,68,68,0.06)'), borderColor: feedbackType === 'correct' ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)' }]}>
-            <View style={[styles.feedbackIcon, { backgroundColor: feedbackType === 'correct' ? success : danger }]}>
-              {feedbackType === 'correct' ? <Check size={15} color="#FFFFFF" /> : <X size={15} color="#FFFFFF" />}
+          <View
+            style={[
+              styles.feedbackCard,
+              {
+                backgroundColor:
+                  feedbackType === 'correct'
+                    ? isDark
+                      ? 'rgba(34,197,94,0.09)'
+                      : 'rgba(34,197,94,0.06)'
+                    : isDark
+                      ? 'rgba(239,68,68,0.09)'
+                      : 'rgba(239,68,68,0.06)',
+                borderColor: feedbackType === 'correct' ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.feedbackIcon,
+                { backgroundColor: feedbackType === 'correct' ? success : danger },
+              ]}
+            >
+              {feedbackType === 'correct' ? (
+                <Check size={15} color="#FFFFFF" />
+              ) : (
+                <X size={15} color="#FFFFFF" />
+              )}
             </View>
-            <Text style={[styles.feedbackText, { color: feedbackType === 'correct' ? success : danger }]}>{feedback}</Text>
+            <Text
+              style={[
+                styles.feedbackText,
+                { color: feedbackType === 'correct' ? success : danger },
+              ]}
+            >
+              {feedback}
+            </Text>
           </View>
         )}
       </Animated.View>
     );
   };
 
+  // ─── RESULT ─────────────────────────────────────────────────
+
   const renderResult = () => {
     const percentage = sessionTotal > 0 ? Math.round((sessionCorrect / sessionTotal) * 100) : 0;
-    const message = percentage >= 80 ? 'عملکرد بسیار خوبی داشتید.' : percentage >= 50 ? 'خوب پیش رفتید؛ مرور دوباره به تثبیت کمک می‌کند.' : 'این جلسه را دوباره مرور کنید تا بیت‌ها بهتر تثبیت شوند.';
+    const message =
+      percentage >= 80
+        ? 'عملکرد بسیار خوبی داشتید.'
+        : percentage >= 50
+          ? 'خوب پیش رفتید؛ مرور دوباره به تثبیت کمک می‌کند.'
+          : 'این جلسه را دوباره مرور کنید تا بیت‌ها بهتر تثبیت شوند.';
+
     return (
-      <Animated.View style={[styles.screen, { opacity: fadeAnim, transform: [{ translateY: translateAnim }] }]}>
-        <View style={[styles.resultHero, { backgroundColor: subtleSurface, borderColor: subtleBorder }]}>
+      <Animated.View
+        style={[styles.screen, { opacity: fadeAnim, transform: [{ translateY: translateAnim }] }]}
+      >
+        <View
+          style={[
+            styles.resultHero,
+            {
+              backgroundColor: isDark ? 'rgba(255,255,255,0.055)' : '#FFFFFF',
+              borderColor: subtleBorder,
+            },
+          ]}
+        >
           <View style={[styles.resultIcon, { backgroundColor: primary }]}>
-            <Trophy size={31} color="#FFFFFF" strokeWidth={1.9} />
+            <Trophy size={32} color="#FFFFFF" strokeWidth={1.9} />
           </View>
           <Text style={[styles.resultTitle, { color: colors.text }]}>جلسه به پایان رسید</Text>
           <Text style={[styles.resultMessage, { color: colors.textSecondary }]}>{message}</Text>
@@ -1234,39 +1609,80 @@ export default function HafezScreen() {
           <Text style={[styles.resultSummary, { color: colors.textSecondary }]}>
             {sessionCorrect} پاسخ صحیح از {sessionTotal} تمرین
           </Text>
-          <View style={[styles.resultProgress, { backgroundColor: mutedSurface }]}>
-            <View style={[styles.resultProgressFill, { width: `${percentage}%`, backgroundColor: primary }]} />
+          <View
+            style={[
+              styles.resultProgress,
+              { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.07)' },
+            ]}
+          >
+            <View
+              style={[styles.resultProgressFill, { width: `${percentage}%`, backgroundColor: primary }]}
+            />
           </View>
         </View>
-        <View style={[styles.resultWeakCard, { backgroundColor: subtleSurface, borderColor: subtleBorder }]}>
+
+        <View
+          style={[
+            styles.resultWeakCard,
+            {
+              backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.82)',
+              borderColor: subtleBorder,
+            },
+          ]}
+        >
           <View style={styles.resultWeakHeader}>
             <Flame size={18} color={warning} />
             <Text style={[styles.resultWeakTitle, { color: colors.text }]}>بیت‌های نیازمند مرور</Text>
           </View>
           <Text style={[styles.resultWeakText, { color: colors.textSecondary }]}>
-            {weakItems.length ? weakItems.filter((item, index, array) => array.indexOf(item) === index).map((item) => `بیت ${item}`).join('، ') : 'در این جلسه بیت مهمی برای مرور دوباره ثبت نشد.'}
+            {weakItems.length
+              ? weakItems
+                  .filter((item, index, array) => array.indexOf(item) === index)
+                  .map((item) => `بیت ${item}`)
+                  .join('، ')
+              : 'در این جلسه بیت مهمی برای مرور دوباره ثبت نشد.'}
           </Text>
         </View>
-        <TouchableOpacity activeOpacity={0.85} onPress={() => setCurrentView('plan')} style={[styles.primaryButton, { backgroundColor: primary }]}>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => setCurrentView('plan')}
+          style={[styles.primaryButton, { backgroundColor: primary }]}
+        >
           <RotateCcw size={18} color="#FFFFFF" />
           <Text style={styles.primaryButtonText}>ادامه مسیر یادگیری</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => setCurrentView('study')} style={[styles.secondaryButton, { borderColor: subtleBorder }]}>
+
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => setCurrentView('study')}
+          style={[styles.secondaryButton, { borderColor: subtleBorder }]}
+        >
           <BookOpen size={18} color={colors.textSecondary} />
-          <Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>بازگشت به شعر</Text>
+          <Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>
+            بازگشت به شعر
+          </Text>
         </TouchableOpacity>
       </Animated.View>
     );
   };
 
+  // ─── RENDER ────────────────────────────────────────────────
+
   const renderContent = () => {
     switch (currentView) {
-      case 'home': return renderHome();
-      case 'study': return renderStudy();
-      case 'plan': return renderPlan();
-      case 'session': return renderSession();
-      case 'result': return renderResult();
-      default: return renderHome();
+      case 'home':
+        return renderHome();
+      case 'study':
+        return renderStudy();
+      case 'plan':
+        return renderPlan();
+      case 'session':
+        return renderSession();
+      case 'result':
+        return renderResult();
+      default:
+        return renderHome();
     }
   };
 
@@ -1274,16 +1690,24 @@ export default function HafezScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <View style={[styles.root, { backgroundColor: colors.background }]}>
-        {currentView !== 'home' && renderHeader()}
+        {renderHeader()}
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[styles.scrollContent, { direction: isRTL ? 'rtl' : 'ltr' }]}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { direction: isRTL ? 'rtl' : 'ltr' },
+          ]}
         >
           {renderContent()}
         </ScrollView>
         {isLoading && (
-          <View style={[styles.loadingOverlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.55)' }]}>
+          <View
+            style={[
+              styles.loadingOverlay,
+              { backgroundColor: isDark ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.55)' },
+            ]}
+          >
             <ActivityIndicator size="small" color={primary} />
           </View>
         )}
@@ -1292,7 +1716,16 @@ export default function HafezScreen() {
   );
 }
 
-function InfoCard({ icon, title, text, colors, backgroundColor, borderColor }: {
+// ─── COMPONENTS ─────────────────────────────────────────────
+
+function InfoCard({
+  icon,
+  title,
+  text,
+  colors,
+  backgroundColor,
+  borderColor,
+}: {
   icon: React.ReactNode;
   title: string;
   text: string;
@@ -1303,7 +1736,12 @@ function InfoCard({ icon, title, text, colors, backgroundColor, borderColor }: {
   return (
     <View style={[styles.infoCard, { backgroundColor, borderColor }]}>
       <View style={styles.infoCardHeader}>
-        <View style={[styles.infoIcon, { backgroundColor: 'rgba(139,92,246,0.08)' }]}>
+        <View
+          style={[
+            styles.infoIcon,
+            { backgroundColor: 'rgba(139,92,246,0.08)' },
+          ]}
+        >
           {icon}
         </View>
         <Text style={[styles.infoTitle, { color: colors.text }]}>{title}</Text>
@@ -1313,7 +1751,15 @@ function InfoCard({ icon, title, text, colors, backgroundColor, borderColor }: {
   );
 }
 
-function LearningMeta({ icon, text, color }: { icon: React.ReactNode; text: string; color: string }) {
+function LearningMeta({
+  icon,
+  text,
+  color,
+}: {
+  icon: React.ReactNode;
+  text: string;
+  color: string;
+}) {
   return (
     <View style={styles.learningMetaItem}>
       {icon}
@@ -1322,7 +1768,15 @@ function LearningMeta({ icon, text, color }: { icon: React.ReactNode; text: stri
   );
 }
 
-function PlanStat({ value, label, colors }: { value: string; label: string; colors: any }) {
+function PlanStat({
+  value,
+  label,
+  colors,
+}: {
+  value: string;
+  label: string;
+  colors: any;
+}) {
   return (
     <View style={styles.planStat}>
       <Text style={[styles.planStatValue, { color: colors.text }]}>{value}</Text>
@@ -1331,238 +1785,957 @@ function PlanStat({ value, label, colors }: { value: string; label: string; colo
   );
 }
 
+// ─── STYLES ──────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   root: { flex: 1 },
+
+  // ─── HEADER ────────────────────────────────────────────────
+
   header: {
-    minHeight: 64,
-    paddingHorizontal: 16,
+    height: 64,
+    paddingHorizontal: 18,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  
-  headerRight: {
+
+  mainHeader: {
+    height: 64,
+    paddingHorizontal: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+
+  headerSidePlaceholder: {
+    width: 44,
+    height: 44,
+  },
+
+  mainHeaderCenter: {
     flex: 1,
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  
-  headerTitleContainer: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    marginLeft: 12,
+
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    textAlign: 'right',
-  },
-  
-  headerSubtitle: {
-    fontSize: 10,
-    marginTop: 2,
-    textAlign: 'right',
-  },
-  
-  headerIcon: {
-    width: 38,
-    height: 38,
+
+  brandIcon: {
+    width: 36,
+    height: 36,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  
-  headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 13,
+
+  mainHeaderTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+
+  headerRight: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  
-  scrollContent: {
-    paddingBottom: 36,
+
+  headerTitleContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
   },
-  
+
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+
+  headerSubtitle: {
+    fontSize: 11,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ─── SCREEN ─────────────────────────────────────────────────
+
+  scrollContent: {
+    paddingBottom: 100,
+  },
+
   screen: {
     paddingHorizontal: CONTENT_HORIZONTAL,
     paddingTop: 18,
-    paddingBottom: 18,
+    paddingBottom: 24,
   },
-  homeHeader: {
-    width: '100%',
-    height: 58,
-    position: 'relative',
-    marginBottom: 10,
+
+  // ─── HOME ──────────────────────────────────────────────────
+
+  homeHero: {
+    alignItems: 'center',
+    paddingTop: 8,
+    paddingBottom: 24,
   },
-  
-  homeHeaderText: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    alignItems: 'flex-end',
+
+  homeHeroIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 23,
+    alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 14,
   },
-  
-  homeHeaderTitle: {
-    fontSize: 20,
-    fontWeight: '900',
+
+  homeHeroTitle: {
+    fontSize: 27,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+
+  homeHeroSubtitle: {
+    fontSize: 14,
+    lineHeight: 22,
+    marginTop: 6,
+    textAlign: 'center',
+    maxWidth: 320,
+  },
+
+  sectionHeading: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
     textAlign: 'right',
   },
-  
-  homeHeaderSubtitle: {
-    fontSize: 11,
+
+  sectionSubtitle: {
+    fontSize: 12,
+    lineHeight: 19,
     marginTop: 3,
     textAlign: 'right',
   },
-  
-  homeBackButton: {
-    position: 'absolute',
-    left: 0,
-    top: 8,
+
+  countBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+
+  countBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  poemList: {
+    gap: 10,
+  },
+
+  poemCard: {
+    minHeight: 108,
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+
+  poemIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  poemInfo: {
+    flex: 1,
+  },
+
+  poemTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    textAlign: 'right',
+  },
+
+  poemPoet: {
+    fontSize: 12,
+    marginTop: 4,
+    textAlign: 'right',
+  },
+
+  poemStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 10,
+    marginBottom: 6,
+  },
+
+  poemStat: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+
+  homeInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 16,
+  },
+
+  homeInfoText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 19,
+    textAlign: 'right',
+  },
+
+  // ─── STUDY ──────────────────────────────────────────────────
+
+  studyHero: {
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+
+  studyHeroIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+
+  studyHeroText: {
+    alignItems: 'center',
+  },
+
+  studyPoet: {
+    fontSize: 12,
+  },
+
+  studyTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+
+  studyStats: {
+    fontSize: 11,
+    marginTop: 6,
+    marginBottom: 10,
+  },
+
+  contentSection: {
+    marginBottom: 24,
+  },
+
+  poemTextCard: {
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    overflow: 'hidden',
+  },
+
+  couplet: {
+    flexDirection: 'row',
+    paddingVertical: 17,
+  },
+
+  coupletNumber: {
+    width: 32,
+    height: 32,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 11,
+    marginTop: 2,
+  },
+
+  coupletNumberText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+
+  coupletContent: {
+    flex: 1,
+  },
+
+  verseText: {
+    fontSize: 15,
+    lineHeight: 29,
+    textAlign: 'right',
+  },
+
+  meaningList: {
+    gap: 10,
+    marginTop: 13,
+  },
+
+  infoCard: {
+    borderWidth: 1,
+    borderRadius: 17,
+    padding: 15,
+  },
+
+  infoCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+
+  infoIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 9,
+  },
+
+  infoTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+
+  infoText: {
+    fontSize: 13,
+    lineHeight: 23,
+    textAlign: 'right',
+  },
+
+  vocabularyCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    marginTop: 12,
+    paddingHorizontal: 14,
+  },
+
+  vocabularyItem: {
+    paddingVertical: 12,
+  },
+
+  vocabularyWord: {
+    fontSize: 14,
+    fontWeight: '800',
+    textAlign: 'right',
+  },
+
+  vocabularyMeaning: {
+    fontSize: 12,
+    lineHeight: 20,
+    marginTop: 3,
+    textAlign: 'right',
+  },
+
+  learningCta: {
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 17,
+    marginTop: 4,
+  },
+
+  learningCtaHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  learningEyebrow: {
+    fontSize: 11,
+    fontWeight: '800',
+    textAlign: 'right',
+  },
+
+  learningTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    textAlign: 'right',
+    marginTop: 3,
+  },
+
+  learningIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  learningDescription: {
+    fontSize: 13,
+    lineHeight: 22,
+    textAlign: 'right',
+    marginTop: 12,
+  },
+
+  learningMeta: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 14,
+  },
+
+  learningMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+
+  learningMetaText: {
+    fontSize: 11,
+  },
+
+  // ─── PLAN ──────────────────────────────────────────────────
+
+  planOverview: {
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 17,
+    marginBottom: 12,
+  },
+
+  planOverviewTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+
+  planEyebrow: {
+    fontSize: 11,
+    fontWeight: '800',
+    textAlign: 'right',
+  },
+
+  planTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    textAlign: 'right',
+    marginTop: 3,
+  },
+
+  planPercent: {
+    minWidth: 58,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+
+  planPercentValue: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+
+  planPercentLabel: {
+    fontSize: 9,
+    marginTop: 1,
+  },
+
+  planStats: {
+    flexDirection: 'row',
+    marginTop: 16,
+  },
+
+  planStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+
+  planStatValue: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+
+  planStatLabel: {
+    fontSize: 10,
+    marginTop: 2,
+  },
+
+  todayPlan: {
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 24,
+  },
+
+  todayPlanTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  todayPlanEyebrow: {
+    fontSize: 11,
+    fontWeight: '700',
+    textAlign: 'right',
+    color: 'rgba(255,255,255,0.72)',
+  },
+
+  todayPlanTitle: {
+    fontSize: 21,
+    fontWeight: '800',
+    marginTop: 3,
+    textAlign: 'right',
+    color: '#FFFFFF',
+  },
+
+  todayPlanIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.16)',
+  },
+
+  todayPlanDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    marginVertical: 14,
+  },
+
+  todayTask: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+
+  todayTaskDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 8,
+    backgroundColor: 'rgba(255,255,255,0.75)',
+  },
+
+  todayTaskText: {
+    flex: 1,
+    fontSize: 12,
+    textAlign: 'right',
+    color: 'rgba(255,255,255,0.88)',
+  },
+
+  todayPlanFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 6,
+    marginBottom: 12,
+  },
+
+  todayPlanMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+
+  todayPlanMetaText: {
+    color: 'rgba(255,255,255,0.82)',
+    fontSize: 11,
+  },
+
+  completedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 9,
+  },
+
+  completedBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+
+  todayStartButton: {
+    height: 50,
+    borderRadius: 15,
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+
+  todayStartText: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+
+  roadmapSection: {
+    marginBottom: 10,
+  },
+
+  roadmap: {
+    gap: 8,
+  },
+
+  roadmapItem: {
+    minHeight: 62,
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  roadmapLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  dayCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 11,
+  },
+
+  dayNumber: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+
+  dayTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'right',
+  },
+
+  daySubtitle: {
+    fontSize: 10,
+    marginTop: 2,
+    textAlign: 'right',
+  },
+
+  // ─── SESSION ──────────────────────────────────────────────
+
+  sessionScreen: {
+    paddingTop: 18,
+  },
+
+  sessionTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 13,
+  },
+
+  sessionEyebrow: {
+    fontSize: 11,
+    fontWeight: '800',
+    textAlign: 'right',
+  },
+
+  sessionCounter: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginTop: 3,
+    textAlign: 'right',
+  },
+
+  sessionIndexBadge: {
+    minWidth: 52,
+    height: 42,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  sessionIndexText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+
+  questionCard: {
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 18,
+    marginTop: 20,
+    marginBottom: 12,
+  },
+
+  questionIcon: {
     width: 42,
     height: 42,
     borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  homeIntro: { alignItems: 'flex-end', paddingTop: 4, paddingBottom: 22 },
-  homeDescription: { width: '100%', fontSize: 13, lineHeight: 22, textAlign: 'right' },
-  sectionHeading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    alignSelf: 'flex-end',
     marginBottom: 12,
   },
-  sectionTitle: { fontSize: 18, fontWeight: '800', textAlign: 'right' },
-  sectionSubtitle: { fontSize: 12, lineHeight: 20, textAlign: 'right' },
-  countBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
-  countBadgeText: { fontSize: 11, fontWeight: '600' },
-  poemList: { gap: 10 },
-  poemCard: { minHeight: 126, borderWidth: 1, borderRadius: 17, overflow: 'hidden', flexDirection: 'row' },
-  poemAccent: { width: 3 },
-  poemCardMain: { flex: 1, padding: 15 },
-  poemCardTop: { flexDirection: 'row', alignItems: 'center' },
-  poemNumber: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 11 },
-  poemNumberText: { fontSize: 15, fontWeight: '800' },
-  poemCardTitles: { flex: 1 },
-  poemTitle: { fontSize: 15, fontWeight: '800', textAlign: 'right' },
-  poemSubtitle: { fontSize: 12, marginTop: 3, textAlign: 'right' },
-  poemMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 12, marginBottom: 7 },
-  poemMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  poemMetaText: { fontSize: 11 },
-  progressTrack: { width: '100%', borderRadius: 10, overflow: 'hidden' },
-  progressFill: { borderRadius: 10 },
-  homeInfo: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 13, borderRadius: 13, borderWidth: 1, marginTop: 16 },
-  homeInfoText: { flex: 1, fontSize: 12, lineHeight: 19, textAlign: 'right' },
-  studyHero: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 18, padding: 16, marginBottom: 22 },
-  studyHeroIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  studyHeroText: { flex: 1, alignItems: 'flex-end' },
-  studyPoet: { fontSize: 12, marginBottom: 3, textAlign: 'right' },
-  studyTitle: { fontSize: 20, fontWeight: '900', textAlign: 'right' },
-  studyStats: { fontSize: 11, marginTop: 5, textAlign: 'right' },
-  contentSection: { marginBottom: 22 },
-  poemTextCard: { borderWidth: 1, borderRadius: 18, paddingHorizontal: 15 },
-  couplet: { flexDirection: 'row', paddingVertical: 16 },
-  coupletNumber: { width: 29, height: 29, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 10, marginTop: 2 },
-  coupletNumberText: { fontSize: 11, fontWeight: '800' },
-  coupletContent: { flex: 1 },
-  verseText: { fontSize: 15, lineHeight: 29, textAlign: 'right', fontWeight: '500' },
-  meaningList: { gap: 9, marginTop: 13 },
-  infoCard: { borderWidth: 1, borderRadius: 15, padding: 14 },
-  infoCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 7 },
-  infoIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 9 },
-  infoTitle: { fontSize: 14, fontWeight: '800' },
-  infoText: { fontSize: 13, lineHeight: 23, textAlign: 'right' },
-  vocabularyCard: { borderWidth: 1, borderRadius: 16, marginTop: 12, paddingHorizontal: 14 },
-  vocabularyItem: { paddingVertical: 12 },
-  vocabularyWord: { fontSize: 14, fontWeight: '800', textAlign: 'right' },
-  vocabularyMeaning: { fontSize: 12, lineHeight: 20, marginTop: 3, textAlign: 'right' },
-  learningCta: { borderWidth: 1, borderRadius: 19, padding: 17, marginTop: 2 },
-  learningCtaHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  learningEyebrow: { fontSize: 11, fontWeight: '800', textAlign: 'right', marginBottom: 3 },
-  learningTitle: { fontSize: 17, fontWeight: '800', textAlign: 'right' },
-  learningIcon: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  learningDescription: { fontSize: 13, lineHeight: 22, textAlign: 'right', marginTop: 12 },
-  learningMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 13, marginBottom: 8 },
-  learningMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  learningMetaText: { fontSize: 11 },
-  planOverview: { borderWidth: 1, borderRadius: 19, padding: 17, marginBottom: 13 },
-  planOverviewTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
-  planEyebrow: { fontSize: 11, fontWeight: '800', textAlign: 'right', marginBottom: 3 },
-  planTitle: { fontSize: 18, fontWeight: '800', textAlign: 'right' },
-  planPercent: { minWidth: 57, paddingVertical: 7, paddingHorizontal: 9, borderRadius: 12, alignItems: 'center' },
-  planPercentValue: { fontSize: 16, fontWeight: '900' },
-  planPercentLabel: { fontSize: 9, marginTop: 1 },
-  planStats: { flexDirection: 'row', marginTop: 16 },
-  planStat: { flex: 1, alignItems: 'center' },
-  planStatValue: { fontSize: 17, fontWeight: '800' },
-  planStatLabel: { fontSize: 10, marginTop: 2 },
-  todayPlan: { borderRadius: 19, padding: 17, marginBottom: 23 },
-  todayPlanTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  todayPlanEyebrow: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '700', textAlign: 'right' },
-  todayPlanTitle: { color: '#FFFFFF', fontSize: 21, fontWeight: '900', marginTop: 3, textAlign: 'right' },
-  todayPlanIcon: { width: 43, height: 43, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.16)' },
-  todayPlanDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.16)', marginVertical: 13 },
-  todayTask: { flexDirection: 'row', alignItems: 'center', marginBottom: 7 },
-  todayTaskDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.78)', marginRight: 8 },
-  todayTaskText: { flex: 1, color: 'rgba(255,255,255,0.88)', fontSize: 12, textAlign: 'right' },
-  todayPlanFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6, marginBottom: 12 },
-  todayPlanMeta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  todayPlanMetaText: { color: 'rgba(255,255,255,0.82)', fontSize: 11 },
-  completedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.14)', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 9 },
-  completedBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
-  todayStartButton: { height: 48, borderRadius: 13, backgroundColor: '#FFFFFF', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
-  todayStartText: { fontSize: 14, fontWeight: '800' },
-  roadmapSection: { marginBottom: 10 },
-  roadmap: { gap: 7 },
-  roadmapItem: { minHeight: 58, borderWidth: 1, borderRadius: 14, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  roadmapLeft: { flexDirection: 'row', alignItems: 'center' },
-  dayCircle: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
-  dayNumber: { fontSize: 11, fontWeight: '800' },
-  dayTitle: { fontSize: 13, fontWeight: '700', textAlign: 'right' },
-  daySubtitle: { fontSize: 10, marginTop: 2, textAlign: 'right' },
-  sessionScreen: { paddingTop: 20 },
-  sessionTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13 },
-  sessionEyebrow: { fontSize: 11, fontWeight: '800', textAlign: 'right' },
-  sessionCounter: { fontSize: 18, fontWeight: '800', marginTop: 3, textAlign: 'right' },
-  sessionIndexBadge: { minWidth: 48, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  sessionIndexText: { fontSize: 12, fontWeight: '800' },
-  questionCard: { borderWidth: 1, borderRadius: 19, padding: 17, marginTop: 20, marginBottom: 12 },
-  questionIcon: { width: 39, height: 39, borderRadius: 12, alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-end', marginBottom: 11 },
-  questionText: { fontSize: 18, lineHeight: 28, fontWeight: '800', textAlign: 'right' },
-  questionVerse: { borderWidth: 1, borderRadius: 13, padding: 13, marginTop: 13 },
-  questionVerseText: { fontSize: 14, lineHeight: 27, textAlign: 'right' },
-  optionsList: { gap: 9, marginTop: 3 },
-  optionButton: { minHeight: 62, borderWidth: 1, borderRadius: 15, padding: 11, flexDirection: 'row', alignItems: 'center' },
-  optionNumber: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
-  optionNumberText: { fontSize: 11, fontWeight: '800' },
-  optionText: { flex: 1, fontSize: 13, lineHeight: 23, textAlign: 'right' },
-  answerArea: { marginTop: 3, gap: 9 },
-  answerInput: { minHeight: 78, borderWidth: 1, borderRadius: 15, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, lineHeight: 24 },
-  largeAnswerInput: { minHeight: 120 },
-  feedbackCard: { borderWidth: 1, borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'flex-start', marginTop: 12 },
-  feedbackIcon: { width: 27, height: 27, borderRadius: 9, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
-  feedbackText: { flex: 1, fontSize: 12, lineHeight: 21, textAlign: 'right' },
-  resultHero: { borderWidth: 1, borderRadius: 21, padding: 22, alignItems: 'center' },
-  resultIcon: { width: 67, height: 67, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
-  resultTitle: { fontSize: 21, fontWeight: '900', textAlign: 'center' },
-  resultMessage: { fontSize: 12, lineHeight: 20, textAlign: 'center', marginTop: 5 },
-  resultPercentage: { fontSize: 55, lineHeight: 65, fontWeight: '900', marginTop: 10 },
-  resultSummary: { fontSize: 12, textAlign: 'center' },
-  resultProgress: { width: '100%', height: 7, borderRadius: 10, overflow: 'hidden', marginTop: 15 },
-  resultProgressFill: { height: 7, borderRadius: 10 },
-  resultWeakCard: { borderWidth: 1, borderRadius: 17, padding: 15, marginTop: 10, marginBottom: 9 },
-  resultWeakHeader: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 6 },
-  resultWeakTitle: { fontSize: 13, fontWeight: '800' },
-  resultWeakText: { fontSize: 12, lineHeight: 21, textAlign: 'right' },
-  primaryButton: { minHeight: 50, borderRadius: 14, marginTop: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
-  primaryButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
-  secondaryButton: { minHeight: 50, borderRadius: 14, marginTop: 8, paddingHorizontal: 16, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
-  secondaryButtonText: { fontSize: 13, fontWeight: '700' },
-  loadingOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+
+  questionText: {
+    fontSize: 18,
+    lineHeight: 29,
+    fontWeight: '800',
+    textAlign: 'right',
+  },
+
+  questionVerse: {
+    borderWidth: 1,
+    borderRadius: 15,
+    padding: 14,
+    marginTop: 14,
+  },
+
+  questionVerseText: {
+    fontSize: 14,
+    lineHeight: 28,
+    textAlign: 'right',
+  },
+
+  optionsList: {
+    gap: 9,
+    marginTop: 3,
+  },
+
+  optionButton: {
+    minHeight: 64,
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  optionNumber: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+
+  optionNumberText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+
+  optionText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 23,
+    textAlign: 'right',
+  },
+
+  answerArea: {
+    marginTop: 3,
+    gap: 9,
+  },
+
+  answerInput: {
+    minHeight: 78,
+    borderWidth: 1,
+    borderRadius: 15,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    lineHeight: 24,
+  },
+
+  largeAnswerInput: {
+    minHeight: 120,
+  },
+
+  feedbackCard: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 12,
+  },
+
+  feedbackIcon: {
+    width: 27,
+    height: 27,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+
+  feedbackText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 21,
+    textAlign: 'right',
+  },
+
+  // ─── RESULT ─────────────────────────────────────────────────
+
+  resultHero: {
+    borderWidth: 1,
+    borderRadius: 21,
+    padding: 23,
+    alignItems: 'center',
+  },
+
+  resultIcon: {
+    width: 68,
+    height: 68,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+
+  resultTitle: {
+    fontSize: 21,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+
+  resultMessage: {
+    fontSize: 12,
+    lineHeight: 20,
+    textAlign: 'center',
+    marginTop: 6,
+  },
+
+  resultPercentage: {
+    fontSize: 52,
+    lineHeight: 62,
+    fontWeight: '800',
+    marginTop: 10,
+  },
+
+  resultSummary: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
+
+  resultProgress: {
+    width: '100%',
+    height: 7,
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginTop: 15,
+  },
+
+  resultProgressFill: {
+    height: 7,
+    borderRadius: 10,
+  },
+
+  resultWeakCard: {
+    borderWidth: 1,
+    borderRadius: 17,
+    padding: 15,
+    marginTop: 10,
+    marginBottom: 9,
+  },
+
+  resultWeakHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginBottom: 6,
+  },
+
+  resultWeakTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+
+  resultWeakText: {
+    fontSize: 12,
+    lineHeight: 21,
+    textAlign: 'right',
+  },
+
+  // ─── BUTTONS ──────────────────────────────────────────────
+
+  primaryButton: {
+    minHeight: 50,
+    borderRadius: 15,
+    marginTop: 13,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+
+  secondaryButton: {
+    minHeight: 50,
+    borderRadius: 15,
+    marginTop: 8,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+
+  secondaryButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
+  // ─── PROGRESS ─────────────────────────────────────────────
+
+  progressTrack: {
+    width: '100%',
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+
+  progressFill: {
+    borderRadius: 20,
+  },
+
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
