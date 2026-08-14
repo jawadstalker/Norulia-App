@@ -447,7 +447,7 @@ export default function QuranScreen() {
         <TouchableOpacity
           activeOpacity={0.78}
           onPress={handleBack}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           style={[
             styles.backButton,
             {
@@ -464,14 +464,30 @@ export default function QuranScreen() {
 
   const renderList = () => (
     <Animated.View style={[styles.screen, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
-      {renderTopBar('حفظ قرآن کریم')}
+      <View style={styles.listHeader}>
+        <TouchableOpacity
+          activeOpacity={0.78}
+          onPress={handleBack}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={[
+            styles.listBackButton,
+            {
+              backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : '#FFFFFF',
+              borderColor: isDark ? 'rgba(255,255,255,0.12)' : colors.border,
+            },
+          ]}
+        >
+          <ArrowLeft size={21} strokeWidth={2.2} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.listHeaderTitle, { color: colors.text }]}>حفظ قرآن کریم</Text>
+      </View>
+      
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.heroSection}>
           <View style={styles.heroBadge}>
             <Sparkles size={14} color="#22C55E" />
             <Text style={[styles.heroBadgeText, { color: '#22C55E' }]}>حفظ هوشمند قرآن</Text>
           </View>
-          <Text style={[styles.heroTitle, { color: colors.text }]}>حفظ قرآن کریم</Text>
           <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
             آیات قرآن را مرحله‌به‌مرحله حفظ کن و میزان تسلط خود را بسنج
           </Text>
@@ -1097,7 +1113,7 @@ const styles = StyleSheet.create({
   },
   screen: {
     flex: 1,
-    paddingTop: 40,
+    paddingTop: 50,
   },
   topBar: {
     height: 56,
@@ -1130,6 +1146,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 8,
+    gap: 16,
+  },
+  listBackButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  listHeaderTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    textAlign: 'right',
+    flex: 1,
+  },
   scrollContent: {
     paddingHorizontal: 18,
     paddingBottom: 130,
@@ -1148,12 +1187,6 @@ const styles = StyleSheet.create({
   heroBadgeText: {
     fontSize: 12,
     fontWeight: '700',
-  },
-  heroTitle: {
-    fontSize: 30,
-    fontWeight: '900',
-    textAlign: 'right',
-    letterSpacing: -0.5,
   },
   heroSubtitle: {
     fontSize: 14,
