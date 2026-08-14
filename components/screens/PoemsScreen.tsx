@@ -717,41 +717,59 @@ export default function HafezScreen() {
     return poemStats[currentPoem.id] || { mastered: 0, total: currentPoem.couplets.length, percent: 0 };
   }, [currentPoem, poemStats]);
 
-  // ─── HEADER ───────────────────────────────────────────────
-
   const renderHeader = () => {
     if (currentView === 'home') {
       return (
-        <View style={[styles.mainHeader, { borderBottomColor: subtleBorder }]}>
-          <View style={styles.headerSidePlaceholder} />
-
-          <View style={styles.mainHeaderCenter}>
-            <View style={styles.brandRow}>
-              <View
-                style={[
-                  styles.brandIcon,
-                  { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : `${primary}18` },
-                ]}
-              >
-                <BookOpen size={20} color={primary} strokeWidth={2} />
-              </View>
-              <Text style={[styles.mainHeaderTitle, { color: colors.text }]}>حافظ‌یار</Text>
-            </View>
-          </View>
-
+        <View
+          style={[
+            styles.mainHeader,
+            {
+              borderBottomColor: subtleBorder,
+              backgroundColor: colors.background,
+            },
+          ]}
+        >
           <TouchableOpacity
             onPress={() => router.back()}
             activeOpacity={0.8}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             style={[
               styles.backButton,
               {
-                backgroundColor: isDark ? 'rgba(255,255,255,0.055)' : '#FFFFFF',
+                backgroundColor: isDark
+                  ? 'rgba(255,255,255,0.055)'
+                  : '#FFFFFF',
                 borderColor: subtleBorder,
               },
             ]}
           >
             <ArrowLeft size={20} color={colors.text} strokeWidth={2.2} />
           </TouchableOpacity>
+
+          <View style={styles.mainHeaderCenter}>
+            <View style={styles.brandRow}>
+              <View
+                style={[
+                  styles.brandIcon,
+                  {
+                    backgroundColor: isDark
+                      ? 'rgba(255,255,255,0.08)'
+                      : `${primary}18`,
+                  },
+                ]}
+              >
+                <BookOpen size={20} color={primary} strokeWidth={2} />
+              </View>
+              <Text
+                style={[styles.mainHeaderTitle, { color: colors.text }]}
+                numberOfLines={1}
+              >
+                حافظ‌یار
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.headerSidePlaceholder} />
         </View>
       );
     }
@@ -762,14 +780,25 @@ export default function HafezScreen() {
     if (currentView === 'result') title = 'نتیجه جلسه';
 
     return (
-      <View style={[styles.header, { borderBottomColor: subtleBorder }]}>
+      <View
+        style={[
+          styles.header,
+          {
+            borderBottomColor: subtleBorder,
+            backgroundColor: colors.background,
+          },
+        ]}
+      >
         <TouchableOpacity
           onPress={goBack}
           activeOpacity={0.75}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           style={[
             styles.backButton,
             {
-              backgroundColor: isDark ? 'rgba(255,255,255,0.055)' : '#FFFFFF',
+              backgroundColor: isDark
+                ? 'rgba(255,255,255,0.055)'
+                : '#FFFFFF',
               borderColor: subtleBorder,
             },
           ]}
@@ -777,13 +806,19 @@ export default function HafezScreen() {
           <ArrowLeft size={20} color={colors.text} strokeWidth={2.2} />
         </TouchableOpacity>
 
-        <View style={styles.headerRight}>
+        <View style={styles.mainHeaderCenter}>
           <View style={styles.headerTitleContainer}>
-            <Text numberOfLines={1} style={[styles.headerTitle, { color: colors.text }]}>
+            <Text
+              numberOfLines={1}
+              style={[styles.headerTitle, { color: colors.text }]}
+            >
               {title}
             </Text>
             {currentPoem && (
-              <Text numberOfLines={1} style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+              <Text
+                numberOfLines={1}
+                style={[styles.headerSubtitle, { color: colors.textSecondary }]}
+              >
                 {currentPoem.fullTitle}
               </Text>
             )}
@@ -795,8 +830,6 @@ export default function HafezScreen() {
     );
   };
 
-  // ─── PROGRESS BAR ─────────────────────────────────────────
-
   const renderProgressBar = (value: number, height = 6) => (
     <View style={[styles.progressTrack, { height, backgroundColor: mutedSurface }]}>
       <View
@@ -807,8 +840,6 @@ export default function HafezScreen() {
       />
     </View>
   );
-
-  // ─── HOME ──────────────────────────────────────────────────
 
   const renderHome = () => {
     return (
@@ -901,8 +932,6 @@ export default function HafezScreen() {
       </Animated.View>
     );
   };
-
-  // ─── STUDY ─────────────────────────────────────────────────
 
   const renderStudy = () => {
     if (!currentPoem) return null;
@@ -1119,8 +1148,6 @@ export default function HafezScreen() {
     );
   };
 
-  // ─── PLAN ──────────────────────────────────────────────────
-
   const renderPlan = () => {
     if (!currentPoem) return null;
 
@@ -1297,8 +1324,6 @@ export default function HafezScreen() {
       </Animated.View>
     );
   };
-
-  // ─── SESSION ───────────────────────────────────────────────
 
   const renderSession = () => {
     if (!currentPoem || !sessionQueue.length) return null;
@@ -1576,8 +1601,6 @@ export default function HafezScreen() {
     );
   };
 
-  // ─── RESULT ─────────────────────────────────────────────────
-
   const renderResult = () => {
     const percentage = sessionTotal > 0 ? Math.round((sessionCorrect / sessionTotal) * 100) : 0;
     const message =
@@ -1667,8 +1690,6 @@ export default function HafezScreen() {
     );
   };
 
-  // ─── RENDER ────────────────────────────────────────────────
-
   const renderContent = () => {
     switch (currentView) {
       case 'home':
@@ -1715,8 +1736,6 @@ export default function HafezScreen() {
     </SafeAreaView>
   );
 }
-
-// ─── COMPONENTS ─────────────────────────────────────────────
 
 function InfoCard({
   icon,
@@ -1785,13 +1804,9 @@ function PlanStat({
   );
 }
 
-// ─── STYLES ──────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   root: { flex: 1 },
-
-  // ─── HEADER ────────────────────────────────────────────────
 
   header: {
     height: 64,
@@ -1814,6 +1829,7 @@ const styles = StyleSheet.create({
   headerSidePlaceholder: {
     width: 44,
     height: 44,
+    flexShrink: 0,
   },
 
   mainHeaderCenter: {
@@ -1825,6 +1841,7 @@ const styles = StyleSheet.create({
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
   },
 
@@ -1840,12 +1857,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     textAlign: 'center',
-  },
-
-  headerRight: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 
   headerTitleContainer: {
@@ -1873,9 +1884,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-
-  // ─── SCREEN ─────────────────────────────────────────────────
 
   scrollContent: {
     paddingBottom: 100,
@@ -1886,8 +1896,6 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 24,
   },
-
-  // ─── HOME ──────────────────────────────────────────────────
 
   homeHero: {
     alignItems: 'center',
@@ -2017,8 +2025,6 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     textAlign: 'right',
   },
-
-  // ─── STUDY ──────────────────────────────────────────────────
 
   studyHero: {
     borderWidth: 1,
@@ -2217,8 +2223,6 @@ const styles = StyleSheet.create({
   learningMetaText: {
     fontSize: 11,
   },
-
-  // ─── PLAN ──────────────────────────────────────────────────
 
   planOverview: {
     borderWidth: 1,
@@ -2447,8 +2451,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 
-  // ─── SESSION ──────────────────────────────────────────────
-
   sessionScreen: {
     paddingTop: 18,
   },
@@ -2603,8 +2605,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 
-  // ─── RESULT ─────────────────────────────────────────────────
-
   resultHero: {
     borderWidth: 1,
     borderRadius: 21,
@@ -2685,8 +2685,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 
-  // ─── BUTTONS ──────────────────────────────────────────────
-
   primaryButton: {
     minHeight: 50,
     borderRadius: 15,
@@ -2720,8 +2718,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-
-  // ─── PROGRESS ─────────────────────────────────────────────
 
   progressTrack: {
     width: '100%',
