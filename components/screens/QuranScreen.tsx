@@ -19,6 +19,7 @@ import {
   Heart,
   Volume2,
   ChevronLeft,
+  ArrowLeft,
   Search,
   Star,
   Trophy,
@@ -451,11 +452,11 @@ export default function QuranScreen() {
             styles.backButton,
             {
               backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : '#FFFFFF',
-              borderColor: isDark ? 'rgba(255,255,255,0.10)' : colors.border,
+              borderColor: isDark ? 'rgba(255,255,255,0.12)' : colors.border,
             },
           ]}
         >
-          <ChevronLeft size={21} strokeWidth={2.2} color={colors.text} />
+          <ArrowLeft size={21} strokeWidth={2.2} color={colors.text} />
         </TouchableOpacity>
       </View>
     );
@@ -463,7 +464,7 @@ export default function QuranScreen() {
 
   const renderList = () => (
     <Animated.View style={[styles.screen, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
-      {renderTopBar()}
+      {renderTopBar('حفظ قرآن کریم')}
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.heroSection}>
           <View style={styles.heroBadge}>
@@ -1123,7 +1124,8 @@ const styles = StyleSheet.create({
   backButton: {
     width: 42,
     height: 42,
-    borderRadius: 30,
+    borderRadius: 21,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,

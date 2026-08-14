@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
+  ArrowLeft,
   Brain,
   Clock,
   Languages,
@@ -28,10 +29,8 @@ const bilingualGames = [
     id: 'word',
     title: 'Word Puzzle',
     titleFa: 'جمله بندی',
-    description:
-      'Build sentences and improve your language skills',
-    descriptionFa:
-      'جمله‌ها را بساز و مهارت زبانی خود را تقویت کن',
+    description: 'Build sentences and improve your language skills',
+    descriptionFa: 'جمله‌ها را بساز و مهارت زبانی خود را تقویت کن',
     image: require('../../assets/games/game8.png'),
     level: 'Easy',
     levelFa: 'آسان',
@@ -43,10 +42,8 @@ const bilingualGames = [
     id: 'memory-bilingual',
     title: 'Bilingual Memory',
     titleFa: 'حافظه دوزبانه',
-    description:
-      'Train your memory with two languages',
-    descriptionFa:
-      'حافظه خود را با دو زبان تقویت کن',
+    description: 'Train your memory with two languages',
+    descriptionFa: 'حافظه خود را با دو زبان تقویت کن',
     image: require('../../assets/games/game3.png'),
     level: 'Medium',
     levelFa: 'متوسط',
@@ -58,10 +55,8 @@ const bilingualGames = [
     id: 'language-challenge',
     title: 'Language Challenge',
     titleFa: 'چالش زبان',
-    description:
-      'Improve vocabulary and language recognition',
-    descriptionFa:
-      'دایره لغات و تشخیص زبان خود را تقویت کن',
+    description: 'Improve vocabulary and language recognition',
+    descriptionFa: 'دایره لغات و تشخیص زبان خود را تقویت کن',
     image: require('../../assets/games/game9.png'),
     level: 'Hard',
     levelFa: 'سخت',
@@ -139,8 +134,7 @@ export default function BilingualGamesScreen() {
               style={[
                 styles.headerIcon,
                 {
-                  backgroundColor:
-                    colors.primary + '16',
+                  backgroundColor: colors.primary + '16',
                 },
               ]}
             >
@@ -184,36 +178,39 @@ export default function BilingualGamesScreen() {
                 ]}
               >
                 {bilingualGames.length}{' '}
-                {language === 'fa' ? 'بازی برای یادگیری' : 'games to learn'}
+                {language === 'fa'
+                  ? 'بازی برای یادگیری'
+                  : 'games to learn'}
               </Text>
             </View>
           </View>
         </View>
 
         <TouchableOpacity
-          onPress={handleBack}
-          activeOpacity={0.75}
-          style={[
-            styles.backButton,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <ChevronLeft
-            size={26}
-            strokeWidth={2.5}
-            color={colors.text}
-            style={
-              isRTL
-                ? undefined
-                : {
-                    transform: [{ rotate: '180deg' }],
-                  }
-            }
-          />
-        </TouchableOpacity>
+  onPress={handleBack}
+  activeOpacity={0.8}
+  accessibilityRole="button"
+  accessibilityLabel={language === 'fa' ? 'بازگشت' : 'Back'}
+  hitSlop={{
+    top: 10,
+    bottom: 10,
+    left: 10,
+    right: 10,
+  }}
+  style={[
+    styles.backButton,
+    {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+  ]}
+>
+  <ArrowLeft
+    size={23}
+    color={colors.text}
+    strokeWidth={2.5}
+  />
+</TouchableOpacity>
       </View>
 
       <View
@@ -288,9 +285,9 @@ export default function BilingualGamesScreen() {
       >
         {bilingualGames.map((game) => (
           <Card
-          key={game.id}
-          style={styles.card}
-        >
+            key={game.id}
+            style={styles.card}
+          >
             <View style={styles.imageWrapper}>
               <Image
                 source={game.image}
@@ -457,15 +454,9 @@ export default function BilingualGamesScreen() {
                 <ChevronLeft
                   size={17}
                   color="#FFFFFF"
-                  style={
-                    isRTL
-                      ? undefined
-                      : {
-                          transform: [
-                            { rotate: '180deg' },
-                          ],
-                        }
-                  }
+                  style={{
+                    transform: [{ rotate: '180deg' }],
+                  }}
                 />
               </TouchableOpacity>
             </View>
@@ -526,11 +517,19 @@ const styles = StyleSheet.create({
   backButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
+
   introCard: {
     marginHorizontal: Spacing.lg,
     marginTop: 5,
