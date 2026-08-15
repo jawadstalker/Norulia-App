@@ -9,9 +9,21 @@ import {
   Animated,
   LayoutChangeEvent,
 } from 'react-native';
+
 import { MotiView } from 'moti';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Trophy, Zap, Clock } from 'lucide-react-native';
+
+import {
+  ArrowLeft,
+  Trophy,
+  Zap,
+  Clock,
+  Heart,
+  RotateCcw,
+  CheckCircle2,
+  XCircle,
+} from 'lucide-react-native';
+
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Spacing, BorderRadius } from '../../constants/theme';
@@ -24,14 +36,54 @@ type ColorDef = {
 };
 
 const COLOR_POOL: ColorDef[] = [
-  { key: 'red', en: 'RED', fa: 'قرمز', hex: '#EF4444' },
-  { key: 'blue', en: 'BLUE', fa: 'آبی', hex: '#3B82F6' },
-  { key: 'green', en: 'GREEN', fa: 'سبز', hex: '#22C55E' },
-  { key: 'yellow', en: 'YELLOW', fa: 'زرد', hex: '#EAB308' },
-  { key: 'purple', en: 'PURPLE', fa: 'بنفش', hex: '#A855F7' },
-  { key: 'orange', en: 'ORANGE', fa: 'نارنجی', hex: '#F97316' },
-  { key: 'pink', en: 'PINK', fa: 'صورتی', hex: '#EC4899' },
-  { key: 'cyan', en: 'CYAN', fa: 'فیروزه‌ای', hex: '#06B6D4' },
+  {
+    key: 'red',
+    en: 'RED',
+    fa: 'قرمز',
+    hex: '#EF4444',
+  },
+  {
+    key: 'blue',
+    en: 'BLUE',
+    fa: 'آبی',
+    hex: '#3B82F6',
+  },
+  {
+    key: 'green',
+    en: 'GREEN',
+    fa: 'سبز',
+    hex: '#22C55E',
+  },
+  {
+    key: 'yellow',
+    en: 'YELLOW',
+    fa: 'زرد',
+    hex: '#EAB308',
+  },
+  {
+    key: 'purple',
+    en: 'PURPLE',
+    fa: 'بنفش',
+    hex: '#A855F7',
+  },
+  {
+    key: 'orange',
+    en: 'ORANGE',
+    fa: 'نارنجی',
+    hex: '#F97316',
+  },
+  {
+    key: 'pink',
+    en: 'PINK',
+    fa: 'صورتی',
+    hex: '#EC4899',
+  },
+  {
+    key: 'cyan',
+    en: 'CYAN',
+    fa: 'فیروزه‌ای',
+    hex: '#06B6D4',
+  },
 ];
 
 type Level = {
@@ -43,10 +95,34 @@ type Level = {
 };
 
 const LEVELS: Level[] = [
-  { name: 'Easy', nameFa: 'آسان', colorCount: 4, roundTime: 4000, totalRounds: 12 },
-  { name: 'Medium', nameFa: 'متوسط', colorCount: 5, roundTime: 3000, totalRounds: 15 },
-  { name: 'Hard', nameFa: 'سخت', colorCount: 6, roundTime: 2200, totalRounds: 18 },
-  { name: 'Extreme', nameFa: 'حرفه‌ای', colorCount: 8, roundTime: 1600, totalRounds: 20 },
+  {
+    name: 'Easy',
+    nameFa: 'آسان',
+    colorCount: 4,
+    roundTime: 4000,
+    totalRounds: 12,
+  },
+  {
+    name: 'Medium',
+    nameFa: 'متوسط',
+    colorCount: 5,
+    roundTime: 3000,
+    totalRounds: 15,
+  },
+  {
+    name: 'Hard',
+    nameFa: 'سخت',
+    colorCount: 6,
+    roundTime: 2200,
+    totalRounds: 18,
+  },
+  {
+    name: 'Extreme',
+    nameFa: 'حرفه‌ای',
+    colorCount: 8,
+    roundTime: 1600,
+    totalRounds: 20,
+  },
 ];
 
 type ScorePopup = {
@@ -71,10 +147,13 @@ const GRID_GAP = 12;
 
 function shuffle<T>(input: T[]): T[] {
   const arr = [...input];
+
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
+
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
+
   return arr;
 }
 
@@ -82,43 +161,80 @@ export default function StroopTestScreen() {
   const { colors } = useTheme();
   const { t, language, isRTL } = useLanguage();
   const router = useRouter();
-  // ابعاد واقعی صفحه‌ی دستگاه؛ همیشه به‌روز است و با اندازه‌ی پنجره‌ی وب اشتباه گرفته نمی‌شود
+
   const { width } = useWindowDimensions();
 
-  // اندازه‌ی دقیق هر مربع رنگ را خودمان محاسبه می‌کنیم به‌جای اتکا به ترکیب
-  // درصد + aspectRatio که روی برخی گوشی‌های اندروید در فریم اول درست رندر نمی‌شود
-  const swatchWidth = (width - GRID_HORIZONTAL_PADDING * 2 - GRID_GAP) / 2;
+  const swatchWidth =
+    (width - GRID_HORIZONTAL_PADDING * 2 - GRID_GAP) / 2;
+
   const swatchHeight = swatchWidth / 2.1;
 
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
+
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
+
   const [roundIndex, setRoundIndex] = useState(0);
-  const [wordKey, setWordKey] = useState<string>('red');
-  const [inkKey, setInkKey] = useState<string>('blue');
+
+  const [wordKey, setWordKey] = useState('red');
+  const [inkKey, setInkKey] = useState('blue');
+
   const [options, setOptions] = useState<ColorDef[]>([]);
+
   const [popups, setPopups] = useState<ScorePopup[]>([]);
   const [particles, setParticles] = useState<Particle[]>([]);
+
   const [gameOver, setGameOver] = useState(false);
   const [completed, setCompleted] = useState(false);
+
   const [flashColor, setFlashColor] = useState('#EF4444');
 
-  const level = selectedLevel !== null ? LEVELS[selectedLevel] : LEVELS[0];
+  const level =
+    selectedLevel !== null
+      ? LEVELS[selectedLevel]
+      : LEVELS[0];
+
+  const wordColor =
+    COLOR_POOL.find((c) => c.key === wordKey) ||
+    COLOR_POOL[0];
+
+  const inkColor =
+    COLOR_POOL.find((c) => c.key === inkKey) ||
+    COLOR_POOL[1];
+
   const textAlignStyle = isRTL ? 'right' : 'left';
-  const colorName = (c: ColorDef) => (language === 'fa' ? c.fa : c.en);
-  const wordColor = COLOR_POOL.find((c) => c.key === wordKey) || COLOR_POOL[0];
-  const inkColor = COLOR_POOL.find((c) => c.key === inkKey) || COLOR_POOL[1];
+
+  const colorName = (color: ColorDef) =>
+    language === 'fa' ? color.fa : color.en;
 
   const roundIdRef = useRef(0);
   const answeredRef = useRef(false);
+
   const popupId = useRef(0);
   const particleId = useRef(0);
-  const buttonLayouts = useRef<Record<string, { x: number; y: number; w: number; h: number }>>({});
+
+  const buttonLayouts = useRef<
+    Record<
+      string,
+      {
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+      }
+    >
+  >({});
+
   const timerAnim = useRef(new Animated.Value(1)).current;
-  const timerRunRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  const timerRunRef =
+    useRef<Animated.CompositeAnimation | null>(null);
+
   const wordScale = useRef(new Animated.Value(0.7)).current;
+
   const flashAnim = useRef(new Animated.Value(0)).current;
+
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -135,57 +251,143 @@ export default function StroopTestScreen() {
         'شش رنگ، زمان محدود',
         'هشت رنگ، سرعت بالا',
       ];
+
       return descriptions[index] || '';
     }
+
     const descriptions = [
       'Four simple colors, plenty of time',
       'Five colors, a bit faster',
       'Six colors, limited time',
       'Eight colors, high speed',
     ];
+
     return descriptions[index] || '';
+  };
+
+  /*
+   * ============================================================
+   * BACK BUTTON
+   * ============================================================
+   *
+   * این تابع برای تمام حالت‌های بازی استفاده می‌شود.
+   *
+   * نکته مهم:
+   * تایمر قبل از برگشت متوقف می‌شود تا بازی در پس‌زمینه
+   * ادامه پیدا نکند.
+   */
+  const handleBack = () => {
+    timerRunRef.current?.stop();
+    timerRunRef.current = null;
+
+    roundIdRef.current += 1;
+    answeredRef.current = true;
+
+    router.back();
   };
 
   const triggerFlash = (color: string) => {
     setFlashColor(color);
+
     Animated.sequence([
-      Animated.timing(flashAnim, { toValue: 1, duration: 70, useNativeDriver: true }),
-      Animated.timing(flashAnim, { toValue: 0, duration: 260, useNativeDriver: true }),
+      Animated.timing(flashAnim, {
+        toValue: 1,
+        duration: 70,
+        useNativeDriver: true,
+      }),
+
+      Animated.timing(flashAnim, {
+        toValue: 0,
+        duration: 260,
+        useNativeDriver: true,
+      }),
     ]).start();
   };
 
   const triggerShake = () => {
     shakeAnim.setValue(0);
+
     Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 1, duration: 45, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -1, duration: 45, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 1, duration: 45, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 45, useNativeDriver: true }),
+      Animated.timing(shakeAnim, {
+        toValue: 1,
+        duration: 45,
+        useNativeDriver: true,
+      }),
+
+      Animated.timing(shakeAnim, {
+        toValue: -1,
+        duration: 45,
+        useNativeDriver: true,
+      }),
+
+      Animated.timing(shakeAnim, {
+        toValue: 1,
+        duration: 45,
+        useNativeDriver: true,
+      }),
+
+      Animated.timing(shakeAnim, {
+        toValue: 0,
+        duration: 45,
+        useNativeDriver: true,
+      }),
     ]).start();
   };
 
   const spawnPopup = (value: number) => {
     const id = popupId.current++;
-    setPopups((prev) => [...prev, { id, value }]);
+
+    setPopups((prev) => [
+      ...prev,
+      {
+        id,
+        value,
+      },
+    ]);
+
     setTimeout(() => {
-      setPopups((prev) => prev.filter((p) => p.id !== id));
+      setPopups((prev) =>
+        prev.filter((popup) => popup.id !== id)
+      );
     }, 700);
   };
 
-  const spawnExplosion = (centerX: number, centerY: number, color: string) => {
+  const spawnExplosion = (
+    centerX: number,
+    centerY: number,
+    color: string
+  ) => {
     const newParticles: Particle[] = [];
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      const angle = (Math.PI * 2 * i) / PARTICLE_COUNT + (Math.random() * 0.4 - 0.2);
+      const angle =
+        (Math.PI * 2 * i) / PARTICLE_COUNT +
+        (Math.random() * 0.4 - 0.2);
+
       const distance = 30 + Math.random() * 40;
+
       const size = 5 + Math.random() * 7;
+
       const id = particleId.current++;
+
       const anim = new Animated.Value(0);
 
-      newParticles.push({ id, x: centerX, y: centerY, angle, distance, color, size, anim });
+      newParticles.push({
+        id,
+        x: centerX,
+        y: centerY,
+        angle,
+        distance,
+        color,
+        size,
+        anim,
+      });
     }
 
-    setParticles((prev) => [...prev, ...newParticles]);
+    setParticles((prev) => [
+      ...prev,
+      ...newParticles,
+    ]);
 
     newParticles.forEach((particle) => {
       Animated.timing(particle.anim, {
@@ -194,7 +396,11 @@ export default function StroopTestScreen() {
         useNativeDriver: true,
       }).start(({ finished }) => {
         if (finished) {
-          setParticles((prev) => prev.filter((p) => p.id !== particle.id));
+          setParticles((prev) =>
+            prev.filter(
+              (p) => p.id !== particle.id
+            )
+          );
         }
       });
     });
@@ -202,19 +408,37 @@ export default function StroopTestScreen() {
 
   const beginRound = (currentLevel: Level) => {
     roundIdRef.current += 1;
+
     const thisRoundId = roundIdRef.current;
+
     answeredRef.current = false;
 
-    const pool = COLOR_POOL.slice(0, currentLevel.colorCount);
-    const word = pool[Math.floor(Math.random() * pool.length)];
-    const inkCandidates = pool.filter((c) => c.key !== word.key);
-    const ink = inkCandidates[Math.floor(Math.random() * inkCandidates.length)];
+    const pool = COLOR_POOL.slice(
+      0,
+      currentLevel.colorCount
+    );
+
+    const word =
+      pool[Math.floor(Math.random() * pool.length)];
+
+    const inkCandidates = pool.filter(
+      (color) => color.key !== word.key
+    );
+
+    const ink =
+      inkCandidates[
+        Math.floor(
+          Math.random() * inkCandidates.length
+        )
+      ];
 
     setWordKey(word.key);
     setInkKey(ink.key);
+
     setOptions(shuffle(pool));
 
     wordScale.setValue(0.7);
+
     Animated.spring(wordScale, {
       toValue: 1,
       friction: 5,
@@ -223,13 +447,22 @@ export default function StroopTestScreen() {
     }).start();
 
     timerAnim.setValue(1);
-    timerRunRef.current = Animated.timing(timerAnim, {
-      toValue: 0,
-      duration: currentLevel.roundTime,
-      useNativeDriver: false,
-    });
+
+    timerRunRef.current = Animated.timing(
+      timerAnim,
+      {
+        toValue: 0,
+        duration: currentLevel.roundTime,
+        useNativeDriver: false,
+      }
+    );
+
     timerRunRef.current.start(({ finished }) => {
-      if (finished && !answeredRef.current && thisRoundId === roundIdRef.current) {
+      if (
+        finished &&
+        !answeredRef.current &&
+        thisRoundId === roundIdRef.current
+      ) {
         handleTimeout(thisRoundId);
       }
     });
@@ -238,63 +471,111 @@ export default function StroopTestScreen() {
   const proceedToNext = (currentLevel: Level) => {
     setRoundIndex((prev) => {
       const next = prev + 1;
+
       if (next >= currentLevel.totalRounds) {
         endGame(true);
         return prev;
       }
+
       beginRound(currentLevel);
+
       return next;
     });
   };
 
   const handleTimeout = (roundId: number) => {
-    if (roundId !== roundIdRef.current) return;
+    if (roundId !== roundIdRef.current) {
+      return;
+    }
+
     answeredRef.current = true;
 
     triggerFlash('#EF4444');
     triggerShake();
+
     spawnPopup(-5);
+
     setScore((prev) => prev - 5);
 
     setLives((prev) => {
       const newLives = prev - 1;
+
       if (newLives <= 0) {
-        setTimeout(() => endGame(false), 500);
+        setTimeout(() => {
+          endGame(false);
+        }, 500);
       } else {
-        setTimeout(() => proceedToNext(level), 500);
+        setTimeout(() => {
+          proceedToNext(level);
+        }, 500);
       }
+
       return newLives;
     });
   };
 
   const handleAnswer = (selected: ColorDef) => {
-    if (!playing || answeredRef.current) return;
+    if (
+      !playing ||
+      answeredRef.current
+    ) {
+      return;
+    }
+
     answeredRef.current = true;
+
     timerRunRef.current?.stop();
 
-    const layout = buttonLayouts.current[selected.key];
-    const centerX = layout ? layout.x + layout.w / 2 : width / 2;
-    const centerY = layout ? layout.y + layout.h / 2 : 0;
-    const isCorrect = selected.key === inkKey;
+    const layout =
+      buttonLayouts.current[selected.key];
+
+    const centerX = layout
+      ? layout.x + layout.w / 2
+      : width / 2;
+
+    const centerY = layout
+      ? layout.y + layout.h / 2
+      : 0;
+
+    const isCorrect =
+      selected.key === inkKey;
 
     if (isCorrect) {
-      spawnExplosion(centerX, centerY, inkColor.hex);
+      spawnExplosion(
+        centerX,
+        centerY,
+        inkColor.hex
+      );
+
       spawnPopup(10);
+
       setScore((prev) => prev + 10);
-      setTimeout(() => proceedToNext(level), 400);
+
+      setTimeout(() => {
+        proceedToNext(level);
+      }, 400);
     } else {
       triggerFlash('#EF4444');
+
       triggerShake();
+
       spawnPopup(-5);
+
       setScore((prev) => prev - 5);
 
       setLives((prev) => {
         const newLives = prev - 1;
+
         if (newLives <= 0) {
-          setTimeout(() => endGame(false), 500);
+          setTimeout(() => {
+            endGame(false);
+          }, 500);
         } else {
-          setTimeout(() => proceedToNext(level), 500);
+          setTimeout(() => {
+            proceedToNext(level);
+          }, 500);
         }
+
         return newLives;
       });
     }
@@ -302,22 +583,32 @@ export default function StroopTestScreen() {
 
   const startGame = (levelIndex: number) => {
     setSelectedLevel(levelIndex);
+
     setPlaying(true);
+
     setGameOver(false);
     setCompleted(false);
+
     setScore(0);
     setLives(3);
+
     setRoundIndex(0);
+
     setPopups([]);
     setParticles([]);
+
     buttonLayouts.current = {};
 
-    requestAnimationFrame(() => beginRound(LEVELS[levelIndex]));
+    requestAnimationFrame(() => {
+      beginRound(LEVELS[levelIndex]);
+    });
   };
 
   const endGame = (success: boolean) => {
     timerRunRef.current?.stop();
+
     setPlaying(false);
+
     if (success) {
       setCompleted(true);
     } else {
@@ -325,350 +616,1018 @@ export default function StroopTestScreen() {
     }
   };
 
-  const recordLayout = (key: string) => (e: LayoutChangeEvent) => {
-    const { x, y, width: w, height: h } = e.nativeEvent.layout;
-    buttonLayouts.current[key] = { x, y, w, h };
+  const restartGame = () => {
+    if (selectedLevel === null) {
+      return;
+    }
+
+    startGame(selectedLevel);
   };
+
+  const recordLayout =
+    (key: string) =>
+    (event: LayoutChangeEvent) => {
+      const {
+        x,
+        y,
+        width: w,
+        height: h,
+      } = event.nativeEvent.layout;
+
+      buttonLayouts.current[key] = {
+        x,
+        y,
+        w,
+        h,
+      };
+    };
 
   const timerWidth = timerAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0%', '100%'],
   });
 
-  const shakeTranslate = shakeAnim.interpolate({
-    inputRange: [-1, 0, 1],
-    outputRange: [-8, 0, 8],
-  });
+  const shakeTranslate =
+    shakeAnim.interpolate({
+      inputRange: [-1, 0, 1],
+      outputRange: [-8, 0, 8],
+    });
 
-  if (!playing && selectedLevel === null) {
+  /*
+   * ============================================================
+   * LEVEL SELECT
+   * ============================================================
+   */
+
+  if (
+    !playing &&
+    selectedLevel === null
+  ) {
     return (
       <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
-        contentContainerStyle={styles.scrollContent}
+        style={[
+          styles.container,
+          {
+            backgroundColor:
+              colors.background,
+          },
+        ]}
+        contentContainerStyle={
+          styles.scrollContent
+        }
         showsVerticalScrollIndicator={false}
       >
+        {/* BACK BUTTON - LEFT */}
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={handleBack}
+          activeOpacity={0.8}
           style={[
             styles.backButton,
             {
-              backgroundColor: colors.surface,
-              flexDirection: isRTL ? 'row-reverse' : 'row',
+              backgroundColor:
+                colors.surface,
+              borderColor:
+                colors.border,
             },
           ]}
         >
           <ArrowLeft
-            size={20}
+            size={21}
+            strokeWidth={2.3}
             color={colors.text}
-            style={isRTL ? { transform: [{ scaleX: -1 }] } : {}}
           />
+
           <Text
             allowFontScaling={false}
-            style={[styles.backText, { color: colors.text, textAlign: textAlignStyle }]}
+            style={[
+              styles.backText,
+              {
+                color: colors.text,
+              },
+            ]}
           >
             {t.back}
           </Text>
         </TouchableOpacity>
 
         <View style={styles.levelHeader}>
-          <View style={[styles.iconCircle, { backgroundColor: colors.primary + '20' }]}>
-            <Zap size={32} color={colors.primary} />
+          <View
+            style={[
+              styles.iconCircle,
+              {
+                backgroundColor:
+                  colors.primary + '20',
+              },
+            ]}
+          >
+            <Zap
+              size={32}
+              color={colors.primary}
+            />
           </View>
 
-          <Text allowFontScaling={false} style={[styles.title, { color: colors.text, textAlign: 'center' }]}>
-            {language === 'fa' ? 'استروپ دیجیتال' : 'Digital Stroop'}
-          </Text>
-        </View>
-
-        <View style={[styles.instructionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text
             allowFontScaling={false}
-            style={[styles.instructionTitle, { color: colors.text, textAlign: textAlignStyle }]}
+            style={[
+              styles.title,
+              {
+                color: colors.text,
+              },
+            ]}
           >
-            {t.howToPlay || (language === 'fa' ? 'راهنما' : 'How to play')}
+            {language === 'fa'
+              ? 'استروپ دیجیتال'
+              : 'Digital Stroop'}
           </Text>
 
-          {(language === 'fa'
-            ? [
-                'یک کلمه‌ی رنگ (مثلاً «قرمز») را می‌بینید',
-                'که با رنگی متفاوت نوشته شده است.',
-                'شما باید رنگ جوهر را انتخاب کنید، نه کلمه را!',
-              ]
-            : [
-                'You will see a color word (e.g. "RED")',
-                'written in a different ink color.',
-                'You must pick the ink color, not the word!',
-              ]
-          ).map((line, i) => (
-            <View key={i} style={[styles.instructionRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-              <View style={[styles.instructionDot, { backgroundColor: colors.primary }]} />
-              <Text
-                allowFontScaling={false}
-                style={[styles.instructionText, { color: colors.textSecondary, textAlign: textAlignStyle }]}
-              >
-                {line}
-              </Text>
-            </View>
-          ))}
+          <Text
+            allowFontScaling={false}
+            style={[
+              styles.subtitle,
+              {
+                color: colors.textSecondary,
+              },
+            ]}
+          >
+            {language === 'fa'
+              ? 'رنگ نوشته را تشخیص دهید، نه خود کلمه را'
+              : 'Identify the ink color, not the word'}
+          </Text>
+        </View>
 
-          <View style={[styles.exampleBox, { borderColor: colors.border }]}>
-            <Text allowFontScaling={false} style={[styles.exampleWord, { color: '#3B82F6' }]}>
-              {language === 'fa' ? 'قرمز' : 'RED'}
-            </Text>
-            <Text allowFontScaling={false} style={[styles.exampleArrow, { color: colors.textSecondary }]}>
-              {isRTL ? '←' : '→'}
-            </Text>
-            <View style={[styles.exampleAnswer, { backgroundColor: '#3B82F6' }]}>
-              <Text allowFontScaling={false} style={styles.exampleAnswerText}>
-                {language === 'fa' ? 'آبی' : 'BLUE'}
-              </Text>
-            </View>
+        <View
+          style={[
+            styles.instructionCard,
+            {
+              backgroundColor:
+                colors.surface,
+              borderColor:
+                colors.border,
+            },
+          ]}
+        >
+          <View style={styles.instructionIcon}>
+            <Zap
+              size={20}
+              color={colors.primary}
+            />
           </View>
+
+          <Text
+            allowFontScaling={false}
+            style={[
+              styles.instructionText,
+              {
+                color: colors.text,
+                textAlign: textAlignStyle,
+              },
+            ]}
+          >
+            {language === 'fa'
+              ? 'رنگ واقعی نوشته را انتخاب کنید. مثلاً اگر کلمه «قرمز» با رنگ آبی نمایش داده شد، باید آبی را انتخاب کنید.'
+              : 'Choose the actual ink color. For example, if RED is displayed in blue, select BLUE.'}
+          </Text>
         </View>
 
-        <View style={styles.levels}>
-          {LEVELS.map((item, index) => (
-            <TouchableOpacity
-              key={item.name}
-              onPress={() => startGame(index)}
-              activeOpacity={0.8}
-              style={[
-                styles.levelCard,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                  flexDirection: isRTL ? 'row-reverse' : 'row',
-                },
-              ]}
-            >
-              <View style={[styles.levelNumber, { backgroundColor: colors.primary }]}>
-                <Text allowFontScaling={false} style={styles.levelNumberText}>
-                  {index + 1}
-                </Text>
-              </View>
+        <Text
+          allowFontScaling={false}
+          style={[
+            styles.sectionTitle,
+            {
+              color: colors.text,
+              textAlign: textAlignStyle,
+            },
+          ]}
+        >
+          {language === 'fa'
+            ? 'سطح بازی را انتخاب کنید'
+            : 'Choose difficulty'}
+        </Text>
 
-              <View style={isRTL ? styles.levelInfoRTL : styles.levelInfo}>
-                <Text
-                  allowFontScaling={false}
-                  style={[styles.levelTitle, { color: colors.text, textAlign: textAlignStyle }]}
-                >
-                  {language === 'fa' ? item.nameFa : item.name}
-                </Text>
-                <Text
-                  allowFontScaling={false}
-                  style={[styles.levelDescription, { color: colors.textSecondary, textAlign: textAlignStyle }]}
-                >
-                  {getLevelDescription(index)}
-                </Text>
-              </View>
+        {LEVELS.map(
+          (item, index) => {
+            const active =
+              selectedLevel === index;
 
-              <Zap
-                size={20}
-                color={
-                  index === 0
-                    ? colors.success
-                    : index === 1
-                    ? colors.warning
-                    : colors.error
+            return (
+              <TouchableOpacity
+                key={item.name}
+                activeOpacity={0.85}
+                onPress={() =>
+                  startGame(index)
                 }
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
+                style={[
+                  styles.levelCard,
+                  {
+                    backgroundColor:
+                      colors.surface,
+                    borderColor:
+                      active
+                        ? colors.primary
+                        : colors.border,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.levelNumber,
+                    {
+                      backgroundColor:
+                        colors.primary +
+                        '18',
+                    },
+                  ]}
+                >
+                  <Text
+                    allowFontScaling={false}
+                    style={[
+                      styles.levelNumberText,
+                      {
+                        color:
+                          colors.primary,
+                      },
+                    ]}
+                  >
+                    {index + 1}
+                  </Text>
+                </View>
+
+                <View
+                  style={
+                    styles.levelInfo
+                  }
+                >
+                  <Text
+                    allowFontScaling={false}
+                    style={[
+                      styles.levelName,
+                      {
+                        color:
+                          colors.text,
+                        textAlign:
+                          textAlignStyle,
+                      },
+                    ]}
+                  >
+                    {language === 'fa'
+                      ? item.nameFa
+                      : item.name}
+                  </Text>
+
+                  <Text
+                    allowFontScaling={false}
+                    style={[
+                      styles.levelDescription,
+                      {
+                        color:
+                          colors.textSecondary,
+                        textAlign:
+                          textAlignStyle,
+                      },
+                    ]}
+                  >
+                    {getLevelDescription(
+                      index
+                    )}
+                  </Text>
+                </View>
+
+                <View
+                  style={
+                    styles.levelStats
+                  }
+                >
+                  <View
+                    style={
+                      styles.statRow
+                    }
+                  >
+                    <Clock
+                      size={15}
+                      color={
+                        colors.textSecondary
+                      }
+                    />
+
+                    <Text
+                      allowFontScaling={
+                        false
+                      }
+                      style={[
+                        styles.statText,
+                        {
+                          color:
+                            colors.textSecondary,
+                        },
+                      ]}
+                    >
+                      {item.roundTime /
+                        1000}
+                      s
+                    </Text>
+                  </View>
+
+                  <View
+                    style={
+                      styles.statRow
+                    }
+                  >
+                    <Trophy
+                      size={15}
+                      color={
+                        colors.textSecondary
+                      }
+                    />
+
+                    <Text
+                      allowFontScaling={
+                        false
+                      }
+                      style={[
+                        styles.statText,
+                        {
+                          color:
+                            colors.textSecondary,
+                        },
+                      ]}
+                    >
+                      {item.totalRounds}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          }
+        )}
       </ScrollView>
     );
   }
 
-  return (
-    <Animated.View
-      style={[
-        styles.gameContainer,
-        { backgroundColor: colors.background, transform: [{ translateX: shakeTranslate }] },
-      ]}
-    >
-      <View style={[styles.gameHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-        <View style={styles.stat}>
-          <Text allowFontScaling={false} style={[styles.lifeIcon, { color: colors.error }]}>
-            ❤️
-          </Text>
-          <Text allowFontScaling={false} style={[styles.statText, { color: colors.text }]}>
-            {lives}
-          </Text>
+  /*
+   * ============================================================
+   * GAME SCREEN
+   * ============================================================
+   */
+
+  if (playing) {
+    return (
+      <View
+        style={[
+          styles.gameContainer,
+          {
+            backgroundColor:
+              colors.background,
+          },
+        ]}
+      >
+        {/* ======================================================
+            FIXED GAME HEADER
+            ====================================================== */}
+
+        <View
+          style={[
+            styles.gameHeader,
+            {
+              backgroundColor:
+                colors.background,
+            },
+          ]}
+        >
+          {/* LEFT SIDE BACK BUTTON */}
+
+          <TouchableOpacity
+            onPress={handleBack}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={
+              t.back || 'Back'
+            }
+            style={[
+              styles.gameBackButton,
+              {
+                backgroundColor:
+                  colors.surface,
+                borderColor:
+                  colors.border,
+              },
+            ]}
+          >
+            <ArrowLeft
+              size={22}
+              strokeWidth={2.4}
+              color={colors.text}
+            />
+          </TouchableOpacity>
+
+          {/* CENTER TITLE */}
+
+          <View
+            style={
+              styles.gameHeaderCenter
+            }
+          >
+            <Text
+              allowFontScaling={false}
+              numberOfLines={1}
+              style={[
+                styles.gameHeaderTitle,
+                {
+                  color: colors.text,
+                },
+              ]}
+            >
+              {language === 'fa'
+                ? 'استروپ دیجیتال'
+                : 'Digital Stroop'}
+            </Text>
+
+            <Text
+              allowFontScaling={false}
+              style={[
+                styles.gameHeaderRound,
+                {
+                  color:
+                    colors.textSecondary,
+                },
+              ]}
+            >
+              {roundIndex + 1} /{' '}
+              {level.totalRounds}
+            </Text>
+          </View>
+
+          {/* RIGHT SIDE SCORE */}
+
+          <View
+            style={[
+              styles.scoreBadge,
+              {
+                backgroundColor:
+                  colors.surface,
+                borderColor:
+                  colors.border,
+              },
+            ]}
+          >
+            <Trophy
+              size={17}
+              color={colors.primary}
+            />
+
+            <Text
+              allowFontScaling={false}
+              style={[
+                styles.scoreText,
+                {
+                  color: colors.text,
+                },
+              ]}
+            >
+              {score}
+            </Text>
+          </View>
         </View>
 
-        <View style={styles.stat}>
-          <Trophy size={20} color={colors.warning} />
-          <Text allowFontScaling={false} style={[styles.statText, { color: colors.text }]}>
+        {/* TIMER */}
+
+        <View
+          style={[
+            styles.timerContainer,
+            {
+              backgroundColor:
+                colors.surface,
+            },
+          ]}
+        >
+          <Animated.View
+            style={[
+              styles.timerProgress,
+              {
+                backgroundColor:
+                  colors.primary,
+                width: timerWidth,
+              },
+            ]}
+          />
+        </View>
+
+        {/* GAME CONTENT */}
+
+        <Animated.View
+          style={[
+            styles.gameContent,
+            {
+              transform: [
+                {
+                  translateX:
+                    shakeTranslate,
+                },
+              ],
+            },
+          ]}
+        >
+          {/* STATUS */}
+
+          <View
+            style={
+              styles.statusRow
+            }
+          >
+            <View
+              style={
+                styles.livesContainer
+              }
+            >
+              {Array.from({
+                length: 3,
+              }).map((_, index) => (
+                <Heart
+                  key={index}
+                  size={20}
+                  strokeWidth={2}
+                  color={
+                    index < lives
+                      ? '#EF4444'
+                      : colors.border
+                  }
+                  fill={
+                    index < lives
+                      ? '#EF4444'
+                      : 'transparent'
+                  }
+                />
+              ))}
+            </View>
+
+            <View
+              style={[
+                styles.roundBadge,
+                {
+                  backgroundColor:
+                    colors.surface,
+                },
+              ]}
+            >
+              <Text
+                allowFontScaling={false}
+                style={[
+                  styles.roundText,
+                  {
+                    color: colors.text,
+                  },
+                ]}
+              >
+                {language === 'fa'
+                  ? `مرحله ${
+                      roundIndex + 1
+                    }`
+                  : `Round ${
+                      roundIndex + 1
+                    }`}
+              </Text>
+            </View>
+          </View>
+
+          {/* WORD */}
+
+          <View
+            style={
+              styles.wordContainer
+            }
+          >
+            <Text
+              allowFontScaling={false}
+              style={[
+                styles.instructionSmall,
+                {
+                  color:
+                    colors.textSecondary,
+                },
+              ]}
+            >
+              {language === 'fa'
+                ? 'رنگ نوشته را انتخاب کنید'
+                : 'Choose the ink color'}
+            </Text>
+
+            <Animated.Text
+              allowFontScaling={false}
+              style={[
+                styles.stroopWord,
+                {
+                  color:
+                    inkColor.hex,
+                  transform: [
+                    {
+                      scale: wordScale,
+                    },
+                  ],
+                },
+              ]}
+            >
+              {colorName(wordColor)}
+            </Animated.Text>
+          </View>
+
+          {/* OPTIONS */}
+
+          <View
+            style={[
+              styles.optionsGrid,
+              {
+                width:
+                  width -
+                  GRID_HORIZONTAL_PADDING *
+                    2,
+              },
+            ]}
+          >
+            {options.map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                activeOpacity={0.82}
+                onLayout={recordLayout(
+                  option.key
+                )}
+                onPress={() =>
+                  handleAnswer(
+                    option
+                  )
+                }
+                style={[
+                  styles.colorButton,
+                  {
+                    width:
+                      swatchWidth,
+                    height:
+                      swatchHeight,
+                    backgroundColor:
+                      option.hex,
+                  },
+                ]}
+              >
+                <Text
+                  allowFontScaling={false}
+                  style={
+                    styles.colorButtonText
+                  }
+                >
+                  {colorName(option)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Animated.View>
+
+        {/* FLASH */}
+
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.flashOverlay,
+            {
+              backgroundColor:
+                flashColor,
+              opacity:
+                flashAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 0.16],
+                }),
+            },
+          ]}
+        />
+
+        {/* SCORE POPUPS */}
+
+        <View
+          pointerEvents="none"
+          style={styles.popupLayer}
+        >
+          {popups.map((popup) => (
+            <MotiView
+              key={popup.id}
+              from={{
+                opacity: 1,
+                translateY: 0,
+                scale: 0.8,
+              }}
+              animate={{
+                opacity: 0,
+                translateY: -55,
+                scale: 1.15,
+              }}
+              transition={{
+                duration: 650,
+              }}
+              style={styles.scorePopup}
+            >
+              <Text
+                allowFontScaling={false}
+                style={[
+                  styles.scorePopupText,
+                  {
+                    color:
+                      popup.value > 0
+                        ? '#22C55E'
+                        : '#EF4444',
+                  },
+                ]}
+              >
+                {popup.value > 0
+                  ? `+${popup.value}`
+                  : popup.value}
+              </Text>
+            </MotiView>
+          ))}
+        </View>
+
+        {/* PARTICLES */}
+
+        <View
+          pointerEvents="none"
+          style={styles.particleLayer}
+        >
+          {particles.map(
+            (particle) => {
+              const translateX =
+                particle.anim.interpolate(
+                  {
+                    inputRange: [
+                      0,
+                      1,
+                    ],
+                    outputRange: [
+                      0,
+                      Math.cos(
+                        particle.angle
+                      ) *
+                        particle.distance,
+                    ],
+                  }
+                );
+
+              const translateY =
+                particle.anim.interpolate(
+                  {
+                    inputRange: [
+                      0,
+                      1,
+                    ],
+                    outputRange: [
+                      0,
+                      Math.sin(
+                        particle.angle
+                      ) *
+                        particle.distance,
+                    ],
+                  }
+                );
+
+              const opacity =
+                particle.anim.interpolate(
+                  {
+                    inputRange: [
+                      0,
+                      0.7,
+                      1,
+                    ],
+                    outputRange: [
+                      1,
+                      1,
+                      0,
+                    ],
+                  }
+                );
+
+              return (
+                <Animated.View
+                  key={particle.id}
+                  style={[
+                    styles.particle,
+                    {
+                      width:
+                        particle.size,
+                      height:
+                        particle.size,
+                      borderRadius:
+                        particle.size /
+                        2,
+                      backgroundColor:
+                        particle.color,
+                      left:
+                        particle.x,
+                      top:
+                        particle.y,
+                      opacity,
+                      transform: [
+                        {
+                          translateX,
+                        },
+                        {
+                          translateY,
+                        },
+                      ],
+                    },
+                  ]}
+                />
+              );
+            }
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  /*
+   * ============================================================
+   * RESULT SCREEN
+   * ============================================================
+   */
+
+  return (
+    <View
+      style={[
+        styles.resultContainer,
+        {
+          backgroundColor:
+            colors.background,
+        },
+      ]}
+    >
+      {/* BACK BUTTON */}
+
+      <TouchableOpacity
+        onPress={handleBack}
+        activeOpacity={0.8}
+        style={[
+          styles.resultBackButton,
+          {
+            backgroundColor:
+              colors.surface,
+            borderColor:
+              colors.border,
+          },
+        ]}
+      >
+        <ArrowLeft
+          size={22}
+          strokeWidth={2.3}
+          color={colors.text}
+        />
+      </TouchableOpacity>
+
+      <View
+        style={
+          styles.resultContent
+        }
+      >
+        <View
+          style={[
+            styles.resultIcon,
+            {
+              backgroundColor:
+                completed
+                  ? '#22C55E20'
+                  : '#EF444420',
+            },
+          ]}
+        >
+          {completed ? (
+            <CheckCircle2
+              size={48}
+              color="#22C55E"
+            />
+          ) : (
+            <XCircle
+              size={48}
+              color="#EF4444"
+            />
+          )}
+        </View>
+
+        <Text
+          allowFontScaling={false}
+          style={[
+            styles.resultTitle,
+            {
+              color: colors.text,
+            },
+          ]}
+        >
+          {completed
+            ? language === 'fa'
+              ? 'بازی با موفقیت تمام شد'
+              : 'Game completed'
+            : language === 'fa'
+              ? 'بازی تمام شد'
+              : 'Game over'}
+        </Text>
+
+        <View
+          style={[
+            styles.finalScoreCard,
+            {
+              backgroundColor:
+                colors.surface,
+              borderColor:
+                colors.border,
+            },
+          ]}
+        >
+          <Trophy
+            size={26}
+            color={colors.primary}
+          />
+
+          <Text
+            allowFontScaling={false}
+            style={[
+              styles.finalScoreLabel,
+              {
+                color:
+                  colors.textSecondary,
+              },
+            ]}
+          >
+            {language === 'fa'
+              ? 'امتیاز نهایی'
+              : 'Final score'}
+          </Text>
+
+          <Text
+            allowFontScaling={false}
+            style={[
+              styles.finalScore,
+              {
+                color: colors.text,
+              },
+            ]}
+          >
             {score}
           </Text>
         </View>
 
-        <View style={styles.stat}>
-          <Clock size={18} color={colors.textSecondary} />
-          <Text allowFontScaling={false} style={[styles.statText, { color: colors.text }]}>
-            {roundIndex + 1}/{level.totalRounds}
-          </Text>
-        </View>
-      </View>
-
-      <View style={[styles.timerTrack, { backgroundColor: colors.border }]}>
-        <Animated.View
-          style={[styles.timerFill, { width: timerWidth, backgroundColor: colors.primary }]}
-        />
-      </View>
-
-      <View style={styles.wordArea}>
-        <Animated.Text
-          allowFontScaling={false}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={restartGame}
           style={[
-            styles.wordText,
-            { color: inkColor.hex, transform: [{ scale: wordScale }] },
+            styles.restartButton,
+            {
+              backgroundColor:
+                colors.primary,
+            },
           ]}
         >
-          {colorName(wordColor)}
-        </Animated.Text>
+          <RotateCcw
+            size={20}
+            color="#FFFFFF"
+          />
 
-        {popups.map((p) => (
-          <MotiView
-            key={p.id}
-            pointerEvents="none"
-            from={{ opacity: 0, translateY: 0, scale: 0.6 }}
-            animate={{ opacity: [1, 1, 0], translateY: -50, scale: 1 }}
-            transition={{ type: 'timing', duration: 700 }}
-            style={styles.popup}
+          <Text
+            allowFontScaling={false}
+            style={
+              styles.restartButtonText
+            }
           >
-            <Text
-              allowFontScaling={false}
-              style={[styles.popupText, { color: p.value > 0 ? '#22C55E' : '#EF4444' }]}
-            >
-              {p.value > 0 ? `+${p.value}` : `${p.value}`}
-            </Text>
-          </MotiView>
-        ))}
+            {language === 'fa'
+              ? 'دوباره بازی کن'
+              : 'Play again'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => {
+            setSelectedLevel(null);
+            setGameOver(false);
+            setCompleted(false);
+          }}
+          style={[
+            styles.secondaryButton,
+            {
+              backgroundColor:
+                colors.surface,
+              borderColor:
+                colors.border,
+            },
+          ]}
+        >
+          <Text
+            allowFontScaling={false}
+            style={[
+              styles.secondaryButtonText,
+              {
+                color: colors.text,
+              },
+            ]}
+          >
+            {language === 'fa'
+              ? 'انتخاب سطح دیگر'
+              : 'Choose another level'}
+          </Text>
+        </TouchableOpacity>
       </View>
-
-      <View style={styles.gridWrapper}>
-        {particles.map((particle) => {
-          const translateX = particle.anim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, Math.cos(particle.angle) * particle.distance],
-          });
-          const translateY = particle.anim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, Math.sin(particle.angle) * particle.distance],
-          });
-          const opacity = particle.anim.interpolate({
-            inputRange: [0, 0.7, 1],
-            outputRange: [1, 0.8, 0],
-          });
-          const scale = particle.anim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [1, 0.2],
-          });
-
-          return (
-            <Animated.View
-              key={particle.id}
-              pointerEvents="none"
-              style={[
-                styles.particle,
-                {
-                  left: particle.x,
-                  top: particle.y,
-                  width: particle.size,
-                  height: particle.size,
-                  borderRadius: particle.size / 2,
-                  backgroundColor: particle.color,
-                  opacity,
-                  transform: [{ translateX }, { translateY }, { scale }],
-                },
-              ]}
-            />
-          );
-        })}
-
-        <View style={styles.grid}>
-          {options.map((option) => (
-            <TouchableOpacity
-              key={option.key}
-              activeOpacity={0.8}
-              onLayout={recordLayout(option.key)}
-              onPress={() => handleAnswer(option)}
-              style={[
-                styles.swatch,
-                {
-                  width: swatchWidth,
-                  height: swatchHeight,
-                  backgroundColor: option.hex,
-                },
-              ]}
-            >
-              <Text allowFontScaling={false} style={styles.swatchLabel}>
-                {colorName(option)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      <Animated.View
-        pointerEvents="none"
-        style={[StyleSheet.absoluteFillObject, { backgroundColor: flashColor, opacity: flashAnim }]}
-      />
-
-      {(gameOver || completed) && (
-        <View style={[styles.resultOverlay, { backgroundColor: colors.background + 'F5' }]}>
-          <View style={[styles.resultCard, { backgroundColor: colors.surface }]}>
-            <Trophy size={42} color={completed ? colors.success : colors.error} />
-
-            <Text
-              allowFontScaling={false}
-              style={[styles.resultTitle, { color: colors.text, textAlign: 'center' }]}
-            >
-              {completed
-                ? language === 'fa'
-                  ? 'مرحله کامل شد!'
-                  : 'Level Complete!'
-                : language === 'fa'
-                ? 'بازی تمام شد'
-                : 'Game Over'}
-            </Text>
-
-            <Text
-              allowFontScaling={false}
-              style={[styles.finalScore, { color: colors.primary, textAlign: 'center' }]}
-            >
-              {score} {language === 'fa' ? 'امتیاز' : 'Points'}
-            </Text>
-
-            <TouchableOpacity
-              onPress={() => selectedLevel !== null && startGame(selectedLevel)}
-              style={[styles.resultButton, { backgroundColor: colors.primary }]}
-            >
-              <Text allowFontScaling={false} style={styles.resultButtonText}>
-                {language === 'fa' ? 'دوباره بازی' : 'Play Again'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {
-                setSelectedLevel(null);
-                setGameOver(false);
-                setCompleted(false);
-              }}
-              style={[styles.secondaryButton, { borderColor: colors.border }]}
-            >
-              <Text
-                allowFontScaling={false}
-                style={[styles.secondaryButtonText, { color: colors.text, textAlign: 'center' }]}
-              >
-                {language === 'fa' ? 'انتخاب سطح' : 'Choose Level'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-    </Animated.View>
+    </View>
   );
 }
 
@@ -676,258 +1635,552 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
   scrollContent: {
-    padding: Spacing.lg,
-    paddingBottom: Spacing.xl * 2,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: 55,
+    paddingBottom: 40,
   },
+
+  /*
+   * ============================================================
+   * BACK BUTTON
+   * ============================================================
+   */
+
   backButton: {
-    alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: BorderRadius.full,
-    marginTop: Spacing.md,
-  },
-  backText: {
-    marginLeft: 8,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  levelHeader: {
-    alignItems: 'center',
-    marginTop: 30,
-    marginBottom: Spacing.lg,
-  },
-  iconCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+
+    minWidth: 44,
+    height: 44,
+
+    paddingHorizontal: 12,
+
+    borderRadius: BorderRadius.md,
+
+    borderWidth: 1,
+
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.md,
+
+    gap: 7,
   },
+
+  backText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  /*
+   * ============================================================
+   * LEVEL SCREEN
+   * ============================================================
+   */
+
+  levelHeader: {
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 24,
+  },
+
+  iconCircle: {
+    width: 68,
+    height: 68,
+
+    borderRadius: 34,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    marginBottom: 14,
+  },
+
   title: {
-    fontSize: 28,
+    fontSize: 27,
     fontWeight: '800',
   },
+
+  subtitle: {
+    marginTop: 8,
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+
   instructionCard: {
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    padding: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-  instructionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 10,
-  },
-  instructionRow: {
-    alignItems: 'flex-start',
-    marginBottom: 6,
-  },
-  instructionDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginTop: 7,
-    marginHorizontal: 8,
-  },
-  instructionText: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  exampleBox: {
-    marginTop: 10,
-    borderWidth: 1,
-    borderRadius: BorderRadius.md,
-    padding: 12,
+
+    padding: 16,
+
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
+
+    marginBottom: 26,
   },
-  exampleWord: {
-    fontSize: 20,
-    fontWeight: '900',
-  },
-  exampleArrow: {
-    fontSize: 16,
-  },
-  exampleAnswer: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: BorderRadius.full,
-  },
-  exampleAnswerText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  levels: {
-    gap: 12,
-  },
-  levelCard: {
+
+  instructionIcon: {
+    width: 38,
+    height: 38,
+
+    borderRadius: 19,
+
     alignItems: 'center',
-    padding: Spacing.md,
+    justifyContent: 'center',
+
+    marginRight: 12,
+  },
+
+  instructionText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 21,
+  },
+
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+
+    marginBottom: 12,
+  },
+
+  levelCard: {
+    minHeight: 88,
+
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
+
+    padding: 14,
+
+    flexDirection: 'row',
+    alignItems: 'center',
+
+    marginBottom: 12,
   },
+
   levelNumber: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+
+    borderRadius: 21,
+
     alignItems: 'center',
     justifyContent: 'center',
+
+    marginRight: 12,
   },
+
   levelNumberText: {
-    color: '#fff',
     fontSize: 17,
     fontWeight: '800',
   },
+
   levelInfo: {
     flex: 1,
-    marginLeft: Spacing.md,
   },
-  levelInfoRTL: {
-    flex: 1,
-    marginRight: Spacing.md,
-  },
-  levelTitle: {
-    fontSize: 17,
+
+  levelName: {
+    fontSize: 16,
     fontWeight: '700',
   },
+
   levelDescription: {
-    fontSize: 12,
     marginTop: 4,
+    fontSize: 12,
+    lineHeight: 18,
   },
+
+  levelStats: {
+    alignItems: 'flex-end',
+    gap: 7,
+  },
+
+  statRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+
+  statText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  /*
+   * ============================================================
+   * GAME
+   * ============================================================
+   */
+
   gameContainer: {
     flex: 1,
   },
+
+  /*
+   * هدر بازی ثابت است.
+   *
+   * مهم:
+   * flexDirection همیشه row است.
+   *
+   * بنابراین دکمه Back همیشه در سمت چپ می‌ماند،
+   * حتی وقتی زبان فارسی و RTL باشد.
+   */
+
   gameHeader: {
-    height: 90,
+    height: 72,
+
     paddingHorizontal: Spacing.lg,
-    paddingTop: 40,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  stat: {
+
     flexDirection: 'row',
     alignItems: 'center',
+
+    justifyContent: 'space-between',
+
+    zIndex: 20,
+  },
+
+  gameBackButton: {
+    width: 44,
+    height: 44,
+
+    borderRadius: BorderRadius.md,
+
+    borderWidth: 1,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  gameHeaderCenter: {
+    flex: 1,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    marginHorizontal: 10,
+  },
+
+  gameHeaderTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+  },
+
+  gameHeaderRound: {
+    marginTop: 2,
+
+    fontSize: 11,
+    fontWeight: '600',
+  },
+
+  scoreBadge: {
+    minWidth: 66,
+    height: 40,
+
+    paddingHorizontal: 10,
+
+    borderRadius: BorderRadius.md,
+
+    borderWidth: 1,
+
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+
     gap: 6,
   },
-  lifeIcon: {
-    fontSize: 18,
-  },
-  statText: {
-    fontSize: 16,
+
+  scoreText: {
+    fontSize: 15,
     fontWeight: '800',
   },
-  timerTrack: {
-    height: 6,
+
+  timerContainer: {
+    height: 5,
+
     marginHorizontal: Spacing.lg,
+
     borderRadius: 3,
+
     overflow: 'hidden',
   },
-  timerFill: {
+
+  timerProgress: {
     height: '100%',
-    borderRadius: 3,
   },
-  wordArea: {
-    height: 140,
+
+  gameContent: {
+    flex: 1,
+
+    paddingHorizontal:
+      GRID_HORIZONTAL_PADDING,
+
+    paddingTop: 18,
+    paddingBottom: 24,
+  },
+
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+
+    marginBottom: 25,
+  },
+
+  livesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+
+    gap: 5,
+  },
+
+  roundBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+
+    borderRadius: 18,
+  },
+
+  roundText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  wordContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+
+    marginBottom: 35,
   },
-  wordText: {
-    fontSize: 46,
+
+  instructionSmall: {
+    fontSize: 13,
+    fontWeight: '600',
+
+    marginBottom: 15,
+  },
+
+  stroopWord: {
+    fontSize: 42,
     fontWeight: '900',
-    letterSpacing: 1,
+
+    textAlign: 'center',
   },
-  popup: {
-    position: 'absolute',
-    top: 10,
-  },
-  popupText: {
-    fontSize: 22,
-    fontWeight: '900',
-    textShadowColor: 'rgba(0,0,0,0.25)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  gridWrapper: {
-    flex: 1,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.sm,
-  },
-  grid: {
+
+  optionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+
+    gap: GRID_GAP,
+
+    alignSelf: 'center',
   },
-  swatch: {
+
+  colorButton: {
     borderRadius: BorderRadius.lg,
+
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: GRID_GAP,
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+
+    elevation: 5,
   },
-  swatchLabel: {
-    color: '#fff',
-    fontSize: 16,
+
+  colorButtonText: {
+    color: '#FFFFFF',
+
+    fontSize: 15,
     fontWeight: '800',
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+
+    textShadowColor:
+      'rgba(0,0,0,0.25)',
+
+    textShadowOffset: {
+      width: 0,
+      height: 1,
+    },
+
+    textShadowRadius: 3,
   },
+
+  flashOverlay: {
+    position: 'absolute',
+
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+
+    zIndex: 50,
+  },
+
+  popupLayer: {
+    position: 'absolute',
+
+    top: '45%',
+    left: 0,
+    right: 0,
+
+    alignItems: 'center',
+
+    zIndex: 60,
+
+    pointerEvents: 'none',
+  },
+
+  scorePopup: {
+    position: 'absolute',
+  },
+
+  scorePopupText: {
+    fontSize: 30,
+    fontWeight: '900',
+  },
+
+  particleLayer: {
+    position: 'absolute',
+
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+
+    zIndex: 55,
+
+    pointerEvents: 'none',
+  },
+
   particle: {
     position: 'absolute',
   },
-  resultOverlay: {
-    ...StyleSheet.absoluteFillObject,
+
+  /*
+   * ============================================================
+   * RESULT
+   * ============================================================
+   */
+
+  resultContainer: {
+    flex: 1,
+
+    paddingTop: 55,
+    paddingHorizontal: Spacing.lg,
+  },
+
+  resultBackButton: {
+    width: 44,
+    height: 44,
+
+    borderRadius: BorderRadius.md,
+
+    borderWidth: 1,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    alignSelf: 'flex-start',
+  },
+
+  resultContent: {
+    flex: 1,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    paddingBottom: 60,
+  },
+
+  resultIcon: {
+    width: 90,
+    height: 90,
+
+    borderRadius: 45,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    marginBottom: 20,
+  },
+
+  resultTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+
+    textAlign: 'center',
+
+    marginBottom: 24,
+  },
+
+  finalScoreCard: {
+    width: '100%',
+
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+
+    alignItems: 'center',
+
+    paddingVertical: 24,
+
+    marginBottom: 20,
+  },
+
+  finalScoreLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+
+    marginTop: 8,
+  },
+
+  finalScore: {
+    fontSize: 42,
+    fontWeight: '900',
+
+    marginTop: 2,
+  },
+
+  restartButton: {
+    width: '100%',
+    height: 52,
+
+    borderRadius: BorderRadius.lg,
+
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    gap: 8,
+
+    marginBottom: 12,
+  },
+
+  restartButtonText: {
+    color: '#FFFFFF',
+
+    fontSize: 15,
+    fontWeight: '800',
+  },
+
+  secondaryButton: {
+    width: '100%',
+    height: 50,
+
+    borderRadius: BorderRadius.lg,
+
+    borderWidth: 1,
+
     alignItems: 'center',
     justifyContent: 'center',
   },
-  resultCard: {
-    width: '82%',
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.xl,
-    alignItems: 'center',
-  },
-  resultTitle: {
-    fontSize: 25,
-    fontWeight: '800',
-    marginTop: Spacing.md,
-  },
-  finalScore: {
-    fontSize: 28,
-    fontWeight: '900',
-    marginVertical: Spacing.lg,
-  },
-  resultButton: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: BorderRadius.full,
-    alignItems: 'center',
-  },
-  resultButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  secondaryButton: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    alignItems: 'center',
-    marginTop: 10,
-  },
+
   secondaryButtonText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
   },
 });

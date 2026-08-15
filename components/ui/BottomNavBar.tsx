@@ -106,13 +106,23 @@ export function BottomNavBar({
   /**
    * Normalize pathname.
    *
-   * Expo Router can report different representations
-   * of route groups depending on navigation state.
+   * IMPORTANT: expo-router's usePathname() strips route-GROUP
+   * segments like "(tabs)" from the URL — they only exist on disk
+   * for file organization, never in the actual pathname. So the
+   * "protocol" tab reports as "/protocol", not "/(tabs)/protocol".
+   *
+   * We strip any "(group)" segment defensively so this keeps working
+   * regardless of which representation is passed in.
    */
-  const normalizedRoute =
-    currentRoute === '/'
-      ? '/(tabs)'
-      : currentRoute;
+  const stripGroups = (path: string) =>
+    path
+      .replace(/\/\([^)]+\)/g, '') // remove /(group) segments anywhere
+      .replace(/\/{2,}/g, '/');    // collapse any resulting //
+
+  const normalizedRoute = (() => {
+    const stripped = stripGroups(currentRoute);
+    return stripped === '' ? '/' : stripped;
+  })();
 
   /**
    * Determine active navigation item.
@@ -120,37 +130,36 @@ export function BottomNavBar({
   const isActiveRoute = (item: NavItem) => {
     if (item.id === 'home') {
       return (
-        normalizedRoute === '/(tabs)' ||
-        normalizedRoute === '/(tabs)/' ||
-        normalizedRoute === '/'
+        normalizedRoute === '/' ||
+        normalizedRoute === '/index'
       );
     }
 
     if (item.id === 'nova') {
       return (
-        normalizedRoute === '/(tabs)/assistant' ||
-        normalizedRoute.startsWith('/(tabs)/assistant/')
+        normalizedRoute === '/assistant' ||
+        normalizedRoute.startsWith('/assistant/')
       );
     }
 
     if (item.id === 'brain') {
       return (
-        normalizedRoute === '/(tabs)/protocol' ||
-        normalizedRoute.startsWith('/(tabs)/protocol/')
+        normalizedRoute === '/protocol' ||
+        normalizedRoute.startsWith('/protocol/')
       );
     }
 
     if (item.id === 'calendar') {
       return (
-        normalizedRoute === '/(tabs)/schedule' ||
-        normalizedRoute.startsWith('/(tabs)/schedule/')
+        normalizedRoute === '/schedule' ||
+        normalizedRoute.startsWith('/schedule/')
       );
     }
 
     if (item.id === 'profile') {
       return (
-        normalizedRoute === '/(tabs)/profile' ||
-        normalizedRoute.startsWith('/(tabs)/profile/')
+        normalizedRoute === '/profile' ||
+        normalizedRoute.startsWith('/profile/')
       );
     }
 

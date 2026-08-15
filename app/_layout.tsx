@@ -10,108 +10,99 @@ import {
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
+
 import {
   Inter_400Regular,
   Inter_500Medium,
   Inter_600SemiBold,
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
+
 import * as SplashScreen from 'expo-splash-screen';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import {
   ThemeProvider,
   useTheme,
 } from '../context/ThemeContext';
+
 import {
   LanguageProvider,
   useLanguage,
 } from '../context/LanguageContext';
+
 import {
   AuthProvider,
   useAuth,
 } from '../context/AuthContext';
+
 import {
   AssessmentProvider,
 } from '../context/AssessmentContext';
+
 import {
   SplashScreen as AppSplashScreen,
 } from '../components/screens/SplashScreen';
+
 import {
   BottomNavBar,
 } from '../components/ui/BottomNavBar';
+
 import {
   AuthScreen,
 } from '../components/screens/AuthScreen';
-import {
-  AssessmentScreen,
-} from '../components/screens/AssessmentScreen';
+
 import { useFrameworkReady } from '../hooks/useFrameworkReady';
 
+
+// Prevent native splash from hiding automatically
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-const ASSESSMENT_KEY = '@neurolia_assessment_completed';
 
 function AppContent() {
   const {
     isAuthenticated,
     isLoading: authLoading,
   } = useAuth();
+
   const {
     colors,
     theme,
   } = useTheme();
+
   const {
     isRTL,
   } = useLanguage();
+
   const router = useRouter();
   const pathname = usePathname();
+
   const [showSplash, setShowSplash] = useState(true);
-  const [
-    assessmentCompleted,
-    setAssessmentCompleted,
-  ] = useState(false);
-  const [
-    assessmentLoading,
-    setAssessmentLoading,
-  ] = useState(true);
+
+
+  // --------------------------------------------------
+  // RTL
+  // --------------------------------------------------
 
   useEffect(() => {
     I18nManager.allowRTL(isRTL);
     I18nManager.forceRTL(isRTL);
   }, [isRTL]);
 
-  useEffect(() => {
-    let mounted = true;
-    const loadAssessmentStatus = async () => {
-      try {
-        const saved = await AsyncStorage.getItem(
-          ASSESSMENT_KEY
-        );
-        if (mounted) {
-          setAssessmentCompleted(
-            saved === 'true'
-          );
-        }
-      } catch (error) {
-        if (mounted) {
-          setAssessmentCompleted(false);
-        }
-      } finally {
-        if (mounted) {
-          setAssessmentLoading(false);
-        }
-      }
-    };
-    loadAssessmentStatus();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+
+  // --------------------------------------------------
+  // Splash completion
+  // --------------------------------------------------
 
   const handleSplashComplete = () => {
     setShowSplash(false);
+
     SplashScreen.hideAsync().catch(() => {});
   };
+
+
+  // --------------------------------------------------
+  // APP SPLASH
+  // --------------------------------------------------
 
   if (showSplash) {
     return (
@@ -121,17 +112,18 @@ function AppContent() {
     );
   }
 
-  if (
-    authLoading ||
-    assessmentLoading
-  ) {
+
+  // --------------------------------------------------
+  // AUTH LOADING
+  // --------------------------------------------------
+
+  if (authLoading) {
     return (
       <View
         style={[
           styles.container,
           {
-            backgroundColor:
-              colors.background,
+            backgroundColor: colors.background,
             justifyContent: 'center',
             alignItems: 'center',
           },
@@ -144,6 +136,7 @@ function AppContent() {
               : 'dark'
           }
         />
+
         <ActivityIndicator
           size="large"
           color={colors.primary}
@@ -152,14 +145,18 @@ function AppContent() {
     );
   }
 
+
+  // --------------------------------------------------
+  // LOGIN / REGISTER
+  // --------------------------------------------------
+
   if (!isAuthenticated) {
     return (
       <View
         style={[
           styles.container,
           {
-            backgroundColor:
-              colors.background,
+            backgroundColor: colors.background,
           },
         ]}
       >
@@ -170,53 +167,29 @@ function AppContent() {
               : 'dark'
           }
         />
+
         <AuthScreen />
       </View>
     );
   }
 
-  if (!assessmentCompleted) {
-    return (
-      <View
-        style={[
-          styles.container,
-          {
-            backgroundColor:
-              colors.background,
-          },
-        ]}
-      >
-        <StatusBar
-          style={
-            theme === 'dark'
-              ? 'light'
-              : 'dark'
-          }
-        />
-        <AssessmentScreen
-          onComplete={async (results) => {
-            try {
-              await AsyncStorage.setItem(
-                ASSESSMENT_KEY,
-                'true'
-              );
-              setAssessmentCompleted(true);
-            } catch (error) {
-              console.error(error);
-            }
-          }}
-        />
-      </View>
-    );
-  }
+
+  // --------------------------------------------------
+  // AUTHENTICATED APP
+  //
+  // IMPORTANT:
+  // Assessment is completely removed from the
+  // initial authentication flow.
+  //
+  // Login → App directly
+  // --------------------------------------------------
 
   return (
     <View
       style={[
         styles.container,
         {
-          backgroundColor:
-            colors.background,
+          backgroundColor: colors.background,
         },
       ]}
     >
@@ -227,9 +200,9 @@ function AppContent() {
             : 'dark'
         }
       />
-      <View
-        style={styles.contentContainer}
-      >
+
+      {/* Main application */}
+      <View style={styles.contentContainer}>
         <Stack
           screenOptions={{
             headerShown: false,
@@ -238,11 +211,15 @@ function AppContent() {
           <Stack.Screen
             name="(tabs)"
           />
+
           <Stack.Screen
             name="settings"
           />
         </Stack>
       </View>
+
+
+      {/* Bottom Navigation */}
       <BottomNavBar
         currentRoute={pathname}
         onNavigate={(route) => {
@@ -253,8 +230,14 @@ function AppContent() {
   );
 }
 
+
+// --------------------------------------------------
+// ROOT LAYOUT
+// --------------------------------------------------
+
 export default function RootLayout() {
   useFrameworkReady();
+
   const [
     fontsLoaded,
     fontError,
@@ -265,12 +248,15 @@ export default function RootLayout() {
     Inter_700Bold,
   });
 
+
+  // Hide native splash after fonts load
   useEffect(() => {
     if (
       fontsLoaded ||
       fontError
     ) {
-      SplashScreen.hideAsync()
+      SplashScreen
+        .hideAsync()
         .catch(() => {});
     }
   }, [
@@ -278,6 +264,8 @@ export default function RootLayout() {
     fontError,
   ]);
 
+
+  // Wait for fonts
   if (
     !fontsLoaded &&
     !fontError
@@ -285,29 +273,46 @@ export default function RootLayout() {
     return null;
   }
 
+
   return (
     <GestureHandlerRootView
       style={styles.container}
     >
       <SafeAreaProvider>
+
         <ThemeProvider>
+
           <LanguageProvider>
+
             <AuthProvider>
+
               <AssessmentProvider>
+
                 <AppContent />
+
               </AssessmentProvider>
+
             </AuthProvider>
+
           </LanguageProvider>
+
         </ThemeProvider>
+
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
 
+
+// --------------------------------------------------
+// STYLES
+// --------------------------------------------------
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
   contentContainer: {
     flex: 1,
   },
