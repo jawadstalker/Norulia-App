@@ -11,8 +11,6 @@ import React, {
     StyleSheet,
     TouchableOpacity,
     ScrollView,
-    Alert,
-    Platform,
   } from 'react-native';
   
   import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -25,6 +23,8 @@ import React, {
     X,
     Languages,
     Sparkles,
+    Clock3,
+    Target,
   } from 'lucide-react-native';
   
   import { useRouter } from 'expo-router';
@@ -39,17 +39,19 @@ import React, {
   
   type GameLanguage = 'fa' | 'en';
   
-  type WordItem = {
-    word: string;
-    shuffled: string[];
+  type LetterItem = {
+    letter: string;
+    index: number;
   };
   
-  type GameStatus = 'playing' | 'correct' | 'gameover';
+  type GameStatus = 'playing' | 'gameover';
   
   
   // =====================================================
-  // STORAGE
+  // CONSTANTS
   // =====================================================
+  
+  const GAME_DURATION = 20;
   
   const BEST_SCORE_FA_KEY = '@anologram_best_score_fa';
   const BEST_SCORE_EN_KEY = '@anologram_best_score_en';
@@ -80,6 +82,28 @@ import React, {
     'آرامش',
     'ذهن',
     'دانش',
+  
+    // Additional words
+    'امید',
+    'آینده',
+    'توانا',
+    'زیبا',
+    'آرام',
+    'خاطره',
+    'لباس',
+    'پنجره',
+    'رودخانه',
+    'کوهستان',
+    'جنگل',
+    'صبح',
+    'شب',
+    'ماه',
+    'خوراک',
+    'سلامت',
+    'آگاهی',
+    'تفکر',
+    'تمرکز',
+    'سرعت',
   ];
   
   const ENGLISH_WORDS = [
@@ -103,6 +127,28 @@ import React, {
     'calm',
     'mind',
     'knowledge',
+  
+    // Additional words
+    'hope',
+    'future',
+    'strong',
+    'beautiful',
+    'memory',
+    'window',
+    'river',
+    'mountain',
+    'forest',
+    'morning',
+    'night',
+    'moon',
+    'health',
+    'focus',
+    'speed',
+    'brain',
+    'thought',
+    'energy',
+    'nature',
+    'wisdom',
   ];
   
   
@@ -126,29 +172,98 @@ import React, {
   }
   
   
-  function shuffleWord(word: string): string[] {
-    const chars = Array.from(word);
+  /**
+   * Better Persian normalization.
+   *
+   * Handles:
+   * ي -> ی
+   * ى -> ی
+   * ك -> ک
+   * ة -> ه
+   * Arabic/Persian whitespace
+   * ZWNJ / zero-width characters
+   * Tatweel
+   */
+  function normalizePersian(value: string): string {
+    return value
+      .normalize('NFKC')
+      .trim()
   
-    let shuffled = shuffleArray(chars);
+      // Arabic Yeh variants
+      .replace(/ي/g, 'ی')
+      .replace(/ى/g, 'ی')
   
-    // Avoid showing the original word
-    if (
-      shuffled.join('') === word &&
-      chars.length > 1
-    ) {
-      shuffled = shuffleArray(chars);
-    }
+      // Arabic Kaf
+      .replace(/ك/g, 'ک')
   
-    return shuffled;
+      // Arabic Teh Marbuta
+      .replace(/ة/g, 'ه')
+  
+      // Remove tatweel
+      .replace(/ـ/g, '')
+  
+      // Remove zero-width characters
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+  
+      // Remove Persian/Arabic whitespace
+      .replace(/\s+/g, '');
   }
   
   
-  function normalizePersian(value: string) {
+  function normalizeEnglish(value: string): string {
     return value
+      .normalize('NFKC')
       .trim()
-      .replace(/ي/g, 'ی')
-      .replace(/ك/g, 'ک')
-      .replace(/\s+/g, '');
+      .replace(/\s+/g, '')
+      .toLowerCase();
+  }
+  
+  
+  function normalizeAnswer(
+    value: string,
+    language: GameLanguage
+  ): string {
+    return language === 'fa'
+      ? normalizePersian(value)
+      : normalizeEnglish(value);
+  }
+  
+  
+  function shuffleWord(word: string): string[] {
+    const characters = Array.from(word);
+  
+    if (characters.length <= 1) {
+      return characters;
+    }
+  
+    let shuffled = shuffleArray(characters);
+  
+    const original = characters.join('');
+  
+    // Try several times to avoid showing the original word.
+    let attempts = 0;
+  
+    while (
+      shuffled.join('') === original &&
+      attempts < 10
+    ) {
+      shuffled = shuffleArray(characters);
+      attempts++;
+    }
+  
+    // If random shuffle still equals original,
+    // swap two positions manually.
+    if (
+      shuffled.join('') === original &&
+      shuffled.length > 1
+    ) {
+      [shuffled[0], shuffled[1]] = [
+        shuffled[1],
+        shuffled[0],
+      ];
+    }
+  
+    return shuffled;
   }
   
   
@@ -159,73 +274,49 @@ import React, {
   export default function AnologramGame() {
     const router = useRouter();
   
-    const {
-      colors,
-    } = useTheme();
+    const { colors } = useTheme();
+    const { isRTL } = useLanguage();
   
-    const {
-      isRTL,
-    } = useLanguage();
-  
-  
-    // ---------------------------------------------------
+    // ===================================================
     // LANGUAGE
-    // ---------------------------------------------------
+    // ===================================================
   
-    const [
-      gameLanguage,
-      setGameLanguage,
-    ] = useState<GameLanguage>('fa');
+    const [gameLanguage, setGameLanguage] =
+      useState<GameLanguage>('fa');
   
   
-    // ---------------------------------------------------
+    // ===================================================
     // GAME STATE
-    // ---------------------------------------------------
+    // ===================================================
   
-    const [
-      currentIndex,
-      setCurrentIndex,
-    ] = useState(0);
+    const [currentIndex, setCurrentIndex] =
+      useState(0);
   
-    const [
-      score,
-      setScore,
-    ] = useState(0);
+    const [score, setScore] =
+      useState(0);
   
-    const [
-      bestScore,
-      setBestScore,
-    ] = useState(0);
+    const [bestScore, setBestScore] =
+      useState(0);
   
-    const [
-      selectedLetters,
-      setSelectedLetters,
-    ] = useState<
-      {
-        letter: string;
-        index: number;
-      }[]
-    >([]);
+    const [timeLeft, setTimeLeft] =
+      useState(GAME_DURATION);
   
-    const [
-      availableLetters,
-      setAvailableLetters,
-    ] = useState<
-      {
-        letter: string;
-        index: number;
-      }[]
-    >([]);
+    const [status, setStatus] =
+      useState<GameStatus>('playing');
   
-    const [
-      status,
-      setStatus,
-    ] = useState<GameStatus>('playing');
+    const [selectedLetters, setSelectedLetters] =
+      useState<LetterItem[]>([]);
+  
+    const [availableLetters, setAvailableLetters] =
+      useState<LetterItem[]>([]);
+  
+    const [showWrong, setShowWrong] =
+      useState(false);
   
   
-    // ---------------------------------------------------
+    // ===================================================
     // WORDS
-    // ---------------------------------------------------
+    // ===================================================
   
     const words = useMemo(() => {
       const source =
@@ -237,12 +328,119 @@ import React, {
     }, [gameLanguage]);
   
   
-    const currentWord = words[currentIndex] || words[0];
+    const currentWord =
+      words[currentIndex % words.length];
   
   
-    // ---------------------------------------------------
+    // ===================================================
+    // TEXT
+    // ===================================================
+  
+    const isPersian =
+      gameLanguage === 'fa';
+  
+    const texts = isPersian
+      ? {
+          title: 'آناگرام',
+          subtitle:
+            'حروف را مرتب کن و کلمه را بساز',
+  
+          score: 'امتیاز',
+          best: 'رکورد',
+          time: 'زمان',
+  
+          chooseLanguage:
+            'زبان بازی',
+  
+          persian: 'فارسی',
+          english: 'English',
+  
+          instruction:
+            'حروف را به ترتیب انتخاب کن تا یک کلمه معنی‌دار ساخته شود.',
+  
+          check:
+            'بررسی پاسخ',
+  
+          correct:
+            'درست',
+  
+          wrong:
+            'پاسخ اشتباه',
+  
+          gameOver:
+            'زمان تمام شد',
+  
+          finalScore:
+            'امتیاز نهایی',
+  
+          record:
+            'رکورد',
+  
+          newRecord:
+            'رکورد جدید',
+  
+          playAgain:
+            'شروع دوباره',
+  
+          back:
+            'بازگشت',
+  
+          seconds:
+            'ثانیه',
+        }
+      : {
+          title: 'Anologram',
+          subtitle:
+            'Arrange the letters and build the word',
+  
+          score: 'Score',
+          best: 'Best',
+          time: 'Time',
+  
+          chooseLanguage:
+            'Game language',
+  
+          persian: 'فارسی',
+          english: 'English',
+  
+          instruction:
+            'Select the letters in order to create a meaningful word.',
+  
+          check:
+            'Check Answer',
+  
+          correct:
+            'Correct',
+  
+          wrong:
+            'Wrong answer',
+  
+          gameOver:
+            'Time is up',
+  
+          finalScore:
+            'Final Score',
+  
+          record:
+            'Record',
+  
+          newRecord:
+            'New Record',
+  
+          playAgain:
+            'Play Again',
+  
+          back:
+            'Back',
+  
+          seconds:
+            'seconds',
+        };
+  
+  
+    // ===================================================
     // LOAD BEST SCORE
-    // ---------------------------------------------------
+    // ===================================================
   
     const loadBestScore = useCallback(
       async (language: GameLanguage) => {
@@ -256,7 +454,14 @@ import React, {
             await AsyncStorage.getItem(key);
   
           if (saved) {
-            setBestScore(Number(saved));
+            const numericScore =
+              Number(saved);
+  
+            setBestScore(
+              Number.isFinite(numericScore)
+                ? numericScore
+                : 0
+            );
           } else {
             setBestScore(0);
           }
@@ -268,32 +473,67 @@ import React, {
     );
   
   
-    // ---------------------------------------------------
-    // PREPARE WORD
-    // ---------------------------------------------------
+    // ===================================================
+    // SAVE BEST SCORE
+    // ===================================================
   
-    const prepareWord = useCallback(
-      (word: string) => {
-        const letters = shuffleWord(word);
+    const saveBestScore = useCallback(
+      async (
+        language: GameLanguage,
+        newScore: number
+      ) => {
+        try {
+          const key =
+            language === 'fa'
+              ? BEST_SCORE_FA_KEY
+              : BEST_SCORE_EN_KEY;
   
-        setAvailableLetters(
-          letters.map(
-            (letter, index) => ({
-              letter,
-              index,
-            })
-          )
-        );
-  
-        setSelectedLetters([]);
+          await AsyncStorage.setItem(
+            key,
+            String(newScore)
+          );
+        } catch {
+          // Storage failure should not stop gameplay.
+        }
       },
       []
     );
   
   
-    // ---------------------------------------------------
-    // INITIALIZE
-    // ---------------------------------------------------
+    // ===================================================
+    // PREPARE CURRENT WORD
+    // ===================================================
+  
+    const prepareWord = useCallback(
+      (word: string) => {
+        if (!word) {
+          setAvailableLetters([]);
+          setSelectedLetters([]);
+          return;
+        }
+  
+        const shuffled =
+          shuffleWord(word);
+  
+        const items: LetterItem[] =
+          shuffled.map(
+            (letter, index) => ({
+              letter,
+              index,
+            })
+          );
+  
+        setAvailableLetters(items);
+        setSelectedLetters([]);
+        setShowWrong(false);
+      },
+      []
+    );
+  
+  
+    // ===================================================
+    // INITIAL LOAD
+    // ===================================================
   
     useEffect(() => {
       loadBestScore(gameLanguage);
@@ -302,6 +542,10 @@ import React, {
       loadBestScore,
     ]);
   
+  
+    // ===================================================
+    // PREPARE WORD WHEN WORD CHANGES
+    // ===================================================
   
     useEffect(() => {
       if (currentWord) {
@@ -313,9 +557,36 @@ import React, {
     ]);
   
   
-    // ---------------------------------------------------
+    // ===================================================
+    // TIMER
+    // ===================================================
+  
+    useEffect(() => {
+      if (status !== 'playing') {
+        return;
+      }
+  
+      const timer =
+        setInterval(() => {
+          setTimeLeft(previous => {
+            if (previous <= 1) {
+              setStatus('gameover');
+              return 0;
+            }
+  
+            return previous - 1;
+          });
+        }, 1000);
+  
+      return () => {
+        clearInterval(timer);
+      };
+    }, [status]);
+  
+  
+    // ===================================================
     // SELECT LETTER
-    // ---------------------------------------------------
+    // ===================================================
   
     const handleLetterPress = (
       letter: string,
@@ -324,6 +595,8 @@ import React, {
       if (status !== 'playing') {
         return;
       }
+  
+      setShowWrong(false);
   
       setSelectedLetters(previous => [
         ...previous,
@@ -341,9 +614,9 @@ import React, {
     };
   
   
-    // ---------------------------------------------------
+    // ===================================================
     // REMOVE SELECTED LETTER
-    // ---------------------------------------------------
+    // ===================================================
   
     const handleSelectedLetterPress = (
       selectedIndex: number
@@ -359,6 +632,8 @@ import React, {
         return;
       }
   
+      setShowWrong(false);
+  
       setSelectedLetters(previous =>
         previous.filter(
           (_, index) =>
@@ -373,14 +648,15 @@ import React, {
     };
   
   
-    // ---------------------------------------------------
+    // ===================================================
     // CHECK ANSWER
-    // ---------------------------------------------------
+    // ===================================================
   
     const checkAnswer = async () => {
       if (
+        status !== 'playing' ||
         selectedLetters.length === 0 ||
-        status !== 'playing'
+        !currentWord
       ) {
         return;
       }
@@ -391,174 +667,143 @@ import React, {
           .join('');
   
       const normalizedAnswer =
-        gameLanguage === 'fa'
-          ? normalizePersian(answer)
-          : answer.toLowerCase();
+        normalizeAnswer(
+          answer,
+          gameLanguage
+        );
   
       const normalizedWord =
-        gameLanguage === 'fa'
-          ? normalizePersian(currentWord)
-          : currentWord.toLowerCase();
+        normalizeAnswer(
+          currentWord,
+          gameLanguage
+        );
   
   
-      // -----------------------------------------------
+      // ================================================
       // CORRECT
-      // -----------------------------------------------
+      // ================================================
   
       if (
-        normalizedAnswer === normalizedWord
+        normalizedAnswer ===
+        normalizedWord
       ) {
-        const newScore = score + 1;
+        setShowWrong(false);
   
-        setScore(newScore);
-        setStatus('correct');
+        setScore(previousScore => {
+          const newScore =
+            previousScore + 1;
   
-        if (newScore > bestScore) {
-          setBestScore(newScore);
+          if (newScore > bestScore) {
+            setBestScore(newScore);
   
-          const key =
-            gameLanguage === 'fa'
-              ? BEST_SCORE_FA_KEY
-              : BEST_SCORE_EN_KEY;
-  
-          try {
-            await AsyncStorage.setItem(
-              key,
-              String(newScore)
+            saveBestScore(
+              gameLanguage,
+              newScore
             );
-          } catch {}
-        }
+          }
+  
+          return newScore;
+        });
+  
+        // Immediately move to the next word.
+        setCurrentIndex(previous =>
+          previous + 1
+        );
   
         return;
       }
   
   
-      // -----------------------------------------------
+      // ================================================
       // WRONG
-      // -----------------------------------------------
+      // ================================================
   
-      setStatus('gameover');
+      // IMPORTANT:
+      // Wrong answer DOES NOT end the game.
+      // The user can correct the letters.
+      setShowWrong(true);
     };
   
   
-    // ---------------------------------------------------
+    // ===================================================
     // NEXT WORD
-    // ---------------------------------------------------
+    // ===================================================
   
     const nextWord = () => {
-      setCurrentIndex(
-        previous =>
-          previous + 1
-      );
+      if (status !== 'playing') {
+        return;
+      }
   
-      setStatus('playing');
+      setShowWrong(false);
+  
+      setCurrentIndex(previous =>
+        previous + 1
+      );
     };
   
   
-    // ---------------------------------------------------
-    // RESTART
-    // ---------------------------------------------------
+    // ===================================================
+    // RESTART GAME
+    // ===================================================
   
     const restartGame = () => {
       setScore(0);
       setCurrentIndex(0);
+      setTimeLeft(GAME_DURATION);
       setStatus('playing');
+      setShowWrong(false);
   
       const source =
         gameLanguage === 'fa'
           ? FARSI_WORDS
           : ENGLISH_WORDS;
   
-      const firstWord =
-        shuffleArray(source)[0];
+      const shuffledSource =
+        shuffleArray(source);
   
-      prepareWord(firstWord);
+      const firstWord =
+        shuffledSource[0];
+  
+      if (firstWord) {
+        prepareWord(firstWord);
+      }
     };
   
   
-    // ---------------------------------------------------
+    // ===================================================
     // CHANGE LANGUAGE
-    // ---------------------------------------------------
+    // ===================================================
   
     const changeLanguage = (
       language: GameLanguage
     ) => {
+      if (
+        language === gameLanguage
+      ) {
+        return;
+      }
+  
       setGameLanguage(language);
+  
       setScore(0);
       setCurrentIndex(0);
+      setTimeLeft(GAME_DURATION);
       setStatus('playing');
+      setShowWrong(false);
     };
   
   
-    // ---------------------------------------------------
-    // TEXT
-    // ---------------------------------------------------
+    // ===================================================
+    // TIMER PROGRESS
+    // ===================================================
   
-    const isPersian =
-      gameLanguage === 'fa';
-  
-    const texts = isPersian
-      ? {
-          title: 'آناگرام',
-          subtitle:
-            'حروف را مرتب کن و کلمه را بساز',
-          score: 'امتیاز',
-          best: 'رکورد',
-          chooseLanguage:
-            'زبان بازی',
-          persian: 'فارسی',
-          english: 'English',
-          check: 'بررسی پاسخ',
-          correct:
-            'پاسخ درست است',
-          next:
-            'کلمه بعدی',
-          gameOver:
-            'بازی تمام شد',
-          wrong:
-            'ترتیب حروف درست نیست',
-          finalScore:
-            'امتیاز نهایی',
-          playAgain:
-            'شروع دوباره',
-          instruction:
-            'حروف را به ترتیب انتخاب کن تا یک کلمه معنی‌دار ساخته شود.',
-          newRecord:
-            'رکورد جدید',
-        }
-      : {
-          title: 'Anologram',
-          subtitle:
-            'Arrange the letters and build the word',
-          score: 'Score',
-          best: 'Best',
-          chooseLanguage:
-            'Game language',
-          persian: 'فارسی',
-          english: 'English',
-          check: 'Check Answer',
-          correct:
-            'Correct answer',
-          next:
-            'Next Word',
-          gameOver:
-            'Game Over',
-          wrong:
-            'The letter order is incorrect',
-          finalScore:
-            'Final Score',
-          playAgain:
-            'Play Again',
-          instruction:
-            'Select the letters in order to create a meaningful word.',
-          newRecord:
-            'New Record',
-        };
+    const timerProgress =
+      timeLeft / GAME_DURATION;
   
   
-    // ---------------------------------------------------
+    // ===================================================
     // RENDER
-    // ---------------------------------------------------
+    // ===================================================
   
     return (
       <View
@@ -571,9 +816,9 @@ import React, {
         ]}
       >
   
-        {/* ================================================
+        {/* =================================================
             HEADER
-           ================================================ */}
+           ================================================= */}
   
         <View
           style={[
@@ -585,7 +830,7 @@ import React, {
           ]}
         >
   
-          {/* BACK BUTTON — LEFT */}
+          {/* BACK BUTTON — ALWAYS LEFT */}
   
           <TouchableOpacity
             onPress={() => router.back()}
@@ -599,6 +844,10 @@ import React, {
                   colors.border,
               },
             ]}
+            accessibilityRole="button"
+            accessibilityLabel={
+              texts.back
+            }
           >
             <ArrowLeft
               size={22}
@@ -608,7 +857,7 @@ import React, {
           </TouchableOpacity>
   
   
-          {/* TITLE — RIGHT */}
+          {/* TITLE */}
   
           <View
             style={[
@@ -646,10 +895,12 @@ import React, {
                   {
                     color:
                       colors.text,
+  
                     marginLeft:
                       isPersian
                         ? 0
                         : 8,
+  
                     marginRight:
                       isPersian
                         ? 8
@@ -668,6 +919,7 @@ import React, {
                 {
                   color:
                     colors.textSecondary,
+  
                   textAlign:
                     isPersian
                       ? 'right'
@@ -683,20 +935,26 @@ import React, {
         </View>
   
   
+        {/* =================================================
+            CONTENT
+           ================================================= */}
+  
         <ScrollView
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={
+            false
+          }
           contentContainerStyle={
             styles.scrollContent
           }
         >
   
-          {/* ============================================
-              LANGUAGE
-             ============================================ */}
+          {/* =================================================
+              LANGUAGE SELECTOR
+             ================================================= */}
   
           <View
             style={[
-              styles.languageSection,
+              styles.languageCard,
               {
                 backgroundColor:
                   colors.surface,
@@ -708,7 +966,7 @@ import React, {
   
             <View
               style={[
-                styles.languageHeader,
+                styles.sectionHeader,
                 {
                   flexDirection:
                     isPersian
@@ -719,8 +977,9 @@ import React, {
             >
   
               <Languages
-                size={19}
+                size={20}
                 color={colors.primary}
+                strokeWidth={2}
               />
   
               <Text
@@ -729,14 +988,6 @@ import React, {
                   {
                     color:
                       colors.text,
-                    marginLeft:
-                      isPersian
-                        ? 0
-                        : 8,
-                    marginRight:
-                      isPersian
-                        ? 8
-                        : 0,
                   },
                 ]}
               >
@@ -747,14 +998,24 @@ import React, {
   
   
             <View
-              style={styles.languageButtons}
+              style={[
+                styles.languageButtons,
+                {
+                  flexDirection:
+                    isPersian
+                      ? 'row-reverse'
+                      : 'row',
+                },
+              ]}
             >
   
+              {/* PERSIAN */}
+  
               <TouchableOpacity
+                activeOpacity={0.8}
                 onPress={() =>
                   changeLanguage('fa')
                 }
-                activeOpacity={0.8}
                 style={[
                   styles.languageButton,
                   {
@@ -762,6 +1023,7 @@ import React, {
                       gameLanguage === 'fa'
                         ? colors.primary
                         : colors.background,
+  
                     borderColor:
                       gameLanguage === 'fa'
                         ? colors.primary
@@ -769,10 +1031,9 @@ import React, {
                   },
                 ]}
               >
-  
                 <Text
                   style={[
-                    styles.languageText,
+                    styles.languageButtonText,
                     {
                       color:
                         gameLanguage === 'fa'
@@ -783,15 +1044,16 @@ import React, {
                 >
                   {texts.persian}
                 </Text>
-  
               </TouchableOpacity>
   
   
+              {/* ENGLISH */}
+  
               <TouchableOpacity
+                activeOpacity={0.8}
                 onPress={() =>
                   changeLanguage('en')
                 }
-                activeOpacity={0.8}
                 style={[
                   styles.languageButton,
                   {
@@ -799,6 +1061,7 @@ import React, {
                       gameLanguage === 'en'
                         ? colors.primary
                         : colors.background,
+  
                     borderColor:
                       gameLanguage === 'en'
                         ? colors.primary
@@ -806,10 +1069,9 @@ import React, {
                   },
                 ]}
               >
-  
                 <Text
                   style={[
-                    styles.languageText,
+                    styles.languageButtonText,
                     {
                       color:
                         gameLanguage === 'en'
@@ -820,7 +1082,6 @@ import React, {
                 >
                   {texts.english}
                 </Text>
-  
               </TouchableOpacity>
   
             </View>
@@ -828,17 +1089,19 @@ import React, {
           </View>
   
   
-          {/* ============================================
-              SCORE
-             ============================================ */}
+          {/* =================================================
+              STATS
+             ================================================= */}
   
           <View
-            style={styles.scoreRow}
+            style={styles.statsRow}
           >
+  
+            {/* TIME */}
   
             <View
               style={[
-                styles.scoreCard,
+                styles.statCard,
                 {
                   backgroundColor:
                     colors.surface,
@@ -848,9 +1111,80 @@ import React, {
               ]}
             >
   
+              <Clock3
+                size={20}
+                color={
+                  timeLeft <= 5
+                    ? '#EF4444'
+                    : colors.primary
+                }
+                strokeWidth={2.2}
+              />
+  
               <Text
                 style={[
-                  styles.scoreLabel,
+                  styles.statLabel,
+                  {
+                    color:
+                      colors.textSecondary,
+                  },
+                ]}
+              >
+                {texts.time}
+              </Text>
+  
+              <Text
+                style={[
+                  styles.statValue,
+                  {
+                    color:
+                      timeLeft <= 5
+                        ? '#EF4444'
+                        : colors.text,
+                  },
+                ]}
+              >
+                {timeLeft}
+              </Text>
+  
+              <Text
+                style={[
+                  styles.statSmall,
+                  {
+                    color:
+                      colors.textSecondary,
+                  },
+                ]}
+              >
+                {texts.seconds}
+              </Text>
+  
+            </View>
+  
+  
+            {/* SCORE */}
+  
+            <View
+              style={[
+                styles.statCard,
+                {
+                  backgroundColor:
+                    colors.surface,
+                  borderColor:
+                    colors.border,
+                },
+              ]}
+            >
+  
+              <Target
+                size={20}
+                color={colors.primary}
+                strokeWidth={2.2}
+              />
+  
+              <Text
+                style={[
+                  styles.statLabel,
                   {
                     color:
                       colors.textSecondary,
@@ -862,10 +1196,10 @@ import React, {
   
               <Text
                 style={[
-                  styles.scoreValue,
+                  styles.statValue,
                   {
                     color:
-                      colors.primary,
+                      colors.text,
                   },
                 ]}
               >
@@ -875,9 +1209,11 @@ import React, {
             </View>
   
   
+            {/* BEST */}
+  
             <View
               style={[
-                styles.scoreCard,
+                styles.statCard,
                 {
                   backgroundColor:
                     colors.surface,
@@ -887,43 +1223,30 @@ import React, {
               ]}
             >
   
-              <View
-                style={[
-                  styles.bestTitle,
-                  {
-                    flexDirection:
-                      isPersian
-                        ? 'row-reverse'
-                        : 'row',
-                  },
-                ]}
-              >
-  
-                <Trophy
-                  size={16}
-                  color={colors.primary}
-                />
-  
-                <Text
-                  style={[
-                    styles.scoreLabel,
-                    {
-                      color:
-                        colors.textSecondary,
-                    },
-                  ]}
-                >
-                  {texts.best}
-                </Text>
-  
-              </View>
+              <Trophy
+                size={20}
+                color={colors.primary}
+                strokeWidth={2.2}
+              />
   
               <Text
                 style={[
-                  styles.scoreValue,
+                  styles.statLabel,
                   {
                     color:
-                      colors.primary,
+                      colors.textSecondary,
+                  },
+                ]}
+              >
+                {texts.best}
+              </Text>
+  
+              <Text
+                style={[
+                  styles.statValue,
+                  {
+                    color:
+                      colors.text,
                   },
                 ]}
               >
@@ -935,13 +1258,62 @@ import React, {
           </View>
   
   
-          {/* ============================================
-              INSTRUCTION
-             ============================================ */}
+          {/* =================================================
+              TIMER BAR
+             ================================================= */}
   
           <View
             style={[
-              styles.instruction,
+              styles.timerContainer,
+              {
+                backgroundColor:
+                  colors.surface,
+                borderColor:
+                  colors.border,
+              },
+            ]}
+          >
+  
+            <View
+              style={[
+                styles.timerTrack,
+                {
+                  backgroundColor:
+                    colors.background,
+                },
+              ]}
+            >
+  
+              <View
+                style={[
+                  styles.timerProgress,
+                  {
+                    width:
+                      `${Math.max(
+                        0,
+                        timerProgress * 100
+                      )}%`,
+  
+                    backgroundColor:
+                      timeLeft <= 5
+                        ? '#EF4444'
+                        : colors.primary,
+                  },
+                ]}
+              />
+  
+            </View>
+  
+          </View>
+  
+  
+          {/* =================================================
+              INSTRUCTION
+             ================================================= */}
+  
+          <View
+            style={[
+              styles.instructionCard,
               {
                 backgroundColor:
                   colors.surface,
@@ -957,6 +1329,7 @@ import React, {
                 {
                   color:
                     colors.textSecondary,
+  
                   textAlign:
                     isPersian
                       ? 'right'
@@ -970,82 +1343,60 @@ import React, {
           </View>
   
   
-          {/* ============================================
-              LETTER AREA
-             ============================================ */}
+          {/* =================================================
+              GAME AREA
+             ================================================= */}
   
-          <View
-            style={[
-              styles.gameCard,
-              {
-                backgroundColor:
-                  colors.surface,
-                borderColor:
-                  colors.border,
-              },
-            ]}
-          >
-  
-            {/* SELECTED WORD */}
-  
+          {status === 'playing' ? (
             <View
               style={[
-                styles.answerBox,
+                styles.gameCard,
                 {
+                  backgroundColor:
+                    colors.surface,
                   borderColor:
                     colors.border,
-                  backgroundColor:
-                    colors.background,
                 },
               ]}
             >
   
-              {selectedLetters.length === 0 ? (
-                <Text
-                  style={[
-                    styles.placeholder,
-                    {
-                      color:
-                        colors.textSecondary,
-                    },
-                  ]}
-                >
-                  {isPersian
-                    ? 'حروف انتخاب‌شده اینجا نمایش داده می‌شوند'
-                    : 'Selected letters will appear here'}
-                </Text>
-              ) : (
-                <View
-                  style={[
-                    styles.selectedLetters,
-                    {
-                      flexDirection:
-                        isPersian
-                          ? 'row-reverse'
-                          : 'row',
-                    },
-                  ]}
-                >
+              {/* SELECTED LETTERS */}
   
-                  {selectedLetters.map(
+              <View
+                style={[
+                  styles.answerContainer,
+                  {
+                    direction:
+                      isPersian
+                        ? 'rtl'
+                        : 'ltr',
+                  },
+                ]}
+              >
+  
+                {selectedLetters.length >
+                0 ? (
+                  selectedLetters.map(
                     (item, index) => (
                       <TouchableOpacity
-                        key={`${item.index}-${index}`}
+                        key={`selected-${item.index}-${index}`}
+                        activeOpacity={0.75}
                         onPress={() =>
                           handleSelectedLetterPress(
                             index
                           )
                         }
-                        activeOpacity={0.75}
                         style={[
                           styles.selectedLetter,
                           {
                             backgroundColor:
                               colors.primary,
+  
+                            borderColor:
+                              colors.primary,
                           },
                         ]}
                       >
-  
                         <Text
                           style={
                             styles.selectedLetterText
@@ -1053,89 +1404,148 @@ import React, {
                         >
                           {item.letter}
                         </Text>
-  
                       </TouchableOpacity>
                     )
-                  )}
+                  )
+                ) : (
+                  <Text
+                    style={[
+                      styles.placeholderText,
+                      {
+                        color:
+                          colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    {isPersian
+                      ? 'حروف را انتخاب کن'
+                      : 'Select letters'}
+                  </Text>
+                )}
+  
+              </View>
+  
+  
+              {/* WRONG MESSAGE */}
+  
+              {showWrong && (
+                <View
+                  style={[
+                    styles.feedback,
+                    {
+                      backgroundColor:
+                        'rgba(239,68,68,0.10)',
+                      borderColor:
+                        'rgba(239,68,68,0.25)',
+                    },
+                  ]}
+                >
+  
+                  <X
+                    size={18}
+                    color="#EF4444"
+                    strokeWidth={2.4}
+                  />
+  
+                  <Text
+                    style={[
+                      styles.feedbackText,
+                      {
+                        color:
+                          '#EF4444',
+                      },
+                    ]}
+                  >
+                    {texts.wrong}
+                  </Text>
   
                 </View>
               )}
   
-            </View>
   
+              {/* AVAILABLE LETTERS */}
   
-            {/* AVAILABLE LETTERS */}
+              <View
+                style={[
+                  styles.lettersContainer,
+                  {
+                    flexDirection:
+                      'row',
   
-            <View
-              style={[
-                styles.lettersContainer,
-                {
-                  flexDirection:
-                    isPersian
-                      ? 'row-reverse'
-                      : 'row',
-                },
-              ]}
-            >
+                    justifyContent:
+                      'center',
   
-              {availableLetters.map(
-                item => (
-                  <TouchableOpacity
-                    key={item.index}
-                    onPress={() =>
-                      handleLetterPress(
-                        item.letter,
-                        item.index
-                      )
-                    }
-                    activeOpacity={0.8}
-                    style={[
-                      styles.letterButton,
-                      {
-                        backgroundColor:
-                          colors.background,
-                        borderColor:
-                          colors.border,
-                      },
-                    ]}
-                  >
+                    flexWrap:
+                      'wrap',
+                  },
+                ]}
+              >
   
-                    <Text
+                {availableLetters.map(
+                  item => (
+                    <TouchableOpacity
+                      key={`available-${item.index}`}
+                      activeOpacity={0.75}
+                      onPress={() =>
+                        handleLetterPress(
+                          item.letter,
+                          item.index
+                        )
+                      }
                       style={[
-                        styles.letterText,
+                        styles.letterButton,
                         {
-                          color:
-                            colors.text,
+                          backgroundColor:
+                            colors.background,
+  
+                          borderColor:
+                            colors.border,
                         },
                       ]}
                     >
-                      {item.letter}
-                    </Text>
   
-                  </TouchableOpacity>
-                )
-              )}
+                      <Text
+                        style={[
+                          styles.letterText,
+                          {
+                            color:
+                              colors.text,
+                          },
+                        ]}
+                      >
+                        {item.letter}
+                      </Text>
   
-            </View>
+                    </TouchableOpacity>
+                  )
+                )}
+  
+              </View>
   
   
-            {/* CHECK */}
+              {/* CHECK BUTTON */}
   
-            {status === 'playing' && (
               <TouchableOpacity
+                activeOpacity={0.82}
                 onPress={checkAnswer}
-                activeOpacity={0.85}
+                disabled={
+                  selectedLetters.length ===
+                  0
+                }
                 style={[
                   styles.checkButton,
                   {
                     backgroundColor:
-                      colors.primary,
+                      selectedLetters.length >
+                      0
+                        ? colors.primary
+                        : colors.border,
                   },
                 ]}
               >
   
                 <Check
-                  size={20}
+                  size={21}
                   color="#FFFFFF"
                   strokeWidth={2.5}
                 />
@@ -1149,186 +1559,240 @@ import React, {
                 </Text>
   
               </TouchableOpacity>
-            )}
   
+            </View>
+          ) : (
+            /* =================================================
+               GAME OVER
+               ================================================= */
   
-            {/* CORRECT */}
+            <View
+              style={[
+                styles.gameOverCard,
+                {
+                  backgroundColor:
+                    colors.surface,
+                  borderColor:
+                    colors.border,
+                },
+              ]}
+            >
   
-            {status === 'correct' && (
               <View
                 style={[
-                  styles.resultContainer,
+                  styles.gameOverIcon,
                   {
                     backgroundColor:
-                      colors.background,
-                    borderColor:
                       colors.primary,
                   },
                 ]}
               >
   
-                <View
-                  style={
-                    styles.resultIcon
-                  }
-                >
-                  <Check
-                    size={24}
-                    color={colors.primary}
-                    strokeWidth={2.5}
-                  />
-                </View>
+                <Trophy
+                  size={34}
+                  color="#FFFFFF"
+                  strokeWidth={2}
+                />
   
-                <Text
-                  style={[
-                    styles.resultTitle,
-                    {
-                      color:
-                        colors.text,
-                    },
-                  ]}
-                >
-                  {texts.correct}
-                </Text>
+              </View>
   
-                {score === bestScore && (
-                  <Text
+  
+              <Text
+                style={[
+                  styles.gameOverTitle,
+                  {
+                    color:
+                      colors.text,
+                  },
+                ]}
+              >
+                {texts.gameOver}
+              </Text>
+  
+  
+              <Text
+                style={[
+                  styles.finalScoreLabel,
+                  {
+                    color:
+                      colors.textSecondary,
+                  },
+                ]}
+              >
+                {texts.finalScore}
+              </Text>
+  
+  
+              <Text
+                style={[
+                  styles.finalScore,
+                  {
+                    color:
+                      colors.primary,
+                  },
+                ]}
+              >
+                {score}
+              </Text>
+  
+  
+              {score >= bestScore &&
+                score > 0 && (
+                  <View
                     style={[
-                      styles.newRecord,
+                      styles.recordBadge,
                       {
-                        color:
+                        backgroundColor:
+                          colors.background,
+                        borderColor:
                           colors.primary,
                       },
                     ]}
                   >
-                    {texts.newRecord}
-                  </Text>
+  
+                    <Trophy
+                      size={17}
+                      color={
+                        colors.primary
+                      }
+                      strokeWidth={2}
+                    />
+  
+                    <Text
+                      style={[
+                        styles.recordText,
+                        {
+                          color:
+                            colors.primary,
+                        },
+                      ]}
+                    >
+                      {texts.newRecord}
+                    </Text>
+  
+                  </View>
                 )}
   
-                <TouchableOpacity
-                  onPress={nextWord}
-                  activeOpacity={0.85}
-                  style={[
-                    styles.nextButton,
-                    {
-                      backgroundColor:
-                        colors.primary,
-                    },
-                  ]}
-                >
   
-                  <Text
-                    style={
-                      styles.nextButtonText
-                    }
-                  >
-                    {texts.next}
-                  </Text>
-  
-                </TouchableOpacity>
-  
-              </View>
-            )}
-  
-  
-            {/* GAME OVER */}
-  
-            {status === 'gameover' && (
               <View
-                style={[
-                  styles.resultContainer,
-                  {
-                    backgroundColor:
-                      colors.background,
-                    borderColor:
-                      colors.border,
-                  },
-                ]}
+                style={styles.finalStatsRow}
               >
   
                 <View
                   style={[
-                    styles.resultIcon,
+                    styles.finalStat,
                     {
                       backgroundColor:
-                        colors.surface,
+                        colors.background,
+                      borderColor:
+                        colors.border,
                     },
                   ]}
                 >
-                  <X
-                    size={24}
-                    color={colors.textSecondary}
-                    strokeWidth={2.5}
-                  />
-                </View>
-  
-                <Text
-                  style={[
-                    styles.resultTitle,
-                    {
-                      color:
-                        colors.text,
-                    },
-                  ]}
-                >
-                  {texts.gameOver}
-                </Text>
-  
-                <Text
-                  style={[
-                    styles.wrongText,
-                    {
-                      color:
-                        colors.textSecondary,
-                    },
-                  ]}
-                >
-                  {texts.wrong}
-                </Text>
-  
-                <Text
-                  style={[
-                    styles.finalScore,
-                    {
-                      color:
-                        colors.primary,
-                    },
-                  ]}
-                >
-                  {texts.finalScore}: {score}
-                </Text>
-  
-                <TouchableOpacity
-                  onPress={restartGame}
-                  activeOpacity={0.85}
-                  style={[
-                    styles.nextButton,
-                    {
-                      backgroundColor:
-                        colors.primary,
-                    },
-                  ]}
-                >
-  
-                  <RotateCcw
-                    size={19}
-                    color="#FFFFFF"
-                  />
   
                   <Text
-                    style={
-                      styles.nextButtonText
-                    }
+                    style={[
+                      styles.finalStatLabel,
+                      {
+                        color:
+                          colors.textSecondary,
+                      },
+                    ]}
                   >
-                    {texts.playAgain}
+                    {texts.finalScore}
                   </Text>
   
-                </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.finalStatValue,
+                      {
+                        color:
+                          colors.text,
+                      },
+                    ]}
+                  >
+                    {score}
+                  </Text>
+  
+                </View>
+  
+  
+                <View
+                  style={[
+                    styles.finalStat,
+                    {
+                      backgroundColor:
+                        colors.background,
+                      borderColor:
+                        colors.border,
+                    },
+                  ]}
+                >
+  
+                  <Text
+                    style={[
+                      styles.finalStatLabel,
+                      {
+                        color:
+                          colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    {texts.record}
+                  </Text>
+  
+                  <Text
+                    style={[
+                      styles.finalStatValue,
+                      {
+                        color:
+                          colors.text,
+                      },
+                    ]}
+                  >
+                    {Math.max(
+                      bestScore,
+                      score
+                    )}
+                  </Text>
+  
+                </View>
   
               </View>
-            )}
   
-          </View>
+  
+              {/* RESTART */}
+  
+              <TouchableOpacity
+                activeOpacity={0.82}
+                onPress={restartGame}
+                style={[
+                  styles.restartButton,
+                  {
+                    backgroundColor:
+                      colors.primary,
+                  },
+                ]}
+              >
+  
+                <RotateCcw
+                  size={21}
+                  color="#FFFFFF"
+                  strokeWidth={2.3}
+                />
+  
+                <Text
+                  style={
+                    styles.restartButtonText
+                  }
+                >
+                  {texts.playAgain}
+                </Text>
+  
+              </TouchableOpacity>
+  
+            </View>
+          )}
   
         </ScrollView>
   
@@ -1342,22 +1806,25 @@ import React, {
   // =====================================================
   
   const styles = StyleSheet.create({
+  
     container: {
       flex: 1,
     },
   
+  
+    // ===================================================
+    // HEADER
+    // ===================================================
+  
     header: {
-      minHeight: 88,
-      paddingTop:
-        Platform.OS === 'ios'
-          ? 42
-          : 28,
+      minHeight: 82,
+  
       paddingHorizontal: 18,
-      paddingBottom: 12,
+      paddingTop: 40,
+      paddingBottom: 10,
   
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
   
       borderBottomWidth: 1,
     },
@@ -1365,17 +1832,23 @@ import React, {
     backButton: {
       width: 42,
       height: 42,
+  
       borderRadius: 13,
   
       alignItems: 'center',
       justifyContent: 'center',
   
       borderWidth: 1,
+  
+      flexShrink: 0,
     },
   
     headerTitle: {
       flex: 1,
+  
       marginLeft: 14,
+  
+      justifyContent: 'center',
     },
   
     titleRow: {
@@ -1384,155 +1857,286 @@ import React, {
   
     title: {
       fontSize: 22,
-      fontWeight: '700',
+      fontWeight: '800',
     },
   
     subtitle: {
       marginTop: 3,
+  
       fontSize: 12,
+      fontWeight: '500',
     },
   
+  
+    // ===================================================
+    // SCROLL
+    // ===================================================
+  
     scrollContent: {
-      padding: 18,
+      paddingHorizontal: 18,
+      paddingTop: 18,
       paddingBottom: 40,
     },
   
-    languageSection: {
+  
+    // ===================================================
+    // LANGUAGE
+    // ===================================================
+  
+    languageCard: {
       borderRadius: 18,
+  
       borderWidth: 1,
-      padding: 15,
+  
+      padding: 16,
+  
       marginBottom: 14,
     },
   
-    languageHeader: {
+    sectionHeader: {
       alignItems: 'center',
-      marginBottom: 12,
+  
+      marginBottom: 13,
     },
   
     sectionTitle: {
+      marginHorizontal: 8,
+  
       fontSize: 15,
-      fontWeight: '600',
+      fontWeight: '700',
     },
   
     languageButtons: {
-      flexDirection: 'row',
       gap: 10,
     },
   
     languageButton: {
       flex: 1,
-      height: 44,
+  
+      minHeight: 44,
+  
       borderRadius: 12,
   
+      borderWidth: 1,
+  
       alignItems: 'center',
       justifyContent: 'center',
-  
-      borderWidth: 1,
     },
   
-    languageText: {
+    languageButtonText: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: '700',
     },
   
-    scoreRow: {
+  
+    // ===================================================
+    // STATS
+    // ===================================================
+  
+    statsRow: {
       flexDirection: 'row',
-      gap: 12,
-      marginBottom: 14,
+  
+      gap: 9,
+  
+      marginBottom: 12,
     },
   
-    scoreCard: {
+    statCard: {
       flex: 1,
-      minHeight: 78,
   
-      borderRadius: 18,
+      minHeight: 102,
+  
+      borderRadius: 16,
+  
       borderWidth: 1,
   
-      padding: 13,
       alignItems: 'center',
       justifyContent: 'center',
+  
+      paddingVertical: 11,
     },
   
-    scoreLabel: {
-      fontSize: 12,
-      marginBottom: 3,
+    statLabel: {
+      fontSize: 11,
+      fontWeight: '600',
+  
+      marginTop: 5,
     },
   
-    scoreValue: {
-      fontSize: 25,
+    statValue: {
+      fontSize: 23,
       fontWeight: '800',
+  
+      marginTop: 1,
     },
   
-    bestTitle: {
-      alignItems: 'center',
-      gap: 5,
+    statSmall: {
+      fontSize: 9,
+      marginTop: -2,
     },
   
-    instruction: {
-      borderRadius: 16,
+  
+    // ===================================================
+    // TIMER
+    // ===================================================
+  
+    timerContainer: {
+      borderRadius: 12,
+  
       borderWidth: 1,
-      padding: 14,
+  
+      padding: 5,
+  
+      marginBottom: 12,
+    },
+  
+    timerTrack: {
+      height: 6,
+  
+      borderRadius: 100,
+  
+      overflow: 'hidden',
+    },
+  
+    timerProgress: {
+      height: '100%',
+  
+      borderRadius: 100,
+    },
+  
+  
+    // ===================================================
+    // INSTRUCTION
+    // ===================================================
+  
+    instructionCard: {
+      borderRadius: 16,
+  
+      borderWidth: 1,
+  
+      paddingHorizontal: 16,
+      paddingVertical: 13,
+  
       marginBottom: 14,
     },
   
     instructionText: {
       fontSize: 13,
       lineHeight: 21,
+      fontWeight: '500',
     },
+  
+  
+    // ===================================================
+    // GAME CARD
+    // ===================================================
   
     gameCard: {
       borderRadius: 22,
+  
       borderWidth: 1,
+  
       padding: 18,
+  
+      minHeight: 330,
     },
   
-    answerBox: {
-      minHeight: 92,
+  
+    // ===================================================
+    // ANSWER
+    // ===================================================
+  
+    answerContainer: {
+      minHeight: 74,
+  
       borderRadius: 17,
+  
       borderWidth: 1,
+  
+      borderColor: 'rgba(128,128,128,0.18)',
   
       alignItems: 'center',
       justifyContent: 'center',
   
-      padding: 12,
-      marginBottom: 18,
-    },
+      flexDirection: 'row',
   
-    placeholder: {
-      fontSize: 12,
-      textAlign: 'center',
-    },
-  
-    selectedLetters: {
       flexWrap: 'wrap',
-      justifyContent: 'center',
-      gap: 8,
+  
+      padding: 10,
+  
+      marginBottom: 14,
+    },
+  
+    placeholderText: {
+      fontSize: 13,
+      fontWeight: '500',
     },
   
     selectedLetter: {
-      minWidth: 46,
-      height: 52,
+      minWidth: 44,
+      height: 48,
   
-      paddingHorizontal: 10,
+      borderRadius: 12,
   
-      borderRadius: 13,
+      borderWidth: 1,
   
       alignItems: 'center',
       justifyContent: 'center',
+  
+      margin: 4,
+  
+      paddingHorizontal: 9,
     },
   
     selectedLetterText: {
       color: '#FFFFFF',
-      fontSize: 22,
-      fontWeight: '700',
+  
+      fontSize: 21,
+      fontWeight: '800',
     },
   
-    lettersContainer: {
-      flexWrap: 'wrap',
-      justifyContent: 'center',
-      gap: 10,
   
-      marginBottom: 20,
+    // ===================================================
+    // FEEDBACK
+    // ===================================================
+  
+    feedback: {
+      minHeight: 42,
+  
+      borderRadius: 12,
+  
+      borderWidth: 1,
+  
+      flexDirection: 'row',
+  
+      alignItems: 'center',
+      justifyContent: 'center',
+  
+      marginBottom: 12,
+  
+      paddingHorizontal: 12,
+    },
+  
+    feedbackText: {
+      fontSize: 13,
+      fontWeight: '700',
+  
+      marginLeft: 7,
+    },
+  
+  
+    // ===================================================
+    // LETTERS
+    // ===================================================
+  
+    lettersContainer: {
+      minHeight: 115,
+  
+      alignItems: 'center',
+  
+      paddingVertical: 5,
+  
+      marginBottom: 12,
     },
   
     letterButton: {
@@ -1540,97 +2144,182 @@ import React, {
       height: 52,
   
       borderRadius: 14,
+  
       borderWidth: 1,
   
       alignItems: 'center',
       justifyContent: 'center',
+  
+      margin: 5,
     },
   
     letterText: {
-      fontSize: 21,
-      fontWeight: '700',
+      fontSize: 22,
+      fontWeight: '800',
     },
+  
+  
+    // ===================================================
+    // CHECK BUTTON
+    // ===================================================
   
     checkButton: {
       height: 52,
+  
       borderRadius: 15,
   
       flexDirection: 'row',
+  
       alignItems: 'center',
       justifyContent: 'center',
   
-      gap: 8,
+      marginTop: 5,
     },
   
     checkButtonText: {
       color: '#FFFFFF',
+  
       fontSize: 15,
-      fontWeight: '700',
+      fontWeight: '800',
+  
+      marginLeft: 8,
     },
   
-    resultContainer: {
-      borderRadius: 17,
+  
+    // ===================================================
+    // GAME OVER
+    // ===================================================
+  
+    gameOverCard: {
+      borderRadius: 22,
+  
       borderWidth: 1,
   
-      padding: 18,
+      padding: 24,
   
       alignItems: 'center',
     },
   
-    resultIcon: {
-      width: 52,
-      height: 52,
+    gameOverIcon: {
+      width: 68,
+      height: 68,
   
-      borderRadius: 26,
+      borderRadius: 22,
   
       alignItems: 'center',
       justifyContent: 'center',
   
-      marginBottom: 10,
-    },
-  
-    resultTitle: {
-      fontSize: 19,
-      fontWeight: '700',
-      marginBottom: 5,
-    },
-  
-    newRecord: {
-      fontSize: 13,
-      fontWeight: '700',
-      marginBottom: 12,
-    },
-  
-    wrongText: {
-      fontSize: 13,
-      marginBottom: 8,
-      textAlign: 'center',
-    },
-  
-    finalScore: {
-      fontSize: 22,
-      fontWeight: '800',
       marginBottom: 15,
     },
   
-    nextButton: {
-      minWidth: 150,
-      height: 48,
+    gameOverTitle: {
+      fontSize: 24,
+      fontWeight: '800',
   
-      borderRadius: 13,
+      marginBottom: 8,
+    },
   
-      paddingHorizontal: 20,
+    finalScoreLabel: {
+      fontSize: 13,
+      fontWeight: '600',
+    },
+  
+    finalScore: {
+      fontSize: 48,
+      fontWeight: '900',
+  
+      marginTop: 1,
+    },
+  
+    recordBadge: {
+      minHeight: 38,
+  
+      borderRadius: 100,
+  
+      borderWidth: 1,
   
       flexDirection: 'row',
+  
       alignItems: 'center',
       justifyContent: 'center',
   
-      gap: 8,
+      paddingHorizontal: 14,
+  
+      marginTop: 8,
     },
   
-    nextButtonText: {
+    recordText: {
+      fontSize: 12,
+      fontWeight: '800',
+  
+      marginLeft: 6,
+    },
+  
+  
+    // ===================================================
+    // FINAL STATS
+    // ===================================================
+  
+    finalStatsRow: {
+      flexDirection: 'row',
+  
+      width: '100%',
+  
+      gap: 10,
+  
+      marginTop: 20,
+      marginBottom: 18,
+    },
+  
+    finalStat: {
+      flex: 1,
+  
+      minHeight: 76,
+  
+      borderRadius: 14,
+  
+      borderWidth: 1,
+  
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  
+    finalStatLabel: {
+      fontSize: 11,
+      fontWeight: '600',
+    },
+  
+    finalStatValue: {
+      fontSize: 23,
+      fontWeight: '800',
+  
+      marginTop: 3,
+    },
+  
+  
+    // ===================================================
+    // RESTART
+    // ===================================================
+  
+    restartButton: {
+      width: '100%',
+  
+      height: 53,
+  
+      borderRadius: 15,
+  
+      flexDirection: 'row',
+  
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  
+    restartButtonText: {
       color: '#FFFFFF',
-      fontSize: 14,
-      fontWeight: '700',
+  
+      fontSize: 15,
+      fontWeight: '800',
+  
+      marginLeft: 8,
     },
   });
