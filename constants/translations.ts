@@ -189,7 +189,7 @@ export const translations = {
     tapToTake: 'برای مصرف ضربه بزنید',
     adherence: 'تعهد',
     nextMedication: 'داروی بعدی',
-    allTaken: 'همه مصرف شد! 🎉',
+    allTaken: 'همه مصرف شد! ',
     takeNow: 'همین حالا مصرف کن',
     askNeuroliaAI: 'از نورولیا هوش مصنوعی بپرسید',
     removeMedication: 'حذف دارو',
@@ -203,7 +203,7 @@ export const translations = {
     noMedicationsToday: 'هیچ دارویی برای امروز ثبت نشده است',
 
     // ===== Add Medication =====
-    addMedicationTitle: 'افزودن دارو 💊',
+    addMedicationTitle: 'افزودن دارو',
     medicationName: 'نام دارو',
     medicationNamePlaceholder: 'مثال: دونپزیل',
     dosage: 'دوز مصرفی',
@@ -537,7 +537,7 @@ export const translations = {
     noMedicationsToday: 'No medications scheduled for today',
 
     // ===== Add Medication =====
-    addMedicationTitle: 'Add Medication 💊',
+    addMedicationTitle: 'Add Medication ',
     medicationName: 'Medication Name',
     medicationNamePlaceholder: 'e.g., Donepezil',
     dosage: 'Dosage',
@@ -551,7 +551,7 @@ export const translations = {
     addedSuccessfully: 'added successfully!',
 
     // ===== Medication History =====
-    medicationHistory: 'Medication History 📋',
+    medicationHistory: 'Medication History ',
     july: 'July',
     missedBadge: 'Missed',
 
@@ -559,7 +559,7 @@ export const translations = {
     personalCognitiveLibrary: 'Personal Cognitive Library',
     unlockBrainTraining: 'Unlock new ways to train your brain',
     translation: 'Translation',
-    quiz: '📝 Quick Quiz',
+    quiz: ' Quick Quiz',
     quizQuestion: 'What is the main message of this poem?',
     points: 'pts',
     dayStreak: 'day streak',
