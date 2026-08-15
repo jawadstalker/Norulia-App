@@ -1,11 +1,9 @@
-import React, { useRef } from 'react';
-
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  LayoutChangeEvent,
 } from 'react-native';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,28 +30,25 @@ import {
   Sparkles,
 } from 'lucide-react-native';
 
-import {
-  Spacing,
-} from '../../constants/theme';
+import { Spacing } from '../../constants/theme';
 
-/**
- * Mirrors the TabBar from complete.html:
- * - single "pill" highlight that SLIDES between tabs (framer-motion layoutId="tabpill")
- * - labels always visible under every icon (not just the active one)
- * - floating circular "Nova" button in the center, lifted above the bar,
- *   with an infinite pulsing ring when active (nova-pulse)
- * - translucent / glassy bar background
- */
-
-const PILL_WIDTH = 44;
-const PILL_HEIGHT = 32;
+/* =========================================================
+   TYPES
+   ========================================================= */
 
 interface NavItem {
-  id: string;
+  id: 'home' | 'brain' | 'nova' | 'calendar' | 'profile';
   icon: typeof Home;
   route: string;
   isCenter?: boolean;
 }
+
+/* =========================================================
+   CONSTANTS
+   ========================================================= */
+
+const PILL_WIDTH = 48;
+const PILL_HEIGHT = 34;
 
 const navItems: NavItem[] = [
   {
@@ -61,32 +56,32 @@ const navItems: NavItem[] = [
     icon: Home,
     route: '/(tabs)',
   },
-
   {
     id: 'brain',
     icon: Brain,
     route: '/(tabs)/protocol',
   },
-
   {
     id: 'nova',
     icon: Sparkles,
     route: '/(tabs)/assistant',
     isCenter: true,
   },
-
   {
     id: 'calendar',
     icon: Calendar,
     route: '/(tabs)/schedule',
   },
-
   {
     id: 'profile',
     icon: User,
     route: '/(tabs)/profile',
   },
 ];
+
+/* =========================================================
+   COMPONENT
+   ========================================================= */
 
 interface BottomNavBarProps {
   currentRoute: string;
@@ -98,151 +93,134 @@ export function BottomNavBar({
   onNavigate,
 }: BottomNavBarProps) {
   const { colors, isDark } = useTheme();
-
   const { t } = useLanguage();
-
   const insets = useSafeAreaInsets();
 
-  /**
-   * Normalize pathname.
-   *
-   * IMPORTANT: expo-router's usePathname() strips route-GROUP
-   * segments like "(tabs)" from the URL — they only exist on disk
-   * for file organization, never in the actual pathname. So the
-   * "protocol" tab reports as "/protocol", not "/(tabs)/protocol".
-   *
-   * We strip any "(group)" segment defensively so this keeps working
-   * regardless of which representation is passed in.
-   */
-  const stripGroups = (path: string) =>
-    path
-      .replace(/\/\([^)]+\)/g, '') // remove /(group) segments anywhere
-      .replace(/\/{2,}/g, '/');    // collapse any resulting //
+  /* =======================================================
+     NORMALIZE ROUTE
+     ======================================================= */
+
+  const stripGroups = (path: string) => {
+    return path
+      .replace(/\/\([^)]+\)/g, '')
+      .replace(/\/{2,}/g, '/');
+  };
 
   const normalizedRoute = (() => {
-    const stripped = stripGroups(currentRoute);
-    return stripped === '' ? '/' : stripped;
+    const stripped = stripGroups(currentRoute || '/');
+
+    if (!stripped || stripped === '') {
+      return '/';
+    }
+
+    return stripped;
   })();
 
-  /**
-   * Determine active navigation item.
-   */
+  /* =======================================================
+     ACTIVE ITEM
+     ======================================================= */
+
   const isActiveRoute = (item: NavItem) => {
-    if (item.id === 'home') {
-      return (
-        normalizedRoute === '/' ||
-        normalizedRoute === '/index'
-      );
-    }
+    switch (item.id) {
+      case 'home':
+        return (
+          normalizedRoute === '/' ||
+          normalizedRoute === '/index'
+        );
 
-    if (item.id === 'nova') {
-      return (
-        normalizedRoute === '/assistant' ||
-        normalizedRoute.startsWith('/assistant/')
-      );
-    }
+      case 'brain':
+        return (
+          normalizedRoute === '/protocol' ||
+          normalizedRoute.startsWith('/protocol/')
+        );
 
-    if (item.id === 'brain') {
-      return (
-        normalizedRoute === '/protocol' ||
-        normalizedRoute.startsWith('/protocol/')
-      );
-    }
+      case 'nova':
+        return (
+          normalizedRoute === '/assistant' ||
+          normalizedRoute.startsWith('/assistant/')
+        );
 
-    if (item.id === 'calendar') {
-      return (
-        normalizedRoute === '/schedule' ||
-        normalizedRoute.startsWith('/schedule/')
-      );
-    }
+      case 'calendar':
+        return (
+          normalizedRoute === '/schedule' ||
+          normalizedRoute.startsWith('/schedule/')
+        );
 
-    if (item.id === 'profile') {
-      return (
-        normalizedRoute === '/profile' ||
-        normalizedRoute.startsWith('/profile/')
-      );
-    }
+      case 'profile':
+        return (
+          normalizedRoute === '/profile' ||
+          normalizedRoute.startsWith('/profile/')
+        );
 
-    return false;
-  };
-
-  /**
-   * Handle navigation safely.
-   */
-  const handlePress = (route: string) => {
-    if (route === normalizedRoute) {
-      return;
-    }
-
-    onNavigate(route);
-  };
-
-  /**
-   * ----- Sliding pill (equivalent of layoutId="tabpill") -----
-   * We measure each side-item's box on layout, then spring the
-   * pill's translateX/width to the active item whenever the route changes.
-   */
-  const pillX = useSharedValue(0);
-  const pillReady = useSharedValue(0);
-
-  const itemLayouts = useRef<Record<string, { x: number; width: number }>>({});
-
-  const movePillTo = (id: string) => {
-    const layout = itemLayouts.current[id];
-
-    if (!layout) return;
-
-    const target = layout.x + layout.width / 2 - PILL_WIDTH / 2;
-
-    pillX.value = withSpring(target, {
-      stiffness: 420,
-      damping: 32,
-    });
-
-    pillReady.value = withTiming(1, { duration: 150 });
-  };
-
-  const handleItemLayout = (item: NavItem) => (e: LayoutChangeEvent) => {
-    const { x, width } = e.nativeEvent.layout;
-
-    itemLayouts.current[item.id] = { x, width };
-
-    if (isActiveRoute(item)) {
-      movePillTo(item.id);
+      default:
+        return false;
     }
   };
+
+  /* =======================================================
+     ACTIVE INDEX
+     ======================================================= */
+
+  const activeIndex = Math.max(
+    0,
+    navItems.findIndex((item) => isActiveRoute(item))
+  );
+
+  /* =======================================================
+     SLIDING HIGHLIGHT
+     ======================================================= */
+
+  const pillPosition = useSharedValue(activeIndex);
 
   React.useEffect(() => {
-    const activeSideItem = navItems.find(
-      (it) => !it.isCenter && isActiveRoute(it)
-    );
+    pillPosition.value = withSpring(activeIndex, {
+      stiffness: 500,
+      damping: 35,
+      mass: 0.7,
+    });
+  }, [activeIndex, pillPosition]);
 
-    if (activeSideItem) {
-      movePillTo(activeSideItem.id);
-    } else {
-      pillReady.value = withTiming(0, { duration: 150 });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [normalizedRoute]);
-
-  const pillStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: pillX.value }],
-    opacity: pillReady.value,
-  }));
-
-  /**
-   * ----- Nova pulse ring (equivalent of .nova-pulse) -----
-   * Infinite scale 1 -> 1.7 / opacity .45 -> 0 while the Nova tab is active.
+  /*
+   * IMPORTANT:
+   *
+   * The navbar is divided into exactly 5 equal slots.
+   *
+   * Each slot has flex: 1.
+   *
+   * Therefore:
+   *
+   * slot 0 = Home
+   * slot 1 = Brain
+   * slot 2 = Nova
+   * slot 3 = Calendar
+   * slot 4 = Profile
+   *
+   * The highlight uses percentage-based positioning.
+   *
+   * This prevents the old problem where the highlight
+   * was calculated from individual onLayout values and
+   * appeared slightly left/right of the selected icon.
    */
-  const isNovaActive = isActiveRoute(
-    navItems.find((it) => it.id === 'nova')!
+
+  const pillAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      left: `${pillPosition.value * 20}%`,
+    };
+  });
+
+  /* =======================================================
+     NOVA PULSE
+     ======================================================= */
+
+  const novaActive = isActiveRoute(
+    navItems.find((item) => item.id === 'nova')!
   );
 
   const pulseScale = useSharedValue(1);
   const pulseOpacity = useSharedValue(0);
 
   React.useEffect(() => {
-    if (isNovaActive) {
+    if (novaActive) {
       pulseScale.value = 1;
       pulseOpacity.value = 0.45;
 
@@ -264,15 +242,70 @@ export function BottomNavBar({
         false
       );
     } else {
-      pulseScale.value = 1;
-      pulseOpacity.value = 0;
-    }
-  }, [isNovaActive]);
+      pulseScale.value = withTiming(1, {
+        duration: 200,
+      });
 
-  const pulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulseScale.value }],
-    opacity: pulseOpacity.value,
-  }));
+      pulseOpacity.value = withTiming(0, {
+        duration: 200,
+      });
+    }
+  }, [novaActive, pulseOpacity, pulseScale]);
+
+  const pulseAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          scale: pulseScale.value,
+        },
+      ],
+      opacity: pulseOpacity.value,
+    };
+  });
+
+  /* =======================================================
+     NAVIGATION
+     ======================================================= */
+
+  const handlePress = (route: string) => {
+    const normalizedTarget = stripGroups(route);
+
+    if (normalizedTarget === normalizedRoute) {
+      return;
+    }
+
+    onNavigate(route);
+  };
+
+  /* =======================================================
+     LABELS
+     ======================================================= */
+
+  const getLabel = (id: NavItem['id']) => {
+    switch (id) {
+      case 'home':
+        return t.home;
+
+      case 'brain':
+        return t.brain;
+
+      case 'calendar':
+        return t.plan;
+
+      case 'profile':
+        return t.profile;
+
+      case 'nova':
+        return 'Nova';
+
+      default:
+        return '';
+    }
+  };
+
+  /* =======================================================
+     RENDER
+     ======================================================= */
 
   return (
     <View
@@ -280,59 +313,54 @@ export function BottomNavBar({
         styles.container,
         {
           backgroundColor: isDark
-            ? 'rgba(36,29,58,0.88)'
-            : 'rgba(255,255,255,0.88)',
-
-          paddingBottom:
-            Math.max(insets.bottom, 0) + Spacing.sm,
+            ? 'rgba(36,29,58,0.94)'
+            : 'rgba(255,255,255,0.96)',
 
           borderTopColor: colors.border,
 
-          shadowColor: '#000',
-
-          shadowOffset: {
-            width: 0,
-            height: -4,
-          },
-
-          shadowOpacity: isDark
-            ? 0.3
-            : 0.06,
-
-          shadowRadius: 12,
-
-          elevation: 12,
+          paddingBottom:
+            Math.max(insets.bottom, 0) + Spacing.sm,
         },
       ]}
     >
-      {/* Sliding active pill (single shared indicator) */}
+      {/* =================================================
+          ACTIVE HIGHLIGHT
+          ================================================= */}
+
       <Animated.View
         pointerEvents="none"
         style={[
           styles.pill,
-          pillStyle,
+          pillAnimatedStyle,
           {
-            top: Spacing.sm + 6,
-            backgroundColor: colors.primary + '22',
+            backgroundColor: colors.primary + '20',
           },
         ]}
       />
+
+      {/* =================================================
+          NAV ITEMS
+          ================================================= */}
 
       {navItems.map((item) => {
         const isActive = isActiveRoute(item);
 
         const Icon = item.icon;
 
-        const isCenter = item.isCenter === true;
+        /* ===============================================
+           NOVA CENTER BUTTON
+           =============================================== */
 
-        if (isCenter) {
+        if (item.isCenter) {
           return (
             <View
               key={item.id}
-              style={styles.centerWrap}
+              style={styles.navSlot}
             >
               <TouchableOpacity
-                onPress={() => handlePress(item.route)}
+                onPress={() =>
+                  handlePress(item.route)
+                }
                 activeOpacity={0.85}
                 accessibilityRole="button"
                 accessibilityLabel="Nova AI"
@@ -349,14 +377,21 @@ export function BottomNavBar({
                   },
                 ]}
               >
+                {/* Pulse ring */}
+
                 <Animated.View
                   pointerEvents="none"
                   style={[
                     styles.novaPulse,
-                    pulseStyle,
-                    { backgroundColor: colors.primary },
+                    pulseAnimatedStyle,
+                    {
+                      backgroundColor:
+                        colors.primary,
+                    },
                   ]}
                 />
+
+                {/* Nova icon */}
 
                 <MotiView
                   animate={{
@@ -387,15 +422,20 @@ export function BottomNavBar({
           );
         }
 
+        /* ===============================================
+           NORMAL NAV ITEM
+           =============================================== */
+
         return (
           <TouchableOpacity
             key={item.id}
-            onLayout={handleItemLayout(item)}
-            onPress={() => handlePress(item.route)}
-            style={styles.navItem}
+            onPress={() =>
+              handlePress(item.route)
+            }
             activeOpacity={0.75}
             accessibilityRole="button"
-            accessibilityLabel={item.id}
+            accessibilityLabel={getLabel(item.id)}
+            style={styles.navSlot}
           >
             <MotiView
               animate={{
@@ -422,6 +462,7 @@ export function BottomNavBar({
             </MotiView>
 
             <Text
+              numberOfLines={1}
               style={[
                 styles.label,
                 {
@@ -431,13 +472,7 @@ export function BottomNavBar({
                 },
               ]}
             >
-              {item.id === 'home'
-                ? t.home
-                : item.id === 'brain'
-                ? t.brain
-                : item.id === 'calendar'
-                ? t.plan
-                : t.profile}
+              {getLabel(item.id)}
             </Text>
           </TouchableOpacity>
         );
@@ -446,87 +481,112 @@ export function BottomNavBar({
   );
 }
 
+/* =========================================================
+   STYLES
+   ========================================================= */
+
 const styles = StyleSheet.create({
   container: {
+    position: 'relative',
+
     flexDirection: 'row',
 
     alignItems: 'center',
 
-    paddingHorizontal: Spacing.sm,
+    width: '100%',
+
+    minHeight: 76,
+
+    paddingHorizontal: 0,
 
     paddingTop: Spacing.sm,
 
     borderTopWidth: 1,
 
-    /**
-     * Prevent Android from collapsing the navbar
-     * when the content above changes.
-     */
-    minHeight: 72,
-
-    /**
-     * Keep navbar above normal screen content.
-     */
     zIndex: 100,
 
     elevation: 12,
 
-    position: 'relative',
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+
+    shadowOpacity: 0.08,
+
+    shadowRadius: 12,
   },
 
-  navItem: {
+  /*
+   * EVERY ITEM HAS EXACTLY THE SAME WIDTH.
+   *
+   * This is the important part of the fix.
+   */
+
+  navSlot: {
     flex: 1,
+
+    height: 62,
 
     alignItems: 'center',
 
     justifyContent: 'center',
 
-    gap: 3,
+    position: 'relative',
 
-    paddingVertical: Spacing.xs,
-
-    minHeight: 56,
+    zIndex: 2,
   },
+
+  /*
+   * Icon area is also centered.
+   */
 
   iconWrap: {
     width: PILL_WIDTH,
 
-    height: 28,
+    height: 30,
 
     alignItems: 'center',
 
     justifyContent: 'center',
   },
+
 
   pill: {
     position: 'absolute',
 
-    width: PILL_WIDTH,
+top: Spacing.sm + 5,
 
-    height: PILL_HEIGHT,
+width: '20%',
 
-    borderRadius: 14,
+height: PILL_HEIGHT,
+
+borderRadius: 17,
+
+zIndex: 0,
+
+alignSelf: 'center',
   },
 
   label: {
+    marginTop: 3,
+
     fontSize: 10,
+
+    lineHeight: 13,
 
     fontWeight: '600',
 
-    letterSpacing: 0.2,
+    letterSpacing: 0.15,
 
     textAlign: 'center',
+
+    maxWidth: 72,
   },
 
-  centerWrap: {
-    flex: 1.2,
-
-    alignItems: 'center',
-
-    justifyContent: 'center',
-
-    transform: [{ translateY: -18 }],
-  },
+  /*
+   * NOVA
+   */
 
   novaButton: {
     width: 58,
@@ -539,8 +599,13 @@ const styles = StyleSheet.create({
 
     justifyContent: 'center',
 
+    position: 'relative',
+
+    marginTop: -18,
+
     shadowOffset: {
       width: 0,
+
       height: 10,
     },
 

@@ -720,21 +720,23 @@ export default function HafezScreen() {
   const renderHeader = () => {
     const isHome = currentView === 'home';
 
-    let title = 'حافظ‌یار';
-    let subtitle: string | undefined;
+    let title = 'اشعار حافظ';
+    let subtitle = 'مطالعه و تمرین شعر';
 
     if (!isHome) {
-      title = 'آموزش شعر';
-
-      if (currentView === 'plan') {
+      if (currentView === 'study') {
+        title = 'آموزش شعر';
+        subtitle = currentPoem?.fullTitle || '';
+      } else if (currentView === 'plan') {
         title = 'مسیر یادگیری';
+        subtitle = currentPoem?.fullTitle || '';
       } else if (currentView === 'session') {
         title = 'تمرین حافظه';
+        subtitle = `${currentPoem?.fullTitle || ''} • جلسه ${selectedDay}`;
       } else if (currentView === 'result') {
         title = 'نتیجه جلسه';
+        subtitle = `${sessionCorrect} از ${sessionTotal} صحیح`;
       }
-
-      subtitle = currentPoem?.fullTitle;
     }
 
     return (
@@ -743,116 +745,82 @@ export default function HafezScreen() {
           styles.header,
           {
             backgroundColor: colors.background,
-            borderBottomColor: subtleBorder,
+            borderBottomColor: colors.border,
           },
         ]}
       >
+        {/* Back — همیشه سمت چپ */}
+        <TouchableOpacity
+          onPress={() => {
+            if (isHome) {
+              router.back();
+            } else {
+              setCurrentView('home');
+            }
+          }}
+          activeOpacity={0.75}
+          style={[
+            styles.headerBackButton,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="بازگشت"
+        >
+          <ArrowLeft
+            size={21}
+            strokeWidth={2.2}
+            color={colors.text}
+          />
+        </TouchableOpacity>
+
+        {/* عنوان */}
+        <View style={styles.headerTitleWrapper}>
+          <Text
+            numberOfLines={1}
+            style={[
+              styles.headerTitle,
+              {
+                color: colors.text,
+              },
+            ]}
+          >
+            {title}
+          </Text>
+
+          {subtitle && (
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.headerSubtitle,
+                {
+                  color: colors.textSecondary,
+                },
+              ]}
+            >
+              {subtitle}
+            </Text>
+          )}
+        </View>
+
+        {/* آیکون سمت راست */}
         <View
           style={[
-            styles.headerContent,
+            styles.headerIcon,
             {
-              flexDirection: isRTL ? 'row-reverse' : 'row',
+              backgroundColor: isDark
+                ? 'rgba(139,92,246,0.14)'
+                : 'rgba(139,92,246,0.08)',
             },
           ]}
         >
-          {/* Title + Icon */}
-          <View
-            style={[
-              styles.headerTitleRow,
-              {
-                flexDirection: isRTL ? 'row-reverse' : 'row',
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.headerIcon,
-                {
-                  backgroundColor: isDark
-                    ? 'rgba(255,255,255,0.08)'
-                    : `${primary}18`,
-                },
-              ]}
-            >
-              <BookOpen
-                size={20}
-                color={primary}
-                strokeWidth={2}
-              />
-            </View>
-
-            <View
-              style={[
-                styles.headerTextContainer,
-                {
-                  alignItems: isRTL ? 'flex-end' : 'flex-start',
-                },
-              ]}
-            >
-              <Text
-                numberOfLines={1}
-                style={[
-                  styles.headerTitle,
-                  {
-                    color: colors.text,
-                    textAlign: isRTL ? 'right' : 'left',
-                  },
-                ]}
-              >
-                {title}
-              </Text>
-
-              {subtitle && (
-                <Text
-                  numberOfLines={1}
-                  style={[
-                    styles.headerSubtitle,
-                    {
-                      color: colors.textSecondary,
-                      textAlign: isRTL ? 'right' : 'left',
-                    },
-                  ]}
-                >
-                  {subtitle}
-                </Text>
-              )}
-            </View>
-          </View>
-
-          {/* Back Button */}
-          <TouchableOpacity
-            onPress={isHome ? () => router.back() : goBack}
-            activeOpacity={0.8}
-            hitSlop={{
-              top: 10,
-              bottom: 10,
-              left: 10,
-              right: 10,
-            }}
-            style={[
-              styles.backButton,
-              {
-                backgroundColor: isDark
-                  ? 'rgba(255,255,255,0.055)'
-                  : '#FFFFFF',
-                borderColor: subtleBorder,
-              },
-            ]}
-          >
-            {isRTL ? (
-              <ArrowLeft
-                size={20}
-                color={colors.text}
-                strokeWidth={2.2}
-              />
-            ) : (
-              <ChevronLeft
-                size={20}
-                color={colors.text}
-                strokeWidth={2.2}
-              />
-            )}
-          </TouchableOpacity>
+          <BookOpen
+            size={22}
+            strokeWidth={2}
+            color={colors.primary}
+          />
         </View>
       </View>
     );
@@ -1835,57 +1803,50 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
 
   header: {
-    paddingTop:60,
-    height: 64,
-    paddingHorizontal: 18,
-
-  },
-
-  headerContent: {
-    flex: 1,
-    width: '100%',
+    minHeight: 76,
+    paddingHorizontal: CONTENT_HORIZONTAL,
+    paddingTop: 50,
+    paddingBottom: 10,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    
   },
 
-  headerTitleRow: {
+  headerBackButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    flexShrink: 0,
+  },
+
+  headerTitleWrapper: {
     flex: 1,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    marginHorizontal: 12,
     minWidth: 0,
-    alignItems: 'center',
+  },
+
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'right',
+  },
+
+  headerSubtitle: {
+    marginTop: 3,
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'right',
   },
 
   headerIcon: {
     width: 42,
     height: 42,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-
-  headerTextContainer: {
-    minWidth: 0,
-    marginHorizontal: 9,
-    alignItems: 'flex-start',
-  },
-
-  headerTitle: {
-    fontSize: 25,
-    fontWeight: '800',
-    maxWidth: 240,
-  },
-
-  headerSubtitle: {
-    fontSize: 11,
-    marginTop: 2,
-    maxWidth: 240,
-  },
-
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
