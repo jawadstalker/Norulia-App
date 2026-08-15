@@ -1,37 +1,88 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useTheme } from '.././context/ThemeContext';
-import { useLanguage } from '.././context/LanguageContext';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
+
 import { useRouter } from 'expo-router';
-import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { ArrowLeft } from 'lucide-react-native';
+
+import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { SettingsScreen } from '../components/screens/SettingsScreen';
-import { Spacing } from '.././constants/theme';
+import { Spacing, BorderRadius } from '../constants/theme';
 
 export default function SettingsRoute() {
-  const { colors } = useTheme();
-  const { t, isRTL } = useLanguage();
   const router = useRouter();
 
-  const BackIcon = isRTL ? ChevronRight : ChevronLeft;
+  const { colors } = useTheme();
+  const { t } = useLanguage();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header with Back Button */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity 
-          onPress={() => router.back()} 
-          style={[styles.backButton, { backgroundColor: colors.surface }]}
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.background,
+        },
+      ]}
+    >
+      {/* ================================
+          HEADER
+         ================================ */}
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: colors.background,
+          },
+        ]}
+      >
+        {/* BACK BUTTON — LEFT */}
+        <TouchableOpacity
+          activeOpacity={0.75}
+          onPress={() => router.back()}
+          style={[
+            styles.backButton,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={t.back || 'بازگشت'}
         >
-          <BackIcon size={24} color={colors.text} />
+          <ArrowLeft
+            size={22}
+            strokeWidth={2.2}
+            color={colors.text}
+          />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          {t.settings || 'Settings'}
-        </Text>
-        <View style={{ width: 40 }} />
+
+        {/* TITLE — RIGHT */}
+        <View style={styles.titleContainer}>
+          {/* <Text
+            style={[
+              styles.title,
+              {
+                color: colors.text,
+              },
+            ]}
+            numberOfLines={1}
+          >
+            {t.settings || 'تنظیمات'}
+          </Text> */}
+        </View>
       </View>
 
-      {/* Settings Content */}
-      <SettingsScreen />
+      {/* ================================
+          CONTENT
+         ================================ */}
+      <View style={styles.content}>
+        <SettingsScreen />
+      </View>
     </View>
   );
 }
@@ -40,24 +91,77 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
+  /* =================================
+     HEADER
+     ================================= */
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    minHeight: 72,
+
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xl,
-    paddingBottom: Spacing.md,
-    borderBottomWidth: 1,
+    paddingTop: 50,
+    paddingBottom: Spacing.sm,
+
+    flexDirection: 'row',
+
+    alignItems: 'center',
+
+    /*
+     * مهم:
+     * هیچ RTL روی خود Header اعمال نمی‌کنیم.
+     * ترتیب فیزیکی:
+     *
+     * [ BACK ]                  [ TITLE ]
+     *
+     */
+    justifyContent: 'space-between',
+
+    width: '100%',
   },
+
+  /* =================================
+     BACK BUTTON
+     ================================= */
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+
+    borderRadius: 30,
+
     alignItems: 'center',
     justifyContent: 'center',
+
+    borderWidth: 1,
+
+    flexShrink: 0,
   },
-  headerTitle: {
-    fontSize: 20,
+
+  /* =================================
+     TITLE
+     * همیشه سمت راست
+     ================================= */
+  titleContainer: {
+    flex: 1,
+
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+
+    marginLeft: Spacing.md,
+  },
+
+  title: {
+    fontSize: 22,
     fontWeight: '700',
+
+    textAlign: 'right',
+
+    includeFontPadding: false,
+  },
+
+  /* =================================
+     CONTENT
+     ================================= */
+  content: {
+    flex: 1,
   },
 });
