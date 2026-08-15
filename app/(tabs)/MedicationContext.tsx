@@ -42,7 +42,7 @@ export default function MedicationHistory() {
           <ArrowLeft size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Medication History 📋
+          Medication History 
         </Text>
         <View style={{ width: 40 }} />
       </View>

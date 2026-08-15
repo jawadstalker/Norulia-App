@@ -155,6 +155,8 @@ export const translations = {
     saving: 'در حال ذخیره...',
     noMedicationHistory: 'تاریخچه دارویی وجود ندارد',
     noMedicationHistoryMessage: 'هنوز هیچ دارویی ثبت نشده است. اولین داروی خود را اضافه کنید.',
+      "type": "نوع",
+  "ok": "تأیید",
     // ===== Profile =====
     profile: 'پروفایل',
     editProfile: 'ویرایش پروفایل',
