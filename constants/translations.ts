@@ -151,7 +151,10 @@ export const translations = {
     dashboardCognitiveProgress: 'پیشرفت سلامت شناختی',
     dashboardKeepGoing: 'نزدیکی، ادامه بده',
     quickAccess: 'دسترسی سریع',
-
+    somethingWentWrong: 'مشکلی پیش آمد. لطفاً دوباره تلاش کنید.',
+    saving: 'در حال ذخیره...',
+    noMedicationHistory: 'تاریخچه دارویی وجود ندارد',
+    noMedicationHistoryMessage: 'هنوز هیچ دارویی ثبت نشده است. اولین داروی خود را اضافه کنید.',
     // ===== Profile =====
     profile: 'پروفایل',
     editProfile: 'ویرایش پروفایل',
