@@ -718,21 +718,110 @@ export default function HafezScreen() {
   }, [currentPoem, poemStats]);
 
   const renderHeader = () => {
-    if (currentView === 'home') {
-      return (
+    const isHome = currentView === 'home';
+
+    let title = 'حافظ‌یار';
+    let subtitle: string | undefined;
+
+    if (!isHome) {
+      title = 'آموزش شعر';
+
+      if (currentView === 'plan') {
+        title = 'مسیر یادگیری';
+      } else if (currentView === 'session') {
+        title = 'تمرین حافظه';
+      } else if (currentView === 'result') {
+        title = 'نتیجه جلسه';
+      }
+
+      subtitle = currentPoem?.fullTitle;
+    }
+
+    return (
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: colors.background,
+            borderBottomColor: subtleBorder,
+          },
+        ]}
+      >
         <View
           style={[
-            styles.mainHeader,
+            styles.headerContent,
             {
-              borderBottomColor: subtleBorder,
-              backgroundColor: colors.background,
+              flexDirection: isRTL ? 'row' : 'row-reverse',
             },
           ]}
         >
+          {/* Title + Icon */}
+          <View
+            style={[
+              styles.headerTitleRow,
+              {
+                flexDirection: isRTL ? 'row' : 'row-reverse',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.headerIcon,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255,255,255,0.08)'
+                    : `${primary}18`,
+                },
+              ]}
+            >
+              <BookOpen
+                size={20}
+                color={primary}
+                strokeWidth={2}
+              />
+            </View>
+
+            <View style={styles.headerTextContainer}>
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.headerTitle,
+                  {
+                    color: colors.text,
+                    textAlign: isRTL ? 'right' : 'left',
+                  },
+                ]}
+              >
+                {title}
+              </Text>
+
+              {subtitle && (
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    styles.headerSubtitle,
+                    {
+                      color: colors.textSecondary,
+                      textAlign: isRTL ? 'right' : 'left',
+                    },
+                  ]}
+                >
+                  {subtitle}
+                </Text>
+              )}
+            </View>
+          </View>
+
+          {/* Back Button */}
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={isHome ? () => router.back() : goBack}
             activeOpacity={0.8}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            hitSlop={{
+              top: 10,
+              bottom: 10,
+              left: 10,
+              right: 10,
+            }}
             style={[
               styles.backButton,
               {
@@ -743,89 +832,21 @@ export default function HafezScreen() {
               },
             ]}
           >
-            <ArrowLeft size={20} color={colors.text} strokeWidth={2.2} />
-          </TouchableOpacity>
-
-          <View style={styles.mainHeaderCenter}>
-            <View style={styles.brandRow}>
-              <View
-                style={[
-                  styles.brandIcon,
-                  {
-                    backgroundColor: isDark
-                      ? 'rgba(255,255,255,0.08)'
-                      : `${primary}18`,
-                  },
-                ]}
-              >
-                <BookOpen size={20} color={primary} strokeWidth={2} />
-              </View>
-              <Text
-                style={[styles.mainHeaderTitle, { color: colors.text }]}
-                numberOfLines={1}
-              >
-                حافظ‌یار
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.headerSidePlaceholder} />
-        </View>
-      );
-    }
-
-    let title = 'آموزش شعر';
-    if (currentView === 'plan') title = 'مسیر یادگیری';
-    if (currentView === 'session') title = 'تمرین حافظه';
-    if (currentView === 'result') title = 'نتیجه جلسه';
-
-    return (
-      <View
-        style={[
-          styles.header,
-          {
-            borderBottomColor: subtleBorder,
-            backgroundColor: colors.background,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={goBack}
-          activeOpacity={0.75}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={[
-            styles.backButton,
-            {
-              backgroundColor: isDark
-                ? 'rgba(255,255,255,0.055)'
-                : '#FFFFFF',
-              borderColor: subtleBorder,
-            },
-          ]}
-        >
-          <ArrowLeft size={20} color={colors.text} strokeWidth={2.2} />
-        </TouchableOpacity>
-
-        <View style={styles.mainHeaderCenter}>
-          <View style={styles.headerTitleContainer}>
-            <Text
-              numberOfLines={1}
-              style={[styles.headerTitle, { color: colors.text }]}
-            >
-              {title}
-            </Text>
-            {currentPoem && (
-              <Text
-                numberOfLines={1}
-                style={[styles.headerSubtitle, { color: colors.textSecondary }]}
-              >
-                {currentPoem.fullTitle}
-              </Text>
+            {isRTL ? (
+              <ArrowLeft
+                size={20}
+                color={colors.text}
+                strokeWidth={2.2}
+              />
+            ) : (
+              <ChevronLeft
+                size={20}
+                color={colors.text}
+                strokeWidth={2.2}
+              />
             )}
-          </View>
+          </TouchableOpacity>
         </View>
-
-        <View style={styles.headerSidePlaceholder} />
       </View>
     );
   };
@@ -1811,70 +1832,47 @@ const styles = StyleSheet.create({
   header: {
     height: 64,
     paddingHorizontal: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
 
-  mainHeader: {
-    height: 64,
-    paddingHorizontal: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-
-  headerSidePlaceholder: {
-    width: 44,
-    height: 44,
-    flexShrink: 0,
-  },
-
-  mainHeaderCenter: {
+  headerContent: {
     flex: 1,
+    width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
   },
 
-  brandRow: {
-    flexDirection: 'row',
+  headerTitleRow: {
+    flex: 1,
+    minWidth: 0,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
   },
 
-  brandIcon: {
-    width: 36,
-    height: 36,
+  headerIcon: {
+    width: 38,
+    height: 38,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
 
-  mainHeaderTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-
-  headerTitleContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 8,
+  headerTextContainer: {
+    minWidth: 0,
+    marginHorizontal: 9,
+    alignItems: 'flex-start',
   },
 
   headerTitle: {
     fontSize: 17,
     fontWeight: '800',
-    textAlign: 'center',
+    maxWidth: 240,
   },
 
   headerSubtitle: {
     fontSize: 11,
     marginTop: 2,
-    textAlign: 'center',
+    maxWidth: 240,
   },
 
   backButton: {
