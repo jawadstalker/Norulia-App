@@ -751,7 +751,7 @@ export default function HafezScreen() {
           style={[
             styles.headerContent,
             {
-              flexDirection: isRTL ? 'row' : 'row-reverse',
+              flexDirection: isRTL ? 'row-reverse' : 'row',
             },
           ]}
         >
@@ -760,7 +760,7 @@ export default function HafezScreen() {
             style={[
               styles.headerTitleRow,
               {
-                flexDirection: isRTL ? 'row' : 'row-reverse',
+                flexDirection: isRTL ? 'row-reverse' : 'row',
               },
             ]}
           >
@@ -781,7 +781,14 @@ export default function HafezScreen() {
               />
             </View>
 
-            <View style={styles.headerTextContainer}>
+            <View
+              style={[
+                styles.headerTextContainer,
+                {
+                  alignItems: isRTL ? 'flex-end' : 'flex-start',
+                },
+              ]}
+            >
               <Text
                 numberOfLines={1}
                 style={[
@@ -868,11 +875,9 @@ export default function HafezScreen() {
         style={[styles.screen, { opacity: fadeAnim, transform: [{ translateY: translateAnim }] }]}
       >
         <View style={styles.homeHero}>
-          <View style={[styles.homeHeroIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : `${primary}18` }]}>
-            <BookOpen size={32} color={primary} strokeWidth={2} />
+          <View>
           </View>
-          <Text style={[styles.homeHeroTitle, { color: colors.text }]}>حافظ‌یار</Text>
-          <Text style={[styles.homeHeroSubtitle, { color: colors.textSecondary }]}>
+          <Text style={[styles.homeHeroSubtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
             شعر را بخوانید، مرور کنید و با تمرین‌های کوتاه به خاطر بسپارید.
           </Text>
         </View>
@@ -1830,9 +1835,10 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
 
   header: {
+    paddingTop:60,
     height: 64,
     paddingHorizontal: 18,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+
   },
 
   headerContent: {
@@ -1849,8 +1855,8 @@ const styles = StyleSheet.create({
   },
 
   headerIcon: {
-    width: 38,
-    height: 38,
+    width: 42,
+    height: 42,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1864,7 +1870,7 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    fontSize: 17,
+    fontSize: 25,
     fontWeight: '800',
     maxWidth: 240,
   },
@@ -1896,32 +1902,30 @@ const styles = StyleSheet.create({
   },
 
   homeHero: {
-    alignItems: 'center',
-    paddingTop: 8,
-    paddingBottom: 24,
+    paddingTop: 12,
+    paddingBottom: 20,
   },
 
-  homeHeroIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 23,
+  homeHeroBadge: {
+    alignSelf: 'flex-end',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 9,
   },
 
-  homeHeroTitle: {
-    fontSize: 27,
-    fontWeight: '800',
-    textAlign: 'center',
+  homeHeroBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
 
   homeHeroSubtitle: {
     fontSize: 14,
     lineHeight: 22,
-    marginTop: 6,
-    textAlign: 'center',
-    maxWidth: 320,
+    marginTop: 2,
   },
 
   sectionHeading: {
