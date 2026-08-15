@@ -64,6 +64,19 @@ const bilingualGames = [
     timeFa: '۷ دقیقه',
     route: '/games/stroop',
   },
+  {
+    id: 'language-challenge',
+    title: 'Analogram',
+    titleFa: 'آنالوگرام',
+    description: 'Improve vocabulary and language recognition',
+    descriptionFa: 'دایره لغات و تشخیص زبان خود را تقویت کن',
+    image: require('../../assets/games/game7.png'),
+    level: 'Hard',
+    levelFa: 'سخت',
+    time: '7 min',
+    timeFa: '۷ دقیقه',
+    route: '/games/AnologramGame',
+  }
 ];
 
 export default function BilingualGamesScreen() {
