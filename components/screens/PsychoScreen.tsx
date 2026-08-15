@@ -171,6 +171,20 @@ const games = [
     timeFa: '۲۰ دقیقه',
     route: '/games/forest-adventure',
   },
+  {
+    id: '12',
+    category: 'psychological',
+    title: 'Size Discrimination',
+    titleFa: 'تشخیص اندازه',
+    description: 'Test your visual perception threshold',
+    descriptionFa: 'آستانه ادراک بصری خود را بسنج',
+    image: require('../../assets/games/game1.png'),
+    level: 'Medium',
+    levelFa: 'متوسط',
+    time: '5 min',
+    timeFa: '۵ دقیقه',
+    route: '/games/size-discrimination',
+  },
 ];
 
 export default function PsychoScreen() {
