@@ -194,26 +194,19 @@ export default function StroopTestScreen() {
     selectedLevel !== null
       ? LEVELS[selectedLevel]
       : LEVELS[0];
-
   const wordColor =
     COLOR_POOL.find((c) => c.key === wordKey) ||
     COLOR_POOL[0];
-
   const inkColor =
     COLOR_POOL.find((c) => c.key === inkKey) ||
     COLOR_POOL[1];
-
   const textAlignStyle = isRTL ? 'right' : 'left';
-
   const colorName = (color: ColorDef) =>
     language === 'fa' ? color.fa : color.en;
-
   const roundIdRef = useRef(0);
   const answeredRef = useRef(false);
-
   const popupId = useRef(0);
   const particleId = useRef(0);
-
   const buttonLayouts = useRef<
     Record<
       string,
@@ -225,7 +218,6 @@ export default function StroopTestScreen() {
       }
     >
   >({});
-
   const timerAnim = useRef(new Animated.Value(1)).current;
 
   const timerRunRef =
@@ -242,7 +234,6 @@ export default function StroopTestScreen() {
       timerRunRef.current?.stop();
     };
   }, []);
-
   const getLevelDescription = (index: number) => {
     if (language === 'fa') {
       const descriptions = [
@@ -251,10 +242,8 @@ export default function StroopTestScreen() {
         'شش رنگ، زمان محدود',
         'هشت رنگ، سرعت بالا',
       ];
-
       return descriptions[index] || '';
     }
-
     const descriptions = [
       'Four simple colors, plenty of time',
       'Five colors, a bit faster',
@@ -264,18 +253,6 @@ export default function StroopTestScreen() {
 
     return descriptions[index] || '';
   };
-
-  /*
-   * ============================================================
-   * BACK BUTTON
-   * ============================================================
-   *
-   * این تابع برای تمام حالت‌های بازی استفاده می‌شود.
-   *
-   * نکته مهم:
-   * تایمر قبل از برگشت متوقف می‌شود تا بازی در پس‌زمینه
-   * ادامه پیدا نکند.
-   */
   const handleBack = () => {
     timerRunRef.current?.stop();
     timerRunRef.current = null;
@@ -285,7 +262,6 @@ export default function StroopTestScreen() {
 
     router.back();
   };
-
   const triggerFlash = (color: string) => {
     setFlashColor(color);
 
@@ -295,7 +271,6 @@ export default function StroopTestScreen() {
         duration: 70,
         useNativeDriver: true,
       }),
-
       Animated.timing(flashAnim, {
         toValue: 0,
         duration: 260,
@@ -303,29 +278,24 @@ export default function StroopTestScreen() {
       }),
     ]).start();
   };
-
   const triggerShake = () => {
     shakeAnim.setValue(0);
-
     Animated.sequence([
       Animated.timing(shakeAnim, {
         toValue: 1,
         duration: 45,
         useNativeDriver: true,
       }),
-
       Animated.timing(shakeAnim, {
         toValue: -1,
         duration: 45,
         useNativeDriver: true,
       }),
-
       Animated.timing(shakeAnim, {
         toValue: 1,
         duration: 45,
         useNativeDriver: true,
       }),
-
       Animated.timing(shakeAnim, {
         toValue: 0,
         duration: 45,
@@ -333,7 +303,6 @@ export default function StroopTestScreen() {
       }),
     ]).start();
   };
-
   const spawnPopup = (value: number) => {
     const id = popupId.current++;
 
