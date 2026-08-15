@@ -535,7 +535,74 @@ export const translations = {
     supplement: 'Supplement',
     missed: 'Missed',
     noMedicationsToday: 'No medications scheduled for today',
+// ===== Navigation =====
+home: 'خانه',
+back: 'بازگشت',
+nextStep: 'مرحله بعد',
+previous: 'قبلی',
+done: 'انجام شد',
 
+// ===== Forms =====
+required: 'الزامی',
+optional: 'اختیاری',
+confirm: 'تأیید',
+submit: 'ثبت',
+update: 'به‌روزرسانی',
+reset: 'بازنشانی',
+
+// ===== Messages =====
+successMessage: 'عملیات با موفقیت انجام شد.',
+errorMessage: 'خطایی رخ داد. لطفاً دوباره تلاش کنید.',
+pleaseTryAgain: 'لطفاً دوباره تلاش کنید.',
+operationFailed: 'عملیات ناموفق بود.',
+changesSaved: 'تغییرات با موفقیت ذخیره شد.',
+
+// ===== Games =====
+gameInstructions: 'دستورالعمل بازی',
+gameOver: 'بازی تمام شد',
+yourScore: 'امتیاز شما',
+finalScore: 'امتیاز نهایی',
+highScore: 'بالاترین امتیاز',
+restartGame: 'شروع مجدد',
+resumeGame: 'ادامه بازی',
+quitGame: 'خروج از بازی',
+continueGame: 'ادامه بازی',
+correct: 'درست',
+incorrect: 'نادرست',
+timeRemaining: 'زمان باقی‌مانده',
+seconds: 'ثانیه',
+levelComplete: 'مرحله تکمیل شد',
+wellDone: 'آفرین',
+
+// ===== Medication =====
+medicationDetails: 'جزئیات دارو',
+editMedication: 'ویرایش دارو',
+deleteMedication: 'حذف دارو',
+confirmDelete: 'تأیید حذف',
+medicationAdded: 'دارو با موفقیت اضافه شد.',
+medicationUpdated: 'دارو با موفقیت به‌روزرسانی شد.',
+medicationDeleted: 'دارو با موفقیت حذف شد.',
+noMedications: 'دارویی ثبت نشده است.',
+
+// ===== Schedule =====
+addActivity: 'افزودن فعالیت',
+activityName: 'نام فعالیت',
+activityType: 'نوع فعالیت',
+startTime: 'زمان شروع',
+endTime: 'زمان پایان',
+saveActivity: 'ذخیره فعالیت',
+activityAdded: 'فعالیت با موفقیت اضافه شد.',
+noActivities: 'فعالیتی برای نمایش وجود ندارد.',
+
+// ===== Consultation =====
+consultationTitle: 'جلسه مشاوره',
+bookConsultation: 'رزرو جلسه مشاوره',
+consultationDate: 'تاریخ جلسه',
+consultationTime: 'زمان جلسه',
+consultant: 'مشاور',
+confirmBooking: 'تأیید رزرو',
+bookingSuccessful: 'جلسه با موفقیت رزرو شد.',
+noConsultations: 'جلسه مشاوره‌ای وجود ندارد.',
     // ===== Add Medication =====
     addMedicationTitle: 'Add Medication ',
     medicationName: 'Medication Name',
@@ -575,8 +642,8 @@ export const translations = {
     checkAnswer: 'Check Answer',
     orderVerses: 'Order the verses',
     checkOrder: 'Check Order',
-    correct: '✅ Correct!',
-    incorrect: '❌ Incorrect',
+    // correct: '✅ Correct!',
+    // incorrect: '❌ Incorrect',
     
     // ===== NEW KEYS FOR DAILY PLAN =====
     dailyPlan: 'Daily Plan',
@@ -587,7 +654,7 @@ export const translations = {
     poetryMemory: 'Persian Poetry Memory',
     memoryLiterature: 'Memory + Literature + Meaning',
     searchPoems: 'Search poems...',
-    back: 'Back',
+    // back: 'Back',
     meaning: 'Meaning',
     meaningQuestion: 'What is the meaning of "Saqi"?',
     backToList: 'Back to List',
@@ -596,7 +663,7 @@ export const translations = {
     howToPlay: 'How to play',
 
     // ===== BOTTOM NAV BAR =====
-    home: 'Home',
+    // home: 'Home',
     brain: 'Brain',
     plan: 'Plan',
 
@@ -669,6 +736,6 @@ export const translations = {
     current: 'START',
     explore: 'Explore',
     recommendations: 'Your weekly recommendations',
-    previous: 'Previous',
+    // previous: 'Previous',
   }
 };
