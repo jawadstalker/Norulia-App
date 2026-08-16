@@ -12,20 +12,19 @@ import {
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
+
 import {
   ArrowLeft,
   Award,
   BookOpen,
   CheckCircle,
   ChevronLeft,
-  ChevronRight,
   Clock,
   Eye,
   EyeOff,
   Heart,
   Play,
   RefreshCw,
-  RotateCcw,
   Sparkles,
   Target,
   Trophy,
@@ -87,43 +86,15 @@ interface QuizResult {
 const STORAGE_KEY = 'quran_memorization_progress_v2';
 const LAST_UPDATE_KEY = 'quran_last_update_v2';
 
-/*
- * برنامه حفظ همان برنامه quran.html
- */
 const PLAN: DayPlan[] = [
-  {
-    day: 1,
-    verses: [1, 2, 3],
-  },
-  {
-    day: 2,
-    verses: [4, 5],
-  },
-  {
-    day: 3,
-    verses: [6, 7],
-  },
-  {
-    day: 4,
-    verses: [8, 9],
-  },
-  {
-    day: 5,
-    verses: [10, 11],
-  },
-  {
-    day: 6,
-    verses: [12],
-  },
+  { day: 1, verses: [1, 2, 3] },
+  { day: 2, verses: [4, 5] },
+  { day: 3, verses: [6, 7] },
+  { day: 4, verses: [8, 9] },
+  { day: 5, verses: [10, 11] },
+  { day: 6, verses: [12] },
 ];
 
-/*
- * سوره یس
- *
- * داده‌های این بخش از quran.html گرفته شده‌اند.
- * آیه 12 نیز برای جلوگیری از خطای داده‌ای HTML
- * به صورت مستقل اصلاح شده است.
- */
 const SURAH_YASIN: QuranVerse[] = [
   {
     number: 1,
@@ -201,10 +172,6 @@ const SURAH_YASIN: QuranVerse[] = [
   },
 ];
 
-/*
- * برای آزمون word_line
- * خطوط تقریبی صفحه قرآن همان ساختار quran.html هستند.
- */
 const WORD_LINE_LOCATIONS: Record<string, number> = {
   يسٓ: 1,
   'وَٱلۡقُرۡءَانِ': 1,
@@ -213,37 +180,31 @@ const WORD_LINE_LOCATIONS: Record<string, number> = {
   'لَمِنَ': 1,
   'ٱلۡمُرۡسَلِينَ': 1,
   'عَلَىٰ': 1,
-
   'صِرَٰطٖ': 2,
   'مُّسۡتَقِيمٖ': 2,
   'تَنزِيلَ': 2,
   'ٱلۡعَزِيزِ': 2,
   'ٱلرَّحِيمِ': 2,
-
   'لِتُنذِرَ': 3,
   'قَوۡمٗا': 3,
   'مَّآ': 3,
   'أُنذِرَ': 3,
   'ءَابَآؤُهُمۡ': 3,
   'غَٰفِلُونَ': 3,
-
   'لَقَدۡ': 4,
   'حَقَّ': 4,
   'ٱلۡقَوۡلُ': 4,
   'أَكۡثَرِهِمۡ': 4,
-
   'فَهُمۡ': 5,
   'لَا': 5,
   'يُؤۡمِنُونَ': 5,
   'إِنَّا': 5,
   'جَعَلۡنَا': 5,
   'فِيٓ': 5,
-
   'أَعۡنَٰقِهِمۡ': 5,
   'أَغۡلَٰلٗا': 5,
   'فَهِيَ': 5,
   'إِلَى': 5,
-
   'ٱلۡأَذۡقَانِ': 6,
   'فَهُم': 6,
   'مُّقۡمَحُونَ': 6,
@@ -251,20 +212,17 @@ const WORD_LINE_LOCATIONS: Record<string, number> = {
   'مِنۢ': 6,
   'بَيۡنِ': 6,
   'أَيۡدِيهِمۡ': 6,
-
   'سَدّٗا': 6,
   'وَمِنۡ': 7,
   'خَلۡفِهِمۡ': 7,
   'فَأَغۡشَيۡنَٰهُمۡ': 7,
   'يُبۡصِرُونَ': 7,
-
   'وَسَوَآءٌ': 7,
   'عَلَيۡهِمۡ': 8,
   'ءَأَنذَرۡتَهُمۡ': 8,
   'أَمۡ': 8,
   'لَمۡ': 8,
   'تُنذِرۡهُمۡ': 8,
-
   'إِنَّمَا': 8,
   'تُنذِرُ': 8,
   'مَنِ': 9,
@@ -275,14 +233,12 @@ const WORD_LINE_LOCATIONS: Record<string, number> = {
   'بِٱلۡغَيۡبِۖ': 9,
   'فَبَشِّرۡهُ': 9,
   'بِمَغۡفِرَةٖ': 9,
-
   'وَأَجۡرٖ': 10,
   'كَرِيمٍ': 10,
   'نَحۡنُ': 10,
   'نُحۡيِ': 10,
   'ٱلۡمَوۡتَىٰ': 10,
   'وَنَكۡتُبُ': 10,
-
   'مَا': 11,
   'قَدَّمُواْ': 11,
   'وَءَاثَٰرَهُمۡۚ': 11,
@@ -308,20 +264,17 @@ const normalizeArabic = (value: string) => {
     .replace(/[^\d۰-۹]/g, '');
 };
 
-const getVerse = (number: number) => {
-  return SURAH_YASIN.find(v => v.number === number);
-};
+const getVerse = (number: number) =>
+  SURAH_YASIN.find(v => v.number === number);
 
-const getDayPlan = (day: number) => {
-  return PLAN.find(p => p.day === day);
-};
+const getDayPlan = (day: number) =>
+  PLAN.find(p => p.day === day);
 
 const shuffle = <T,>(array: T[]): T[] => {
   const copy = [...array];
 
   for (let i = copy.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
-
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
 
@@ -334,23 +287,17 @@ const getWordsFromVerses = (verses: number[]) => {
   Object.keys(WORD_LINE_LOCATIONS).forEach(word => {
     const exists = verses.some(verseNumber => {
       const verse = getVerse(verseNumber);
-
       return verse?.arabic.includes(word);
     });
 
-    if (exists) {
-      result.push(word);
-    }
+    if (exists) result.push(word);
   });
 
   return result;
 };
 
 const makeShortText = (text: string, length = 45) => {
-  if (text.length <= length) {
-    return text;
-  }
-
+  if (text.length <= length) return text;
   return `${text.substring(0, length)}...`;
 };
 
@@ -362,19 +309,12 @@ const generateQuestions = (
   verses: number[],
   count: number,
 ): QuizQuestion[] => {
-  if (!verses.length) {
-    return [];
-  }
+  if (!verses.length) return [];
 
   const questions: QuizQuestion[] = [];
-
   const availableVerses = shuffle(verses);
   const availableWords = shuffle(getWordsFromVerses(verses));
 
-  /*
-   * دقیقاً مشابه HTML:
-   * حداکثر تعداد سؤال برابر count است.
-   */
   const questionCount = Math.min(
     count,
     availableVerses.length + Math.floor(availableWords.length / 2),
@@ -389,10 +329,6 @@ const generateQuestions = (
     i < questionCount && i < 12;
     i += 1
   ) {
-    /*
-     * چون HTML از انتخاب تصادفی استفاده می‌کرد،
-     * نوع سؤال هم تصادفی است.
-     */
     const possibleTypes: QuizType[] = [
       'ayah_number',
       'translation',
@@ -402,44 +338,31 @@ const generateQuestions = (
     ];
 
     let type =
-      possibleTypes[Math.floor(Math.random() * possibleTypes.length)];
+      possibleTypes[
+        Math.floor(Math.random() * possibleTypes.length)
+      ];
 
-    /*
-     * اگر دیگر verse نداریم، فقط word_line امکان‌پذیر است.
-     */
     if (verseCursor >= availableVerses.length) {
       type = 'word_line';
     }
 
-    /*
-     * اگر word نداریم، از چهار نوع آیه استفاده کن.
-     */
     if (
       type === 'word_line' &&
       wordCursor >= availableWords.length
     ) {
-      type = possibleTypes[
-        Math.floor(Math.random() * 4)
-      ];
+      type =
+        possibleTypes[
+          Math.floor(Math.random() * 4)
+        ];
     }
 
-    /* -----------------------------------------------------
-       1. شماره آیه
-    ----------------------------------------------------- */
-
     if (type === 'ayah_number') {
-      if (verseCursor >= availableVerses.length) {
-        continue;
-      }
+      if (verseCursor >= availableVerses.length) continue;
 
-      const ayahNumber = availableVerses[verseCursor];
-      verseCursor += 1;
-
+      const ayahNumber = availableVerses[verseCursor++];
       const verse = getVerse(ayahNumber);
 
-      if (!verse) {
-        continue;
-      }
+      if (!verse) continue;
 
       questions.push({
         id: `${Date.now()}-${i}-ayah`,
@@ -455,23 +378,13 @@ const generateQuestions = (
       continue;
     }
 
-    /* -----------------------------------------------------
-       2. ترجمه
-    ----------------------------------------------------- */
-
     if (type === 'translation') {
-      if (verseCursor >= availableVerses.length) {
-        continue;
-      }
+      if (verseCursor >= availableVerses.length) continue;
 
-      const ayahNumber = availableVerses[verseCursor];
-      verseCursor += 1;
-
+      const ayahNumber = availableVerses[verseCursor++];
       const verse = getVerse(ayahNumber);
 
-      if (!verse) {
-        continue;
-      }
+      if (!verse) continue;
 
       const otherTranslations = verses
         .filter(number => number !== ayahNumber)
@@ -498,26 +411,15 @@ const generateQuestions = (
       continue;
     }
 
-    /* -----------------------------------------------------
-       3. ادامه آیه
-    ----------------------------------------------------- */
-
     if (type === 'continuation') {
-      if (verseCursor >= availableVerses.length) {
-        continue;
-      }
+      if (verseCursor >= availableVerses.length) continue;
 
-      const ayahNumber = availableVerses[verseCursor];
-      verseCursor += 1;
-
+      const ayahNumber = availableVerses[verseCursor++];
       const verse = getVerse(ayahNumber);
 
-      if (!verse) {
-        continue;
-      }
+      if (!verse) continue;
 
       const words = verse.arabic.split(' ');
-
       const halfIndex = Math.max(
         1,
         Math.floor(words.length / 2),
@@ -535,13 +437,9 @@ const generateQuestions = (
         .filter(number => number !== ayahNumber)
         .map(number => {
           const other = getVerse(number);
-
-          if (!other) {
-            return '';
-          }
+          if (!other) return '';
 
           const otherWords = other.arabic.split(' ');
-
           const otherHalf = Math.max(
             1,
             Math.floor(otherWords.length / 2),
@@ -574,23 +472,13 @@ const generateQuestions = (
       continue;
     }
 
-    /* -----------------------------------------------------
-       4. تشخیص آیه از روی ترجمه
-    ----------------------------------------------------- */
-
     if (type === 'verse_from_translation') {
-      if (verseCursor >= availableVerses.length) {
-        continue;
-      }
+      if (verseCursor >= availableVerses.length) continue;
 
-      const ayahNumber = availableVerses[verseCursor];
-      verseCursor += 1;
-
+      const ayahNumber = availableVerses[verseCursor++];
       const verse = getVerse(ayahNumber);
 
-      if (!verse) {
-        continue;
-      }
+      if (!verse) continue;
 
       const numberOptions = shuffle([
         ayahNumber,
@@ -613,30 +501,20 @@ const generateQuestions = (
       continue;
     }
 
-    /* -----------------------------------------------------
-       5. تشخیص خط
-    ----------------------------------------------------- */
-
     if (type === 'word_line') {
-      if (wordCursor >= availableWords.length) {
-        continue;
-      }
+      if (wordCursor >= availableWords.length) continue;
 
-      const word = availableWords[wordCursor];
-      wordCursor += 1;
+      const word = availableWords[wordCursor++];
+      const correctLine = WORD_LINE_LOCATIONS[word];
 
-      const correctLine =
-        WORD_LINE_LOCATIONS[word];
-
-      if (!correctLine) {
-        continue;
-      }
+      if (!correctLine) continue;
 
       const lineOptions = shuffle([
         correctLine,
         ...shuffle(
-          Array.from({ length: 11 }, (_, index) => index + 1)
-            .filter(line => line !== correctLine),
+          Array.from({ length: 11 }, (_, index) => index + 1).filter(
+            line => line !== correctLine,
+          ),
         ).slice(0, 3),
       ]);
 
@@ -658,7 +536,7 @@ const generateQuestions = (
 };
 
 /* =========================================================
-   MAIN SCREEN
+   SCREEN
 ========================================================= */
 
 export default function QuranScreen() {
@@ -667,64 +545,30 @@ export default function QuranScreen() {
   const navigation = useNavigation();
 
   const [currentDay, setCurrentDay] = useState(1);
+  const [isStudyComplete, setIsStudyComplete] = useState(false);
+  const [isReviewMode, setIsReviewMode] = useState(false);
+  const [showTranslation, setShowTranslation] = useState(true);
+  const [showReview, setShowReview] = useState(false);
 
-  const [isStudyComplete, setIsStudyComplete] =
-    useState(false);
-
-  const [isReviewMode, setIsReviewMode] =
-    useState(false);
-
-  const [showTranslation, setShowTranslation] =
-    useState(true);
-
-  const [showReview, setShowReview] =
-    useState(false);
-
-  const [quizVisible, setQuizVisible] =
-    useState(false);
-
-  const [quizMode, setQuizMode] =
-    useState<StudyMode>('today');
-
-  const [quizQuestions, setQuizQuestions] =
-    useState<QuizQuestion[]>([]);
-
+  const [quizVisible, setQuizVisible] = useState(false);
+  const [quizMode, setQuizMode] = useState<StudyMode>('today');
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [quizIndex, setQuizIndex] = useState(0);
-
   const [selectedOption, setSelectedOption] =
     useState<string | number | null>(null);
-
-  const [fillAnswer, setFillAnswer] =
-    useState('');
-
-  const [questionAnswered, setQuestionAnswered] =
-    useState(false);
-
+  const [fillAnswer, setFillAnswer] = useState('');
+  const [questionAnswered, setQuestionAnswered] = useState(false);
   const [questionCorrect, setQuestionCorrect] =
     useState<boolean | null>(null);
-
   const [quizCorrect, setQuizCorrect] = useState(0);
-
   const [quizResult, setQuizResult] =
     useState<QuizResult | null>(null);
 
-  const [favorite, setFavorite] =
-    useState(false);
+  const [favorite, setFavorite] = useState(false);
+  const [playing, setPlaying] = useState(false);
 
-  const [playing, setPlaying] =
-    useState(false);
-
-  const fadeAnim = useRef(
-    new Animated.Value(0),
-  ).current;
-
-  const scaleAnim = useRef(
-    new Animated.Value(0.97),
-  ).current;
-
-  /* =======================================================
-     CURRENT DAY DATA
-  ======================================================= */
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.97)).current;
 
   const todayVerses = useMemo(
     () => getDayPlan(currentDay)?.verses ?? [],
@@ -736,10 +580,7 @@ export default function QuranScreen() {
 
     for (let day = 1; day < currentDay; day += 1) {
       const plan = getDayPlan(day);
-
-      if (plan) {
-        result.push(...plan.verses);
-      }
+      if (plan) result.push(...plan.verses);
     }
 
     return result;
@@ -766,29 +607,21 @@ export default function QuranScreen() {
     (memorizedVerses / totalVerses) * 100,
   );
 
-  const currentQuestion =
-    quizQuestions[quizIndex];
+  const currentQuestion = quizQuestions[quizIndex];
 
-  /* =======================================================
-     LOAD / SAVE PROGRESS
-  ======================================================= */
+  /* =========================================================
+     STORAGE
+  ========================================================= */
 
   useEffect(() => {
     let mounted = true;
 
     const load = async () => {
       try {
-        /*
-         * AsyncStorage را عمداً با import داخلی استفاده می‌کنیم
-         * تا ساختار فعلی پروژه نیاز به تغییر دیگری نداشته باشد.
-         */
         const AsyncStorage =
-          require('@react-native-async-storage/async-storage')
-            .default;
+          require('@react-native-async-storage/async-storage').default;
 
-        const saved =
-          await AsyncStorage.getItem(STORAGE_KEY);
-
+        const saved = await AsyncStorage.getItem(STORAGE_KEY);
         const savedDate =
           await AsyncStorage.getItem(LAST_UPDATE_KEY);
 
@@ -796,14 +629,7 @@ export default function QuranScreen() {
           .toISOString()
           .slice(0, 10);
 
-        if (
-          savedDate &&
-          savedDate !== todayKey
-        ) {
-          /*
-           * مشابه quran.html:
-           * با شروع روز جدید، مطالعه همان روز دوباره فعال می‌شود.
-           */
+        if (savedDate && savedDate !== todayKey) {
           setIsStudyComplete(false);
 
           await AsyncStorage.setItem(
@@ -816,30 +642,20 @@ export default function QuranScreen() {
           try {
             const data = JSON.parse(saved);
 
-            if (
-              typeof data.currentDay === 'number'
-            ) {
+            if (typeof data.currentDay === 'number') {
               setCurrentDay(
                 Math.max(
                   1,
-                  Math.min(
-                    PLAN.length,
-                    data.currentDay,
-                  ),
+                  Math.min(PLAN.length, data.currentDay),
                 ),
               );
             }
 
-            if (
-              typeof data.isStudyComplete ===
-              'boolean'
-            ) {
-              setIsStudyComplete(
-                data.isStudyComplete,
-              );
+            if (typeof data.isStudyComplete === 'boolean') {
+              setIsStudyComplete(data.isStudyComplete);
             }
           } catch {
-            // ignore invalid storage
+            // ignore
           }
         }
 
@@ -865,8 +681,7 @@ export default function QuranScreen() {
     const save = async () => {
       try {
         const AsyncStorage =
-          require('@react-native-async-storage/async-storage')
-            .default;
+          require('@react-native-async-storage/async-storage').default;
 
         await AsyncStorage.setItem(
           STORAGE_KEY,
@@ -883,9 +698,9 @@ export default function QuranScreen() {
     save();
   }, [currentDay, isStudyComplete]);
 
-  /* =======================================================
-     SCREEN ANIMATION
-  ======================================================= */
+  /* =========================================================
+     ANIMATION
+  ========================================================= */
 
   useEffect(() => {
     fadeAnim.setValue(0);
@@ -906,20 +721,12 @@ export default function QuranScreen() {
     ]).start();
   }, []);
 
-  /* =======================================================
-     RESET QUESTION
-  ======================================================= */
-
   const resetQuestionState = () => {
     setSelectedOption(null);
     setFillAnswer('');
     setQuestionAnswered(false);
     setQuestionCorrect(null);
   };
-
-  /* =======================================================
-     BACK
-  ======================================================= */
 
   const handleBack = () => {
     if (quizVisible) {
@@ -932,21 +739,17 @@ export default function QuranScreen() {
     }
   };
 
-  /* =======================================================
-     START QUIZ
-  ======================================================= */
+  /* =========================================================
+     QUIZ
+  ========================================================= */
 
   const startQuiz = (mode: StudyMode) => {
     const verses =
-      mode === 'today'
-        ? todayVerses
-        : previousVerses;
+      mode === 'today' ? todayVerses : previousVerses;
 
     if (!verses.length) {
       Alert.alert(
-        mode === 'today'
-          ? 'آزمون امروز'
-          : 'آزمون مرور',
+        mode === 'today' ? 'آزمون امروز' : 'آزمون مرور',
         mode === 'today'
           ? 'هیچ آیاتی برای امروز تعیین نشده است.'
           : 'هنوز آیات قبلی برای آزمون مرور وجود ندارد.',
@@ -955,10 +758,7 @@ export default function QuranScreen() {
       return;
     }
 
-    if (
-      mode === 'today' &&
-      isStudyComplete
-    ) {
+    if (mode === 'today' && isStudyComplete) {
       Alert.alert(
         'آزمون امروز',
         'مطالعه امروز انجام شده است. آزمون امروز فقط قبل از پایان مطالعه قابل انجام است.',
@@ -972,8 +772,7 @@ export default function QuranScreen() {
         ? Math.min(5, verses.length)
         : Math.min(10, verses.length);
 
-    const generated =
-      generateQuestions(verses, count);
+    const generated = generateQuestions(verses, count);
 
     if (!generated.length) {
       Alert.alert(
@@ -993,30 +792,17 @@ export default function QuranScreen() {
     setQuizVisible(true);
   };
 
-  /* =======================================================
-     ANSWER CHECK
-  ======================================================= */
-
   const submitCurrentAnswer = () => {
-    if (!currentQuestion || questionAnswered) {
-      return;
-    }
+    if (!currentQuestion || questionAnswered) return;
 
     let correct = false;
 
-    if (
-      currentQuestion.type ===
-      'ayah_number'
-    ) {
-      const answer = fillAnswer.trim();
-
+    if (currentQuestion.type === 'ayah_number') {
       correct =
-        answer ===
+        fillAnswer.trim() ===
         String(currentQuestion.answer);
     } else {
-      if (selectedOption === null) {
-        return;
-      }
+      if (selectedOption === null) return;
 
       correct =
         String(selectedOption) ===
@@ -1028,45 +814,21 @@ export default function QuranScreen() {
 
     if (correct) {
       setQuizCorrect(value => value + 1);
-
-      /*
-       * بازخورد لمسی کوچک
-       */
-      // Vibration در اینجا عمداً حذف شده تا روی دستگاه‌های
-      // مختلف رفتار متفاوت ایجاد نکند.
     }
   };
 
-  /* =======================================================
-     NEXT QUESTION
-  ======================================================= */
-
   const nextQuestion = () => {
-    if (!questionAnswered) {
-      return;
-    }
+    if (!questionAnswered) return;
 
-    if (
-      quizIndex >=
-      quizQuestions.length - 1
-    ) {
-      /*
-       * quizCorrect با setState ممکن است هنوز
-       * مقدار آخر را نگرفته باشد؛ بنابراین نتیجه
-       * را مستقیم از questionCorrect محاسبه می‌کنیم.
-       */
+    if (quizIndex >= quizQuestions.length - 1) {
       const finalCorrect =
-        quizCorrect +
-        (questionCorrect ? 1 : 0);
+        quizCorrect + (questionCorrect ? 1 : 0);
 
-      const total =
-        quizQuestions.length;
+      const total = quizQuestions.length;
 
       const percentage =
         total > 0
-          ? Math.round(
-              (finalCorrect / total) * 100,
-            )
+          ? Math.round((finalCorrect / total) * 100)
           : 0;
 
       setQuizResult({
@@ -1082,10 +844,6 @@ export default function QuranScreen() {
     resetQuestionState();
   };
 
-  /* =======================================================
-     REGENERATE QUIZ
-  ======================================================= */
-
   const regenerateQuiz = () => {
     const verses =
       quizMode === 'today'
@@ -1097,11 +855,10 @@ export default function QuranScreen() {
         ? Math.min(5, verses.length)
         : Math.min(10, verses.length);
 
-    const generated =
-      generateQuestions(
-        verses,
-        count,
-      );
+    const generated = generateQuestions(
+      verses,
+      count,
+    );
 
     setQuizQuestions(generated);
     setQuizIndex(0);
@@ -1110,9 +867,9 @@ export default function QuranScreen() {
     resetQuestionState();
   };
 
-  /* =======================================================
-     FINISH STUDY
-  ======================================================= */
+  /* =========================================================
+     STUDY
+  ========================================================= */
 
   const finishStudy = () => {
     if (isStudyComplete) {
@@ -1135,9 +892,7 @@ export default function QuranScreen() {
 
     Alert.alert(
       'پایان مطالعه',
-      `آیا از حفظ آیات ${todayVerses.join(
-        '، ',
-      )} اطمینان دارید؟`,
+      `آیا از حفظ آیات ${todayVerses.join('، ')} اطمینان دارید؟`,
       [
         {
           text: 'لغو',
@@ -1146,25 +901,21 @@ export default function QuranScreen() {
         {
           text: 'بله، پایان مطالعه',
           onPress: () => {
-            if (
-              currentDay <
-              PLAN.length
-            ) {
-              const nextDay =
-                currentDay + 1;
+            if (currentDay < PLAN.length) {
+              const nextDay = currentDay + 1;
 
               setCurrentDay(nextDay);
               setIsStudyComplete(false);
 
               Alert.alert(
-                '🎉 تبریک!',
+                'روز کامل شد',
                 `روز ${currentDay} کامل شد.\nروز ${nextDay} فعال شد.`,
               );
             } else {
               setIsStudyComplete(true);
 
               Alert.alert(
-                '🎉 مبارک!',
+                'برنامه کامل شد',
                 'شما برنامه حفظ سوره یس را کامل کردید.',
               );
             }
@@ -1173,10 +924,6 @@ export default function QuranScreen() {
       ],
     );
   };
-
-  /* =======================================================
-     REVIEW MODE
-  ======================================================= */
 
   const toggleReviewMode = () => {
     if (!previousVerses.length) {
@@ -1192,14 +939,8 @@ export default function QuranScreen() {
     setShowReview(true);
   };
 
-  /* =======================================================
-     AUDIO PLACEHOLDER
-  ======================================================= */
-
   const playAudio = () => {
-    if (playing) {
-      return;
-    }
+    if (playing) return;
 
     setPlaying(true);
 
@@ -1208,54 +949,56 @@ export default function QuranScreen() {
     }, 2500);
   };
 
-  /* =======================================================
-     QUIZ RESULT
-  ======================================================= */
+  /* =========================================================
+     RESULT
+  ========================================================= */
 
   const renderQuizResult = () => {
-    if (!quizResult) {
-      return null;
-    }
+    if (!quizResult) return null;
 
     const perfect =
-      quizResult.correct ===
-      quizResult.total;
+      quizResult.correct === quizResult.total;
 
-    const good =
-      quizResult.percentage >= 50;
+    const good = quizResult.percentage >= 50;
 
     return (
       <View
         style={[
           styles.resultContainer,
           {
-            backgroundColor:
-              colors.card ??
-              'rgba(255,255,255,0.06)',
-            borderColor:
-              colors.border ??
-              'rgba(255,255,255,0.1)',
+            backgroundColor: colors.surface || 'rgba(255,255,255,0.05)',
+            borderColor: colors.border || 'rgba(255,255,255,0.1)',
           },
         ]}
       >
-        <View style={styles.resultIcon}>
+        <View
+          style={[
+            styles.resultIcon,
+            {
+              backgroundColor: `${colors.primary}12`,
+              borderColor: `${colors.primary}25`,
+            },
+          ]}
+        >
           {perfect ? (
-            <Trophy
-              size={42}
-              color="#F5D76E"
-            />
+            <Trophy size={38} color="#F5D76E" />
           ) : good ? (
-            <Award
-              size={42}
-              color={colors.primary}
-            />
+            <Award size={38} color={colors.primary} />
           ) : (
-            <Target
-              size={42}
-              color={colors.primary}
-            />
+            <Target size={38} color={colors.primary} />
           )}
         </View>
+
+        <Text
+          style={[
+            styles.resultEyebrow,
+            {
+              color: colors.textSecondary || '#999',
+            },
+          ]}
+        >
+          نتیجه آزمون
+        </Text>
 
         <Text
           style={[
@@ -1265,54 +1008,82 @@ export default function QuranScreen() {
             },
           ]}
         >
-          {quizResult.correct}/
-          {quizResult.total}
+          {quizResult.correct}/{quizResult.total}
         </Text>
 
-        <Text
+        <View
           style={[
-            styles.resultPercentage,
+            styles.resultPercentPill,
             {
-              color:
-                colors.textSecondary ??
-                '#999',
+              backgroundColor: `${colors.primary}15`,
             },
           ]}
         >
-          {quizResult.percentage}٪
-        </Text>
+          <Target
+            size={15}
+            color={colors.primary}
+          />
+
+          <Text
+            style={[
+              styles.resultPercentText,
+              {
+                color: colors.primary,
+              },
+            ]}
+          >
+            {quizResult.percentage}٪
+          </Text>
+        </View>
 
         <Text
           style={[
             styles.resultTitle,
             {
-              color:
-                colors.text ??
-                '#fff',
+              color: colors.text || '#fff',
             },
           ]}
         >
           {quizMode === 'today'
-            ? 'نتیجه آزمون امروز'
-            : 'نتیجه آزمون مرور'}
+            ? 'آزمون امروز'
+            : 'آزمون مرور'}
         </Text>
 
         <Text
           style={[
             styles.resultMessage,
             {
-              color:
-                colors.textSecondary ??
-                '#aaa',
+              color: colors.textSecondary || '#aaa',
             },
           ]}
         >
           {perfect
-            ? '🎉 عالی! همه پاسخ‌ها صحیح بودند.'
+            ? 'عالی! تمام پاسخ‌ها صحیح بودند.'
             : good
-            ? '👍 خوب است، ادامه بده!'
-            : '💪 نیاز به مرور بیشتری داری.'}
+            ? 'عملکرد خوبی داشتی؛ با کمی مرور بهتر هم می‌شود.'
+            : 'مرور بیشتر به تثبیت مطالب کمک می‌کند.'}
         </Text>
+
+        <View
+          style={[
+            styles.resultProgressTrack,
+            {
+              backgroundColor: isDark
+                ? 'rgba(255,255,255,0.07)'
+                : 'rgba(0,0,0,0.06)',
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.resultProgressFill,
+              {
+                width: `${quizResult.percentage}%`,
+                backgroundColor: colors.primary,
+              },
+            ]}
+          />
+        </View>
 
         <View style={styles.resultActions}>
           <TouchableOpacity
@@ -1321,51 +1092,38 @@ export default function QuranScreen() {
             style={[
               styles.secondaryButton,
               {
-                borderColor:
-                  colors.border ??
-                  'rgba(255,255,255,0.12)',
+                borderColor: colors.border || 'rgba(255,255,255,0.12)',
               },
             ]}
           >
             <RefreshCw
-              size={18}
-              color={
-                colors.textSecondary ??
-                '#aaa'
-              }
+              size={17}
+              color={colors.textSecondary || '#aaa'}
             />
 
             <Text
               style={[
                 styles.secondaryButtonText,
                 {
-                  color:
-                    colors.textSecondary ??
-                    '#aaa',
+                  color: colors.textSecondary || '#aaa',
                 },
               ]}
             >
-              تولید مجدد
+              آزمون دوباره
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() => {
-              setQuizVisible(false);
-            }}
+            onPress={() => setQuizVisible(false)}
             style={[
               styles.primaryButton,
               {
-                backgroundColor:
-                  colors.primary,
+                backgroundColor: colors.primary,
               },
             ]}
           >
-            <CheckCircle
-              size={18}
-              color="#fff"
-            />
+            <CheckCircle size={18} color="#fff" />
 
             <Text style={styles.primaryButtonText}>
               پایان
@@ -1376,14 +1134,12 @@ export default function QuranScreen() {
     );
   };
 
-  /* =======================================================
-     QUESTION RENDER
-  ======================================================= */
+  /* =========================================================
+     QUESTION
+  ========================================================= */
 
   const renderQuestion = () => {
-    if (!currentQuestion) {
-      return null;
-    }
+    if (!currentQuestion) return null;
 
     const optionIsCorrect = (
       option: string | number,
@@ -1398,19 +1154,22 @@ export default function QuranScreen() {
       String(selectedOption) ===
       String(option);
 
+    const quizPercent =
+      quizQuestions.length > 0
+        ? ((quizIndex + 1) /
+            quizQuestions.length) *
+          100
+        : 0;
+
     return (
       <View>
-        {/* QUESTION HEADER */}
-
-        <View style={styles.quizProgressRow}>
-          <View>
+        <View style={styles.questionTop}>
+          <View style={{ flex: 1 }}>
             <Text
               style={[
                 styles.questionCounter,
                 {
-                  color:
-                    colors.textSecondary ??
-                    '#aaa',
+                  color: colors.textSecondary || '#aaa',
                 },
               ]}
             >
@@ -1422,8 +1181,7 @@ export default function QuranScreen() {
               style={[
                 styles.questionType,
                 {
-                  color:
-                    colors.primary,
+                  color: colors.primary,
                 },
               ]}
             >
@@ -1433,24 +1191,23 @@ export default function QuranScreen() {
 
           <View
             style={[
-              styles.quizBadge,
+              styles.quizModePill,
               {
-                backgroundColor:
-                  `${colors.primary}18`,
+                backgroundColor: `${colors.primary}12`,
+                borderColor: `${colors.primary}25`,
               },
             ]}
           >
             <Target
-              size={16}
+              size={15}
               color={colors.primary}
             />
 
             <Text
               style={[
-                styles.quizBadgeText,
+                styles.quizModeText,
                 {
-                  color:
-                    colors.primary,
+                  color: colors.primary,
                 },
               ]}
             >
@@ -1461,28 +1218,55 @@ export default function QuranScreen() {
           </View>
         </View>
 
-        {/* PROMPT */}
+        <View
+          style={[
+            styles.quizProgressTrack,
+            {
+              backgroundColor: isDark
+                ? 'rgba(255,255,255,0.07)'
+                : 'rgba(0,0,0,0.06)',
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.quizProgressFill,
+              {
+                width: `${quizPercent}%`,
+                backgroundColor: colors.primary,
+              },
+            ]}
+          />
+        </View>
 
         <View
           style={[
             styles.promptCard,
             {
-              backgroundColor:
-                colors.card ??
-                'rgba(255,255,255,0.05)',
-              borderColor:
-                colors.border ??
-                'rgba(255,255,255,0.1)',
+              backgroundColor: colors.surface || 'rgba(255,255,255,0.04)',
+              borderColor: colors.border || 'rgba(255,255,255,0.1)',
             },
           ]}
         >
+          <View
+            style={[
+              styles.promptIcon,
+              {
+                backgroundColor: `${colors.primary}12`,
+              },
+            ]}
+          >
+            <Sparkles
+              size={18}
+              color={colors.primary}
+            />
+          </View>
+
           <Text
             style={[
               styles.promptText,
               {
-                color:
-                  colors.text ??
-                  '#fff',
+                color: colors.text || '#fff',
               },
             ]}
           >
@@ -1490,29 +1274,33 @@ export default function QuranScreen() {
           </Text>
         </View>
 
-        {/* DISPLAY */}
-
         <View
           style={[
             styles.displayCard,
             {
-              backgroundColor:
-                isDark
-                  ? 'rgba(255,255,255,0.035)'
-                  : 'rgba(0,0,0,0.035)',
-              borderColor:
-                colors.border ??
-                'rgba(255,255,255,0.1)',
+              backgroundColor: isDark
+                ? 'rgba(255,255,255,0.035)'
+                : 'rgba(0,0,0,0.025)',
+              borderColor: colors.border || 'rgba(255,255,255,0.1)',
             },
           ]}
         >
           <Text
             style={[
+              styles.displayLabel,
+              {
+                color: colors.textSecondary || '#888',
+              },
+            ]}
+          >
+            متن سؤال
+          </Text>
+
+          <Text
+            style={[
               styles.displayText,
               {
-                color:
-                  colors.text ??
-                  '#fff',
+                color: colors.text || '#fff',
               },
             ]}
           >
@@ -1520,60 +1308,41 @@ export default function QuranScreen() {
           </Text>
         </View>
 
-        {/* FILL INPUT */}
-
-        {currentQuestion.type ===
-          'ayah_number' && (
+        {currentQuestion.type === 'ayah_number' && (
           <View>
             <TextInput
               value={fillAnswer}
               onChangeText={setFillAnswer}
               editable={!questionAnswered}
               keyboardType="number-pad"
-              placeholder="شماره آیه را وارد کنید..."
-              placeholderTextColor={
-                colors.textSecondary ??
-                '#888'
-              }
+              placeholder="شماره آیه را وارد کنید"
+              placeholderTextColor={colors.textSecondary || '#888'}
               style={[
                 styles.input,
                 {
-                  color:
-                    colors.text ??
-                    '#fff',
-                  borderColor:
-                    questionAnswered
-                      ? questionCorrect
-                        ? '#34D399'
-                        : '#FF6B81'
-                      : colors.border ??
-                        'rgba(255,255,255,0.12)',
-                  backgroundColor:
-                    colors.card ??
-                    'rgba(255,255,255,0.05)',
+                  color: colors.text || '#fff',
+                  borderColor: questionAnswered
+                    ? questionCorrect
+                      ? '#34D399'
+                      : '#FF6B81'
+                    : colors.border || 'rgba(255,255,255,0.12)',
+                  backgroundColor: colors.surface || 'rgba(255,255,255,0.05)',
                 },
               ]}
             />
           </View>
         )}
 
-        {/* OPTIONS */}
-
         {currentQuestion.options &&
-          currentQuestion.type !==
-            'ayah_number' && (
+          currentQuestion.type !== 'ayah_number' && (
             <View style={styles.optionsContainer}>
               {currentQuestion.options.map(
                 (option, index) => {
                   const selected =
-                    optionIsSelected(
-                      option,
-                    );
+                    optionIsSelected(option);
 
                   const correct =
-                    optionIsCorrect(
-                      option,
-                    );
+                    optionIsCorrect(option);
 
                   const wrong =
                     questionAnswered &&
@@ -1581,34 +1350,26 @@ export default function QuranScreen() {
                     !correct;
 
                   let borderColor =
-                    colors.border ??
-                    'rgba(255,255,255,0.1)';
+                    colors.border || 'rgba(255,255,255,0.1)';
 
                   let backgroundColor =
-                    colors.card ??
-                    'rgba(255,255,255,0.04)';
+                    colors.surface || 'rgba(255,255,255,0.04)';
 
                   let textColor =
-                    colors.text ??
-                    '#fff';
+                    colors.text || '#fff';
 
                   if (correct) {
-                    borderColor =
-                      '#34D399';
+                    borderColor = '#34D399';
                     backgroundColor =
                       'rgba(52,211,153,0.08)';
-                    textColor =
-                      '#34D399';
+                    textColor = '#34D399';
                   } else if (wrong) {
-                    borderColor =
-                      '#FF6B81';
+                    borderColor = '#FF6B81';
                     backgroundColor =
                       'rgba(255,107,129,0.08)';
-                    textColor =
-                      '#FF6B81';
+                    textColor = '#FF6B81';
                   } else if (selected) {
-                    borderColor =
-                      colors.primary;
+                    borderColor = colors.primary;
                     backgroundColor =
                       `${colors.primary}15`;
                   }
@@ -1616,15 +1377,11 @@ export default function QuranScreen() {
                   return (
                     <TouchableOpacity
                       key={`${currentQuestion.id}-${index}`}
-                      disabled={
-                        questionAnswered
+                      disabled={questionAnswered}
+                      activeOpacity={0.82}
+                      onPress={() =>
+                        setSelectedOption(option)
                       }
-                      activeOpacity={0.8}
-                      onPress={() => {
-                        setSelectedOption(
-                          option,
-                        );
-                      }}
                       style={[
                         styles.option,
                         {
@@ -1656,8 +1413,7 @@ export default function QuranScreen() {
                             style={[
                               styles.optionIndexText,
                               {
-                                color:
-                                  textColor,
+                                color: textColor,
                               },
                             ]}
                           >
@@ -1672,13 +1428,11 @@ export default function QuranScreen() {
                         style={[
                           styles.optionText,
                           {
-                            color:
-                              textColor,
+                            color: textColor,
                           },
                           currentQuestion.type ===
                             'continuation' && {
-                            fontFamily:
-                              'serif',
+                            fontFamily: 'serif',
                             lineHeight: 32,
                           },
                         ]}
@@ -1692,54 +1446,45 @@ export default function QuranScreen() {
             </View>
           )}
 
-        {/* FEEDBACK */}
-
         {questionAnswered && (
           <View
             style={[
               styles.feedback,
               {
-                backgroundColor:
-                  questionCorrect
-                    ? 'rgba(52,211,153,0.08)'
-                    : 'rgba(255,107,129,0.08)',
-                borderColor:
-                  questionCorrect
-                    ? 'rgba(52,211,153,0.25)'
-                    : 'rgba(255,107,129,0.25)',
+                backgroundColor: questionCorrect
+                  ? 'rgba(52,211,153,0.08)'
+                  : 'rgba(255,107,129,0.08)',
+                borderColor: questionCorrect
+                  ? 'rgba(52,211,153,0.25)'
+                  : 'rgba(255,107,129,0.25)',
               },
             ]}
           >
             {questionCorrect ? (
               <CheckCircle
-                size={20}
+                size={21}
                 color="#34D399"
               />
             ) : (
               <XCircle
-                size={20}
+                size={21}
                 color="#FF6B81"
               />
             )}
 
-            <View
-              style={{
-                flex: 1,
-              }}
-            >
+            <View style={{ flex: 1 }}>
               <Text
                 style={[
                   styles.feedbackTitle,
                   {
-                    color:
-                      questionCorrect
-                        ? '#34D399'
-                        : '#FF6B81',
+                    color: questionCorrect
+                      ? '#34D399'
+                      : '#FF6B81',
                   },
                 ]}
               >
                 {questionCorrect
-                  ? 'پاسخ صحیح است!'
+                  ? 'پاسخ صحیح است'
                   : 'پاسخ نادرست است'}
               </Text>
 
@@ -1748,9 +1493,7 @@ export default function QuranScreen() {
                   style={[
                     styles.feedbackAnswer,
                     {
-                      color:
-                        colors.textSecondary ??
-                        '#aaa',
+                      color: colors.textSecondary || '#aaa',
                     },
                   ]}
                 >
@@ -1764,33 +1507,27 @@ export default function QuranScreen() {
           </View>
         )}
 
-        {/* SUBMIT / NEXT */}
-
         {!questionAnswered ? (
           <TouchableOpacity
             activeOpacity={0.85}
             disabled={
               currentQuestion.type ===
-                'ayah_number'
+              'ayah_number'
                 ? !fillAnswer.trim()
                 : selectedOption === null
             }
-            onPress={
-              submitCurrentAnswer
-            }
+            onPress={submitCurrentAnswer}
             style={[
               styles.quizActionButton,
               {
-                backgroundColor:
-                  colors.primary,
+                backgroundColor: colors.primary,
                 opacity:
                   currentQuestion.type ===
                   'ayah_number'
                     ? fillAnswer.trim()
                       ? 1
                       : 0.45
-                    : selectedOption !==
-                        null
+                    : selectedOption !== null
                       ? 1
                       : 0.45,
               },
@@ -1801,9 +1538,7 @@ export default function QuranScreen() {
               color="#fff"
             />
 
-            <Text
-              style={styles.quizActionText}
-            >
+            <Text style={styles.quizActionText}>
               بررسی پاسخ
             </Text>
           </TouchableOpacity>
@@ -1814,8 +1549,7 @@ export default function QuranScreen() {
             style={[
               styles.quizActionButton,
               {
-                backgroundColor:
-                  colors.primary,
+                backgroundColor: colors.primary,
               },
             ]}
           >
@@ -1832,9 +1566,7 @@ export default function QuranScreen() {
               />
             )}
 
-            <Text
-              style={styles.quizActionText}
-            >
+            <Text style={styles.quizActionText}>
               {quizIndex >=
               quizQuestions.length - 1
                 ? 'مشاهده نتیجه'
@@ -1846,376 +1578,387 @@ export default function QuranScreen() {
     );
   };
 
-  /* =======================================================
+  /* =========================================================
      QUIZ MODAL
-  ======================================================= */
+  ========================================================= */
 
-  const renderQuizModal = () => {
-    return (
-      <Modal
-        visible={quizVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() =>
-          setQuizVisible(false)
-        }
-      >
-        <View style={styles.modalOverlay}>
+  const renderQuizModal = () => (
+    <Modal
+      visible={quizVisible}
+      transparent
+      animationType="fade"
+      onRequestClose={() =>
+        setQuizVisible(false)
+      }
+    >
+      <View style={styles.modalOverlay}>
+        <View
+          style={[
+            styles.modalContainer,
+            {
+              backgroundColor: colors.background || '#1b1024',
+            },
+          ]}
+        >
           <View
             style={[
-              styles.modalContainer,
+              styles.modalHeader,
               {
-                backgroundColor:
-                  colors.background ??
-                  '#1b1024',
+                borderBottomColor: colors.border || 'rgba(255,255,255,0.1)',
               },
             ]}
           >
-            {/* HEADER */}
-
-            <View
-              style={[
-                styles.modalHeader,
-                {
-                  borderBottomColor:
-                    colors.border ??
-                    'rgba(255,255,255,0.1)',
-                },
-              ]}
-            >
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={[
-                    styles.modalTitle,
-                    {
-                      color:
-                        colors.text ??
-                        '#fff',
-                    },
-                  ]}
-                >
-                  {quizMode === 'today'
-                    ? '📝 آزمون امروز'
-                    : '🔄 آزمون مرور'}
-                </Text>
-
-                <Text
-                  style={[
-                    styles.modalSubtitle,
-                    {
-                      color:
-                        colors.textSecondary ??
-                        '#aaa',
-                    },
-                  ]}
-                >
-                  سنجش حافظه و یادآوری آیات
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() =>
-                  setQuizVisible(false)
-                }
-                style={[
-                  styles.closeButton,
-                  {
-                    backgroundColor:
-                      colors.card ??
-                      'rgba(255,255,255,0.06)',
-                  },
-                ]}
-              >
-                <X
-                  size={22}
-                  color={
-                    colors.textSecondary ??
-                    '#aaa'
-                  }
-                />
-              </TouchableOpacity>
+            <View style={styles.modalHeaderIcon}>
+              <Target
+                size={20}
+                color={colors.primary}
+              />
             </View>
 
-            {/* BODY */}
-
-            <ScrollView
-              style={styles.modalScroll}
-              contentContainerStyle={
-                styles.modalScrollContent
-              }
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={
-                false
-              }
-            >
-              {quizResult
-                ? renderQuizResult()
-                : renderQuestion()}
-            </ScrollView>
-
-            {/* FOOTER */}
-
-            {!quizResult && (
-              <View
-                style={[
-                  styles.modalFooter,
-                  {
-                    borderTopColor:
-                      colors.border ??
-                      'rgba(255,255,255,0.1)',
-                  },
-                ]}
-              >
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={
-                    regenerateQuiz
-                  }
-                  style={[
-                    styles.footerResetButton,
-                    {
-                      borderColor:
-                        colors.border ??
-                        'rgba(255,255,255,0.1)',
-                    },
-                  ]}
-                >
-                  <RefreshCw
-                    size={17}
-                    color={
-                      colors.textSecondary ??
-                      '#aaa'
-                    }
-                  />
-
-                  <Text
-                    style={[
-                      styles.footerResetText,
-                      {
-                        color:
-                          colors.textSecondary ??
-                          '#aaa',
-                      },
-                    ]}
-                  >
-                    تولید مجدد
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
-    );
-  };
-
-  /* =======================================================
-     QURAN PAGE
-  ======================================================= */
-
-  const renderQuranPage = () => {
-    return (
-      <View
-        style={[
-          styles.quranCard,
-          {
-            backgroundColor:
-              isDark
-                ? '#51237E'
-                : '#9F6FC9',
-            borderColor:
-              colors.border ??
-              'rgba(255,255,255,0.1)',
-          },
-        ]}
-      >
-        <LinearGradient
-          colors={
-            isDark
-              ? ['#69349E', '#51237E']
-              : ['#B38AD9', '#9F6FC9']
-          }
-          style={styles.quranGradient}
-        >
-          <View
-            style={styles.ornamentalBorder}
-          >
-            <View
-              style={styles.surahTitleBox}
-            >
+            <View style={{ flex: 1 }}>
               <Text
                 style={[
-                  styles.surahTitle,
+                  styles.modalTitle,
                   {
-                    color:
-                      colors.text ??
-                      '#fff',
+                    color: colors.text || '#fff',
                   },
                 ]}
               >
-                سورة يس
+                {quizMode === 'today'
+                  ? 'آزمون امروز'
+                  : 'آزمون مرور'}
+              </Text>
+
+              <Text
+                style={[
+                  styles.modalSubtitle,
+                  {
+                    color: colors.textSecondary || '#aaa',
+                  },
+                ]}
+              >
+                سنجش حافظه و یادآوری آیات
               </Text>
             </View>
 
-            <Text
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() =>
+                setQuizVisible(false)
+              }
               style={[
-                styles.basmala,
+                styles.closeButton,
                 {
-                  color:
-                    colors.textSecondary ??
-                    '#E8D0F0',
+                  backgroundColor: colors.surface || 'rgba(255,255,255,0.06)',
                 },
               ]}
             >
-              بِسۡمِ اللَّهِ الرَّحۡمَٰنِ الرَّحِيمِ
+              <X
+                size={21}
+                color={colors.textSecondary || '#aaa'}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            style={styles.modalScroll}
+            contentContainerStyle={
+              styles.modalScrollContent
+            }
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {quizResult
+              ? renderQuizResult()
+              : renderQuestion()}
+          </ScrollView>
+
+          {!quizResult && (
+            <View
+              style={[
+                styles.modalFooter,
+                {
+                  borderTopColor: colors.border || 'rgba(255,255,255,0.1)',
+                },
+              ]}
+            >
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={regenerateQuiz}
+                style={[
+                  styles.footerResetButton,
+                  {
+                    borderColor: colors.border || 'rgba(255,255,255,0.1)',
+                  },
+                ]}
+              >
+                <RefreshCw
+                  size={17}
+                  color={colors.textSecondary || '#aaa'}
+                />
+
+                <Text
+                  style={[
+                    styles.footerResetText,
+                    {
+                      color: colors.textSecondary || '#aaa',
+                    },
+                  ]}
+                >
+                  تولید سؤال جدید
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+
+  /* =========================================================
+     QURAN PAGE
+  ========================================================= */
+
+  const renderQuranPage = () => (
+    <View
+      style={[
+        styles.quranCard,
+        {
+          backgroundColor: isDark
+            ? '#51237E'
+            : '#9F6FC9',
+          borderColor: colors.border || 'rgba(255,255,255,0.1)',
+        },
+      ]}
+    >
+      <LinearGradient
+        colors={
+          isDark
+            ? ['#6A369F', '#4C216F']
+            : ['#B78BDA', '#9867C2']
+        }
+        style={styles.quranGradient}
+      >
+        <View style={styles.quranTopRow}>
+          <View
+            style={[
+              styles.quranIcon,
+              {
+                backgroundColor:
+                  'rgba(255,255,255,0.12)',
+              },
+            ]}
+          >
+            <BookOpen
+              size={20}
+              color="#fff"
+            />
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <Text
+              style={styles.quranEyebrow}
+            >
+              قرآن کریم
             </Text>
 
-            <View style={styles.ayahList}>
-              {SURAH_YASIN.map(verse => {
-                const today =
-                  todayVerses.includes(
-                    verse.number,
-                  );
+            <Text style={styles.quranSurah}>
+              سوره یس
+            </Text>
+          </View>
 
-                const review =
-                  isReviewMode &&
-                  previousVerses.includes(
-                    verse.number,
-                  );
+          <View
+            style={[
+              styles.quranDayPill,
+              {
+                backgroundColor:
+                  'rgba(255,255,255,0.12)',
+              },
+            ]}
+          >
+            <Text style={styles.quranDayText}>
+              روز {currentDay}
+            </Text>
+          </View>
+        </View>
 
-                const visible =
-                  today || review;
+        <View style={styles.ornamentalBorder}>
+          <View style={styles.surahTitleBox}>
+            <Text
+              style={[
+                styles.surahTitle,
+                {
+                  color: colors.text || '#fff',
+                },
+              ]}
+            >
+              سورة يس
+            </Text>
+          </View>
 
-                return (
+          <Text
+            style={[
+              styles.basmala,
+              {
+                color: '#F1E1F7',
+              },
+            ]}
+          >
+            بِسۡمِ اللَّهِ الرَّحۡمَٰنِ الرَّحِيمِ
+          </Text>
+
+          <View style={styles.ayahList}>
+            {SURAH_YASIN.map(verse => {
+              const today =
+                todayVerses.includes(
+                  verse.number,
+                );
+
+              const review =
+                isReviewMode &&
+                previousVerses.includes(
+                  verse.number,
+                );
+
+              const visible =
+                today || review;
+
+              return (
+                <View
+                  key={verse.number}
+                  style={[
+                    styles.ayahRow,
+                    !visible &&
+                      styles.ayahBlurred,
+                  ]}
+                >
                   <View
-                    key={verse.number}
                     style={[
-                      styles.ayahRow,
-                      !visible &&
-                        styles.ayahBlurred,
+                      styles.ayahNumber,
+                      {
+                        borderColor:
+                          visible
+                            ? review
+                              ? '#34D399'
+                              : 'rgba(255,255,255,0.75)'
+                            : 'rgba(255,255,255,0.12)',
+                        backgroundColor:
+                          visible
+                            ? 'rgba(255,255,255,0.08)'
+                            : 'transparent',
+                      },
                     ]}
                   >
                     <Text
                       style={[
-                        styles.ayahText,
+                        styles.ayahNumberText,
                         {
                           color:
-                            colors.text ??
-                            '#fff',
-                        },
-                      ]}
-                    >
-                      {verse.arabic}
-                    </Text>
-
-                    <View
-                      style={[
-                        styles.ayahNumber,
-                        {
-                          borderColor:
                             visible
-                              ? review
-                                ? '#34D399'
-                                : colors.primary
-                              : 'rgba(255,255,255,0.1)',
+                              ? '#fff'
+                              : 'rgba(255,255,255,0.4)',
                         },
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.ayahNumberText,
-                          {
-                            color:
-                              visible
-                                ? review
-                                  ? '#34D399'
-                                  : colors.primary
-                                : colors.textSecondary ??
-                                  '#777',
-                          },
-                        ]}
-                      >
-                        {verse.number}
-                      </Text>
-                    </View>
+                      {verse.number}
+                    </Text>
                   </View>
-                );
-              })}
-            </View>
-          </View>
-        </LinearGradient>
-      </View>
-    );
-  };
 
-  /* =======================================================
+                  <Text
+                    style={[
+                      styles.ayahText,
+                      {
+                        color: colors.text || '#fff',
+                      },
+                    ]}
+                  >
+                    {verse.arabic}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      </LinearGradient>
+    </View>
+  );
+
+  /* =========================================================
      TRANSLATIONS
-  ======================================================= */
+  ========================================================= */
 
   const renderTranslations = () => {
-    if (!showTranslation) {
-      return null;
-    }
+    if (!showTranslation) return null;
 
     return (
       <View
         style={[
           styles.card,
           {
-            backgroundColor:
-              colors.card ??
-              'rgba(255,255,255,0.05)',
-            borderColor:
-              colors.border ??
-              'rgba(255,255,255,0.1)',
+            backgroundColor: colors.surface || 'rgba(255,255,255,0.05)',
+            borderColor: colors.border || 'rgba(255,255,255,0.1)',
           },
         ]}
       >
         <View style={styles.cardHeader}>
           <View style={styles.cardHeaderLeft}>
-            <BookOpen
-              size={20}
-              color={colors.primary}
-            />
-
-            <Text
+            <View
               style={[
-                styles.cardTitle,
+                styles.sectionIcon,
                 {
-                  color:
-                    colors.text ??
-                    '#fff',
+                  backgroundColor: `${colors.primary}12`,
                 },
               ]}
             >
-              ترجمه آیات امروز
-            </Text>
+              <BookOpen
+                size={18}
+                color={colors.primary}
+              />
+            </View>
+
+            <View>
+              <Text
+                style={[
+                  styles.cardTitle,
+                  {
+                    color: colors.text || '#fff',
+                  },
+                ]}
+              >
+                ترجمه آیات امروز
+              </Text>
+
+              <Text
+                style={[
+                  styles.cardCaption,
+                  {
+                    color: colors.textSecondary || '#888',
+                  },
+                ]}
+              >
+                مرور معنای آیات
+              </Text>
+            </View>
           </View>
 
           <TouchableOpacity
             onPress={() =>
               setShowTranslation(false)
             }
+            style={styles.smallIconButton}
           >
             <EyeOff
-              size={20}
-              color={
-                colors.textSecondary ??
-                '#aaa'
-              }
+              size={18}
+              color={colors.textSecondary || '#aaa'}
             />
           </TouchableOpacity>
         </View>
 
         <View style={styles.translationList}>
           {todayVerses.map(number => {
-            const verse =
-              getVerse(number);
+            const verse = getVerse(number);
 
-            if (!verse) {
-              return null;
-            }
+            if (!verse) return null;
 
             return (
               <View
@@ -2223,31 +1966,35 @@ export default function QuranScreen() {
                 style={[
                   styles.translationItem,
                   {
-                    borderBottomColor:
-                      colors.border ??
-                      'rgba(255,255,255,0.08)',
+                    borderBottomColor: colors.border || 'rgba(255,255,255,0.08)',
                   },
                 ]}
               >
-                <Text
+                <View
                   style={[
-                    styles.translationRef,
+                    styles.translationNumber,
                     {
-                      color:
-                        colors.primary,
+                      backgroundColor: `${colors.primary}12`,
                     },
                   ]}
                 >
-                  آیه {number}
-                </Text>
+                  <Text
+                    style={[
+                      styles.translationRef,
+                      {
+                        color: colors.primary,
+                      },
+                    ]}
+                  >
+                    {number}
+                  </Text>
+                </View>
 
                 <Text
                   style={[
                     styles.translationText,
                     {
-                      color:
-                        colors.textSecondary ??
-                        '#aaa',
+                      color: colors.textSecondary || '#aaa',
                     },
                   ]}
                 >
@@ -2261,26 +2008,20 @@ export default function QuranScreen() {
     );
   };
 
-  /* =======================================================
-     REVIEW CARD
-  ======================================================= */
+  /* =========================================================
+     REVIEW
+  ========================================================= */
 
   const renderReviewCard = () => {
-    if (!previousVerses.length) {
-      return null;
-    }
+    if (!previousVerses.length) return null;
 
     return (
       <View
         style={[
           styles.card,
           {
-            backgroundColor:
-              colors.card ??
-              'rgba(255,255,255,0.05)',
-            borderColor:
-              colors.border ??
-              'rgba(255,255,255,0.1)',
+            backgroundColor: colors.surface || 'rgba(255,255,255,0.05)',
+            borderColor: colors.border || 'rgba(255,255,255,0.1)',
           },
         ]}
       >
@@ -2292,64 +2033,84 @@ export default function QuranScreen() {
           style={styles.cardHeader}
         >
           <View style={styles.cardHeaderLeft}>
-            <RefreshCw
-              size={20}
-              color="#34D399"
-            />
-
-            <Text
+            <View
               style={[
-                styles.cardTitle,
+                styles.sectionIcon,
                 {
-                  color:
-                    colors.text ??
-                    '#fff',
+                  backgroundColor:
+                    'rgba(52,211,153,0.10)',
                 },
               ]}
             >
-              مرور آیات قبلی
-            </Text>
+              <RefreshCw
+                size={18}
+                color="#34D399"
+              />
+            </View>
+
+            <View>
+              <Text
+                style={[
+                  styles.cardTitle,
+                  {
+                    color: colors.text || '#fff',
+                  },
+                ]}
+              >
+                مرور آیات قبلی
+              </Text>
+
+              <Text
+                style={[
+                  styles.cardCaption,
+                  {
+                    color: colors.textSecondary || '#888',
+                  },
+                ]}
+              >
+                {previousVerses.length} آیه برای مرور
+              </Text>
+            </View>
           </View>
 
-          {showReview ? (
-            <EyeOff
-              size={20}
-              color={
-                colors.textSecondary ??
-                '#aaa'
-              }
-            />
-          ) : (
-            <Eye
-              size={20}
-              color={
-                colors.textSecondary ??
-                '#aaa'
-              }
-            />
-          )}
+          <View style={styles.smallIconButton}>
+            {showReview ? (
+              <EyeOff
+                size={18}
+                color={colors.textSecondary || '#aaa'}
+              />
+            ) : (
+              <Eye
+                size={18}
+                color={colors.textSecondary || '#aaa'}
+              />
+            )}
+          </View>
         </TouchableOpacity>
 
         {showReview && (
           <View>
-            {previousVerses.map(
-              number => {
-                const verse =
-                  getVerse(number);
+            {previousVerses.map(number => {
+              const verse = getVerse(number);
 
-                if (!verse) {
-                  return null;
-                }
+              if (!verse) return null;
 
-                return (
+              return (
+                <View
+                  key={number}
+                  style={[
+                    styles.reviewItem,
+                    {
+                      borderBottomColor: colors.border || 'rgba(255,255,255,0.08)',
+                    },
+                  ]}
+                >
                   <View
-                    key={number}
                     style={[
-                      styles.reviewItem,
+                      styles.reviewNumber,
                       {
-                        borderBottomColor:
-                          colors.border ??
-                          'rgba(255,255,255,0.08)',
+                        backgroundColor:
+                          'rgba(52,211,153,0.10)',
                       },
                     ]}
                   >
@@ -2362,241 +2123,255 @@ export default function QuranScreen() {
                         },
                       ]}
                     >
-                      آیه {number}
-                    </Text>
-
-                    <Text
-                      style={[
-                        styles.reviewText,
-                        {
-                          color:
-                            colors.textSecondary ??
-                            '#aaa',
-                        },
-                      ]}
-                    >
-                      {verse.arabic}
+                      {number}
                     </Text>
                   </View>
-                );
-              },
-            )}
+
+                  <Text
+                    style={[
+                      styles.reviewText,
+                      {
+                        color: colors.textSecondary || '#aaa',
+                      },
+                    ]}
+                  >
+                    {verse.arabic}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
         )}
       </View>
     );
   };
 
-  /* =======================================================
-     ACTION BUTTONS
-  ======================================================= */
+  /* =========================================================
+     ACTIONS
+  ========================================================= */
 
-  const renderActions = () => {
-    return (
-      <View
-        style={[
-          styles.card,
-          {
-            backgroundColor:
-              colors.card ??
-              'rgba(255,255,255,0.05)',
-            borderColor:
-              colors.border ??
-              'rgba(255,255,255,0.1)',
-          },
-        ]}
-      >
-        <View style={styles.actionGrid}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() =>
-              setShowTranslation(
-                value => !value,
-              )
-            }
+  const renderActions = () => (
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.surface || 'rgba(255,255,255,0.05)',
+          borderColor: colors.border || 'rgba(255,255,255,0.1)',
+        },
+      ]}
+    >
+      <View style={styles.actionSectionHeader}>
+        <View>
+          <Text
             style={[
-              styles.actionButton,
+              styles.actionSectionTitle,
               {
-                borderColor:
-                  colors.border ??
-                  'rgba(255,255,255,0.1)',
+                color: colors.text || '#fff',
               },
             ]}
           >
-            <BookOpen
-              size={18}
-              color={colors.primary}
-            />
+            تمرین و آزمون
+          </Text>
 
-            <Text
-              style={[
-                styles.actionButtonText,
-                {
-                  color:
-                    colors.textSecondary ??
-                    '#aaa',
-                },
-              ]}
-            >
-              {showTranslation
-                ? 'مخفی کردن ترجمه'
-                : 'نمایش ترجمه'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={
-              toggleReviewMode
-            }
+          <Text
             style={[
-              styles.actionButton,
-              isReviewMode && {
-                borderColor:
-                  '#34D399',
-                backgroundColor:
-                  'rgba(52,211,153,0.08)',
-              },
-            ]}
-          >
-            <RefreshCw
-              size={18}
-              color={
-                isReviewMode
-                  ? '#34D399'
-                  : colors.primary
-              }
-            />
-
-            <Text
-              style={[
-                styles.actionButtonText,
-                {
-                  color:
-                    isReviewMode
-                      ? '#34D399'
-                      : colors.textSecondary ??
-                        '#aaa',
-                },
-              ]}
-            >
-              {isReviewMode
-                ? 'بازگشت به حالت عادی'
-                : 'مرور آیات قبلی'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              startQuiz('today')
-            }
-            style={[
-              styles.quizButton,
+              styles.actionSectionSubtitle,
               {
-                backgroundColor:
-                  colors.primary,
+                color: colors.textSecondary || '#888',
               },
             ]}
           >
-            <Target
-              size={18}
-              color="#fff"
-            />
-
-            <Text
-              style={styles.quizButtonText}
-            >
-              آزمون امروز
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.85}
-            disabled={
-              !previousVerses.length
-            }
-            onPress={() =>
-              startQuiz('review')
-            }
-            style={[
-              styles.quizButton,
-              {
-                backgroundColor:
-                  '#7A3A9E',
-                opacity:
-                  previousVerses.length
-                    ? 1
-                    : 0.45,
-              },
-            ]}
-          >
-            <RefreshCw
-              size={18}
-              color="#fff"
-            />
-
-            <Text
-              style={styles.quizButtonText}
-            >
-              آزمون مرور
-            </Text>
-          </TouchableOpacity>
+            حافظه خود را با آزمون‌های کوتاه بسنجید
+          </Text>
         </View>
 
-        <TouchableOpacity
-          activeOpacity={0.85}
-          disabled={isStudyComplete}
-          onPress={finishStudy}
+        <View
           style={[
-            styles.finishButton,
+            styles.actionSectionIcon,
             {
-              backgroundColor:
-                isStudyComplete
-                  ? 'rgba(52,211,153,0.15)'
-                  : 'rgba(52,211,153,0.10)',
-              borderColor:
-                'rgba(52,211,153,0.25)',
+              backgroundColor: `${colors.primary}12`,
             },
           ]}
         >
-          <CheckCircle
-            size={19}
-            color="#34D399"
+          <Target
+            size={20}
+            color={colors.primary}
+          />
+        </View>
+      </View>
+
+      <View style={styles.actionGrid}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() =>
+            setShowTranslation(
+              value => !value,
+            )
+          }
+          style={[
+            styles.actionButton,
+            {
+              borderColor: colors.border || 'rgba(255,255,255,0.1)',
+            },
+          ]}
+        >
+          {showTranslation ? (
+            <EyeOff
+              size={18}
+              color={colors.primary}
+            />
+          ) : (
+            <Eye
+              size={18}
+              color={colors.primary}
+            />
+          )}
+
+          <Text
+            style={[
+              styles.actionButtonText,
+              {
+                color: colors.textSecondary || '#aaa',
+              },
+            ]}
+          >
+            {showTranslation
+              ? 'مخفی کردن ترجمه'
+              : 'نمایش ترجمه'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={toggleReviewMode}
+          style={[
+            styles.actionButton,
+            isReviewMode && {
+              borderColor: '#34D399',
+              backgroundColor:
+                'rgba(52,211,153,0.08)',
+            },
+            {
+              borderColor:
+                isReviewMode
+                  ? '#34D399'
+                  : colors.border || 'rgba(255,255,255,0.1)',
+            },
+          ]}
+        >
+          <RefreshCw
+            size={18}
+            color={
+              isReviewMode
+                ? '#34D399'
+                : colors.primary
+            }
           />
 
           <Text
             style={[
-              styles.finishButtonText,
+              styles.actionButtonText,
               {
                 color:
-                  '#34D399',
+                  isReviewMode
+                    ? '#34D399'
+                    : colors.textSecondary || '#aaa',
               },
             ]}
           >
-            {isStudyComplete
-              ? 'مطالعه امروز انجام شد'
-              : 'پایان مطالعه امروز'}
+            {isReviewMode
+              ? 'حالت عادی'
+              : 'مرور آیات'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => startQuiz('today')}
+          style={[
+            styles.quizButton,
+            {
+              backgroundColor:
+                colors.primary,
+            },
+          ]}
+        >
+          <Target size={18} color="#fff" />
+
+          <Text style={styles.quizButtonText}>
+            آزمون امروز
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          disabled={!previousVerses.length}
+          onPress={() => startQuiz('review')}
+          style={[
+            styles.quizButton,
+            {
+              backgroundColor: '#7A3A9E',
+              opacity:
+                previousVerses.length
+                  ? 1
+                  : 0.45,
+            },
+          ]}
+        >
+          <RefreshCw size={18} color="#fff" />
+
+          <Text style={styles.quizButtonText}>
+            آزمون مرور
           </Text>
         </TouchableOpacity>
       </View>
-    );
-  };
 
-  /* =======================================================
+      <TouchableOpacity
+        activeOpacity={0.85}
+        disabled={isStudyComplete}
+        onPress={finishStudy}
+        style={[
+          styles.finishButton,
+          {
+            backgroundColor: isStudyComplete
+              ? 'rgba(52,211,153,0.12)'
+              : 'rgba(52,211,153,0.07)',
+            borderColor:
+              'rgba(52,211,153,0.25)',
+          },
+        ]}
+      >
+        <CheckCircle
+          size={19}
+          color="#34D399"
+        />
+
+        <Text
+          style={[
+            styles.finishButtonText,
+            {
+              color: '#34D399',
+            },
+          ]}
+        >
+          {isStudyComplete
+            ? 'مطالعه امروز انجام شد'
+            : 'پایان مطالعه امروز'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  /* =========================================================
      MAIN UI
-  ======================================================= */
+  ========================================================= */
 
   return (
     <View
       style={[
         styles.container,
         {
-          backgroundColor:
-            colors.background ??
-            (isDark
-              ? '#160B20'
-              : '#F7F3FA'),
+          backgroundColor: colors.background || (isDark ? '#160B20' : '#F7F3FA'),
         },
       ]}
     >
@@ -2628,49 +2403,41 @@ export default function QuranScreen() {
               style={[
                 styles.headerButton,
                 {
-                  backgroundColor:
-                    colors.card ??
-                    'rgba(255,255,255,0.06)',
-                  borderColor:
-                    colors.border ??
-                    'rgba(255,255,255,0.1)',
+                  backgroundColor: colors.surface || 'rgba(255,255,255,0.06)',
+                  borderColor: colors.border || 'rgba(255,255,255,0.1)',
                 },
               ]}
             >
               <ArrowLeft
                 size={21}
-                color={
-                  colors.text ??
-                  '#fff'
-                }
+                color={colors.text || '#fff'}
               />
             </TouchableOpacity>
 
-            <View
-              style={
-                styles.headerCenter
-              }
-            >
-              <Text
-                style={[
-                  styles.headerTitle,
-                  {
-                    color:
-                      colors.text ??
-                      '#fff',
-                  },
-                ]}
-              >
-                حفظ قرآن
-              </Text>
+            <View style={styles.headerCenter}>
+              <View style={styles.headerTitleRow}>
+                <BookOpen
+                  size={18}
+                  color={colors.primary}
+                />
+
+                <Text
+                  style={[
+                    styles.headerTitle,
+                    {
+                      color: colors.text || '#fff',
+                    },
+                  ]}
+                >
+                  حفظ قرآن
+                </Text>
+              </View>
 
               <Text
                 style={[
                   styles.headerSubtitle,
                   {
-                    color:
-                      colors.textSecondary ??
-                      '#aaa',
+                    color: colors.textSecondary || '#aaa',
                   },
                 ]}
               >
@@ -2688,12 +2455,8 @@ export default function QuranScreen() {
               style={[
                 styles.headerButton,
                 {
-                  backgroundColor:
-                    colors.card ??
-                    'rgba(255,255,255,0.06)',
-                  borderColor:
-                    colors.border ??
-                    'rgba(255,255,255,0.1)',
+                  backgroundColor: colors.surface || 'rgba(255,255,255,0.06)',
+                  borderColor: colors.border || 'rgba(255,255,255,0.1)',
                 },
               ]}
             >
@@ -2702,8 +2465,7 @@ export default function QuranScreen() {
                 color={
                   favorite
                     ? '#FF6B81'
-                    : colors.textSecondary ??
-                      '#aaa'
+                    : colors.textSecondary || '#aaa'
                 }
                 fill={
                   favorite
@@ -2720,50 +2482,57 @@ export default function QuranScreen() {
             style={[
               styles.dayCard,
               {
-                backgroundColor:
-                  colors.card ??
-                  'rgba(255,255,255,0.05)',
-                borderColor:
-                  colors.border ??
-                  'rgba(255,255,255,0.1)',
+                backgroundColor: colors.surface || 'rgba(255,255,255,0.05)',
+                borderColor: colors.border || 'rgba(255,255,255,0.1)',
               },
             ]}
           >
             <View style={styles.dayHeader}>
-              <View>
-                <Text
+              <View style={styles.dayTitleBlock}>
+                <View
                   style={[
-                    styles.dayTitle,
+                    styles.dayIcon,
                     {
-                      color:
-                        colors.text ??
-                        '#fff',
+                      backgroundColor: `${colors.primary}12`,
                     },
                   ]}
                 >
-                  📖 برنامه حفظ
-                </Text>
+                  <BookOpen
+                    size={20}
+                    color={colors.primary}
+                  />
+                </View>
 
-                <Text
-                  style={[
-                    styles.daySubtitle,
-                    {
-                      color:
-                        colors.textSecondary ??
-                        '#aaa',
-                    },
-                  ]}
-                >
-                  برنامه ۶ روزه سوره یس
-                </Text>
+                <View>
+                  <Text
+                    style={[
+                      styles.dayTitle,
+                      {
+                        color: colors.text || '#fff',
+                      },
+                    ]}
+                  >
+                    برنامه حفظ
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.daySubtitle,
+                      {
+                        color: colors.textSecondary || '#aaa',
+                      },
+                    ]}
+                  >
+                    برنامه ۶ روزه سوره یس
+                  </Text>
+                </View>
               </View>
 
               <View
                 style={[
                   styles.dayBadge,
                   {
-                    backgroundColor:
-                      `${colors.primary}18`,
+                    backgroundColor: `${colors.primary}18`,
                   },
                 ]}
               >
@@ -2771,8 +2540,7 @@ export default function QuranScreen() {
                   style={[
                     styles.dayBadgeText,
                     {
-                      color:
-                        colors.primary,
+                      color: colors.primary,
                     },
                   ]}
                 >
@@ -2781,19 +2549,20 @@ export default function QuranScreen() {
               </View>
             </View>
 
-            <View
-              style={styles.dayStats}
-            >
+            <View style={styles.dayStats}>
               <View
-                style={styles.dayStat}
+                style={[
+                  styles.dayStat,
+                  {
+                    borderColor: colors.border || 'rgba(255,255,255,0.08)',
+                  },
+                ]}
               >
                 <Text
                   style={[
                     styles.statLabel,
                     {
-                      color:
-                        colors.textSecondary ??
-                        '#aaa',
+                      color: colors.textSecondary || '#aaa',
                     },
                   ]}
                 >
@@ -2804,17 +2573,14 @@ export default function QuranScreen() {
                   style={[
                     styles.statValue,
                     {
-                      color:
-                        colors.text ??
-                        '#fff',
+                      color: colors.text || '#fff',
                     },
                   ]}
                 >
                   {todayVerses.length
                     ? `${todayVerses[0]} - ${
                         todayVerses[
-                          todayVerses.length -
-                            1
+                          todayVerses.length - 1
                         ]
                       }`
                     : '-'}
@@ -2822,15 +2588,18 @@ export default function QuranScreen() {
               </View>
 
               <View
-                style={styles.dayStat}
+                style={[
+                  styles.dayStat,
+                  {
+                    borderColor: colors.border || 'rgba(255,255,255,0.08)',
+                  },
+                ]}
               >
                 <Text
                   style={[
                     styles.statLabel,
                     {
-                      color:
-                        colors.textSecondary ??
-                        '#aaa',
+                      color: colors.textSecondary || '#aaa',
                     },
                   ]}
                 >
@@ -2841,13 +2610,42 @@ export default function QuranScreen() {
                   style={[
                     styles.statValue,
                     {
-                      color:
-                        colors.text ??
-                        '#fff',
+                      color: colors.text || '#fff',
                     },
                   ]}
                 >
                   {todayVerses.length}
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.dayStat,
+                  {
+                    borderColor: colors.border || 'rgba(255,255,255,0.08)',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.statLabel,
+                    {
+                      color: colors.textSecondary || '#aaa',
+                    },
+                  ]}
+                >
+                  پیشرفت
+                </Text>
+
+                <Text
+                  style={[
+                    styles.statValue,
+                    {
+                      color: colors.primary,
+                    },
+                  ]}
+                >
+                  {progress}٪
                 </Text>
               </View>
             </View>
@@ -2857,56 +2655,66 @@ export default function QuranScreen() {
 
           <View
             style={[
-              styles.card,
+              styles.progressCard,
               {
-                backgroundColor:
-                  colors.card ??
-                  'rgba(255,255,255,0.05)',
-                borderColor:
-                  colors.border ??
-                  'rgba(255,255,255,0.1)',
+                backgroundColor: colors.surface || 'rgba(255,255,255,0.05)',
+                borderColor: colors.border || 'rgba(255,255,255,0.1)',
               },
             ]}
           >
-            <View
-              style={
-                styles.progressHeader
-              }
-            >
-              <Text
-                style={[
-                  styles.progressLabel,
-                  {
-                    color:
-                      colors.textSecondary ??
-                      '#aaa',
-                  },
-                ]}
-              >
-                پیشرفت کلی
-              </Text>
+            <View style={styles.progressHeader}>
+              <View>
+                <Text
+                  style={[
+                    styles.progressTitle,
+                    {
+                      color: colors.text || '#fff',
+                    },
+                  ]}
+                >
+                  پیشرفت حفظ
+                </Text>
 
-              <Text
+                <Text
+                  style={[
+                    styles.progressSubtitle,
+                    {
+                      color: colors.textSecondary || '#888',
+                    },
+                  ]}
+                >
+                  {memorizedVerses} از {totalVerses} آیه
+                </Text>
+              </View>
+
+              <View
                 style={[
-                  styles.progressPercent,
+                  styles.progressPercentPill,
                   {
-                    color:
-                      colors.primary,
+                    backgroundColor: `${colors.primary}12`,
                   },
                 ]}
               >
-                {progress}٪
-              </Text>
+                <Text
+                  style={[
+                    styles.progressPercent,
+                    {
+                      color: colors.primary,
+                    },
+                  ]}
+                >
+                  {progress}٪
+                </Text>
+              </View>
             </View>
 
             <View
               style={[
                 styles.progressTrack,
                 {
-                  backgroundColor:
-                    isDark
-                      ? 'rgba(255,255,255,0.06)'
-                      : 'rgba(0,0,0,0.06)',
+                  backgroundColor: isDark
+                    ? 'rgba(255,255,255,0.06)'
+                    : 'rgba(0,0,0,0.06)',
                 },
               ]}
             >
@@ -2936,12 +2744,8 @@ export default function QuranScreen() {
             style={[
               styles.audioRow,
               {
-                backgroundColor:
-                  colors.card ??
-                  'rgba(255,255,255,0.05)',
-                borderColor:
-                  colors.border ??
-                  'rgba(255,255,255,0.1)',
+                backgroundColor: colors.surface || 'rgba(255,255,255,0.05)',
+                borderColor: colors.border || 'rgba(255,255,255,0.1)',
               },
             ]}
           >
@@ -2970,16 +2774,12 @@ export default function QuranScreen() {
               )}
             </TouchableOpacity>
 
-            <View
-              style={styles.audioText}
-            >
+            <View style={styles.audioText}>
               <Text
                 style={[
                   styles.audioTitle,
                   {
-                    color:
-                      colors.text ??
-                      '#fff',
+                    color: colors.text || '#fff',
                   },
                 ]}
               >
@@ -2992,13 +2792,36 @@ export default function QuranScreen() {
                 style={[
                   styles.audioSubtitle,
                   {
-                    color:
-                      colors.textSecondary ??
-                      '#aaa',
+                    color: colors.textSecondary || '#aaa',
                   },
                 ]}
               >
                 سوره یس
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.audioMeta,
+                {
+                  backgroundColor: `${colors.primary}10`,
+                },
+              ]}
+            >
+              <Clock
+                size={14}
+                color={colors.primary}
+              />
+
+              <Text
+                style={[
+                  styles.audioMetaText,
+                  {
+                    color: colors.primary,
+                  },
+                ]}
+              >
+                تلاوت
               </Text>
             </View>
           </View>
@@ -3009,32 +2832,26 @@ export default function QuranScreen() {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() =>
-                setShowTranslation(
-                  true,
-                )
+                setShowTranslation(true)
               }
               style={[
                 styles.showTranslationButton,
                 {
-                  borderColor:
-                    colors.border ??
-                    'rgba(255,255,255,0.1)',
+                  backgroundColor: `${colors.primary}08`,
+                  borderColor: `${colors.primary}30`,
                 },
               ]}
             >
               <Eye
                 size={18}
-                color={
-                  colors.primary
-                }
+                color={colors.primary}
               />
 
               <Text
                 style={[
                   styles.showTranslationText,
                   {
-                    color:
-                      colors.primary,
+                    color: colors.primary,
                   },
                 ]}
               >
@@ -3049,7 +2866,7 @@ export default function QuranScreen() {
 
           {renderActions()}
 
-          {/* COMPLETE MESSAGE */}
+          {/* COMPLETE */}
 
           {isStudyComplete && (
             <View
@@ -3063,22 +2880,44 @@ export default function QuranScreen() {
                 },
               ]}
             >
-              <CheckCircle
-                size={22}
-                color="#34D399"
-              />
-
-              <Text
+              <View
                 style={[
-                  styles.completeText,
+                  styles.completeIcon,
                   {
-                    color:
-                      '#34D399',
+                    backgroundColor:
+                      'rgba(52,211,153,0.10)',
                   },
                 ]}
               >
-                مطالعه امروز انجام شده است.
-              </Text>
+                <CheckCircle
+                  size={22}
+                  color="#34D399"
+                />
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.completeTitle,
+                    {
+                      color: '#34D399',
+                    },
+                  ]}
+                >
+                  مطالعه امروز انجام شد
+                </Text>
+
+                <Text
+                  style={[
+                    styles.completeText,
+                    {
+                      color: colors.textSecondary || '#aaa',
+                    },
+                  ]}
+                >
+                  آیات امروز با موفقیت ثبت شدند.
+                </Text>
+              </View>
             </View>
           )}
         </ScrollView>
@@ -3104,8 +2943,8 @@ const styles = StyleSheet.create({
 
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 18,
-    paddingBottom: 45,
+    paddingTop: 16,
+    paddingBottom: 50,
   },
 
   /* HEADER */
@@ -3113,8 +2952,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 18,
+    marginBottom: 16,
   },
 
   headerCenter: {
@@ -3122,10 +2960,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+
   headerButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 43,
+    height: 43,
+    borderRadius: 15,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -3138,13 +2982,13 @@ const styles = StyleSheet.create({
 
   headerSubtitle: {
     marginTop: 3,
-    fontSize: 12,
+    fontSize: 11,
   },
 
   /* DAY */
 
   dayCard: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     padding: 16,
     marginBottom: 12,
@@ -3156,93 +3000,108 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
 
+  dayTitleBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+  },
+
+  dayIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   dayTitle: {
     fontSize: 17,
     fontWeight: '800',
   },
 
   daySubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 4,
   },
 
   dayBadge: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 13,
     paddingVertical: 7,
     borderRadius: 999,
   },
 
   dayBadgeText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
   },
 
   dayStats: {
     flexDirection: 'row',
-    marginTop: 18,
-    gap: 12,
+    gap: 8,
+    marginTop: 16,
   },
 
   dayStat: {
     flex: 1,
+    minHeight: 64,
+    borderWidth: 1,
+    borderRadius: 15,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    justifyContent: 'center',
   },
 
   statLabel: {
-    fontSize: 11,
-    marginBottom: 3,
+    fontSize: 10,
+    marginBottom: 4,
   },
 
   statValue: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
   },
 
-  /* CARD */
+  /* PROGRESS */
 
-  card: {
+  progressCard: {
     borderRadius: 20,
     borderWidth: 1,
     padding: 16,
     marginBottom: 12,
   },
 
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  cardHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-  },
-
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-
-  /* PROGRESS */
-
   progressHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 12,
   },
 
-  progressLabel: {
-    fontSize: 12,
+  progressTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+
+  progressSubtitle: {
+    fontSize: 10,
+    marginTop: 3,
+  },
+
+  progressPercentPill: {
+    minWidth: 53,
+    height: 34,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   progressPercent: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '900',
   },
 
   progressTrack: {
-    height: 5,
+    height: 7,
     borderRadius: 999,
     overflow: 'hidden',
   },
@@ -3255,7 +3114,7 @@ const styles = StyleSheet.create({
   /* QURAN */
 
   quranCard: {
-    borderRadius: 28,
+    borderRadius: 27,
     borderWidth: 1,
     overflow: 'hidden',
     marginBottom: 12,
@@ -3265,36 +3124,75 @@ const styles = StyleSheet.create({
     padding: 12,
   },
 
+  quranTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 5,
+  },
+
+  quranIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+
+  quranEyebrow: {
+    color: 'rgba(255,255,255,0.65)',
+    fontSize: 10,
+    marginBottom: 2,
+  },
+
+  quranSurah: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '800',
+  },
+
+  quranDayPill: {
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: 999,
+  },
+
+  quranDayText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+
   ornamentalBorder: {
     borderWidth: 1,
-    borderColor:
-      'rgba(209,0,209,0.16)',
+    borderColor: 'rgba(255,255,255,0.15)',
     borderRadius: 20,
-    padding: 18,
+    padding: 16,
   },
 
   surahTitleBox: {
     alignSelf: 'center',
-    paddingHorizontal: 28,
-    paddingVertical: 9,
-    borderRadius: 10,
+    paddingHorizontal: 27,
+    paddingVertical: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor:
-      'rgba(209,0,209,0.15)',
-    marginBottom: 12,
+    borderColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    marginBottom: 11,
   },
 
   surahTitle: {
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: '800',
     fontFamily: 'serif',
   },
 
   basmala: {
     textAlign: 'center',
-    fontSize: 19,
-    lineHeight: 36,
-    marginBottom: 12,
+    fontSize: 18,
+    lineHeight: 35,
+    marginBottom: 13,
     fontFamily: 'serif',
   },
 
@@ -3305,8 +3203,8 @@ const styles = StyleSheet.create({
   ayahRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 7,
-    paddingVertical: 3,
+    gap: 9,
+    paddingVertical: 4,
   },
 
   ayahBlurred: {
@@ -3318,13 +3216,13 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     fontFamily: 'serif',
     fontSize: 18,
-    lineHeight: 33,
+    lineHeight: 34,
   },
 
   ayahNumber: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 27,
+    height: 27,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -3341,86 +3239,197 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 18,
-    padding: 12,
+    borderRadius: 19,
+    padding: 11,
     marginBottom: 12,
   },
 
   audioButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 43,
+    height: 43,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   audioText: {
-    marginLeft: 12,
+    marginLeft: 11,
+    flex: 1,
   },
 
   audioTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '800',
   },
 
   audioSubtitle: {
-    fontSize: 11,
-    marginTop: 2,
+    fontSize: 10,
+    marginTop: 3,
+  },
+
+  audioMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    borderRadius: 10,
+  },
+
+  audioMetaText: {
+    fontSize: 9,
+    fontWeight: '800',
+  },
+
+  /* CARDS */
+
+  card: {
+    borderRadius: 21,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 12,
+  },
+
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  cardHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+
+  sectionIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+
+  cardCaption: {
+    fontSize: 10,
+    marginTop: 3,
+  },
+
+  smallIconButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   /* TRANSLATION */
 
   translationList: {
-    marginTop: 10,
+    marginTop: 12,
   },
 
   translationItem: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 10,
     paddingVertical: 10,
     borderBottomWidth: 1,
   },
 
+  translationNumber: {
+    width: 31,
+    height: 31,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   translationRef: {
-    fontSize: 11,
-    fontWeight: '800',
-    marginBottom: 3,
+    fontSize: 10,
+    fontWeight: '900',
   },
 
   translationText: {
+    flex: 1,
     fontSize: 13,
     lineHeight: 24,
+    textAlign: 'right',
   },
 
   /* REVIEW */
 
   reviewItem: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 10,
     paddingVertical: 10,
     borderBottomWidth: 1,
   },
 
+  reviewNumber: {
+    width: 31,
+    height: 31,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   reviewRef: {
-    fontSize: 11,
-    fontWeight: '800',
-    marginBottom: 4,
+    fontSize: 10,
+    fontWeight: '900',
   },
 
   reviewText: {
+    flex: 1,
     fontFamily: 'serif',
     fontSize: 17,
     lineHeight: 30,
     textAlign: 'right',
   },
 
-  /* ACTIONS */
+  /* ACTION SECTION */
+
+  actionSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+
+  actionSectionTitle: {
+    fontSize: 15,
+    fontWeight: '900',
+  },
+
+  actionSectionSubtitle: {
+    fontSize: 10,
+    marginTop: 4,
+  },
+
+  actionSectionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   actionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 9,
   },
 
   actionButton: {
     width: '48%',
-    minHeight: 48,
+    minHeight: 50,
     borderWidth: 1,
     borderRadius: 15,
     alignItems: 'center',
@@ -3431,14 +3440,14 @@ const styles = StyleSheet.create({
   },
 
   actionButtonText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '800',
     textAlign: 'center',
   },
 
   quizButton: {
     width: '48%',
-    minHeight: 50,
+    minHeight: 52,
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
@@ -3448,13 +3457,13 @@ const styles = StyleSheet.create({
 
   quizButtonText: {
     color: '#fff',
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 11,
+    fontWeight: '900',
   },
 
   finishButton: {
     marginTop: 10,
-    minHeight: 52,
+    minHeight: 53,
     borderRadius: 16,
     borderWidth: 1,
     alignItems: 'center',
@@ -3464,12 +3473,12 @@ const styles = StyleSheet.create({
   },
 
   finishButtonText: {
-    fontSize: 13,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: '900',
   },
 
   showTranslationButton: {
-    minHeight: 48,
+    minHeight: 49,
     borderWidth: 1,
     borderRadius: 15,
     alignItems: 'center',
@@ -3484,27 +3493,40 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
+  /* COMPLETE */
+
   completeCard: {
-    borderRadius: 18,
+    borderRadius: 19,
     borderWidth: 1,
-    padding: 15,
+    padding: 14,
     flexDirection: 'row-reverse',
     alignItems: 'center',
+    gap: 10,
+  },
+
+  completeIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: 9,
+  },
+
+  completeTitle: {
+    fontSize: 13,
+    fontWeight: '900',
   },
 
   completeText: {
-    fontSize: 13,
-    fontWeight: '800',
+    fontSize: 10,
+    marginTop: 3,
   },
 
-  /* QUIZ MODAL */
+  /* MODAL */
 
   modalOverlay: {
     flex: 1,
-    backgroundColor:
-      'rgba(12,5,20,0.90)',
+    backgroundColor: 'rgba(10,5,17,0.91)',
     justifyContent: 'center',
     padding: 12,
   },
@@ -3512,17 +3534,27 @@ const styles = StyleSheet.create({
   modalContainer: {
     maxHeight: '94%',
     width: '100%',
-    borderRadius: 26,
+    borderRadius: 27,
     overflow: 'hidden',
   },
 
   modalHeader: {
-    minHeight: 76,
-    paddingHorizontal: 17,
+    minHeight: 79,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
+  },
+
+  modalHeaderIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   modalTitle: {
@@ -3531,14 +3563,14 @@ const styles = StyleSheet.create({
   },
 
   modalSubtitle: {
-    fontSize: 11,
-    marginTop: 3,
+    fontSize: 10,
+    marginTop: 4,
   },
 
   closeButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -3571,21 +3603,21 @@ const styles = StyleSheet.create({
   },
 
   footerResetText: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '800',
   },
 
-  /* QUIZ */
+  /* QUESTION */
 
-  quizProgressRow: {
+  questionTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 13,
+    marginBottom: 10,
   },
 
   questionCounter: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
   },
 
@@ -3595,52 +3627,84 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
-  quizBadge: {
-    paddingHorizontal: 11,
+  quizModePill: {
+    paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 999,
+    borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
   },
 
-  quizBadgeText: {
-    fontSize: 11,
+  quizModeText: {
+    fontSize: 10,
     fontWeight: '800',
+  },
+
+  quizProgressTrack: {
+    height: 5,
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginBottom: 14,
+  },
+
+  quizProgressFill: {
+    height: '100%',
+    borderRadius: 999,
   },
 
   promptCard: {
     padding: 13,
     borderWidth: 1,
-    borderRadius: 15,
+    borderRadius: 16,
     marginBottom: 10,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 9,
+  },
+
+  promptIcon: {
+    width: 35,
+    height: 35,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   promptText: {
-    fontSize: 13,
-    lineHeight: 23,
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 22,
     textAlign: 'right',
     fontWeight: '700',
   },
 
   displayCard: {
-    padding: 15,
+    padding: 16,
     borderWidth: 1,
-    borderRadius: 15,
+    borderRadius: 16,
     marginBottom: 12,
+  },
+
+  displayLabel: {
+    textAlign: 'right',
+    fontSize: 9,
+    marginBottom: 8,
+    fontWeight: '700',
   },
 
   displayText: {
     textAlign: 'center',
     fontFamily: 'serif',
-    fontSize: 18,
-    lineHeight: 34,
+    fontSize: 19,
+    lineHeight: 36,
   },
 
   input: {
-    height: 53,
+    height: 54,
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 15,
     paddingHorizontal: 15,
     textAlign: 'right',
     fontSize: 15,
@@ -3652,9 +3716,9 @@ const styles = StyleSheet.create({
   },
 
   option: {
-    minHeight: 54,
+    minHeight: 56,
     borderWidth: 1,
-    borderRadius: 15,
+    borderRadius: 16,
     paddingHorizontal: 11,
     paddingVertical: 8,
     flexDirection: 'row-reverse',
@@ -3663,30 +3727,30 @@ const styles = StyleSheet.create({
   },
 
   optionIndex: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 31,
+    height: 31,
+    borderRadius: 11,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   optionIndexText: {
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 11,
+    fontWeight: '900',
   },
 
   optionText: {
     flex: 1,
     textAlign: 'right',
-    fontSize: 13,
+    fontSize: 12,
     lineHeight: 23,
   },
 
   feedback: {
     marginTop: 12,
     borderWidth: 1,
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 12,
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -3694,19 +3758,19 @@ const styles = StyleSheet.create({
   },
 
   feedbackTitle: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '900',
   },
 
   feedbackAnswer: {
     marginTop: 3,
-    fontSize: 11,
-    lineHeight: 20,
+    fontSize: 10,
+    lineHeight: 19,
   },
 
   quizActionButton: {
     marginTop: 14,
-    minHeight: 52,
+    minHeight: 53,
     borderRadius: 16,
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -3716,7 +3780,7 @@ const styles = StyleSheet.create({
 
   quizActionText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '900',
   },
 
@@ -3724,7 +3788,7 @@ const styles = StyleSheet.create({
 
   resultContainer: {
     borderWidth: 1,
-    borderRadius: 20,
+    borderRadius: 21,
     padding: 20,
     alignItems: 'center',
   },
@@ -3732,34 +3796,63 @@ const styles = StyleSheet.create({
   resultIcon: {
     width: 76,
     height: 76,
-    borderRadius: 38,
+    borderRadius: 25,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
   },
 
+  resultEyebrow: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+
   resultScore: {
     fontSize: 46,
     fontWeight: '900',
+    marginTop: 2,
   },
 
-  resultPercentage: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginTop: -2,
+  resultPercentPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    marginTop: 4,
+  },
+
+  resultPercentText: {
+    fontSize: 12,
+    fontWeight: '900',
   },
 
   resultTitle: {
     fontSize: 17,
     fontWeight: '900',
-    marginTop: 13,
+    marginTop: 14,
   },
 
   resultMessage: {
-    fontSize: 12,
+    fontSize: 11,
     textAlign: 'center',
     marginTop: 7,
     lineHeight: 21,
+  },
+
+  resultProgressTrack: {
+    width: '100%',
+    height: 7,
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginTop: 18,
+  },
+
+  resultProgressFill: {
+    height: '100%',
+    borderRadius: 999,
   },
 
   resultActions: {
@@ -3771,7 +3864,7 @@ const styles = StyleSheet.create({
 
   secondaryButton: {
     flex: 1,
-    minHeight: 47,
+    minHeight: 48,
     borderWidth: 1,
     borderRadius: 14,
     alignItems: 'center',
@@ -3781,13 +3874,13 @@ const styles = StyleSheet.create({
   },
 
   secondaryButtonText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
   },
 
   primaryButton: {
     flex: 1,
-    minHeight: 47,
+    minHeight: 48,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
@@ -3797,7 +3890,7 @@ const styles = StyleSheet.create({
 
   primaryButtonText: {
     color: '#fff',
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 11,
+    fontWeight: '900',
   },
 });
