@@ -1037,9 +1037,6 @@ export default function ScheduleScreen() {
   );
 }
 
-/* ==========================================================================
-   Styles
-   ========================================================================== */
 
 const styles = StyleSheet.create({
   container: {
@@ -1052,10 +1049,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingBottom: 160,
   },
-
-  /* ==========================================================================
-     Hero Card
-     ========================================================================== */
 
   heroWrapper: {
     width: '100%',
