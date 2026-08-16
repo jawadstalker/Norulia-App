@@ -1041,6 +1041,7 @@ const styles = StyleSheet.create({
   },
 
   sectionTitle: {
+    paddingBottom:10,
     fontSize: 17,
     fontWeight: '700',
   },
