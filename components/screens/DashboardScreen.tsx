@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   View,
@@ -8,17 +7,17 @@ import {
   RefreshControl,
   Dimensions,
   Image,
+  TouchableOpacity,
 } from 'react-native';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Card } from '../ui/Card';
-import { MenuItem } from '../ui/MenuItem';
 import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius } from '../../constants/theme';
+
 import {
-  Brain,
   Sparkles,
   Puzzle,
   Globe,
@@ -27,6 +26,8 @@ import {
   Video,
   TrendingUp,
   LayoutGrid,
+  ChevronRight,
+  ChevronLeft,
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
@@ -67,6 +68,13 @@ const menuItems = [
     color: '#F97316',
     route: '/consultation',
   },
+  {
+    id: 'assistant',
+    titleKey: 'novaAI',
+    icon: Sparkles,
+    color: '#6366F1',
+    route: '/(tabs)/assistant',
+  },
 ];
 
 function getGreeting(t: any) {
@@ -90,9 +98,8 @@ export function DashboardScreen() {
 
   const [refreshing, setRefreshing] = React.useState(false);
 
-  const refreshTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
+  const refreshTimerRef =
+    React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
@@ -110,6 +117,110 @@ export function DashboardScreen() {
       }
     };
   }, []);
+
+  const renderMenuCard = (
+    item: (typeof menuItems)[number],
+    index: number
+  ) => {
+    const IconComponent = item.icon;
+
+    const title =
+      t[item.titleKey as keyof typeof t] || item.titleKey;
+
+    return (
+      <MotiView
+        key={item.id}
+        from={{
+          opacity: 0,
+          translateY: 20,
+          scale: 0.94,
+        }}
+        animate={{
+          opacity: 1,
+          translateY: 0,
+          scale: 1,
+        }}
+        transition={{
+          type: 'timing',
+          duration: 380,
+          delay: 320 + index * 70,
+        }}
+        style={styles.menuCardWrapper}
+      >
+        <TouchableOpacity
+          activeOpacity={0.78}
+          onPress={() => router.push(item.route as any)}
+          style={[
+            styles.menuCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          {/* Icon */}
+
+          <View
+            style={[
+              styles.menuIconContainer,
+              {
+                backgroundColor: `${item.color}18`,
+              },
+            ]}
+          >
+            <IconComponent
+              size={25}
+              color={item.color}
+              strokeWidth={2}
+            />
+          </View>
+
+          {/* Title */}
+
+          <Text
+            numberOfLines={2}
+            style={[
+              styles.menuCardTitle,
+              {
+                color: colors.text,
+                textAlign: isRTL ? 'right' : 'left',
+                writingDirection: isRTL
+                  ? 'rtl'
+                  : 'ltr',
+              },
+            ]}
+          >
+            {title}
+          </Text>
+
+          {/* Arrow */}
+
+          <View
+            style={[
+              styles.menuArrow,
+              {
+                backgroundColor: `${item.color}12`,
+              },
+            ]}
+          >
+            {isRTL ? (
+              <ChevronLeft
+                size={15}
+                color={item.color}
+                strokeWidth={2.3}
+              />
+            ) : (
+              <ChevronRight
+                size={15}
+                color={item.color}
+                strokeWidth={2.3}
+              />
+            )}
+          </View>
+        </TouchableOpacity>
+      </MotiView>
+    );
+  };
 
   return (
     <View
@@ -132,9 +243,9 @@ export function DashboardScreen() {
           />
         }
       >
-        {/* =========================
+        {/* =====================================================
             HEADER
-        ========================== */}
+        ====================================================== */}
 
         <MotiView
           from={{
@@ -149,13 +260,19 @@ export function DashboardScreen() {
             type: 'timing',
             duration: 400,
           }}
-          style={styles.header}
+          style={[
+            styles.header,
+            {
+              alignItems: 'center',
+            },
+          ]}
         >
           <View
             style={[
               styles.greetingChip,
               {
-                backgroundColor: colors.primary + '14',
+                backgroundColor:
+                  colors.primary + '14',
               },
             ]}
           >
@@ -176,6 +293,12 @@ export function DashboardScreen() {
               styles.dashboardTitle,
               {
                 color: colors.text,
+                textAlign: isRTL
+                  ? 'right'
+                  : 'left',
+                writingDirection: isRTL
+                  ? 'rtl'
+                  : 'ltr',
               },
             ]}
           >
@@ -187,6 +310,12 @@ export function DashboardScreen() {
               styles.dashboardSubtitle,
               {
                 color: colors.textSecondary,
+                textAlign: isRTL
+                  ? 'right'
+                  : 'left',
+                writingDirection: isRTL
+                  ? 'rtl'
+                  : 'ltr',
               },
             ]}
           >
@@ -194,9 +323,9 @@ export function DashboardScreen() {
           </Text>
         </MotiView>
 
-        {/* =========================
-            CHARACTER CARD
-        ========================== */}
+        {/* =====================================================
+            CHARACTER / AI CARD
+        ====================================================== */}
 
         <MotiView
           from={{
@@ -272,20 +401,44 @@ export function DashboardScreen() {
                 />
               </View>
 
-              <Text style={styles.characterTitle}>
+              <Text
+                style={[
+                  styles.characterTitle,
+                  {
+                    textAlign: isRTL
+                      ? 'right'
+                      : 'left',
+                    writingDirection: isRTL
+                      ? 'rtl'
+                      : 'ltr',
+                  },
+                ]}
+              >
                 {t.dashboardReadyHelp}
               </Text>
 
-              <Text style={styles.characterSubtitle}>
+              <Text
+                style={[
+                  styles.characterSubtitle,
+                  {
+                    textAlign: isRTL
+                      ? 'right'
+                      : 'left',
+                    writingDirection: isRTL
+                      ? 'rtl'
+                      : 'ltr',
+                  },
+                ]}
+              >
                 {t.dashboardWellnessJourney}
               </Text>
             </View>
           </LinearGradient>
         </MotiView>
 
-        {/* =========================
+        {/* =====================================================
             COGNITIVE PROGRESS
-        ========================== */}
+        ====================================================== */}
 
         <MotiView
           from={{
@@ -336,6 +489,9 @@ export function DashboardScreen() {
                     textAlign: isRTL
                       ? 'right'
                       : 'left',
+                    writingDirection: isRTL
+                      ? 'rtl'
+                      : 'ltr',
                   },
                 ]}
               >
@@ -377,7 +533,14 @@ export function DashboardScreen() {
                   duration: 1100,
                   delay: 250,
                 }}
-                style={styles.progressBarFillWrap}
+                style={[
+                  styles.progressBarFillWrap,
+                  {
+                    alignSelf: isRTL
+                      ? 'flex-end'
+                      : 'flex-start',
+                  },
+                ]}
               >
                 <LinearGradient
                   colors={[
@@ -403,8 +566,8 @@ export function DashboardScreen() {
                 styles.progressFooter,
                 {
                   alignItems: isRTL
-                    ? 'flex-start'
-                    : 'flex-end',
+                    ? 'flex-end'
+                    : 'flex-start',
                 },
               ]}
             >
@@ -417,6 +580,9 @@ export function DashboardScreen() {
                     textAlign: isRTL
                       ? 'right'
                       : 'left',
+                    writingDirection: isRTL
+                      ? 'rtl'
+                      : 'ltr',
                   },
                 ]}
               >
@@ -426,9 +592,9 @@ export function DashboardScreen() {
           </Card>
         </MotiView>
 
-        {/* =========================
-            QUICK ACCESS TITLE
-        ========================== */}
+        {/* =====================================================
+            QUICK ACCESS HEADER
+        ====================================================== */}
 
         <MotiView
           from={{
@@ -454,7 +620,7 @@ export function DashboardScreen() {
           ]}
         >
           <LayoutGrid
-            size={16}
+            size={17}
             color={colors.textSecondary}
           />
 
@@ -466,6 +632,9 @@ export function DashboardScreen() {
                 textAlign: isRTL
                   ? 'right'
                   : 'left',
+                writingDirection: isRTL
+                  ? 'rtl'
+                  : 'ltr',
               },
             ]}
           >
@@ -473,42 +642,21 @@ export function DashboardScreen() {
           </Text>
         </MotiView>
 
-        {/* =========================
-            MENU CARDS
-        ========================== */}
+        {/* =====================================================
+            2 × 3 GRID
+        ====================================================== */}
 
         <View
           style={[
-            styles.menuSection,
+            styles.menuGrid,
             {
-              direction: isRTL ? 'rtl' : 'ltr',
+              direction: isRTL
+                ? 'rtl'
+                : 'ltr',
             },
           ]}
         >
-          {menuItems.map((item, index) => {
-            const IconComponent = item.icon;
-
-            return (
-              <MenuItem
-                key={item.id}
-                titleKey={item.titleKey}
-                icon={
-                  <IconComponent
-                    size={24}
-                    color={item.color}
-                  />
-                }
-                color={item.color}
-                onPress={() =>
-                  router.push(
-                    item.route as any
-                  )
-                }
-                delay={320 + index * 60}
-                isRTL={isRTL}
-              />
-            );
-          })}
+          {menuItems.map(renderMenuCard)}
         </View>
 
         <View style={styles.bottomSpace} />
@@ -528,23 +676,21 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  // =========================
-  // Header
-  // =========================
+  /* =========================================================
+     HEADER
+  ========================================================= */
 
   header: {
     marginBottom: Spacing.lg,
-    alignItems: 'center',
   },
 
   greetingChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
     borderRadius: 14,
-    gap: 5,
-    marginBottom: 8,
+    marginBottom: 9,
   },
 
   greetingText: {
@@ -553,20 +699,22 @@ const styles = StyleSheet.create({
   },
 
   dashboardTitle: {
+    width: '100%',
     fontSize: 30,
+    lineHeight: 37,
     fontWeight: '800',
-    textAlign: 'center',
   },
 
   dashboardSubtitle: {
+    width: '100%',
     fontSize: 15,
+    lineHeight: 22,
     marginTop: 6,
-    textAlign: 'center',
   },
 
-  // =========================
-  // Character Card
-  // =========================
+  /* =========================================================
+     CHARACTER CARD
+  ========================================================= */
 
   characterCard: {
     marginBottom: Spacing.lg,
@@ -648,21 +796,25 @@ const styles = StyleSheet.create({
   },
 
   characterTitle: {
+    width: '100%',
     fontSize: 20,
+    lineHeight: 27,
     fontWeight: '700',
     marginTop: Spacing.md,
     color: '#FFFFFF',
   },
 
   characterSubtitle: {
+    width: '100%',
     fontSize: 14,
+    lineHeight: 21,
     marginTop: 4,
     color: 'rgba(255,255,255,0.8)',
   },
 
-  // =========================
-  // Progress
-  // =========================
+  /* =========================================================
+     PROGRESS
+  ========================================================= */
 
   progressCard: {
     marginBottom: Spacing.lg,
@@ -693,75 +845,133 @@ const styles = StyleSheet.create({
   progressTitle: {
     flex: 1,
     fontSize: 15,
+    lineHeight: 21,
     fontWeight: '600',
   },
 
   progressPercent: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
   },
 
   progressBarContainer: {
-    height: 12,
-    borderRadius: BorderRadius.full,
+    width: '100%',
+    height: 7,
+    position: 'relative',
+    borderRadius: 4,
     overflow: 'hidden',
   },
 
   progressBarBg: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    borderRadius: BorderRadius.full,
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 4,
   },
 
   progressBarFillWrap: {
     height: '100%',
-    borderRadius: BorderRadius.full,
+    borderRadius: 4,
     overflow: 'hidden',
   },
 
   progressBarFill: {
     width: '100%',
     height: '100%',
+    borderRadius: 4,
   },
 
   progressFooter: {
-    flexDirection: 'row',
-    marginTop: Spacing.sm,
+    width: '100%',
+    marginTop: 8,
   },
 
   progressText: {
-    fontSize: 13,
+    fontSize: 11,
+    lineHeight: 17,
   },
 
-  // =========================
-  // Menu
-  // =========================
+  /* =========================================================
+     QUICK ACCESS
+  ========================================================= */
 
   menuSectionHeader: {
+    width: '100%',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: Spacing.sm,
-    marginTop: Spacing.xs,
+    gap: 7,
+    marginBottom: 12,
+    marginTop: 2,
   },
 
   menuSectionTitle: {
-    fontSize: 12,
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
     fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
 
-  menuSection: {
-    marginTop: Spacing.xs,
+  /* =========================================================
+     GRID
+  ========================================================= */
+
+  menuGrid: {
+    width: '100%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 10,
   },
 
-  // =========================
-  // Bottom
-  // =========================
+  menuCardWrapper: {
+    width: '31.7%',
+  },
+
+  menuCard: {
+    width: '100%',
+    minHeight: 132,
+    borderRadius: 18,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    position: 'relative',
+
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.035,
+    shadowRadius: 7,
+    elevation: 2,
+  },
+
+  menuIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+
+  menuCardTitle: {
+    width: '100%',
+    minHeight: 36,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: '600',
+  },
+
+  menuArrow: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
 
   bottomSpace: {
-    height: 100,
+    height: 30,
   },
 });
-
