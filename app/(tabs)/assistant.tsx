@@ -1021,29 +1021,23 @@ export default function AssistantScreen() {
     </LinearGradient>
   );
 }
-
 const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
-
   container: {
     flex: 1,
     paddingHorizontal: 16,
   },
 
-  /* ================= HEADER ================= */
-
   header: {
     width: '100%',
   },
-
   headerContent: {
     paddingTop: 50,
     minHeight: 66,
     alignItems: 'center',
   },
-
   avatarWrapper: {
     width: 50,
     height: 50,
