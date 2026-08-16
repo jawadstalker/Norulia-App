@@ -1043,6 +1043,7 @@ export default function ScheduleScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    paddingTop: 40,
     flex: 1,
   },
 
@@ -1539,7 +1540,6 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-
     elevation: 4,
   },
 
