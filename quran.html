@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>سوره یس · نورولیا</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&family=Amiri+Quran&display=swap" rel="stylesheet">
+    <style>
+        /* ================================================================
+           پالت رنگی بنفش-ارغوانی (مشابه سایر صفحات)
+           ================================================================ */
+        :root {
+            --bg-deep: #69349e;
+            --bg-surface: #51237e;
+            --bg-card: rgba(211, 0, 209, 0.06);
+            --bg-card-hover: rgba(211, 0, 209, 0.08);
+            --border-glass: rgba(211, 0, 209, 0.10);
+            --border-glass-hover: rgba(211, 0, 209, 0.25);
+            --primary: #D100D1;
+            --primary-dark: #A300A3;
+            --primary-glow: rgba(209, 0, 209, 0.20);
+            --secondary: #A300A3;
+            --secondary-glow: rgba(163, 0, 163, 0.15);
+            --cyan: #D100D1;
+            --cyan-glow: rgba(209, 0, 209, 0.20);
+            --purple: #A300A3;
+            --success: #34D399;
+            --success-glow: rgba(52, 211, 153, 0.04);
+            --error: #FF6B81;
+            --gold: #F5D76E;
+            --text-primary: #FFFFFF;
+            --text-secondary: #E8D0F0;
+            --text-muted: #A070B0;
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.40), 0 0 0 1px rgba(209, 0, 209, 0.04);
+            --shadow-hover: 0 12px 48px rgba(0, 0, 0, 0.50), 0 0 0 1px rgba(209, 0, 209, 0.10);
+            --radius-lg: 28px;
+            --radius-md: 18px;
+            --radius-sm: 12px;
+            --transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --font-quran: "Amiri Quran", "Amiri", serif;
+            --font-body: 'Vazirmatn', 'Segoe UI', Tahoma, Arial, sans-serif;
+            --icon-filter: brightness(0) invert(1);
+        }
+
+        /* ===== تم روشن ===== */
+        [data-theme="light"] {
+            --bg-deep: #b38ad9;
+            --bg-surface: #9f6fc9;
+            --bg-card: rgba(255, 255, 255, 0.25);
+            --bg-card-hover: rgba(255, 255, 255, 0.40);
+            --border-glass: rgba(163, 0, 163, 0.15);
+            --border-glass-hover: rgba(163, 0, 163, 0.30);
+            --primary: #9f4fbf;
+            --primary-dark: #7a3a9e;
+            --primary-glow: rgba(163, 0, 163, 0.12);
+            --secondary: #8a4ab0;
+            --secondary-glow: rgba(163, 0, 163, 0.08);
+            --cyan: #9f4fbf;
+            --cyan-glow: rgba(163, 0, 163, 0.12);
+            --purple: #8a4ab0;
+            --text-primary: #1A0A2A;
+            --text-secondary: #3D1F4A;
+            --text-muted: #6A4A7A;
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(163, 0, 163, 0.06);
+            --shadow-hover: 0 12px 48px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(163, 0, 163, 0.10);
+            --icon-filter: none;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-deep);
+            min-height: 100vh;
+            padding: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            direction: rtl;
+            position: relative;
+            transition: background 0.4s ease;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 30%, var(--primary-glow) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 70%, var(--secondary-glow) 0%, transparent 60%);
+            pointer-events: none;
+            animation: pulseGlow 8s ease-in-out infinite alternate;
+            z-index: 0;
+            transition: background 0.4s ease;
+        }
+
+        @keyframes pulseGlow {
+            0% { opacity: 0.4; transform: scale(1); }
+            100% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        /* ===== دکمه تغییر تم ===== */
+        .theme-toggle-fixed {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 100;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            transition: var(--transition);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            line-height: 1;
+            -webkit-tap-highlight-color: transparent;
+            color: var(--text-muted);
+        }
+
+        .theme-toggle-fixed:hover {
+            background: rgba(209, 0, 209, 0.06);
+            border-color: rgba(209, 0, 209, 0.15);
+            transform: scale(1.06) rotate(-8deg);
+        }
+
+        .theme-toggle-fixed:active { transform: scale(0.92); }
+
+        [data-theme="light"] .theme-toggle-fixed {
+            background: rgba(255, 255, 255, 0.6);
+            border-color: rgba(163, 0, 163, 0.08);
+        }
+
+        [data-theme="light"] .theme-toggle-fixed:hover {
+            background: rgba(255, 255, 255, 0.85);
+            border-color: rgba(163, 0, 163, 0.20);
+        }
+
+        @media (max-width: 480px) {
+            .theme-toggle-fixed {
+                top: 12px;
+                left: 12px;
+                width: 36px;
+                height: 36px;
+                font-size: 15px;
+            }
+        }
+
+        /* ===== دکمه بازگشت ===== */
+        .back-btn-fixed {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 100;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            line-height: 1;
+            -webkit-tap-highlight-color: transparent;
+            color: var(--text-muted);
+        }
+
+        .back-btn-fixed:hover {
+            background: rgba(209, 0, 209, 0.06);
+            border-color: rgba(209, 0, 209, 0.15);
+            transform: scale(1.05);
+        }
+
+        .back-btn-fixed:active { transform: scale(0.92); }
+
+        .back-btn-fixed img {
+            width: 22px;
+            height: 22px;
+            display: block;
+            filter: var(--icon-filter);
+            opacity: 0.6;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn-fixed:hover img { opacity: 1; }
+
+        @media (max-width: 480px) {
+            .back-btn-fixed {
+                top: 12px;
+                right: 12px;
+                width: 36px;
+                height: 36px;
+            }
+            .back-btn-fixed img { width: 18px; height: 18px; }
+        }
+
+        .app-wrapper {
+            display: flex;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            min-height: 100vh;
+            align-items: flex-start;
+            position: relative;
+            z-index: 1;
+            padding-top: 60px;
+        }
+
+        .quran-section {
+            flex: 0 0 50%;
+            max-width: 50%;
+            position: sticky;
+            top: 4rem;
+        }
+
+        .app-panel {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            max-height: calc(100vh - 5rem);
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .app-panel::-webkit-scrollbar { width: 3px; }
+        .app-panel::-webkit-scrollbar-track { background: transparent; }
+        .app-panel::-webkit-scrollbar-thumb { background: var(--primary-glow); border-radius: 4px; }
+
+        .page-wrapper {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quran-page {
+            container-type: inline-size;
+            container-name: page;
+            width: 100%;
+            aspect-ratio: 437 / 564;
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-glass);
+            box-shadow: var(--shadow-card);
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .quran-page:hover {
+            box-shadow: var(--shadow-hover);
+            border-color: rgba(209, 0, 209, 0.06);
+        }
+
+        .ornamental-border {
+            position: absolute;
+            inset: 3.75cqw;
+            border: 0.47cqw solid rgba(209, 0, 209, 0.08);
+            outline: 0.16cqw solid rgba(209, 0, 209, 0.04);
+            outline-offset: 0.94cqw;
+            padding: 3.5cqw 2.8cqw 2.5cqw 2.8cqw;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            border-radius: 6px;
+            background: transparent;
+        }
+
+        .ornamental-border::before,
+        .ornamental-border::after {
+            content: "";
+            position: absolute;
+            width: 3.5cqw;
+            height: 3.5cqw;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(209, 0, 209, 0.10) 0 15%, transparent 16%),
+                radial-gradient(circle, rgba(209, 0, 209, 0.06) 0 8%, transparent 9%);
+            background-position: center, center;
+            background-size: 100% 100%;
+            opacity: 0.6;
+            transition: var(--transition);
+        }
+        .ornamental-border::before { top: -1.75cqw; right: -1.75cqw; }
+        .ornamental-border::after { bottom: -1.75cqw; left: -1.75cqw; }
+
+        .surah-title-box {
+            align-self: center;
+            width: auto;
+            max-width: 80%;
+            min-height: 6.5cqw;
+            margin-bottom: calc(3cqw - 5px);
+            padding: 1cqw 5cqw;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            clip-path: polygon(6% 0%, 94% 0%, 100% 50%, 94% 100%, 6% 100%, 0% 50%);
+            transition: var(--transition);
+            overflow: visible;
+        }
+
+        .surah-title {
+            font-family: var(--font-quran);
+            font-size: 3.6cqw;
+            color: var(--text-primary);
+            letter-spacing: 0.15cqw;
+            font-weight: 700;
+            line-height: 1;
+            white-space: nowrap;
+        }
+        .surah-title .gradient {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .basmala-line {
+            text-align: center;
+            font-family: var(--font-quran);
+            font-size: 4.1cqw;
+            color: var(--text-secondary);
+            margin-bottom: calc(2.6cqw - 5px);
+            line-height: 1.9;
+            letter-spacing: 0.05em;
+            padding-bottom: 0.4cqw;
+            overflow: visible;
+        }
+
+        .quran-text {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 0.6cqw;
+        }
+
+        .line {
+            font-family: var(--font-quran);
+            font-size: 3.55cqw;
+            color: var(--text-primary);
+            line-height: 1.6;
+            text-align: justify;
+            text-align-last: justify;
+            direction: rtl;
+            unicode-bidi: plain-text;
+            white-space: normal;
+            word-spacing: 0.1cqw;
+            padding: 0.2cqw 0;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .line-4 { text-align-last: center; }
+
+        .word {
+            display: inline;
+            transition: all 0.4s ease;
+        }
+
+        .word.ayah-blurred {
+            filter: blur(4px) !important;
+            opacity: 0.12 !important;
+            user-select: none !important;
+            pointer-events: none !important;
+        }
+
+        .word.ayah-today {
+            filter: blur(0) !important;
+            opacity: 1 !important;
+            user-select: text !important;
+            pointer-events: auto !important;
+        }
+
+        .word.ayah-review {
+            filter: blur(0) !important;
+            opacity: 1 !important;
+            user-select: text !important;
+            pointer-events: auto !important;
+        }
+
+        .ayah-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 4.1cqw;
+            height: 4.1cqw;
+            margin: 0 0.3cqw;
+            border: 1.5px solid rgba(209, 0, 209, 0.08);
+            border-radius: 50%;
+            position: relative;
+            font-family: var(--font-body);
+            font-size: 2.1cqw;
+            color: var(--text-muted);
+            font-weight: 700;
+            background: var(--bg-surface);
+            box-shadow: inset 0 0 0 0.3cqw var(--bg-surface);
+            outline: 0.06cqw solid rgba(209, 0, 209, 0.04);
+            outline-offset: 0.25cqw;
+            transition: var(--transition);
+        }
+
+        .ayah-number.ayah-blurred {
+            filter: blur(4px) !important;
+            opacity: 0.12 !important;
+            user-select: none !important;
+            pointer-events: none !important;
+        }
+
+        .ayah-number.ayah-today {
+            filter: blur(0) !important;
+            opacity: 1 !important;
+            border-color: rgba(209, 0, 209, 0.15);
+            color: var(--primary);
+        }
+
+        .ayah-number.ayah-review {
+            filter: blur(0) !important;
+            opacity: 1 !important;
+            border-color: rgba(52, 211, 153, 0.10);
+            color: var(--success);
+        }
+
+        .panel-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-glass);
+            box-shadow: var(--shadow-card);
+            padding: 1rem 1.25rem;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: var(--transition);
+        }
+
+        .panel-card:hover { border-color: rgba(255, 255, 255, 0.04); }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .panel-header h2 {
+            color: var(--text-primary);
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        .panel-header h2 .gradient {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .day-badge {
+            background: rgba(209, 0, 209, 0.06);
+            color: var(--primary);
+            padding: 0.25rem 1rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid rgba(209, 0, 209, 0.06);
+        }
+
+        .day-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .day-item .label {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 400;
+        }
+        .day-item .value {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        .progress-label { color: var(--text-secondary); font-size: 0.85rem; }
+        .progress-percent { color: var(--primary); font-weight: 700; font-size: 0.85rem; }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 999px;
+            transition: width 0.6s ease;
+        }
+
+        .card-toggle {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: var(--transition);
+            padding: 0 0.25rem;
+        }
+        .card-toggle:hover { color: var(--text-primary); }
+
+        .card-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.4s ease;
+            opacity: 0;
+        }
+        .card-content.open {
+            max-height: 600px;
+            opacity: 1;
+            padding-top: 1rem;
+        }
+
+        .translation-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-glass);
+        }
+        .translation-item:last-child { border-bottom: none; }
+        .translation-item .ayah-ref {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.8rem;
+            display: inline-block;
+            min-width: 3rem;
+        }
+        .translation-item .ayah-translation {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+
+        .review-verse {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-glass);
+            font-family: var(--font-quran);
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+        .review-verse:last-child { border-bottom: none; }
+        .review-verse .ayah-ref {
+            color: var(--success);
+            font-family: var(--font-body);
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-left: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1.5rem;
+            border: 1px solid var(--border-glass);
+            border-radius: 60px;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-secondary);
+            min-height: 44px;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: rgba(209, 0, 209, 0.06);
+            border-color: rgba(209, 0, 209, 0.12);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+        .btn:active:not(:disabled) { transform: scale(0.96); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+        .btn-primary {
+            background: rgba(209, 0, 209, 0.08);
+            border-color: rgba(209, 0, 209, 0.10);
+            color: var(--text-primary);
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: rgba(209, 0, 209, 0.12);
+            border-color: rgba(209, 0, 209, 0.15);
+            box-shadow: 0 0 40px var(--primary-glow);
+        }
+
+        .btn-success {
+            background: rgba(52, 211, 153, 0.06);
+            border-color: rgba(52, 211, 153, 0.06);
+            color: var(--success);
+        }
+        .btn-success:hover:not(:disabled) {
+            background: rgba(52, 211, 153, 0.10);
+            border-color: rgba(52, 211, 153, 0.12);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border-color: var(--border-glass);
+            color: var(--text-secondary);
+        }
+        .btn-outline:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.02);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+        }
+
+        .btn-sm { padding: 0.4rem 1rem; font-size: 0.75rem; min-height: 34px; }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        .action-grid .btn { width: 100%; }
+        .action-grid .btn-full { grid-column: 1 / -1; }
+
+        .study-complete-msg {
+            background: rgba(52, 211, 153, 0.02);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-sm);
+            border-right: 3px solid var(--success);
+            color: var(--success);
+            font-weight: 500;
+            text-align: center;
+            font-size: 0.9rem;
+            border: 1px solid rgba(52, 211, 153, 0.04);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(26, 10, 42, 0.90);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-glass);
+            animation: modalIn 0.3s ease;
+        }
+        .modal-content::-webkit-scrollbar { width: 3px; }
+        .modal-content::-webkit-scrollbar-track { background: transparent; }
+        .modal-content::-webkit-scrollbar-thumb { background: var(--primary-glow); border-radius: 4px; }
+
+        @keyframes modalIn {
+            from { transform: scale(0.95) translateY(20px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-glass);
+        }
+        .modal-header h3 {
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        .modal-header h3 .gradient {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: var(--transition);
+            padding: 0 0.5rem;
+            line-height: 1;
+        }
+        .modal-close:hover { color: var(--text-primary); transform: rotate(90deg); }
+
+        .quiz-question {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-glass);
+        }
+        .question-number {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+        }
+        .question-text {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        .question-hint {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            border-right: 3px solid rgba(209, 0, 209, 0.10);
+        }
+        .question-display-text {
+            font-family: var(--font-quran);
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+            text-align: center;
+            line-height: 2;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .quiz-option {
+            padding: 0.6rem 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: right;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .quiz-option:hover:not(.disabled) {
+            border-color: rgba(209, 0, 209, 0.15);
+            background: rgba(209, 0, 209, 0.04);
+            color: var(--text-primary);
+        }
+        .quiz-option.selected {
+            border-color: rgba(209, 0, 209, 0.15);
+            background: rgba(209, 0, 209, 0.06);
+            color: var(--text-primary);
+        }
+        .quiz-option.correct {
+            border-color: var(--success);
+            background: rgba(52, 211, 153, 0.04);
+            color: var(--success);
+        }
+        .quiz-option.wrong {
+            border-color: var(--error);
+            background: rgba(255, 107, 129, 0.04);
+            color: var(--error);
+        }
+        .quiz-option.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .quiz-input {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            font-family: var(--font-body);
+            transition: var(--transition);
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-primary);
+        }
+        .quiz-input:focus {
+            outline: none;
+            border-color: rgba(209, 0, 209, 0.15);
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+        .quiz-input:disabled { opacity: 0.4; }
+
+        .quiz-feedback {
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+        }
+        .quiz-feedback.correct {
+            background: rgba(52, 211, 153, 0.04);
+            color: var(--success);
+            border: 1px solid rgba(52, 211, 153, 0.04);
+        }
+        .quiz-feedback.wrong {
+            background: rgba(255, 107, 129, 0.04);
+            color: var(--error);
+            border: 1px solid rgba(255, 107, 129, 0.04);
+        }
+
+        .quiz-result {
+            text-align: center;
+            padding: 2rem 0;
+        }
+        .quiz-result .score {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .quiz-result .score-label {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .modal-footer {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-glass);
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        @media screen and (max-width: 1024px) {
+            .app-wrapper {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+            .quran-section {
+                flex: none;
+                max-width: 100%;
+                width: 100%;
+                position: static;
+            }
+            .quran-page { max-width: 640px; margin: 0 auto; }
+            .app-panel {
+                max-height: none;
+                width: 100%;
+                max-width: 640px;
+                margin: 0 auto;
+                padding-right: 0;
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+            .app-wrapper { padding: 0.5rem; gap: 1rem; padding-top: 60px; }
+            .app-panel { gap: 1rem; }
+            .panel-card { padding: 0.75rem 1rem; }
+            .panel-header h2 { font-size: 1rem; }
+            .day-badge { font-size: 0.7rem; padding: 0.2rem 0.75rem; }
+            .day-grid { grid-template-columns: 1fr; gap: 0.4rem; }
+            .action-grid { grid-template-columns: 1fr; }
+            .action-grid .btn-full { grid-column: 1; }
+            .modal-content { padding: 1.5rem; margin: 1rem; }
+            .quiz-question { padding: 0.75rem; }
+            .quiz-option { padding: 0.5rem 0.75rem; font-size: 0.85rem; }
+        }
+
+        @media screen and (max-width: 480px) {
+            .app-wrapper { padding: 0.25rem; padding-top: 60px; }
+            .panel-card { padding: 0.5rem 0.75rem; }
+            .panel-header h2 { font-size: 0.9rem; }
+            .btn { padding: 0.4rem 1rem; font-size: 0.75rem; min-height: 36px; }
+            .modal-content { padding: 1rem; }
+            .quiz-result .score { font-size: 2.2rem; }
+            .question-display-text { font-size: 0.95rem; }
+        }
+
+        @media print {
+            .app-panel { display: none !important; }
+            .quran-section { flex: none; max-width: 100%; width: 100%; position: static; }
+            .quran-page { box-shadow: none !important; border: 1px solid #333; }
+            .quran-page:hover { box-shadow: none !important; }
+            .app-wrapper { padding: 0; gap: 0; }
+            .word.ayah-blurred { filter: blur(0) !important; opacity: 0.2 !important; }
+            .back-btn-fixed { display: none !important; }
+            .theme-toggle-fixed { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== دکمه بازگشت ===== -->
+    <button class="back-btn-fixed" onclick="goBack()" aria-label="بازگشت">
+        <img src="undogo.png" alt="بازگشت" onerror="this.textContent='←'">
+    </button>
+
+    <!-- ===== دکمه تغییر تم ===== -->
+    <button class="theme-toggle-fixed" onclick="toggleTheme()" aria-label="تغییر تم" title="تغییر تم">
+        🌙
+    </button>
+
+    <div class="app-wrapper">
+
+        <div class="quran-section">
+            <div class="page-wrapper">
+                <div class="quran-page" id="quranPage">
+                    <div class="ornamental-border">
+
+                        <div class="surah-title-box">
+                            <span class="surah-title"><span class="gradient">سورة يس</span></span>
+                        </div>
+
+                        <div class="basmala-line">
+                            بِسۡمِ اللَّهِ الرَّحۡمَٰنِ الرَّحِيمِ
+                        </div>
+
+                        <div class="quran-text" id="quranText">
+                            <div class="line line-1">
+                                <span class="word" data-verse="1">يسٓ</span>
+                                <span class="ayah-number" data-verse="1">١</span>
+                                <span class="word" data-verse="2">وَٱلۡقُرۡءَانِ ٱلۡحَكِيمِ</span>
+                                <span class="ayah-number" data-verse="2">٢</span>
+                                <span class="word" data-verse="3">إِنَّكَ لَمِنَ ٱلۡمُرۡسَلِينَ</span>
+                                <span class="ayah-number" data-verse="3">٣</span>
+                                <span class="word" data-verse="4">عَلَىٰ</span>
+                            </div>
+
+                            <div class="line line-2">
+                                <span class="word" data-verse="4">صِرَٰطٖ مُّسۡتَقِيمٖ</span>
+                                <span class="ayah-number" data-verse="4">٤</span>
+                                <span class="word" data-verse="5">تَنزِيلَ ٱلۡعَزِيزِ ٱلرَّحِيمِ</span>
+                                <span class="ayah-number" data-verse="5">٥</span>
+                                <span class="word" data-verse="6">لِتُنذِرَ قَوۡمٗا مَّآ</span>
+                            </div>
+
+                            <div class="line line-3">
+                                <span class="word" data-verse="6">أُنذِرَ ءَابَآؤُهُمۡ فَهُمۡ غَٰفِلُونَ</span>
+                                <span class="ayah-number" data-verse="6">٦</span>
+                                <span class="word" data-verse="6">لَقَدۡ حَقَّ ٱلۡقَوۡلُ عَلَىٰٓ أَكۡثَرِهِمۡ</span>
+                            </div>
+
+                            <div class="line line-5">
+                                <span class="word" data-verse="6">فَهُمۡ لَا يُؤۡمِنُونَ</span>
+                                <span class="ayah-number" data-verse="6">٧</span>
+                                <span class="word" data-verse="7">إِنَّا جَعَلۡنَا فِيٓ أَعۡنَٰقِهِمۡ أَغۡلَٰلٗا فَهِيَ إِلَى</span>
+                            </div>
+
+                            <div class="line line-6">
+                                <span class="word" data-verse="7">ٱلۡأَذۡقَانِ فَهُم مُّقۡمَحُونَ</span>
+                                <span class="ayah-number" data-verse="7">٨</span>
+                                <span class="word" data-verse="8">وَجَعَلۡنَا مِنۢ بَيۡنِ أَيۡدِيهِمۡ سَدّٗا</span>
+                            </div>
+
+                            <div class="line line-7">
+                                <span class="word" data-verse="8">وَمِنۡ خَلۡفِهِمۡ سَدّٗا فَأَغۡشَيۡنَٰهُمۡ فَهُمۡ لَا يُبۡصِرُونَ</span>
+                                <span class="ayah-number" data-verse="8">٩</span>
+                                <span class="word" data-verse="9">وَسَوَآءٌ</span>
+                            </div>
+
+                            <div class="line line-8">
+                                <span class="word" data-verse="9">عَلَيۡهِمۡ ءَأَنذَرۡتَهُمۡ أَمۡ لَمۡ تُنذِرۡهُمۡ لَا يُؤۡمِنُونَ</span>
+                                <span class="ayah-number" data-verse="9">١٠</span>
+                                <span class="word" data-verse="10">إِنَّمَا تُنذِرُ</span>
+                            </div>
+
+                            <div class="line line-9">
+                                <span class="word" data-verse="10">مَنِ ٱتَّبَعَ ٱلذِّكۡرَ وَخَشِيَ ٱلرَّحۡمَٰنَ بِٱلۡغَيۡبِۖ فَبَشِّرۡهُ بِمَغۡفِرَةٖ</span>
+                            </div>
+
+                            <div class="line line-10">
+                                <span class="word" data-verse="10">وَأَجۡرٖ كَرِيمٍ</span>
+                                <span class="ayah-number" data-verse="10">١١</span>
+                                <span class="word" data-verse="11">إِنَّا نَحۡنُ نُحۡيِ ٱلۡمَوۡتَىٰ وَنَكۡتُبُ</span>
+                            </div>
+
+                            <div class="line line-11">
+                                <span class="word" data-verse="11">مَا قَدَّمُواْ وَءَاثَٰرَهُمۡۚ وَكُلَّ شَيۡءٍ أَحۡصَيۡنَٰهُ فِيٓ إِمَامٖ مُّبِينٖ</span>
+                                <span class="ayah-number" data-verse="11">١٢</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-panel" id="appPanel">
+
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h2>📖 <span class="gradient">برنامه حفظ</span></h2>
+                    <span class="day-badge" id="dayBadge">روز ۱</span>
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <div class="day-grid">
+                    <div class="day-item">
+                        <div class="label">آیات امروز</div>
+                        <div class="value" id="todayVerses">۱ - ۳</div>
+                    </div>
+                    <div class="day-item">
+                        <div class="label">تعداد آیات</div>
+                        <div class="value" id="todayCount">۳</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <div class="progress-header">
+                    <span class="progress-label">پیشرفت کلی</span>
+                    <span class="progress-percent" id="progressPercent">۰٪</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="color:var(--text-primary);font-weight:600;font-size:0.95rem;">📝 ترجمه آیات امروز</span>
+                    <button class="card-toggle" id="toggleTranslation">▾</button>
+                </div>
+                <div class="card-content open" id="translationContent">
+                    <p style="color: var(--text-muted);">برای مشاهده ترجمه، دکمه «نمایش ترجمه» را بزنید.</p>
+                </div>
+            </div>
+
+            <div class="panel-card" id="reviewCard" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="color:var(--text-primary);font-weight:600;font-size:0.95rem;">🔄 مرور آیات قبلی</span>
+                    <button class="card-toggle" id="toggleReview">▾</button>
+                </div>
+                <div class="card-content open" id="reviewContent">
+                    <p style="color: var(--text-muted);">آیات قبلی برای مرور وجود ندارد.</p>
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <div class="action-grid">
+                    <button class="btn btn-outline btn-sm" id="showTranslationBtn">📖 نمایش ترجمه</button>
+                    <button class="btn btn-outline btn-sm" id="reviewVersesBtn">🔍 مرور آیات قبلی</button>
+                    <button class="btn btn-primary btn-sm" id="startQuizBtn">📝 آزمون امروز</button>
+                    <button class="btn btn-primary btn-sm" id="startReviewQuizBtn">🔄 آزمون مرور</button>
+                    <button class="btn btn-success btn-sm btn-full" id="finishStudyBtn">✅ پایان مطالعه امروز</button>
+                </div>
+            </div>
+
+            <div id="studyCompleteMsg" style="display:none;"></div>
+
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="quizModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">📝 <span class="gradient">آزمون</span></h3>
+                <button class="modal-close" id="modalClose">✕</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer" id="modalFooter">
+                <button class="btn btn-primary" id="modalSubmitBtn">ارسال پاسخ‌ها</button>
+                <button class="btn btn-outline" id="modalResetBtn">تولید مجدد</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================================================================
+        // مدیریت تم (روشن/تیره)
+        // ================================================================
+        function applyTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            localStorage.setItem('nora_theme', theme);
+            
+            const toggleBtn = document.querySelector('.theme-toggle-fixed');
+            if (toggleBtn) {
+                toggleBtn.textContent = theme === 'light' ? '☀️' : '🌙';
+            }
+        }
+
+        function toggleTheme() {
+            const current = document.body.getAttribute('data-theme') || 'dark';
+            applyTheme(current === 'dark' ? 'light' : 'dark');
+        }
+
+        // ================================================================
+        // بارگذاری تم ذخیره شده
+        // ================================================================
+        const savedTheme = localStorage.getItem('nora_theme') || 'dark';
+        document.body.setAttribute('data-theme', savedTheme);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.querySelector('.theme-toggle-fixed');
+            if (toggleBtn) {
+                toggleBtn.textContent = savedTheme === 'light' ? '☀️' : '🌙';
+            }
+        });
+
+        // ================================================================
+        // بازگشت به صفحه ماژول‌ها
+        // ================================================================
+        function goBack() {
+            window.location.href = 'module.html';
+        }
+
+        /* ==========================================================================
+           برنامه حفظ قرآن - سوره یس · نورولیا
+           ========================================================================== */
+
+        // ==========================================================================
+        // 1. داده‌ها
+        // ==========================================================================
+
+        const SURAH_YASIN = {
+            totalVerses: 12,
+            verses: {
+                1: "يسٓ",
+                2: "وَٱلۡقُرۡءَانِ ٱلۡحَكِيمِ",
+                3: "إِنَّكَ لَمِنَ ٱلۡمُرۡسَلِينَ",
+                4: "عَلَىٰ صِرَٰطٖ مُّسۡتَقِيمٖ",
+                5: "تَنزِيلَ ٱلۡعَزِيزِ ٱلرَّحِيمِ",
+                6: "لِتُنذِرَ قَوۡمٗا مَّآ أُنذِرَ ءَابَآؤُهُمۡ فَهُمۡ غَٰفِلُونَ لَقَدۡ حَقَّ ٱلۡقَوۡلُ عَلَىٰٓ أَكۡثَرِهِمۡ فَهُمۡ لَا يُؤۡمِنُونَ",
+                7: "إِنَّا جَعَلۡنَا فِيٓ أَعۡنَٰقِهِمۡ أَغۡلَٰلٗا فَهِيَ إِلَى ٱلۡأَذۡقَانِ فَهُم مُّقۡمَحُونَ",
+                8: "وَجَعَلۡنَا مِنۢ بَيۡنِ أَيۡدِيهِمۡ سَدّٗا وَمِنۡ خَلۡفِهِمۡ سَدّٗا فَأَغۡشَيۡنَٰهُمۡ فَهُمۡ لَا يُبۡصِرُونَ",
+                9: "وَسَوَآءٌ عَلَيۡهِمۡ ءَأَنذَرۡتَهُمۡ أَمۡ لَمۡ تُنذِرۡهُمۡ لَا يُؤۡمِنُونَ",
+                10: "إِنَّمَا تُنذِرُ مَنِ ٱتَّبَعَ ٱلذِّكۡرَ وَخَشِيَ ٱلرَّحۡمَٰنَ بِٱلۡغَيۡبِۖ فَبَشِّرۡهُ بِمَغۡفِرَةٖ وَأَجۡرٖ كَرِيمٍ",
+                11: "إِنَّا نَحۡنُ نُحۡيِ ٱلۡمَوۡتَىٰ وَنَكۡتُبُ مَا قَدَّمُواْ وَءَاثَٰرَهُمۡۚ وَكُلَّ شَيۡءٍ أَحۡصَيۡنَٰهُ فِيٓ إِمَامٖ مُّبِينٖ"
+            },
+            translations: {
+                1: "یس",
+                2: "سوگند به قرآن حکیم",
+                3: "که تو از پیامبرانی",
+                4: "بر راه راست",
+                5: "نازل شده از سوی عزیزِ رحیم",
+                6: "تا قومی را که پدرانشان انذار نشده‌اند و غافلند، بترسانی",
+                7: "به تحقیق که گفتار (عذاب) بر بیشترشان محقق شده، پس ایمان نمی‌آورند",
+                8: "ما در گردن‌هایشان غل‌هایی قرار داده‌ایم که تا چانه‌هاست، پس سرهایشان بالا نگه داشته شده",
+                9: "و از پیش رویشان سدی و از پشت سرشان سدی قرار داده‌ایم و بر چشمانشان پرده‌ای افکنده‌ایم، پس نمی‌بینند",
+                10: "و برایشان یکسان است، چه انذارشان کنی یا نکنی، ایمان نمی‌آورند",
+                11: "تنها کسی را انذار می‌کنی که از ذکر پیروی کند و از رحمان در نهان بترسد، پس او را به آمرزش و پاداشی کریم مژده بده",
+                12: "همانا ما هستیم که مردگان را زنده می‌کنیم و آنچه را که پیش فرستاده‌اند و آثارشان را می‌نویسیم و هر چیزی را در لوحی مبین شمارش کرده‌ایم"
+            }
+        };
+
+        const wordLocations = {
+            "يسٓ": 1, "وَٱلۡقُرۡءَانِ": 1, "ٱلۡحَكِيمِ": 1, "إِنَّكَ": 1, "لَمِنَ": 1, "ٱلۡمُرۡسَلِينَ": 1, "عَلَىٰ": 1,
+            "صِرَٰطٖ": 2, "مُّسۡتَقِيمٖ": 2, "تَنزِيلَ": 2, "ٱلۡعَزِيزِ": 2, "ٱلرَّحِيمِ": 2,
+            "لِتُنذِرَ": 3, "قَوۡمٗا": 3, "مَّآ": 3, "أُنذِرَ": 3, "ءَابَآؤُهُمۡ": 3, "فَهُمۡ": 3, "غَٰفِلُونَ": 3,
+            "لَقَدۡ": 4, "حَقَّ": 4, "ٱلۡقَوۡلُ": 4, "عَلَىٰٓ": 4, "أَكۡثَرِهِمۡ": 4,
+            "فَهُمۡ": 5, "لَا": 5, "يُؤۡمِنُونَ": 5, "إِنَّا": 5, "جَعَلۡنَا": 5, "فِيٓ": 5, "أَعۡنَٰقِهِمۡ": 5, "أَغۡلَٰلٗا": 5,
+            "فَهِيَ": 5, "إِلَى": 5, "ٱلۡأَذۡقَانِ": 6, "فَهُم": 6, "مُّقۡمَحُونَ": 6, "وَجَعَلۡنَا": 6, "مِنۢ": 6,
+            "بَيۡنِ": 6, "أَيۡدِيهِمۡ": 6, "سَدّٗا": 6,
+            "وَمِنۡ": 7, "خَلۡفِهِمۡ": 7, "سَدّٗا": 7, "فَأَغۡشَيۡنَٰهُمۡ": 7, "فَهُمۡ": 7, "لَا": 7, "يُبۡصِرُونَ": 7,
+            "وَسَوَآءٌ": 7,
+            "عَلَيۡهِمۡ": 8, "ءَأَنذَرۡتَهُمۡ": 8, "أَمۡ": 8, "لَمۡ": 8, "تُنذِرۡهُمۡ": 8, "لَا": 8, "يُؤۡمِنُونَ": 8,
+            "إِنَّمَا": 8, "تُنذِرُ": 8,
+            "مَنِ": 9, "ٱتَّبَعَ": 9, "ٱلذِّكۡرَ": 9, "وَخَشِيَ": 9, "ٱلرَّحۡمَٰنَ": 9, "بِٱلۡغَيۡبِۖ": 9, "فَبَشِّرۡهُ": 9,
+            "بِمَغۡفِرَةٖ": 9,
+            "وَأَجۡرٖ": 10, "كَرِيمٍ": 10, "إِنَّا": 10, "نَحۡنُ": 10, "نُحۡيِ": 10, "ٱلۡمَوۡتَىٰ": 10, "وَنَكۡتُبُ": 10,
+            "مَا": 11, "قَدَّمُواْ": 11, "وَءَاثَٰرَهُمۡۚ": 11, "وَكُلَّ": 11, "شَيۡءٍ": 11, "أَحۡصَيۡنَٰهُ": 11, "فِيٓ": 11,
+            "إِمَامٖ": 11, "مُّبِينٖ": 11
+        };
+
+        // ==========================================================================
+        // 2. برنامه حفظ (Plan)
+        // ==========================================================================
+
+        const PLAN = {
+            day1: { verses: [1, 2, 3] },
+            day2: { verses: [4, 5] },
+            day3: { verses: [6, 7] },
+            day4: { verses: [8, 9] },
+            day5: { verses: [10, 11] },
+            day6: { verses: [12] }
+        };
+
+        // ==========================================================================
+        // 3. وضعیت برنامه
+        // ==========================================================================
+
+        let currentDay = 1;
+        let totalDays = Object.keys(PLAN).length;
+        let isReviewMode = false;
+        let dailyQuizQuestions = [];
+        let reviewQuizQuestions = [];
+        let dailyQuizAnswered = false;
+        let reviewQuizAnswered = false;
+        let isStudyComplete = false;
+        let currentModalType = 'daily';
+
+        // ==========================================================================
+        // 4. ذخیره و بازیابی وضعیت
+        // ==========================================================================
+
+        function saveProgress() {
+            const data = {
+                currentDay: currentDay,
+                isStudyComplete: isStudyComplete,
+                completedDays: []
+            };
+            for (let i = 1; i <= totalDays; i++) {
+                if (i < currentDay || (i === currentDay && isStudyComplete)) {
+                    data.completedDays.push(i);
+                }
+            }
+            localStorage.setItem('quran_memorization_progress', JSON.stringify(data));
+        }
+
+        function loadProgress() {
+            const saved = localStorage.getItem('quran_memorization_progress');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    currentDay = data.currentDay || 1;
+                    isStudyComplete = data.isStudyComplete || false;
+                    const today = new Date().getDate();
+                    const lastUpdate = localStorage.getItem('quran_last_update');
+                    if (lastUpdate && parseInt(lastUpdate) !== today) {
+                        isStudyComplete = false;
+                        localStorage.setItem('quran_last_update', today.toString());
+                    }
+                    if (!lastUpdate) {
+                        localStorage.setItem('quran_last_update', today.toString());
+                    }
+                    return true;
+                } catch (e) {}
+            }
+            return false;
+        }
+
+        // ==========================================================================
+        // 5. توابع اصلی
+        // ==========================================================================
+
+        function getTodayVerses() {
+            const dayKey = `day${currentDay}`;
+            return PLAN[dayKey]?.verses || [];
+        }
+
+        function getPreviousVerses() {
+            const previous = [];
+            for (let i = 1; i < currentDay; i++) {
+                const dayKey = `day${i}`;
+                if (PLAN[dayKey]) {
+                    previous.push(...PLAN[dayKey].verses);
+                }
+            }
+            return previous;
+        }
+
+        function calculateProgress() {
+            let totalVerses = 0;
+            let memorizedVerses = 0;
+            for (let i = 1; i <= totalDays; i++) {
+                const dayKey = `day${i}`;
+                if (PLAN[dayKey]) {
+                    totalVerses += PLAN[dayKey].verses.length;
+                    if (i < currentDay || (i === currentDay && isStudyComplete)) {
+                        memorizedVerses += PLAN[dayKey].verses.length;
+                    }
+                }
+            }
+            return totalVerses > 0 ? Math.round((memorizedVerses / totalVerses) * 100) : 0;
+        }
+
+        // ==========================================================================
+        // 6. رندر صفحه قرآن
+        // ==========================================================================
+
+        function renderQuran() {
+            const todayVerses = getTodayVerses();
+            const previousVerses = getPreviousVerses();
+            const elements = document.querySelectorAll('[data-verse]');
+
+            elements.forEach(el => {
+                const verseNum = parseInt(el.dataset.verse);
+                el.classList.remove('ayah-today', 'ayah-blurred', 'ayah-review');
+
+                let status = 'blurred';
+                if (isReviewMode && previousVerses.includes(verseNum)) {
+                    status = 'review';
+                } else if (todayVerses.includes(verseNum)) {
+                    status = 'today';
+                }
+                el.classList.add(`ayah-${status}`);
+            });
+        }
+
+        // ==========================================================================
+        // 7. رندر اطلاعات روز
+        // ==========================================================================
+
+        function renderDayInfo() {
+            const todayVerses = getTodayVerses();
+            document.getElementById('dayBadge').textContent = `روز ${currentDay}`;
+            document.getElementById('todayVerses').textContent =
+                todayVerses.length > 0 ? `${todayVerses[0]} - ${todayVerses[todayVerses.length - 1]}` : '-';
+            document.getElementById('todayCount').textContent = todayVerses.length;
+
+            const progress = calculateProgress();
+            document.getElementById('progressPercent').textContent = `${progress}%`;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+        }
+
+        // ==========================================================================
+        // 8. رندر ترجمه
+        // ==========================================================================
+
+        function renderTranslation() {
+            const container = document.getElementById('translationContent');
+            const todayVerses = getTodayVerses();
+
+            if (todayVerses.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted);">هیچ آیاتی برای امروز تعیین نشده است.</p>';
+                return;
+            }
+
+            let html = '';
+            todayVerses.forEach(ayahNum => {
+                const translation = SURAH_YASIN.translations[ayahNum] || 'ترجمه موجود نیست';
+                html += `
+                    <div class="translation-item">
+                        <span class="ayah-ref">آیه ${ayahNum}</span>
+                        <span class="ayah-translation">${translation}</span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // ==========================================================================
+        // 9. رندر مرور آیات قبلی
+        // ==========================================================================
+
+        function renderReview() {
+            const container = document.getElementById('reviewContent');
+            const previousVerses = getPreviousVerses();
+
+            if (previousVerses.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted);">هنوز آیات قبلی برای مرور وجود ندارد.</p>';
+                return;
+            }
+
+            let html = '';
+            previousVerses.forEach(ayahNum => {
+                const text = SURAH_YASIN.verses[ayahNum] || '';
+                html += `
+                    <div class="review-verse">
+                        <span class="ayah-ref">آیه ${ayahNum}</span>
+                        ${text}
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // ==========================================================================
+        // 10. تولید سؤالات آزمون
+        // ==========================================================================
+
+        function getWordsFromVerses(verses) {
+            const words = [];
+            const allWords = Object.keys(wordLocations);
+            for (let word of allWords) {
+                for (let verse of verses) {
+                    if (SURAH_YASIN.verses[verse].includes(word)) {
+                        words.push(word);
+                        break;
+                    }
+                }
+            }
+            return words;
+        }
+
+        function generateQuestions(verses, count) {
+            if (verses.length === 0) return [];
+
+            const questions = [];
+            const availableVerses = [...verses];
+            const availableWords = getWordsFromVerses(verses);
+            const numQuestions = Math.min(count, availableVerses.length + Math.floor(availableWords.length / 2));
+
+            function removeRandomItem(arr) {
+                if (arr.length === 0) return null;
+                const index = Math.floor(Math.random() * arr.length);
+                return arr.splice(index, 1)[0];
+            }
+
+            for (let i = 0; i < numQuestions && i < 12; i++) {
+                if (availableVerses.length === 0 && availableWords.length === 0) break;
+
+                const questionType = Math.floor(Math.random() * 5);
+                let question = null;
+
+                switch (questionType) {
+                    case 0: {
+                        if (availableVerses.length === 0) { i--; continue; }
+                        const ayahNum = removeRandomItem(availableVerses);
+                        const text = SURAH_YASIN.verses[ayahNum] || '';
+                        const displayText = text.length > 40 ? text.substring(0, 40) + '...' : text;
+                        question = {
+                            ayah: ayahNum,
+                            type: 'ayah_number',
+                            prompt: 'شماره آیه‌ای که متن زیر مربوط به آن است را وارد کنید.',
+                            display: displayText,
+                            answer: ayahNum.toString(),
+                            typeLabel: 'شماره آیه'
+                        };
+                        break;
+                    }
+                    case 1: {
+                        if (availableVerses.length === 0) { i--; continue; }
+                        const ayahNum = removeRandomItem(availableVerses);
+                        const text = SURAH_YASIN.verses[ayahNum] || '';
+                        const translation = SURAH_YASIN.translations[ayahNum] || '';
+                        const displayText = text.length > 40 ? text.substring(0, 40) + '...' : text;
+                        const options = [translation];
+                        const otherVerses = verses.filter(v => v !== ayahNum);
+                        const shuffled = otherVerses.sort(() => Math.random() - 0.5);
+                        for (let j = 0; j < Math.min(3, shuffled.length); j++) {
+                            options.push(SURAH_YASIN.translations[shuffled[j]] || '');
+                        }
+                        question = {
+                            ayah: ayahNum,
+                            type: 'translation',
+                            prompt: 'ترجمه صحیح این آیه را از بین گزینه‌های زیر انتخاب کنید.',
+                            display: displayText,
+                            options: options.sort(() => Math.random() - 0.5),
+                            answer: translation,
+                            typeLabel: 'ترجمه'
+                        };
+                        break;
+                    }
+                    case 2: {
+                        if (availableVerses.length === 0) { i--; continue; }
+                        const ayahNum = removeRandomItem(availableVerses);
+                        const text = SURAH_YASIN.verses[ayahNum] || '';
+                        const words = text.split(' ');
+                        const halfIndex = Math.floor(words.length / 2);
+                        const firstHalf = words.slice(0, halfIndex).join(' ');
+                        const secondHalf = words.slice(halfIndex).join(' ');
+                        const displayText = firstHalf + ' ...';
+                        const continuations = [secondHalf];
+                        const allVerses = Object.values(SURAH_YASIN.verses);
+                        const otherContinuations = allVerses
+                            .filter((v, idx) => (idx + 1) !== ayahNum)
+                            .map(v => {
+                                const w = v.split(' ');
+                                return w.slice(Math.floor(w.length / 2)).join(' ');
+                            })
+                            .filter(v => v.length > 0 && v !== secondHalf)
+                            .sort(() => Math.random() - 0.5)
+                            .slice(0, 3);
+                        question = {
+                            ayah: ayahNum,
+                            type: 'continuation',
+                            prompt: 'ادامه صحیح این آیه را از بین گزینه‌های زیر انتخاب کنید.',
+                            display: displayText,
+                            options: [secondHalf, ...otherContinuations].sort(() => Math.random() - 0.5),
+                            answer: secondHalf,
+                            typeLabel: 'تکمیل آیه'
+                        };
+                        break;
+                    }
+                    case 3: {
+                        if (availableVerses.length === 0) { i--; continue; }
+                        const ayahNum = removeRandomItem(availableVerses);
+                        const translation = SURAH_YASIN.translations[ayahNum] || '';
+                        const verseOptions = [ayahNum];
+                        const otherVerseNums = verses.filter(v => v !== ayahNum).sort(() => Math.random() - 0.5);
+                        for (let j = 0; j < Math.min(3, otherVerseNums.length); j++) {
+                            verseOptions.push(otherVerseNums[j]);
+                        }
+                        question = {
+                            ayah: ayahNum,
+                            type: 'verse_from_translation',
+                            prompt: 'این ترجمه مربوط به کدام آیه است؟',
+                            display: translation,
+                            options: verseOptions.sort(() => Math.random() - 0.5),
+                            answer: ayahNum,
+                            typeLabel: 'تشخیص آیه'
+                        };
+                        break;
+                    }
+                    case 4: {
+                        if (availableWords.length === 0) { i--; continue; }
+                        const word = removeRandomItem(availableWords);
+                        const correctLine = wordLocations[word];
+                        const lineOptions = [correctLine];
+                        const allLines = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+                        const otherLines = allLines.filter(l => l !== correctLine).sort(() => Math.random() - 0.5).slice(0, 3);
+                        for (let line of otherLines) {
+                            lineOptions.push(line);
+                        }
+                        question = {
+                            word: word,
+                            type: 'word_line',
+                            prompt: 'کلمه زیر در کدام خط صفحه قرآن قرار دارد؟',
+                            display: word,
+                            options: lineOptions.sort(() => Math.random() - 0.5),
+                            answer: correctLine,
+                            typeLabel: 'تشخیص خط'
+                        };
+                        break;
+                    }
+                }
+
+                if (question) {
+                    questions.push(question);
+                }
+            }
+
+            return questions;
+        }
+
+        // ==========================================================================
+        // 11. نمایش آزمون در Modal
+        // ==========================================================================
+
+        function openQuizModal(title, questions, isReview) {
+            const modal = document.getElementById('quizModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            const modalFooter = document.getElementById('modalFooter');
+
+            modalTitle.innerHTML = `📝 <span class="gradient">${title.replace('📝', '').trim()}</span>`;
+            modal.classList.add('active');
+
+            if (questions.length === 0) {
+                modalBody.innerHTML = '<p style="text-align:center;color:var(--text-muted);">سؤالی برای نمایش وجود ندارد.</p>';
+                modalFooter.style.display = 'none';
+                return;
+            }
+
+            modalFooter.style.display = 'flex';
+
+            let html = '<div class="quiz-container">';
+            questions.forEach((q, index) => {
+                const questionNumber = index + 1;
+                const totalQuestions = questions.length;
+
+                html += `<div class="quiz-question" data-index="${index}">`;
+                html += `<div class="question-number">سؤال ${questionNumber} از ${totalQuestions}</div>`;
+                html += `<div class="question-hint">${q.prompt}</div>`;
+
+                if (q.type === 'word_line') {
+                    html += `<div class="question-display-text">${q.display}</div>`;
+                } else if (q.type === 'ayah_number' || q.type === 'translation' || q.type === 'continuation') {
+                    html += `<div class="question-display-text">${q.display}</div>`;
+                } else if (q.type === 'verse_from_translation') {
+                    html += `<div class="question-display-text">${q.display}</div>`;
+                }
+
+                if (q.type === 'ayah_number') {
+                    html += `<input type="text" class="quiz-input" data-index="${index}" placeholder="شماره آیه را وارد کنید...">`;
+                } else {
+                    html += `<div class="quiz-options">`;
+                    q.options.forEach((opt, optIndex) => {
+                        html += `
+                            <div class="quiz-option" data-index="${index}" data-optindex="${optIndex}">
+                                ${opt}
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+
+                html += `<div class="quiz-feedback" id="feedback-${index}"></div>`;
+                html += `</div>`;
+            });
+            html += '</div>';
+            modalBody.innerHTML = html;
+
+            const submitBtn = document.getElementById('modalSubmitBtn');
+            const resetBtn = document.getElementById('modalResetBtn');
+
+            submitBtn.onclick = function() {
+                if (isReview) {
+                    submitReviewQuizInModal(questions);
+                } else {
+                    submitDailyQuizInModal(questions);
+                }
+            };
+
+            resetBtn.onclick = function() {
+                if (isReview) {
+                    const verses = getPreviousVerses();
+                    const newQuestions = generateQuestions(verses, Math.min(10, verses.length, 10));
+                    reviewQuizQuestions = newQuestions;
+                    reviewQuizAnswered = false;
+                    openQuizModal('🔄 آزمون مرور', reviewQuizQuestions, true);
+                } else {
+                    const verses = getTodayVerses();
+                    const newQuestions = generateQuestions(verses, Math.min(5, verses.length));
+                    dailyQuizQuestions = newQuestions;
+                    dailyQuizAnswered = false;
+                    openQuizModal('📝 آزمون امروز', dailyQuizQuestions, false);
+                }
+            };
+
+            document.querySelectorAll('.modal-body .quiz-option').forEach(el => {
+                el.addEventListener('click', function() {
+                    const isAnswered = isReview ? reviewQuizAnswered : dailyQuizAnswered;
+                    if (isAnswered) return;
+                    const parent = this.closest('.quiz-question');
+                    parent.querySelectorAll('.quiz-option').forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
+            });
+
+            document.querySelectorAll('.modal-body .quiz-input').forEach(input => {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        submitBtn.click();
+                    }
+                });
+            });
+        }
+
+        // ==========================================================================
+        // 12. ارسال آزمون روزانه
+        // ==========================================================================
+
+        function submitDailyQuizInModal(questions) {
+            if (dailyQuizAnswered) return;
+            dailyQuizAnswered = true;
+
+            let correct = 0;
+            const total = questions.length;
+
+            questions.forEach((q, index) => {
+                const feedback = document.getElementById(`feedback-${index}`);
+                const questionEl = document.querySelector(`.modal-body .quiz-question[data-index="${index}"]`);
+
+                if (q.type === 'ayah_number') {
+                    const input = questionEl.querySelector('.quiz-input');
+                    const userAnswer = input.value.trim();
+                    const isCorrect = userAnswer === q.answer;
+                    if (isCorrect) correct++;
+                    feedback.className = `quiz-feedback ${isCorrect ? 'correct' : 'wrong'}`;
+                    feedback.textContent = isCorrect ? '✅ صحیح!' : `❌ پاسخ صحیح: ${q.answer}`;
+                    input.disabled = true;
+                } else {
+                    const selected = questionEl.querySelector('.quiz-option.selected');
+                    const options = questionEl.querySelectorAll('.quiz-option');
+
+                    options.forEach(opt => opt.classList.add('disabled'));
+
+                    if (!selected) {
+                        feedback.className = 'quiz-feedback wrong';
+                        feedback.textContent = `❌ پاسخی انتخاب نشده. پاسخ صحیح: ${q.answer}`;
+                        return;
+                    }
+
+                    const isCorrect = selected.textContent.trim() === q.answer.toString();
+                    if (isCorrect) correct++;
+
+                    options.forEach(opt => {
+                        if (opt.textContent.trim() === q.answer.toString()) {
+                            opt.classList.add('correct');
+                        } else if (opt === selected && !isCorrect) {
+                            opt.classList.add('wrong');
+                        }
+                    });
+
+                    feedback.className = `quiz-feedback ${isCorrect ? 'correct' : 'wrong'}`;
+                    feedback.textContent = isCorrect ? '✅ صحیح!' : `❌ پاسخ صحیح: ${q.answer}`;
+                }
+            });
+
+            const modalBody = document.getElementById('modalBody');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'quiz-result';
+            resultDiv.innerHTML = `
+                <div class="score">${correct}/${total}</div>
+                <div class="score-label">نمره شما</div>
+                <div style="margin-top: 0.5rem;">${correct === total ? '🎉 عالی! حفظیات شما کامل است.' : correct >= total/2 ? '👍 خوب است، ادامه دهید!' : '💪 بیشتر تلاش کنید!'}</div>
+            `;
+            modalBody.appendChild(resultDiv);
+
+            document.getElementById('modalSubmitBtn').disabled = true;
+            document.getElementById('modalResetBtn').disabled = false;
+        }
+
+        // ==========================================================================
+        // 13. ارسال آزمون مرور
+        // ==========================================================================
+
+        function submitReviewQuizInModal(questions) {
+            if (reviewQuizAnswered) return;
+            reviewQuizAnswered = true;
+
+            let correct = 0;
+            const total = questions.length;
+
+            questions.forEach((q, index) => {
+                const feedback = document.getElementById(`feedback-${index}`);
+                const questionEl = document.querySelector(`.modal-body .quiz-question[data-index="${index}"]`);
+
+                if (q.type === 'ayah_number') {
+                    const input = questionEl.querySelector('.quiz-input');
+                    const userAnswer = input.value.trim();
+                    const isCorrect = userAnswer === q.answer;
+                    if (isCorrect) correct++;
+                    feedback.className = `quiz-feedback ${isCorrect ? 'correct' : 'wrong'}`;
+                    feedback.textContent = isCorrect ? '✅ صحیح!' : `❌ پاسخ صحیح: ${q.answer}`;
+                    input.disabled = true;
+                } else {
+                    const selected = questionEl.querySelector('.quiz-option.selected');
+                    const options = questionEl.querySelectorAll('.quiz-option');
+
+                    options.forEach(opt => opt.classList.add('disabled'));
+
+                    if (!selected) {
+                        feedback.className = 'quiz-feedback wrong';
+                        feedback.textContent = `❌ پاسخی انتخاب نشده. پاسخ صحیح: ${q.answer}`;
+                        return;
+                    }
+
+                    const isCorrect = selected.textContent.trim() === q.answer.toString();
+                    if (isCorrect) correct++;
+
+                    options.forEach(opt => {
+                        if (opt.textContent.trim() === q.answer.toString()) {
+                            opt.classList.add('correct');
+                        } else if (opt === selected && !isCorrect) {
+                            opt.classList.add('wrong');
+                        }
+                    });
+
+                    feedback.className = `quiz-feedback ${isCorrect ? 'correct' : 'wrong'}`;
+                    feedback.textContent = isCorrect ? '✅ صحیح!' : `❌ پاسخ صحیح: ${q.answer}`;
+                }
+            });
+
+            const modalBody = document.getElementById('modalBody');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'quiz-result';
+            resultDiv.innerHTML = `
+                <div class="score">${correct}/${total}</div>
+                <div class="score-label">نمره مرور</div>
+                <div style="margin-top: 0.5rem;">${correct === total ? '🌟 عالی! همه را به خاطر دارید!' : correct >= total/2 ? '👍 خوب است، ادامه دهید!' : '💪 بیشتر مرور کنید!'}</div>
+            `;
+            modalBody.appendChild(resultDiv);
+
+            document.getElementById('modalSubmitBtn').disabled = true;
+            document.getElementById('modalResetBtn').disabled = false;
+        }
+
+        // ==========================================================================
+        // 14. بستن Modal
+        // ==========================================================================
+
+        function closeModal() {
+            document.getElementById('quizModal').classList.remove('active');
+            document.getElementById('modalSubmitBtn').disabled = false;
+            document.getElementById('modalResetBtn').disabled = false;
+        }
+
+        // ==========================================================================
+        // 15. مدیریت روز
+        // ==========================================================================
+
+        function checkToday() {
+            const today = new Date().getDate();
+            const lastUpdate = localStorage.getItem('quran_last_update');
+            if (lastUpdate && parseInt(lastUpdate) !== today) {
+                isStudyComplete = false;
+                localStorage.setItem('quran_last_update', today.toString());
+            }
+            if (!lastUpdate) {
+                localStorage.setItem('quran_last_update', today.toString());
+            }
+        }
+
+        // ==========================================================================
+        // 16. به‌روزرسانی کامل برنامه
+        // ==========================================================================
+
+        function updateApp() {
+            checkToday();
+            renderQuran();
+            renderDayInfo();
+            renderTranslation();
+
+            const reviewCard = document.getElementById('reviewCard');
+            const previousVerses = getPreviousVerses();
+
+            if (previousVerses.length > 0) {
+                reviewCard.style.display = 'block';
+                renderReview();
+            } else {
+                reviewCard.style.display = 'none';
+            }
+
+            const finishBtn = document.getElementById('finishStudyBtn');
+            const msgDiv = document.getElementById('studyCompleteMsg');
+
+            if (isStudyComplete) {
+                finishBtn.disabled = true;
+                finishBtn.textContent = '✅ مطالعه امروز انجام شد';
+                msgDiv.style.display = 'block';
+                msgDiv.className = 'study-complete-msg';
+                msgDiv.textContent = '✅ مطالعه امروز انجام شده است. مرحله بعد فردا فعال خواهد شد.';
+            } else {
+                finishBtn.disabled = false;
+                finishBtn.textContent = '✅ پایان مطالعه امروز';
+                msgDiv.style.display = 'none';
+            }
+
+            saveProgress();
+        }
+
+        // ==========================================================================
+        // 17. رویدادهای دکمه‌ها
+        // ==========================================================================
+
+        function setupEventListeners() {
+            document.getElementById('showTranslationBtn').addEventListener('click', function() {
+                const content = document.getElementById('translationContent');
+                if (content.classList.contains('open')) {
+                    content.classList.remove('open');
+                    this.textContent = '📖 نمایش ترجمه';
+                } else {
+                    content.classList.add('open');
+                    this.textContent = '📖 مخفی کردن ترجمه';
+                    renderTranslation();
+                }
+            });
+
+            document.getElementById('reviewVersesBtn').addEventListener('click', function() {
+                const previousVerses = getPreviousVerses();
+                if (previousVerses.length === 0) {
+                    alert('هنوز آیات قبلی برای مرور وجود ندارد.');
+                    return;
+                }
+
+                isReviewMode = !isReviewMode;
+                this.textContent = isReviewMode ? '🔍 بازگشت به حالت عادی' : '🔍 مرور آیات قبلی';
+
+                if (isReviewMode) {
+                    renderQuran();
+                    document.getElementById('reviewCard').style.display = 'block';
+                    renderReview();
+                } else {
+                    renderQuran();
+                }
+            });
+
+            document.getElementById('finishStudyBtn').addEventListener('click', function() {
+                if (isStudyComplete) {
+                    alert('مطالعه امروز قبلاً انجام شده است.');
+                    return;
+                }
+
+                const todayVerses = getTodayVerses();
+                if (todayVerses.length === 0) {
+                    alert('هیچ آیاتی برای امروز تعیین نشده است.');
+                    return;
+                }
+
+                if (confirm(`آیا از حفظ آیات ${todayVerses.join('، ')} اطمینان دارید؟`)) {
+                    isStudyComplete = true;
+                    if (currentDay < totalDays) {
+                        alert(`🎉 تبریک! روز ${currentDay} کامل شد. به روز ${currentDay + 1} خواهید رفت.`);
+                        currentDay++;
+                        isStudyComplete = false;
+                        localStorage.setItem('quran_last_update', new Date().getDate().toString());
+                    } else {
+                        alert('🎉 مبارک! شما کل سوره یس را به اتمام رساندید!');
+                    }
+                    updateApp();
+                    saveProgress();
+                }
+            });
+
+            document.getElementById('toggleTranslation').addEventListener('click', function() {
+                const content = document.getElementById('translationContent');
+                content.classList.toggle('open');
+                this.textContent = content.classList.contains('open') ? '▾' : '▸';
+            });
+
+            document.getElementById('toggleReview').addEventListener('click', function() {
+                const content = document.getElementById('reviewContent');
+                content.classList.toggle('open');
+                this.textContent = content.classList.contains('open') ? '▾' : '▸';
+            });
+
+            document.getElementById('startQuizBtn').addEventListener('click', function() {
+                const todayVerses = getTodayVerses();
+                if (todayVerses.length === 0) {
+                    alert('هیچ آیاتی برای آزمون امروز وجود ندارد.');
+                    return;
+                }
+                if (isStudyComplete) {
+                    alert('مطالعه امروز انجام شده است. آزمون فقط قبل از اتمام مطالعه قابل انجام است.');
+                    return;
+                }
+                dailyQuizQuestions = generateQuestions(todayVerses, Math.min(5, todayVerses.length));
+                dailyQuizAnswered = false;
+                openQuizModal('📝 آزمون امروز', dailyQuizQuestions, false);
+            });
+
+            document.getElementById('startReviewQuizBtn').addEventListener('click', function() {
+                const previousVerses = getPreviousVerses();
+                if (previousVerses.length === 0) {
+                    alert('هنوز آیات قبلی برای آزمون مرور وجود ندارد.');
+                    return;
+                }
+                reviewQuizQuestions = generateQuestions(previousVerses, Math.min(10, previousVerses.length, 10));
+                reviewQuizAnswered = false;
+                openQuizModal('🔄 آزمون مرور', reviewQuizQuestions, true);
+            });
+
+            document.getElementById('modalClose').addEventListener('click', closeModal);
+            document.getElementById('quizModal').addEventListener('click', function(e) {
+                if (e.target === this) closeModal();
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') closeModal();
+            });
+        }
+
+        // ==========================================================================
+        // 18. مقداردهی اولیه
+        // ==========================================================================
+
+        function init() {
+            loadProgress();
+
+            const startDate = new Date(2026, 6, 28);
+            const today = new Date();
+            const diffDays = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+            if (diffDays >= 0 && diffDays < totalDays) {
+                currentDay = diffDays + 1;
+            } else if (diffDays >= totalDays) {
+                currentDay = totalDays;
+                isStudyComplete = true;
+            }
+
+            checkToday();
+
+            const todayDate = new Date().getDate();
+            const lastUpdate = localStorage.getItem('quran_last_update');
+            if (lastUpdate && parseInt(lastUpdate) === todayDate && isStudyComplete) {
+                // مطالعه امروز انجام شده
+            }
+
+            updateApp();
+            setupEventListeners();
+
+            console.log('📖 برنامه حفظ قرآن - سوره یس · نورولیا');
+            console.log(`📅 روز ${currentDay} از ${totalDays} روز`);
+            console.log(`📝 آیات امروز: ${getTodayVerses().join(', ')}`);
+            console.log(`📊 پیشرفت: ${calculateProgress()}%`);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+
+        window.app = {
+            currentDay: () => currentDay,
+            totalDays: () => totalDays,
+            getTodayVerses,
+            getPreviousVerses,
+            calculateProgress,
+            isStudyComplete: () => isStudyComplete,
+            PLAN,
+            SURAH_YASIN
+        };
+    </script>
+
+</body>
+</html>
