@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   View,
@@ -11,11 +12,15 @@ import {
 } from 'react-native';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
+
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Card } from '../ui/Card';
 import { useRouter } from 'expo-router';
-import { Spacing, BorderRadius } from '../../constants/theme';
+import {
+  Spacing,
+  BorderRadius,
+} from '../../constants/theme';
 
 import {
   Sparkles,
@@ -26,56 +31,57 @@ import {
   Video,
   TrendingUp,
   LayoutGrid,
-  ChevronRight,
-  ChevronLeft,
+  Settings,
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
+
+/* =========================================================
+   QUICK ACCESS ITEMS
+========================================================= */
 
 const menuItems = [
   {
     id: 'psycho',
     titleKey: 'psychoPhysical',
     icon: Puzzle,
-    color: '#10B981',
     route: '/psycho',
   },
   {
     id: 'cultural',
     titleKey: 'culturalInterventions',
     icon: Globe,
-    color: '#F59E0B',
     route: '/cultural',
   },
   {
     id: 'plus',
     titleKey: 'plusModule',
     icon: Plus,
-    color: '#EF4444',
     route: '/(tabs)/plus',
   },
   {
     id: 'medication',
     titleKey: 'medicationManagement',
     icon: Pill,
-    color: '#14B8A6',
     route: '/medication',
   },
   {
     id: 'consultation',
     titleKey: 'consultation',
     icon: Video,
-    color: '#F97316',
     route: '/consultation',
   },
   {
-    id: 'assistant',
-    titleKey: 'novaAI',
-    icon: Sparkles,
-    color: '#6366F1',
-    route: '/(tabs)/assistant',
+    id: 'settings',
+    titleKey: 'settings',
+    icon: Settings,
+    route: '/(tabs)/profile',
   },
 ];
+
+/* =========================================================
+   GREETING
+========================================================= */
 
 function getGreeting(t: any) {
   const hour = new Date().getHours();
@@ -91,15 +97,26 @@ function getGreeting(t: any) {
   return t.goodEvening;
 }
 
+/* =========================================================
+   DASHBOARD
+========================================================= */
+
 export function DashboardScreen() {
   const { colors } = useTheme();
   const { t, isRTL } = useLanguage();
   const router = useRouter();
 
-  const [refreshing, setRefreshing] = React.useState(false);
+  const [refreshing, setRefreshing] =
+    React.useState(false);
 
   const refreshTimerRef =
-    React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    React.useRef<ReturnType<typeof setTimeout> | null>(
+      null
+    );
+
+  /* =======================================================
+     REFRESH
+  ======================================================= */
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
@@ -118,6 +135,10 @@ export function DashboardScreen() {
     };
   }, []);
 
+  /* =======================================================
+     MENU CARD
+  ======================================================= */
+
   const renderMenuCard = (
     item: (typeof menuItems)[number],
     index: number
@@ -125,7 +146,8 @@ export function DashboardScreen() {
     const IconComponent = item.icon;
 
     const title =
-      t[item.titleKey as keyof typeof t] || item.titleKey;
+      t[item.titleKey as keyof typeof t] ||
+      item.titleKey;
 
     return (
       <MotiView
@@ -149,7 +171,11 @@ export function DashboardScreen() {
       >
         <TouchableOpacity
           activeOpacity={0.78}
-          onPress={() => router.push(item.route as any)}
+          onPress={() =>
+            router.push(item.route as any)
+          }
+          accessibilityRole="button"
+          accessibilityLabel={title}
           style={[
             styles.menuCard,
             {
@@ -158,24 +184,30 @@ export function DashboardScreen() {
             },
           ]}
         >
-          {/* Icon */}
+          {/* =================================================
+              ICON
+          ================================================= */}
 
           <View
             style={[
               styles.menuIconContainer,
               {
-                backgroundColor: `${item.color}18`,
+                backgroundColor: isRTL
+                  ? 'rgba(255,255,255,0.06)'
+                  : 'rgba(15,23,42,0.045)',
               },
             ]}
           >
             <IconComponent
-              size={25}
-              color={item.color}
-              strokeWidth={2}
+              size={24}
+              color={colors.textSecondary}
+              strokeWidth={1.9}
             />
           </View>
 
-          {/* Title */}
+          {/* =================================================
+              TITLE
+          ================================================= */}
 
           <Text
             numberOfLines={2}
@@ -183,7 +215,9 @@ export function DashboardScreen() {
               styles.menuCardTitle,
               {
                 color: colors.text,
-                textAlign: isRTL ? 'right' : 'left',
+                textAlign: isRTL
+                  ? 'right'
+                  : 'left',
                 writingDirection: isRTL
                   ? 'rtl'
                   : 'ltr',
@@ -192,35 +226,14 @@ export function DashboardScreen() {
           >
             {title}
           </Text>
-
-          {/* Arrow */}
-
-          <View
-            style={[
-              styles.menuArrow,
-              {
-                backgroundColor: `${item.color}12`,
-              },
-            ]}
-          >
-            {isRTL ? (
-              <ChevronLeft
-                size={15}
-                color={item.color}
-                strokeWidth={2.3}
-              />
-            ) : (
-              <ChevronRight
-                size={15}
-                color={item.color}
-                strokeWidth={2.3}
-              />
-            )}
-          </View>
         </TouchableOpacity>
       </MotiView>
     );
   };
+
+  /* =======================================================
+     RENDER
+  ======================================================= */
 
   return (
     <View
@@ -233,7 +246,9 @@ export function DashboardScreen() {
     >
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={
+          styles.scrollContent
+        }
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -243,9 +258,9 @@ export function DashboardScreen() {
           />
         }
       >
-        {/* =====================================================
+        {/* =================================================
             HEADER
-        ====================================================== */}
+        ================================================== */}
 
         <MotiView
           from={{
@@ -263,10 +278,14 @@ export function DashboardScreen() {
           style={[
             styles.header,
             {
-              alignItems: 'center',
+              alignItems: isRTL
+                ? 'flex-end'
+                : 'flex-start',
             },
           ]}
         >
+          {/* Greeting */}
+
           <View
             style={[
               styles.greetingChip,
@@ -281,12 +300,20 @@ export function DashboardScreen() {
                 styles.greetingText,
                 {
                   color: colors.primary,
+                  textAlign: isRTL
+                    ? 'right'
+                    : 'left',
+                  writingDirection: isRTL
+                    ? 'rtl'
+                    : 'ltr',
                 },
               ]}
             >
               {getGreeting(t)}
             </Text>
           </View>
+
+          {/* Title */}
 
           <Text
             style={[
@@ -304,6 +331,8 @@ export function DashboardScreen() {
           >
             {t.dashboardNeuroTitle}
           </Text>
+
+          {/* Subtitle */}
 
           <Text
             style={[
@@ -323,9 +352,9 @@ export function DashboardScreen() {
           </Text>
         </MotiView>
 
-        {/* =====================================================
+        {/* =================================================
             CHARACTER / AI CARD
-        ====================================================== */}
+        ================================================== */}
 
         <MotiView
           from={{
@@ -359,6 +388,8 @@ export function DashboardScreen() {
             }}
             style={styles.characterCard}
           >
+            {/* Decorative blobs */}
+
             <View
               style={[
                 styles.heroBlobA,
@@ -378,8 +409,12 @@ export function DashboardScreen() {
             />
 
             <View style={styles.characterWrapper}>
+              {/* Avatar */}
+
               <View style={styles.avatarRing}>
-                <View style={styles.avatarContainer}>
+                <View
+                  style={styles.avatarContainer}
+                >
                   <Image
                     source={require('../../assets/avatars/model1.jpg')}
                     style={styles.avatar}
@@ -387,19 +422,25 @@ export function DashboardScreen() {
                 </View>
               </View>
 
+              {/* AI Badge */}
+
               <View
                 style={[
                   styles.aiBadge,
                   {
-                    right: width / 2 - 64 - 6,
+                    right:
+                      width / 2 - 64 - 6,
                   },
                 ]}
               >
                 <Sparkles
                   size={12}
                   color="#FFFFFF"
+                  strokeWidth={2}
                 />
               </View>
+
+              {/* Character title */}
 
               <Text
                 style={[
@@ -416,6 +457,8 @@ export function DashboardScreen() {
               >
                 {t.dashboardReadyHelp}
               </Text>
+
+              {/* Character subtitle */}
 
               <Text
                 style={[
@@ -436,9 +479,9 @@ export function DashboardScreen() {
           </LinearGradient>
         </MotiView>
 
-        {/* =====================================================
+        {/* =================================================
             COGNITIVE PROGRESS
-        ====================================================== */}
+        ================================================== */}
 
         <MotiView
           from={{
@@ -466,6 +509,8 @@ export function DashboardScreen() {
                 },
               ]}
             >
+              {/* Icon */}
+
               <View
                 style={[
                   styles.progressIconWrap,
@@ -478,8 +523,11 @@ export function DashboardScreen() {
                 <TrendingUp
                   size={18}
                   color={colors.primary}
+                  strokeWidth={2}
                 />
               </View>
+
+              {/* Title */}
 
               <Text
                 style={[
@@ -498,6 +546,8 @@ export function DashboardScreen() {
                 {t.dashboardCognitiveProgress}
               </Text>
 
+              {/* Percent */}
+
               <Text
                 style={[
                   styles.progressPercent,
@@ -510,7 +560,11 @@ export function DashboardScreen() {
               </Text>
             </View>
 
-            <View style={styles.progressBarContainer}>
+            {/* Progress bar */}
+
+            <View
+              style={styles.progressBarContainer}
+            >
               <View
                 style={[
                   styles.progressBarBg,
@@ -556,10 +610,14 @@ export function DashboardScreen() {
                     x: 1,
                     y: 0,
                   }}
-                  style={styles.progressBarFill}
+                  style={
+                    styles.progressBarFill
+                  }
                 />
               </MotiView>
             </View>
+
+            {/* Progress footer */}
 
             <View
               style={[
@@ -592,9 +650,9 @@ export function DashboardScreen() {
           </Card>
         </MotiView>
 
-        {/* =====================================================
+        {/* =================================================
             QUICK ACCESS HEADER
-        ====================================================== */}
+        ================================================== */}
 
         <MotiView
           from={{
@@ -622,6 +680,7 @@ export function DashboardScreen() {
           <LayoutGrid
             size={17}
             color={colors.textSecondary}
+            strokeWidth={1.9}
           />
 
           <Text
@@ -642,17 +701,17 @@ export function DashboardScreen() {
           </Text>
         </MotiView>
 
-        {/* =====================================================
+        {/* =================================================
             2 × 3 GRID
-        ====================================================== */}
+        ================================================== */}
 
         <View
           style={[
             styles.menuGrid,
             {
-              direction: isRTL
-                ? 'rtl'
-                : 'ltr',
+              flexDirection: isRTL
+                ? 'row-reverse'
+                : 'row',
             },
           ]}
         >
@@ -664,6 +723,10 @@ export function DashboardScreen() {
     </View>
   );
 }
+
+/* ===========================================================
+   STYLES
+=========================================================== */
 
 const styles = StyleSheet.create({
   container: {
@@ -681,6 +744,7 @@ const styles = StyleSheet.create({
   ========================================================= */
 
   header: {
+    width: '100%',
     marginBottom: Spacing.lg,
   },
 
@@ -717,6 +781,7 @@ const styles = StyleSheet.create({
   ========================================================= */
 
   characterCard: {
+    width: '100%',
     marginBottom: Spacing.lg,
     borderRadius: BorderRadius.lg,
     overflow: 'hidden',
@@ -909,12 +974,11 @@ const styles = StyleSheet.create({
   },
 
   /* =========================================================
-     GRID
+     2 × 3 GRID
   ========================================================= */
 
   menuGrid: {
     width: '100%',
-    flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     rowGap: 10,
@@ -960,15 +1024,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     fontWeight: '600',
-  },
-
-  menuArrow: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
   },
 
   bottomSpace: {
