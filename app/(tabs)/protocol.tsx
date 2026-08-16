@@ -1,6 +1,7 @@
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions, SafeAreaView, ActivityIndicator } from 'react-native';
-import { MotiView, AnimatePresence } from 'moti';
+import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
@@ -201,6 +202,15 @@ export default function ProtocolScreen() {
   const lightHaptic = () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); };
   const successHaptic = () => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); };
 
+  const handleBack = () => {
+    lightHaptic();
+    if (view === 'day' || view === 'report') {
+      setView('home');
+      return;
+    }
+    router.back();
+  };
+
   const changeMode = (nextMode: ProtocolMode) => {
     if (nextMode === mode) return;
     lightHaptic();
@@ -215,15 +225,6 @@ export default function ProtocolScreen() {
     setCurrentDay(Math.max(0, Math.min(dayIndex, totalDays - 1)));
     setView('day');
     setSelectedTask(null);
-  };
-
-  const handleBack = () => {
-    lightHaptic();
-    if (view === 'day' || view === 'report') {
-      setView('home');
-      return;
-    }
-    router.back();
   };
 
   const toggleTask = (taskIndex: number) => {
@@ -316,6 +317,58 @@ export default function ProtocolScreen() {
   const currentCompletedTasks = getCompletedTasks(currentDay);
   const currentTotalTasks = currentEntry?.tasks?.length ?? 0;
 
+  // Header with back button always on the left
+  const renderPageHeader = (title: string, subtitle: string) => (
+    <View style={[styles.pageHeader, { backgroundColor: background }]}>
+      <TouchableOpacity
+        onPress={handleBack}
+        activeOpacity={0.75}
+        accessibilityRole="button"
+        accessibilityLabel={fa ? 'بازگشت' : 'Back'}
+        style={[styles.headerBackButton, { backgroundColor: card, borderColor: colors.border }]}
+      >
+        <ArrowLeft size={21} color={colors.text} strokeWidth={2.2} />
+      </TouchableOpacity>
+
+      <View style={styles.headerTitleContainer}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{title}</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
+      </View>
+
+      <View style={styles.headerSidePlaceholder} />
+    </View>
+  );
+
+  const renderDayNavigation = () => (
+    <View style={styles.dayNavigation}>
+      <TouchableOpacity
+        onPress={previousDay}
+        disabled={currentDay === 0}
+        activeOpacity={0.75}
+        accessibilityRole="button"
+        accessibilityLabel={fa ? 'روز قبلی' : 'Previous day'}
+        style={[styles.dayNavButton, { backgroundColor: card, borderColor: colors.border, opacity: currentDay === 0 ? 0.35 : 1 }]}
+      >
+        <ChevronLeft size={22} color={colors.text} strokeWidth={2.2} />
+      </TouchableOpacity>
+
+      <View style={[styles.dayIndicator, { backgroundColor: softAccent, borderColor: softAccentStrong }]}>
+        <Text style={[styles.dayIndicatorText, { color: accent }]}>{getDayLabel(currentDay)}</Text>
+      </View>
+
+      <TouchableOpacity
+        onPress={nextDay}
+        disabled={currentDay >= totalDays - 1}
+        activeOpacity={0.75}
+        accessibilityRole="button"
+        accessibilityLabel={fa ? 'روز بعدی' : 'Next day'}
+        style={[styles.dayNavButton, { backgroundColor: card, borderColor: colors.border, opacity: currentDay >= totalDays - 1 ? 0.35 : 1 }]}
+      >
+        <ChevronRight size={22} color={colors.text} strokeWidth={2.2} />
+      </TouchableOpacity>
+    </View>
+  );
+
   const renderModeCard = (protocolMode: ProtocolMode) => {
     const Icon = getModeIcon(protocolMode);
     const active = mode === protocolMode;
@@ -336,10 +389,10 @@ export default function ProtocolScreen() {
         <View style={[styles.modeIcon, { backgroundColor: active ? accent : cardSecondary }]}>
           <Icon size={21} color={active ? '#FFFFFF' : accent} strokeWidth={2.1} />
         </View>
-        <Text style={[styles.modeTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
+        <Text style={[styles.modeTitle, { color: colors.text, textAlign: 'center' }]}>
           {getModeTitle(protocolMode)}
         </Text>
-        <Text style={[styles.modeDescription, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={2}>
+        <Text style={[styles.modeDescription, { color: colors.textSecondary, textAlign: 'center' }]} numberOfLines={2}>
           {getModeDescription(protocolMode)}
         </Text>
         {active && (
@@ -364,7 +417,7 @@ export default function ProtocolScreen() {
         onPress={() => openDay(dayIndex)}
         style={[styles.dayCard, { backgroundColor: card, borderColor: colors.border }]}
       >
-        <View style={[styles.dayCardTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <View style={styles.dayCardTop}>
           <View style={[styles.dayNumber, { backgroundColor: completedDay ? accent : softAccent }]}>
             {completedDay ? (
               <Check size={18} color="#FFFFFF" strokeWidth={2.8} />
@@ -373,10 +426,8 @@ export default function ProtocolScreen() {
             )}
           </View>
           <View style={styles.dayCardInfo}>
-            <Text style={[styles.dayTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
-              {getDayLabel(dayIndex)}
-            </Text>
-            <Text style={[styles.dayTasksText, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text style={[styles.dayTitle, { color: colors.text }]}>{getDayLabel(dayIndex)}</Text>
+            <Text style={[styles.dayTasksText, { color: colors.textSecondary }]}>
               {fa ? `${completed} از ${total} فعالیت` : `${completed} of ${total} activities`}
             </Text>
           </View>
@@ -409,50 +460,63 @@ export default function ProtocolScreen() {
       <View style={[styles.root, { backgroundColor: background }]}>
         {view === 'home' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-            <View style={[styles.standardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-              <TouchableOpacity activeOpacity={0.75} onPress={handleBack} style={[styles.backButton, { backgroundColor: card, borderColor: colors.border }]}>
-                <ArrowLeft size={21} color={colors.text} strokeWidth={2.2} />
-              </TouchableOpacity>
-              <View style={styles.headerTitleContainer}>
-                <Text style={[styles.headerTitle, { color: colors.text, textAlign: 'center' }]}>
-                  {fa ? 'پروتکل' : 'Protocol'}
-                </Text>
-                <Text style={[styles.headerSubtitle, { color: colors.textSecondary, textAlign: 'center' }]}>
-                  {fa ? 'برنامه رشد و سلامت شناختی' : 'Your cognitive wellness journey'}
-                </Text>
-              </View>
-              <View style={styles.headerPlaceholder} />
-            </View>
+            {renderPageHeader(fa ? 'پروتکل' : 'Protocol', fa ? 'برنامه روزانه شما' : 'Your daily program')}
 
             <View style={[styles.heroCard, { backgroundColor: accent }]}>
-              <View style={styles.heroGlowOne} />
-              <View style={styles.heroGlowTwo} />
-              <View style={[styles.heroContent, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-                <View style={[styles.heroIcon, { backgroundColor: 'rgba(255,255,255,0.16)' }]}>
-                  <Brain size={25} color="#FFFFFF" strokeWidth={2} />
-                </View>
-                <Text style={[styles.heroTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
-                  {getModeTitle(mode)}
-                </Text>
-                <Text style={[styles.heroDescription, { textAlign: isRTL ? 'right' : 'left' }]}>
-                  {getModeDescription(mode)}
-                </Text>
-                <View style={[styles.heroProgressRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                  <View style={styles.heroProgressInfo}>
-                    <Text style={styles.heroProgressLabel}>{fa ? 'پیشرفت کلی' : 'Overall progress'}</Text>
-                    <Text style={styles.heroProgressValue}>{overallPercent}%</Text>
-                  </View>
-                  <View style={styles.heroProgressTrack}>
-                    <View style={[styles.heroProgressFill, { width: `${overallPercent}%` }]} />
-                  </View>
-                </View>
-              </View>
-            </View>
+  <View style={styles.heroGlowOne} />
+  <View style={styles.heroGlowTwo} />
+
+  <View style={styles.heroContent}>
+    <View
+      style={[
+        styles.heroIcon,
+        {
+          backgroundColor: 'rgba(255,255,255,0.16)',
+        },
+      ]}
+    >
+      <Brain
+        size={25}
+        color="#FFFFFF"
+        strokeWidth={2}
+      />
+    </View>
+
+    <Text style={styles.heroTitle}>
+      {getModeTitle(mode)}
+    </Text>
+
+    <Text style={styles.heroDescription}>
+      {getModeDescription(mode)}
+    </Text>
+
+    <View style={styles.heroProgressRow}>
+      <View style={styles.heroProgressInfo}>
+        <Text style={styles.heroProgressLabel}>
+          {fa ? 'پیشرفت کلی' : 'Overall progress'}
+        </Text>
+
+        <Text style={styles.heroProgressValue}>
+          {overallPercent}%
+        </Text>
+      </View>
+
+      <View style={styles.heroProgressTrack}>
+        <View
+          style={[
+            styles.heroProgressFill,
+            {
+              width: `${overallPercent}%`,
+            },
+          ]}
+        />
+      </View>
+    </View>
+  </View>
+</View>
 
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
-                {fa ? 'نوع پروتکل' : 'Protocol type'}
-              </Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{fa ? 'نوع پروتکل' : 'Protocol type'}</Text>
               <View style={styles.modeGrid}>
                 {renderModeCard('single')}
                 {renderModeCard('dyad')}
@@ -461,14 +525,10 @@ export default function ProtocolScreen() {
             </View>
 
             <View style={styles.section}>
-              <View style={[styles.sectionHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <View style={styles.sectionHeader}>
                 <View>
-                  <Text style={[styles.sectionTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
-                    {fa ? 'گزارش امروز' : 'Today\'s report'}
-                  </Text>
-                  <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
-                    {getDayLabel(currentDay)}
-                  </Text>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>{fa ? 'گزارش امروز' : "Today's report"}</Text>
+                  <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>{getDayLabel(currentDay)}</Text>
                 </View>
                 <TouchableOpacity
                   activeOpacity={0.75}
@@ -482,7 +542,7 @@ export default function ProtocolScreen() {
                 </TouchableOpacity>
               </View>
               <View style={[styles.reportCard, { backgroundColor: card, borderColor: colors.border }]}>
-                <View style={[styles.reportMain, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <View style={styles.reportMain}>
                   <View style={styles.circularProgress}>
                     <Text style={[styles.circularProgressText, { color: accent }]}>{currentDayPercent}%</Text>
                     <Text style={[styles.circularProgressLabel, { color: colors.textSecondary }]}>
@@ -490,10 +550,10 @@ export default function ProtocolScreen() {
                     </Text>
                   </View>
                   <View style={styles.reportStats}>
-                    <Text style={[styles.reportStatsTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
+                    <Text style={[styles.reportStatsTitle, { color: colors.text }]}>
                       {fa ? 'وضعیت فعالیت‌ها' : 'Activity status'}
                     </Text>
-                    <Text style={[styles.reportStatsValue, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                    <Text style={[styles.reportStatsValue, { color: colors.textSecondary }]}>
                       {fa ? `${currentCompletedTasks} از ${currentTotalTasks} فعالیت انجام شده` : `${currentCompletedTasks} of ${currentTotalTasks} activities completed`}
                     </Text>
                     <View style={[styles.progressTrack, { backgroundColor: isDark ? '#292533' : '#EAE6F3' }]}>
@@ -505,12 +565,10 @@ export default function ProtocolScreen() {
             </View>
 
             <View style={styles.section}>
-              <View style={[styles.sectionHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <View style={styles.sectionHeader}>
                 <View>
-                  <Text style={[styles.sectionTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
-                    {fa ? 'فعالیت‌های امروز' : 'Today\'s activities'}
-                  </Text>
-                  <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>{fa ? 'فعالیت‌های امروز' : "Today's activities"}</Text>
+                  <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
                     {fa ? 'برای ادامه روی یک فعالیت بزنید' : 'Tap an activity to continue'}
                   </Text>
                 </View>
@@ -528,17 +586,17 @@ export default function ProtocolScreen() {
                     <View style={[styles.todayTaskIcon, { backgroundColor: done ? accent : softAccent }]}>
                       {done ? <Check size={17} color="#FFFFFF" strokeWidth={2.7} /> : <CheckCircle2 size={17} color={accent} strokeWidth={2} />}
                     </View>
-                    <Text style={[styles.todayTaskText, { color: done ? colors.textSecondary : colors.text, textAlign: isRTL ? 'right' : 'left', textDecorationLine: done ? 'line-through' : 'none' }]}>
+                    <Text style={[styles.todayTaskText, { color: done ? colors.textSecondary : colors.text, textDecorationLine: done ? 'line-through' : 'none' }]}>
                       {tr(task.text)}
                     </Text>
-                    <ChevronLeft size={18} color={colors.textTertiary} style={{ transform: [{ rotate: isRTL ? '0deg' : '180deg' }] }} />
+                    <ChevronLeft size={18} color={colors.textTertiary} style={{ transform: [{ rotate: '180deg' }] }} />
                   </TouchableOpacity>
                 );
               })}
             </View>
 
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
                 {mode === 'single' ? (fa ? 'روزهای پروتکل' : 'Protocol days') : (fa ? 'جلسات پروتکل' : 'Protocol sessions')}
               </Text>
               {data.map((_, index) => renderDayCard(index))}
@@ -560,24 +618,15 @@ export default function ProtocolScreen() {
 
         {view === 'day' && currentEntry && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-            <View style={[styles.standardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-              <TouchableOpacity activeOpacity={0.75} onPress={handleBack} style={[styles.backButton, { backgroundColor: card, borderColor: colors.border }]}>
-                <ArrowLeft size={21} color={colors.text} strokeWidth={2.2} />
-              </TouchableOpacity>
-              <View style={styles.headerTitleContainer}>
-                <Text style={[styles.headerTitle, { color: colors.text }]}>{getDayLabel(currentDay)}</Text>
-                <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>{getModeTitle(mode)}</Text>
-              </View>
-              <View style={styles.headerPlaceholder} />
-            </View>
+            {renderPageHeader(getDayLabel(currentDay), getModeTitle(mode))}
 
             <View style={[styles.dayProgressCard, { backgroundColor: card, borderColor: colors.border }]}>
-              <View style={[styles.dayProgressHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <View style={styles.dayProgressHeader}>
                 <View>
-                  <Text style={[styles.dayProgressTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
-                    {fa ? 'پیشرفت امروز' : 'Today\'s progress'}
+                  <Text style={[styles.dayProgressTitle, { color: colors.text }]}>
+                    {fa ? 'پیشرفت امروز' : "Today's progress"}
                   </Text>
-                  <Text style={[styles.dayProgressSubtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                  <Text style={[styles.dayProgressSubtitle, { color: colors.textSecondary }]}>
                     {fa ? `${currentCompletedTasks} از ${currentTotalTasks} فعالیت` : `${currentCompletedTasks} of ${currentTotalTasks} activities`}
                   </Text>
                 </View>
@@ -587,6 +636,8 @@ export default function ProtocolScreen() {
                 <View style={[styles.progressFill, { width: `${currentDayPercent}%`, backgroundColor: accent }]} />
               </View>
             </View>
+
+            {renderDayNavigation()}
 
             {currentEntry.ayah && (
               <View style={[styles.quoteCard, { backgroundColor: softAccent, borderColor: isDark ? 'rgba(192,132,252,0.22)' : 'rgba(124,58,237,0.12)' }]}>
@@ -602,18 +653,14 @@ export default function ProtocolScreen() {
 
             {currentEntry.poem && (
               <View style={[styles.poemCard, { backgroundColor: card, borderColor: colors.border }]}>
-                <View style={[styles.poemHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <View style={styles.poemHeader}>
                   <View style={[styles.poemIcon, { backgroundColor: softAccent }]}>
                     <Feather size={18} color={accent} strokeWidth={2} />
                   </View>
                   <View>
-                    <Text style={[styles.poemTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
-                      {fa ? 'شعر امروز' : 'Today\'s poem'}
-                    </Text>
+                    <Text style={[styles.poemTitle, { color: colors.text }]}>{fa ? 'شعر امروز' : "Today's poem"}</Text>
                     {currentEntry.poemPoet && (
-                      <Text style={[styles.poemPoet, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
-                        {currentEntry.poemPoet}
-                      </Text>
+                      <Text style={[styles.poemPoet, { color: colors.textSecondary }]}>{currentEntry.poemPoet}</Text>
                     )}
                   </View>
                 </View>
@@ -622,9 +669,7 @@ export default function ProtocolScreen() {
             )}
 
             <View style={styles.tasksSection}>
-              <Text style={[styles.sectionTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
-                {fa ? 'فعالیت‌های این روز' : 'Today\'s tasks'}
-              </Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{fa ? 'فعالیت‌های این روز' : "Today's tasks"}</Text>
               {currentEntry.tasks.map((task, index) => {
                 const taskProgress = getDayProgress(currentDay)[index];
                 const done = isTaskDone(taskProgress);
@@ -635,12 +680,12 @@ export default function ProtocolScreen() {
                     <TouchableOpacity
                       activeOpacity={0.8}
                       onPress={() => setSelectedTask(selected ? null : index)}
-                      style={[styles.taskHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+                      style={styles.taskHeader}
                     >
                       <View style={[styles.taskCheckbox, { backgroundColor: done ? accent : 'transparent', borderColor: done ? accent : colors.border }]}>
                         {done && <Check size={16} color="#FFFFFF" strokeWidth={2.8} />}
                       </View>
-                      <Text style={[styles.taskText, { color: colors.text, textAlign: isRTL ? 'right' : 'left', textDecorationLine: done ? 'line-through' : 'none' }]}>
+                      <Text style={[styles.taskText, { color: colors.text, textDecorationLine: done ? 'line-through' : 'none' }]}>
                         {tr(task.text)}
                       </Text>
                       <ChevronDown size={18} color={colors.textSecondary} style={{ transform: [{ rotate: selected ? '180deg' : '0deg' }] }} />
@@ -654,7 +699,6 @@ export default function ProtocolScreen() {
                             placeholder={fa ? 'پاسخ خود را بنویسید...' : 'Write your response...'}
                             placeholderTextColor={colors.textTertiary}
                             multiline
-                            textAlign={isRTL ? 'right' : 'left'}
                             style={[styles.taskInput, { color: colors.text, backgroundColor: cardSecondary, borderColor: colors.border }]}
                           />
                         ) : (
@@ -696,42 +740,13 @@ export default function ProtocolScreen() {
               </Text>
             </TouchableOpacity>
 
-            <View style={[styles.dayNavigation, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                disabled={currentDay <= 0}
-                onPress={previousDay}
-                style={[styles.dayNavigationButton, { backgroundColor: card, borderColor: colors.border, opacity: currentDay <= 0 ? 0.4 : 1 }]}
-              >
-                <ChevronLeft size={20} color={colors.text} style={{ transform: [{ rotate: isRTL ? '180deg' : '0deg' }] }} />
-                <Text style={[styles.dayNavigationText, { color: colors.text }]}>{fa ? 'قبلی' : 'Previous'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                disabled={currentDay >= totalDays - 1}
-                onPress={nextDay}
-                style={[styles.dayNavigationButton, { backgroundColor: card, borderColor: colors.border, opacity: currentDay >= totalDays - 1 ? 0.4 : 1 }]}
-              >
-                <Text style={[styles.dayNavigationText, { color: colors.text }]}>{fa ? 'بعدی' : 'Next'}</Text>
-                <ChevronRight size={20} color={colors.text} style={{ transform: [{ rotate: isRTL ? '180deg' : '0deg' }] }} />
-              </TouchableOpacity>
-            </View>
             <View style={styles.bottomSpace} />
           </ScrollView>
         )}
 
         {view === 'report' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-            <View style={[styles.standardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-              <TouchableOpacity activeOpacity={0.75} onPress={handleBack} style={[styles.backButton, { backgroundColor: card, borderColor: colors.border }]}>
-                <ArrowLeft size={21} color={colors.text} strokeWidth={2.2} />
-              </TouchableOpacity>
-              <View style={styles.headerTitleContainer}>
-                <Text style={[styles.headerTitle, { color: colors.text }]}>{fa ? 'گزارش پروتکل' : 'Protocol report'}</Text>
-                <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>{getModeTitle(mode)}</Text>
-              </View>
-              <View style={styles.headerPlaceholder} />
-            </View>
+            {renderPageHeader(fa ? 'گزارش پروتکل' : 'Protocol report', getModeTitle(mode))}
 
             <View style={[styles.reportHero, { backgroundColor: card, borderColor: colors.border }]}>
               <View style={[styles.reportCircle, { borderColor: accent }]}>
@@ -773,10 +788,8 @@ export default function ProtocolScreen() {
             </View>
 
             <View style={[styles.reportProgressCard, { backgroundColor: card, borderColor: colors.border }]}>
-              <View style={[styles.sectionHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                <Text style={[styles.sectionTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
-                  {fa ? 'پیشرفت روزانه' : 'Daily progress'}
-                </Text>
+              <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>{fa ? 'پیشرفت روزانه' : 'Daily progress'}</Text>
                 <BarChart3 size={19} color={accent} strokeWidth={2} />
               </View>
               <View style={styles.reportDays}>
@@ -799,10 +812,10 @@ export default function ProtocolScreen() {
                 <Sparkles size={19} color="#FFFFFF" strokeWidth={2} />
               </View>
               <View style={styles.summaryContent}>
-                <Text style={[styles.summaryTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[styles.summaryTitle, { color: colors.text }]}>
                   {overallPercent === 100 ? (fa ? 'پروتکل را کامل کرده‌اید' : 'You completed the protocol') : (fa ? 'به مسیر خود ادامه دهید' : 'Keep moving forward')}
                 </Text>
-                <Text style={[styles.summaryText, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
                   {overallPercent === 100
                     ? (fa ? 'تمام فعالیت‌های این پروتکل با موفقیت انجام شده‌اند.' : 'All activities in this protocol have been completed.')
                     : (fa ? 'هر فعالیت کوچک، یک قدم به سمت پیشرفت بیشتر است.' : 'Every small activity is another step forward.')}
@@ -839,52 +852,342 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
   loadingText: { fontSize: 16 },
   scrollContent: { paddingBottom: 40 },
-  standardHeader: { paddingTop:50,paddingHorizontal: 16, paddingVertical: 12, alignItems: 'center', justifyContent: 'space-between' },
-  backButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  headerTitleContainer: {  flex: 1, paddingHorizontal: 12 },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
-  headerSubtitle: { fontSize: 12, color: '#666' },
-  headerPlaceholder: { width: 40 },
-  heroCard: { marginHorizontal: 16, marginTop: 8, borderRadius: 24, padding: 20, overflow: 'hidden', position: 'relative' },
-  heroGlowOne: { position: 'absolute', width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(255,255,255,0.08)', right: -80, top: -80 },
-  heroGlowTwo: { position: 'absolute', width: 150, height: 150, borderRadius: 75, backgroundColor: 'rgba(255,255,255,0.05)', left: -60, bottom: -60 },
-  heroContent: { flex: 1 },
-  heroIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  heroTitle: { fontSize: 24, fontWeight: '800', color: '#FFFFFF', marginBottom: 4 },
-  heroDescription: { fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: 16 },
-  heroProgressRow: { alignItems: 'center', gap: 12 },
-  heroProgressInfo: { flex: 1 },
-  heroProgressLabel: { fontSize: 11, color: 'rgba(255,255,255,0.7)' },
-  heroProgressValue: { fontSize: 20, fontWeight: '700', color: '#FFFFFF' },
-  heroProgressTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.2)', overflow: 'hidden' },
-  heroProgressFill: { height: '100%', borderRadius: 3, backgroundColor: '#FFFFFF' },
-  section: { paddingHorizontal: 30, marginTop: 20 },
-  sectionHeader: { alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  sectionTitle: { padding:20, fontSize: 17, fontWeight: '700' },
-  sectionSubtitle: { fontSize: 12, marginTop: 2 },
-  modeGrid: { flexDirection: 'row', gap: 10, marginTop: 8 },
-  modeCard: { flex: 1, padding: 14, borderRadius: 16, borderWidth: 1, alignItems: 'center', position: 'relative' },
-  modeIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  modeTitle: { fontSize: 14, fontWeight: '600', marginBottom: 3 },
-  modeDescription: { fontSize: 10, textAlign: 'center', opacity: 0.7 },
-  modeActiveIndicator: { position: 'absolute', top: 8, right: 8, width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  reportButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
-  reportButtonText: { fontSize: 12, fontWeight: '600' },
-  reportCard: { borderRadius: 16, borderWidth: 1, padding: 16 },
-  reportMain: { alignItems: 'center', gap: 16 },
-  circularProgress: { alignItems: 'center', width: 80 },
-  circularProgressText: { fontSize: 28, fontWeight: '800' },
-  circularProgressLabel: { fontSize: 11, marginTop: 2 },
-  reportStats: { flex: 1, gap: 4 },
-  reportStatsTitle: { fontSize: 14, fontWeight: '600' },
-  reportStatsValue: { fontSize: 12 },
-  progressTrack: { width: '100%', height: 6, borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 3 },
-  todayTaskCard: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 14, borderWidth: 1, marginBottom: 8, gap: 12 },
-  todayTaskIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  todayTaskText: { flex: 1, fontSize: 13 },
-  dayCard: { padding: 14, borderRadius: 14, borderWidth: 1, marginBottom: 8 },
-  dayCardTop: { alignItems: 'center', gap: 12 },
+
+  pageHeader: {
+    width: '100%',
+    minHeight: 72,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 10,
+  },
+
+  headerBackButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 30,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 8,
+  },
+
+  headerTitle: {
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '700',
+    textAlign: 'right',
+  },
+  
+  headerSubtitle: {
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 1,
+    textAlign: 'right',
+  },
+  
+  headerSidePlaceholder: {
+    width: 42,
+    height: 42,
+  },
+  
+  heroCard: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 24,
+    padding: 20,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  
+  heroGlowOne: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    right: -80,
+    top: -80,
+  },
+  
+  heroGlowTwo: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    left: -60,
+    bottom: -60,
+  },
+  
+  heroContent: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'flex-end',
+  },
+  
+  heroIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  
+  heroTitle: {
+    width: '100%',
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 4,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  
+  heroDescription: {
+    width: '100%',
+    fontSize: 13,
+    lineHeight: 21,
+    color: 'rgba(255,255,255,0.85)',
+    marginBottom: 18,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    alignSelf: 'stretch',
+  },
+  
+  heroProgressRow: {
+    width: '100%',
+    alignItems: 'center',
+    flexDirection: 'row-reverse',
+    gap: 12,
+  },
+  
+  heroProgressInfo: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  
+  heroProgressLabel: {
+    width: '100%',
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.7)',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  
+  heroProgressValue: {
+    width: '100%',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  
+  heroProgressTrack: {
+    flex: 1,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    overflow: 'hidden',
+  },
+  
+  heroProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: '#FFFFFF',
+  },
+  section: {
+    paddingHorizontal: 16,
+    marginTop: 20,
+  },
+  
+  sectionHeader: {
+    padding: 10,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  
+  sectionSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  
+  modeGrid: {
+    flexDirection: 'row-reverse',
+    gap: 10,
+    marginTop: 8,
+  },
+  
+  modeCard: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  
+  modeIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  
+  modeTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 3,
+    textAlign: 'center',
+    writingDirection: 'rtl',
+  },
+  
+  modeDescription: {
+    fontSize: 10,
+    textAlign: 'center',
+    opacity: 0.7,
+    writingDirection: 'rtl',
+  },
+  
+  modeActiveIndicator: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  
+  reportButton: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  
+  reportButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  
+  reportCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+  },
+  
+  reportMain: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 16,
+  },
+  
+  circularProgress: {
+    alignItems: 'center',
+    width: 80,
+  },
+  
+  circularProgressText: {
+    fontSize: 28,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  
+  circularProgressLabel: {
+    fontSize: 11,
+    marginTop: 2,
+    textAlign: 'center',
+    writingDirection: 'rtl',
+  },
+  
+  reportStats: {
+    flex: 1,
+    gap: 4,
+    alignItems: 'flex-end',
+  },
+  
+  reportStatsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  
+  reportStatsValue: {
+    fontSize: 12,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  
+  progressTrack: {
+    width: '100%',
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  
+  todayTaskCard: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 8,
+    gap: 12,
+  },
+  
+  todayTaskIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  
+  todayTaskText: {
+    flex: 1,
+    fontSize: 13,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+
+  dayCard: { padding: 14, borderRadius: 14, borderWidth: 1, marginBottom: 8, },
+  dayCardTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   dayNumber: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   dayNumberText: { fontSize: 14, fontWeight: '700' },
   dayCardInfo: { flex: 1 },
@@ -892,60 +1195,80 @@ const styles = StyleSheet.create({
   dayTasksText: { fontSize: 11, opacity: 0.7 },
   dayPercent: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   dayPercentText: { fontSize: 12, fontWeight: '600' },
+
   resetButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14, borderRadius: 14, borderWidth: 1, marginHorizontal: 16, marginTop: 16 },
   resetButtonText: { fontSize: 14 },
   bottomSpace: { height: 30 },
+
   dayProgressCard: { marginHorizontal: 16, padding: 16, borderRadius: 16, borderWidth: 1 },
-  dayProgressHeader: { alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  dayProgressHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   dayProgressTitle: { fontSize: 15, fontWeight: '600' },
   dayProgressSubtitle: { fontSize: 12, opacity: 0.7 },
   dayProgressPercent: { fontSize: 22, fontWeight: '800' },
+
+  dayNavigation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  dayNavButton: { width: 44, height: 44, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  dayIndicator: { minWidth: 90, height: 40, paddingHorizontal: 14, borderRadius: 13, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  dayIndicatorText: { fontSize: 13, fontWeight: '700' },
+
   quoteCard: { marginHorizontal: 16, marginTop: 12, padding: 16, borderRadius: 16, borderWidth: 1, alignItems: 'center' },
   quoteIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   quoteText: { fontSize: 16, lineHeight: 26, marginBottom: 8 },
   quoteReference: { fontSize: 12 },
+
   poemCard: { marginHorizontal: 16, marginTop: 12, padding: 16, borderRadius: 16, borderWidth: 1 },
-  poemHeader: { alignItems: 'center', gap: 10, marginBottom: 10 },
+  poemHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   poemIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   poemTitle: { fontSize: 13, fontWeight: '600' },
   poemPoet: { fontSize: 11, opacity: 0.7 },
   poemText: { fontSize: 14, lineHeight: 22, fontStyle: 'italic' },
+
   tasksSection: { paddingHorizontal: 16, marginTop: 16 },
   taskCard: { borderRadius: 14, borderWidth: 1, marginBottom: 8, overflow: 'hidden' },
-  taskHeader: { alignItems: 'center', padding: 14, gap: 12 },
+  taskHeader: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
   taskCheckbox: { width: 28, height: 28, borderRadius: 8, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   taskText: { flex: 1, fontSize: 14 },
   taskExpanded: { borderTopWidth: 1, padding: 14 },
   taskInput: { padding: 12, borderRadius: 10, borderWidth: 1, minHeight: 80, textAlignVertical: 'top' },
   taskActionButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, borderRadius: 12 },
   taskActionText: { fontSize: 14, fontWeight: '600' },
+
   completeDayButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 16, borderRadius: 16, borderWidth: 1, marginHorizontal: 16, marginTop: 16 },
   completeDayText: { fontSize: 15, fontWeight: '700' },
-  dayNavigation: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginTop: 16, gap: 12 },
-  dayNavigationButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12, borderWidth: 1 },
-  dayNavigationText: { fontSize: 13, fontWeight: '500' },
+
   reportHero: { marginHorizontal: 16, marginTop: 8, padding: 20, borderRadius: 20, borderWidth: 1, alignItems: 'center' },
   reportCircle: { width: 100, height: 100, borderRadius: 50, borderWidth: 4, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   reportCircleValue: { fontSize: 30, fontWeight: '800' },
   reportCircleLabel: { fontSize: 12 },
   reportHeroTitle: { fontSize: 18, fontWeight: '700', marginBottom: 4 },
   reportHeroSubtitle: { fontSize: 13, opacity: 0.7 },
+
   reportStatsGrid: { flexDirection: 'row', paddingHorizontal: 16, marginTop: 12, gap: 10 },
   reportStatCard: { flex: 1, padding: 14, borderRadius: 14, borderWidth: 1, alignItems: 'center' },
   reportStatIcon: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   reportStatValue: { fontSize: 18, fontWeight: '700' },
   reportStatLabel: { fontSize: 10, textAlign: 'center', opacity: 0.7, marginTop: 2 },
+
   reportProgressCard: { marginHorizontal: 16, marginTop: 12, padding: 16, borderRadius: 16, borderWidth: 1 },
   reportDays: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 120, paddingTop: 8 },
   reportDay: { alignItems: 'center', flex: 1 },
   reportDayBarTrack: { width: 20, height: 100, borderRadius: 10, overflow: 'hidden', justifyContent: 'flex-end' },
   reportDayBar: { width: '100%', borderRadius: 10, minHeight: 4 },
   reportDayLabel: { fontSize: 10, marginTop: 6 },
+
   summaryCard: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 16, padding: 16, borderRadius: 16, borderWidth: 1, gap: 14 },
   summaryIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   summaryContent: { flex: 1 },
   summaryTitle: { fontSize: 14, fontWeight: '600', marginBottom: 2 },
   summaryText: { fontSize: 12, opacity: 0.7 },
+
   celebrationOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' },
   celebrationCard: { padding: 28, borderRadius: 24, borderWidth: 1, alignItems: 'center', maxWidth: 300 },
   celebrationIcon: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
