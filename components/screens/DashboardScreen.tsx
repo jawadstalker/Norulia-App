@@ -17,6 +17,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Card } from '../ui/Card';
 import { useRouter } from 'expo-router';
+
 import {
   Spacing,
   BorderRadius,
@@ -211,13 +212,17 @@ export function DashboardScreen() {
 
           <Text
             numberOfLines={2}
+            ellipsizeMode="tail"
             style={[
               styles.menuCardTitle,
               {
                 color: colors.text,
-                textAlign: isRTL
-                  ? 'right'
-                  : 'left',
+
+                /*
+                 * کارت‌ها همیشه وسط‌چین هستند.
+                 * فقط جهت نوشتار بر اساس زبان تغییر می‌کند.
+                 */
+                textAlign: 'center',
                 writingDirection: isRTL
                   ? 'rtl'
                   : 'ltr',
@@ -709,6 +714,10 @@ export function DashboardScreen() {
           style={[
             styles.menuGrid,
             {
+              /*
+               * خود Grid از چپ/راست بر اساس زبان شروع می‌شود.
+               * کارت‌ها داخل هر سطر در سه ستون قرار می‌گیرند.
+               */
               flexDirection: isRTL
                 ? 'row-reverse'
                 : 'row',
@@ -995,8 +1004,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 10,
     paddingVertical: 12,
+
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
+
     position: 'relative',
 
     shadowColor: '#000',
@@ -1013,20 +1024,27 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 15,
+
     alignItems: 'center',
     justifyContent: 'center',
+
     marginBottom: 10,
+    alignSelf: 'center',
   },
 
   menuCardTitle: {
     width: '100%',
     minHeight: 36,
+
     fontSize: 12,
     lineHeight: 17,
     fontWeight: '600',
+
+    textAlign: 'center',
   },
 
   bottomSpace: {
     height: 30,
   },
 });
+
