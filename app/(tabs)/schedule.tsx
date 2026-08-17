@@ -1062,7 +1062,7 @@ const styles = StyleSheet.create({
 
   hero: {
     width: '100%',
-    minHeight: 290,
+    minHeight: 300,
 
     paddingTop: 42,
     paddingBottom: 36,
@@ -1072,9 +1072,9 @@ const styles = StyleSheet.create({
 
     borderRadius: 32,
 
-    borderWidth: 1,
+    // borderWidth: 1,
 
-    overflow: 'hidden',
+    // overflow: 'hidden',
 
     shadowColor: '#000',
     shadowOffset: {
@@ -1111,8 +1111,8 @@ const styles = StyleSheet.create({
      ========================================================================== */
 
   avatarContainer: {
-    width: 190,
-    height: 190,
+    width: 200,
+    height: 200,
 
     // borderRadius: 60,
 
