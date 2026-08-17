@@ -132,22 +132,19 @@ export default function ProtocolScreen() {
   const rowDirection = fa ? 'row-reverse' : 'row';
   const contentAlign = fa ? 'flex-end' : 'flex-start';
 
-  const accent = colors.primary;
-  const accentStrong = colors.primaryDark;
-  
+  // 🔹 رنگ‌های بنفش ملایم‌تر و روشن‌تر
+  const accent = '#A78BFA'; // بنفش ملایم (مشابه violet-400)
+  const accentStrong = '#8B5CF6'; // بنفش کمی پررنگ‌تر (مشابه violet-500)
+
   const background = colors.background;
-  
   const card = colors.surface;
-  
   const cardSecondary = colors.surfaceSecondary;
-  
   const softAccent = isDark
-    ? 'rgba(123, 97, 255, 0.13)'
-    : 'rgba(124, 58, 237, 0.08)';
-  
+    ? 'rgba(167, 139, 250, 0.15)'
+    : 'rgba(167, 139, 250, 0.10)';
   const softAccentStrong = isDark
-    ? 'rgba(123, 97, 255, 0.22)'
-    : 'rgba(124, 58, 237, 0.13)';
+    ? 'rgba(167, 139, 250, 0.25)'
+    : 'rgba(167, 139, 250, 0.15)';
 
   const [mode, setMode] = useState<ProtocolMode>('single');
   const [view, setView] = useState<ViewMode>('home');
@@ -648,7 +645,7 @@ export default function ProtocolScreen() {
             {renderDayNavigation()}
 
             {currentEntry.ayah && (
-              <View style={[styles.quoteCard, { backgroundColor: softAccent, borderColor: isDark ? 'rgba(192,132,252,0.22)' : 'rgba(124,58,237,0.12)' }]}>
+              <View style={[styles.quoteCard, { backgroundColor: softAccent, borderColor: isDark ? 'rgba(167, 139, 250, 0.25)' : 'rgba(167, 139, 250, 0.15)' }]}>
                 <View style={[styles.quoteIcon, { backgroundColor: accent }]}>
                   <BookOpen size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
@@ -848,7 +845,7 @@ export default function ProtocolScreen() {
               </View>
             </View>
 
-            <View style={[styles.summaryCard, { backgroundColor: softAccent, borderColor: isDark ? 'rgba(192,132,252,0.2)' : 'rgba(124,58,237,0.12)', flexDirection: rowDirection }]}>
+            <View style={[styles.summaryCard, { backgroundColor: softAccent, borderColor: isDark ? 'rgba(167, 139, 250, 0.25)' : 'rgba(167, 139, 250, 0.15)', flexDirection: rowDirection }]}>
               <View style={[styles.summaryIcon, { backgroundColor: accent }]}>
                 <Sparkles size={19} color="#FFFFFF" strokeWidth={2} />
               </View>

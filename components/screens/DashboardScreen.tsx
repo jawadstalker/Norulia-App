@@ -427,39 +427,39 @@ export function DashboardScreen() {
 
             <View style={styles.characterWrapper}>
               <View
-                style={[
-                  styles.avatarRing,
-                  {
-                    backgroundColor: isDark
-                      ? 'rgba(255,255,255,0.18)'
-                      : 'rgba(107,90,166,0.10)',
+                // style={[
+                //   styles.avatarRing,
+                //   {
+                //     backgroundColor: isDark
+                //       ? 'rgba(255,255,255,0.18)'
+                //       : 'rgba(107,90,166,0.10)',
 
-                    shadowColor: isDark
-                      ? '#000000'
-                      : '#6B5AA6',
+                //     shadowColor: isDark
+                //       ? '#000000'
+                //       : '#6B5AA6',
 
-                    shadowOpacity: isDark
-                      ? 0.20
-                      : 0.06,
+                //     shadowOpacity: isDark
+                //       ? 0.20
+                //       : 0.06,
 
-                    elevation: isDark
-                      ? 5
-                      : 2,
-                  },
-                ]}
+                //     elevation: isDark
+                //       ? 5
+                //       : 2,
+                //   },
+                // ]}
               >
                 <View
                   style={[
                     styles.avatarContainer,
-                    {
-                      backgroundColor: isDark
-                        ? 'rgba(255,255,255,0.96)'
-                        : 'rgba(255,255,255,0.82)',
-                    },
+                    // {
+                    //   backgroundColor: isDark
+                    //     ? 'rgba(255,255,255,0.96)'
+                    //     : 'rgba(255,255,255,0.82)',
+                    // },
                   ]}
                 >
                   <Image
-                    source={require('../../assets/avatars/model1.jpg')}
+                    source={require('../../assets/avatars/model.png')}
                     style={styles.avatar}
                   />
                 </View>
@@ -819,8 +819,9 @@ const styles = StyleSheet.create({
   },
 
   heroBlobA: {
+
     position: 'absolute',
-    width: 160,
+    width: 200,
     height: 160,
     borderRadius: 80,
     opacity: 0.07,
@@ -859,17 +860,18 @@ const styles = StyleSheet.create({
   },
 
   avatarContainer: {
-    width: 118,
-    height: 118,
-    borderRadius: 59,
-    overflow: 'hidden',
+    width: 121,
+    height: 121,
+    // borderRadius: 59,
+    // overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingRight: 120,
   },
 
   avatar: {
-    width: 118,
-    height: 118,
+    width: 180,
+    height: 180,
     resizeMode: 'cover',
   },
 

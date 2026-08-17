@@ -197,6 +197,12 @@ export default function ScheduleScreen() {
   const { t, isRTL } = useLanguage();
   const router = useRouter();
 
+  // 🔹 رنگ‌های بنفش ملایم‌تر و روشن‌تر
+  const softPurple = '#A78BFA'; // بنفش ملایم (violet-400)
+  const softPurpleStrong = '#8B5CF6'; // بنفش کمی پررنگ‌تر (violet-500)
+  const softPurpleLight = '#C4B5FD'; // بنفش بسیار روشن (violet-300)
+
+  // 🔹 همه آیکون‌ها به رنگ بنفش تم یکدست شده‌اند
   const [events, setEvents] = useState<Event[]>([
     {
       id: '1',
@@ -206,7 +212,7 @@ export default function ScheduleScreen() {
       duration: '20 ' + (t.minutes || 'min'),
       completed: true,
       icon: Brain,
-      color: '#6366F1',
+      color: softPurple, // ← بنفش
     },
     {
       id: '2',
@@ -216,7 +222,7 @@ export default function ScheduleScreen() {
       duration: '5 ' + (t.minutes || 'min'),
       completed: false,
       icon: Pill,
-      color: '#22C55E',
+      color: softPurple, // ← بنفش (قبلاً سبز)
     },
     {
       id: '3',
@@ -226,7 +232,7 @@ export default function ScheduleScreen() {
       duration: '45 ' + (t.minutes || 'min'),
       completed: false,
       icon: Heart,
-      color: '#EC4899',
+      color: softPurpleStrong, // ← بنفش (قبلاً صورتی)
     },
     {
       id: '4',
@@ -236,7 +242,7 @@ export default function ScheduleScreen() {
       duration: '30 ' + (t.minutes || 'min'),
       completed: false,
       icon: Moon,
-      color: '#8B5CF6',
+      color: softPurpleStrong, // ← بنفش (قبلاً بنفش تیره‌تر)
     },
   ]);
 
@@ -315,19 +321,19 @@ export default function ScheduleScreen() {
       id: 'task',
       label: t.add || 'Add Task',
       icon: Sparkles,
-      color: '#7C3AED',
+      color: softPurple, // ← بنفش
     },
     {
       id: 'medication',
       label: t.addMedication || 'Add Medication',
       icon: Pill,
-      color: '#22C55E',
+      color: softPurple, // ← بنفش (قبلاً سبز)
     },
     {
       id: 'consultation',
       label: t.addConsultation || 'Add Consultation',
       icon: Heart,
-      color: '#EC4899',
+      color: softPurple, // ← بنفش (قبلاً صورتی)
     },
   ];
 
@@ -344,7 +350,7 @@ export default function ScheduleScreen() {
       colors={
         isDark
           ? ['#0a0a0f', '#14141e']
-          : ['#f0f4ff', '#ffffff']
+          : ['#f5f0ff', '#ffffff']
       }
       style={styles.container}
     >
@@ -354,7 +360,6 @@ export default function ScheduleScreen() {
       >
         {/* ==================================================================
             Hero Avatar Card
-            دقیقاً با ساختار کارت Profile
             ================================================================== */}
 
         <MotiView
@@ -374,8 +379,8 @@ export default function ScheduleScreen() {
         >
           <LinearGradient
             colors={[
-              colors.primary,
-              colors.accent || colors.primary,
+              softPurple,
+              softPurpleStrong,
             ]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -386,7 +391,7 @@ export default function ScheduleScreen() {
               },
             ]}
           >
-            {/* Decorative blobs - همان Profile */}
+            {/* Decorative blobs */}
 
             <View
               style={[
@@ -528,7 +533,7 @@ export default function ScheduleScreen() {
               >
                 <Calendar
                   size={24}
-                  color={colors.primary}
+                  color={softPurple}
                 />
 
                 <View
@@ -567,7 +572,7 @@ export default function ScheduleScreen() {
                 style={[
                   styles.progressCircle,
                   {
-                    borderColor: colors.primary,
+                    borderColor: softPurple,
                   },
                 ]}
               >
@@ -575,7 +580,7 @@ export default function ScheduleScreen() {
                   style={[
                     styles.progressText,
                     {
-                      color: colors.primary,
+                      color: softPurple,
                     },
                   ]}
                 >
@@ -613,7 +618,7 @@ export default function ScheduleScreen() {
                   styles.progressBar,
                   {
                     backgroundColor:
-                      colors.primary,
+                      softPurple,
                   },
                 ]}
               />
@@ -1007,7 +1012,7 @@ export default function ScheduleScreen() {
         style={[
           styles.fab,
           {
-            backgroundColor: colors.primary,
+            backgroundColor: softPurple,
           },
           isRTL && styles.fabRTL,
         ]}
@@ -1081,10 +1086,6 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
 
-  /*
-   * دقیقاً مشابه Profile
-   */
-
   heroBlobA: {
     position: 'absolute',
     width: 180,
@@ -1109,12 +1110,6 @@ const styles = StyleSheet.create({
      Avatar
      ========================================================================== */
 
-  /*
-   * مهم:
-   * دیگر هیچ کارت، حلقه یا Border دور Avatar وجود ندارد.
-   * Avatar مستقیماً داخل Hero Card قرار گرفته است.
-   */
-
   avatarContainer: {
     width: 120,
     height: 120,
@@ -1126,7 +1121,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
 
-    backgroundColor: 'rgba(255,255,255,0.16)',
+    backgroundColor: 'rgba(255,255,255,0.30)',
 
     shadowColor: '#000',
     shadowOffset: {
@@ -1370,11 +1365,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
   },
 
-  /*
-   * عنوان فضای قابل انعطاف می‌گیرد.
-   * این باعث می‌شود متن فارسی به تیک نچسبد.
-   */
-
   eventTitle: {
     flex: 1,
     minWidth: 0,
@@ -1385,11 +1375,6 @@ const styles = StyleSheet.create({
 
     paddingHorizontal: 0,
   },
-
-  /*
-   * فاصله تیک از متن به صورت مستقل کنترل می‌شود.
-   * بنابراین در RTL هم تیک به متن نمی‌چسبد.
-   */
 
   eventStatusIcon: {
     width: 28,

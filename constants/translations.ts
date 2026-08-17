@@ -1,3 +1,5 @@
+import { Brain } from "lucide-react-native";
+
 export const translations = {
   fa: {
     // ===== General =====
@@ -723,6 +725,7 @@ noConsultations: 'جلسه مشاوره‌ای وجود ندارد.',
     // ================================================================
 
     // Cultural Journey Section
+    Brain: 'پروتکل',
     monthlyJourney: 'Your 4-Week Journey',
     chooseWeek: "Explore this month's cultural recommendations",
     week: 'Week',
