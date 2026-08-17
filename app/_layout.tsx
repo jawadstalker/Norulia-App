@@ -1,14 +1,26 @@
 import { useEffect, useState } from 'react';
-import { Stack, useRouter, usePathname } from 'expo-router';
+import {
+  Stack,
+  useRouter,
+  usePathname,
+} from 'expo-router';
+
 import { StatusBar } from 'expo-status-bar';
+
 import {
   View,
   StyleSheet,
-  I18nManager,
   ActivityIndicator,
 } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import {
+  GestureHandlerRootView,
+} from 'react-native-gesture-handler';
+
+import {
+  SafeAreaProvider,
+} from 'react-native-safe-area-context';
+
 import { useFonts } from 'expo-font';
 
 import {
@@ -27,7 +39,6 @@ import {
 
 import {
   LanguageProvider,
-  useLanguage,
 } from '../context/LanguageContext';
 
 import {
@@ -51,14 +62,18 @@ import {
   AuthScreen,
 } from '../components/screens/AuthScreen';
 
-import { useFrameworkReady } from '../hooks/useFrameworkReady';
+import {
+  useFrameworkReady,
+} from '../hooks/useFrameworkReady';
 
 
 // --------------------------------------------------
 // Prevent native splash from hiding automatically
 // --------------------------------------------------
 
-SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.preventAutoHideAsync().catch(
+  () => {}
+);
 
 
 // --------------------------------------------------
@@ -67,6 +82,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export const FONT_FAMILY = {
   persian: 'XBNiloofar',
+
   english: {
     regular: 'Inter_400Regular',
     medium: 'Inter_500Medium',
@@ -91,24 +107,24 @@ function AppContent() {
     theme,
   } = useTheme();
 
-  const {
-    isRTL,
-  } = useLanguage();
-
   const router = useRouter();
   const pathname = usePathname();
 
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] =
+    useState(true);
 
 
   // --------------------------------------------------
-  // RTL
+  // IMPORTANT
   // --------------------------------------------------
-
-  useEffect(() => {
-    I18nManager.allowRTL(isRTL);
-    I18nManager.forceRTL(isRTL);
-  }, [isRTL]);
+  //
+  // There is intentionally NO I18nManager
+  // manipulation here.
+  //
+  // LanguageContext is the single source of truth
+  // for RTL/LTR.
+  //
+  // --------------------------------------------------
 
 
   // --------------------------------------------------
@@ -118,7 +134,9 @@ function AppContent() {
   const handleSplashComplete = () => {
     setShowSplash(false);
 
-    SplashScreen.hideAsync().catch(() => {});
+    SplashScreen.hideAsync().catch(
+      () => {}
+    );
   };
 
 
@@ -145,9 +163,14 @@ function AppContent() {
         style={[
           styles.container,
           {
-            backgroundColor: colors.background,
-            justifyContent: 'center',
-            alignItems: 'center',
+            backgroundColor:
+              colors.background,
+
+            justifyContent:
+              'center',
+
+            alignItems:
+              'center',
           },
         ]}
       >
@@ -178,7 +201,8 @@ function AppContent() {
         style={[
           styles.container,
           {
-            backgroundColor: colors.background,
+            backgroundColor:
+              colors.background,
           },
         ]}
       >
@@ -205,7 +229,8 @@ function AppContent() {
       style={[
         styles.container,
         {
-          backgroundColor: colors.background,
+          backgroundColor:
+            colors.background,
         },
       ]}
     >
@@ -217,16 +242,18 @@ function AppContent() {
         }
       />
 
+      {/* --------------------------------------------
+          MAIN APPLICATION
+         -------------------------------------------- */}
 
-      {/* Main application */}
-
-      <View style={styles.contentContainer}>
+      <View
+        style={styles.contentContainer}
+      >
         <Stack
           screenOptions={{
             headerShown: false,
           }}
         >
-
           <Stack.Screen
             name="(tabs)"
           />
@@ -234,20 +261,22 @@ function AppContent() {
           <Stack.Screen
             name="settings"
           />
-
         </Stack>
       </View>
 
 
-      {/* Bottom Navigation */}
+      {/* --------------------------------------------
+          BOTTOM NAVIGATION
+         -------------------------------------------- */}
 
       <BottomNavBar
         currentRoute={pathname}
         onNavigate={(route) => {
-          router.navigate(route as any);
+          router.navigate(
+            route as any
+          );
         }}
       />
-
     </View>
   );
 }
@@ -269,15 +298,14 @@ export default function RootLayout() {
     fontsLoaded,
     fontError,
   ] = useFonts({
-
-    // English fonts
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
 
-    // Persian font
-    XBNiloofar: require('../XB Niloofar.ttf'),
+    XBNiloofar: require(
+      '../XB Niloofar.ttf'
+    ),
   });
 
 
@@ -320,29 +348,17 @@ export default function RootLayout() {
     <GestureHandlerRootView
       style={styles.container}
     >
-
       <SafeAreaProvider>
-
         <ThemeProvider>
-
           <LanguageProvider>
-
             <AuthProvider>
-
               <AssessmentProvider>
-
                 <AppContent />
-
               </AssessmentProvider>
-
             </AuthProvider>
-
           </LanguageProvider>
-
         </ThemeProvider>
-
       </SafeAreaProvider>
-
     </GestureHandlerRootView>
   );
 }
@@ -353,7 +369,6 @@ export default function RootLayout() {
 // --------------------------------------------------
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
   },
@@ -361,5 +376,4 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
   },
-
 });

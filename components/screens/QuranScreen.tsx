@@ -2950,6 +2950,7 @@ const styles = StyleSheet.create({
   /* HEADER */
 
   header: {
+    paddingTop:40,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,

@@ -1,12 +1,17 @@
-import React, { ReactNode } from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import React, { ReactNode, useMemo } from 'react';
+import {
+  View,
+  StyleSheet,
+  ViewStyle,
+  StyleProp,
+} from 'react-native';
 import { MotiView } from 'moti';
 import { useTheme } from '../../context/ThemeContext';
 import { Spacing, BorderRadius } from '../../constants/theme';
 
 interface CardProps {
   children: ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   variant?: 'elevated' | 'outlined' | 'filled';
   padding?: 'none' | 'sm' | 'md' | 'lg';
   animate?: boolean;
@@ -23,51 +28,94 @@ export function Card({
 }: CardProps) {
   const { colors, isDark } = useTheme();
 
-  const getPaddingStyle = (): ViewStyle => {
-    const paddingStyles: Record<string, ViewStyle> = {
-      none: { padding: 0 },
-      sm: { padding: Spacing.sm },
-      md: { padding: Spacing.md },
-      lg: { padding: Spacing.lg },
-    };
-    return paddingStyles[padding];
-  };
+  const cardStyle = useMemo<StyleProp<ViewStyle>>(
+    () => [
+      styles.card,
 
-  const getVariantStyle = (): ViewStyle => {
-    const variantStyles: Record<string, ViewStyle> = {
-      elevated: {
-        backgroundColor: colors.surface,
-        shadowColor: isDark ? colors.primary : '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: isDark ? 0.15 : 0.08,
-        shadowRadius: 12,
-        elevation: 8,
+      {
+        padding:
+          padding === 'none'
+            ? 0
+            : padding === 'sm'
+              ? Spacing.sm
+              : padding === 'lg'
+                ? Spacing.lg
+                : Spacing.md,
       },
-      outlined: {
-        backgroundColor: colors.surface,
-        borderWidth: 1,
-        borderColor: colors.border,
-      },
-      filled: {
-        backgroundColor: colors.surfaceSecondary,
-      },
-    };
-    return variantStyles[variant];
-  };
 
-  const cardStyle = [
-    styles.card,
-    getPaddingStyle(),
-    getVariantStyle(),
-    style,
-  ];
+      variant === 'outlined'
+        ? {
+            backgroundColor: colors.surface,
+            borderWidth: 1,
+            borderColor: colors.border,
+          }
+        : variant === 'filled'
+          ? {
+              backgroundColor: colors.surfaceSecondary,
+            }
+          : {
+              backgroundColor: colors.surface,
 
+              shadowColor: isDark
+                ? colors.primary
+                : '#000000',
+
+              shadowOffset: {
+                width: 0,
+                height: 4,
+              },
+
+              shadowOpacity: isDark
+                ? 0.15
+                : 0.08,
+
+              shadowRadius: 12,
+
+              elevation: 8,
+            },
+
+      style,
+    ],
+    [
+      colors,
+      isDark,
+      padding,
+      variant,
+      style,
+    ],
+  );
+
+  /*
+   * Card animations are intentionally lighter
+   * than the previous version.
+   *
+   * Previous:
+   * opacity + translateY 20 + scale 0.95
+   *
+   * New:
+   * opacity + translateY 12 + scale 0.985
+   *
+   * This reduces the amount of work when many
+   * cards are rendered inside ScrollViews.
+   */
   if (animate) {
     return (
       <MotiView
-        from={{ opacity: 0, translateY: 20, scale: 0.95 }}
-        animate={{ opacity: 1, translateY: 0, scale: 1 }}
-        transition={{ type: 'timing', duration: 400, delay }}
+        from={{
+          opacity: 0,
+          translateY: 12,
+          scale: 0.985,
+        }}
+        animate={{
+          opacity: 1,
+          translateY: 0,
+          scale: 1,
+        }}
+        transition={{
+          type: 'timing',
+          duration: 260,
+          delay,
+        }}
         style={cardStyle}
       >
         {children}
@@ -75,7 +123,11 @@ export function Card({
     );
   }
 
-  return <View style={cardStyle}>{children}</View>;
+  return (
+    <View style={cardStyle}>
+      {children}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({

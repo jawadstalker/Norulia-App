@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -20,10 +20,10 @@ import {
   ArrowLeft,
   Brain,
   Clock,
-  Trophy,
   Heart,
   Compass,
   ChevronLeft,
+  Play,
 } from 'lucide-react-native';
 
 import { useTheme } from '../../context/ThemeContext';
@@ -51,7 +51,6 @@ const categories = [
       'حافظه، توجه و مهارت‌های شناختی خود را تقویت کنید',
     icon: Brain,
   },
-
   {
     id: 'stress',
     title: 'Anti-Stress Games',
@@ -62,7 +61,6 @@ const categories = [
       'ذهن خود را آرام کنید و استرس را کاهش دهید',
     icon: Heart,
   },
-
   {
     id: 'adventure',
     title: 'Adventure Games',
@@ -117,7 +115,7 @@ const games = [
   {
     id: '3',
     category: 'psychological',
-    title: 'size discrimination',
+    title: 'Size Discrimination',
     titleFa: 'تشخیص اندازه',
     description: 'Improve reaction speed',
     descriptionFa: 'بهبود قدرت تشخیص',
@@ -134,7 +132,7 @@ const games = [
     category: 'stress',
     title: 'Visual Flow',
     titleFa: 'جریان بصری',
-    description: 'Focuse on Flow',
+    description: 'Focus on visual flow',
     descriptionFa: 'افزایش قدرت بصری',
     image: require('../../assets/games/game4.png'),
     level: 'Easy',
@@ -143,21 +141,6 @@ const games = [
     timeFa: '۵ دقیقه',
     route: '/games/visual-flow',
   },
-
-  // {
-  //   id: '5',
-  //   category: 'psychological',
-  //   title: 'Word Puzzle',
-  //   titleFa: 'جمله بندی',
-  //   description: 'Enjoy a peaceful relaxing experience',
-  //   descriptionFa: 'یک تجربه آرام و لذت‌بخش را تجربه کنید',
-  //   image: require('../../assets/games/game8.png'),
-  //   level: 'Easy',
-  //   levelFa: 'آسان',
-  //   time: '10 min',
-  //   timeFa: '۱۰ دقیقه',
-  //   route: '/games/Word',
-  // },
 
   {
     id: '6',
@@ -193,30 +176,6 @@ const games = [
     route: '/games/lost-island',
   },
 
-  // {
-  //   id: '11',
-  //   category: 'adventure',
-  //   title: 'Forest Adventure',
-  //   titleFa: 'ماجراجویی در جنگل',
-  //   description:
-  //     'Discover the secrets of the forest',
-  //   descriptionFa:
-  //     'رازهای جنگل را کشف کنید',
-  //   image: require('../../assets/games/game3.png'),
-  //   level: 'Hard',
-  //   levelFa: 'سخت',
-  //   time: '20 min',
-  //   timeFa: '۲۰ دقیقه',
-  //   route: '/games/forest-adventure',
-  // },
-
-  /* ================================================================
-     NORU PUZZLE — EXTERNAL ANDROID APP
-     
-     این بازی داخل Neurolia اجرا نمی‌شود.
-     با Android Intent اپلیکیشن مستقل Noru Puzzle باز می‌شود.
-  ================================================================ */
-
   {
     id: '12',
     category: 'adventure',
@@ -231,17 +190,12 @@ const games = [
     levelFa: 'متوسط',
     time: '15 min',
     timeFa: '۱۵ دقیقه',
-
-    /*
-     * این route واقعی Expo Router نیست.
-     * فقط یک شناسه برای تشخیص بازی خارجی است.
-     */
     route: 'external:noru-puzzle',
   },
 ];
 
 /* ================================================================
-   SHARED HEADER
+   HEADER
 ================================================================ */
 
 interface PageHeaderProps {
@@ -250,6 +204,7 @@ interface PageHeaderProps {
   onBack: () => void;
   colors: any;
   isRTL: boolean;
+  isDark: boolean;
   backLabel?: string;
 }
 
@@ -259,6 +214,7 @@ function PageHeader({
   onBack,
   colors,
   isRTL,
+  isDark,
   backLabel = 'Back',
 }: PageHeaderProps) {
   return (
@@ -266,7 +222,9 @@ function PageHeader({
       style={[
         styles.pageHeader,
         {
-          borderBottomColor: colors.border,
+          borderBottomColor: isDark
+            ? 'rgba(255,255,255,0.06)'
+            : colors.border,
         },
       ]}
     >
@@ -278,8 +236,12 @@ function PageHeader({
         style={[
           styles.unifiedBackButton,
           {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
+            backgroundColor: isDark
+              ? 'rgba(255,255,255,0.06)'
+              : colors.surface,
+            borderColor: isDark
+              ? 'rgba(255,255,255,0.10)'
+              : colors.border,
           },
         ]}
       >
@@ -340,7 +302,7 @@ function PageHeader({
 ================================================================ */
 
 export default function PsychoScreen() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   const {
     t,
@@ -350,9 +312,7 @@ export default function PsychoScreen() {
 
   const router = useRouter();
 
-  const {
-    category,
-  } =
+  const { category } =
     useLocalSearchParams<{
       category?: string;
     }>();
@@ -381,7 +341,7 @@ export default function PsychoScreen() {
   ================================================================ */
 
   const getGameTitle = (
-    game: typeof games[0],
+    game: typeof games[number],
   ) => {
     return language === 'fa'
       ? game.titleFa
@@ -389,7 +349,7 @@ export default function PsychoScreen() {
   };
 
   const getGameDescription = (
-    game: typeof games[0],
+    game: typeof games[number],
   ) => {
     return language === 'fa'
       ? game.descriptionFa
@@ -397,7 +357,7 @@ export default function PsychoScreen() {
   };
 
   const getGameLevel = (
-    game: typeof games[0],
+    game: typeof games[number],
   ) => {
     return language === 'fa'
       ? game.levelFa
@@ -405,7 +365,7 @@ export default function PsychoScreen() {
   };
 
   const getGameTime = (
-    game: typeof games[0],
+    game: typeof games[number],
   ) => {
     return language === 'fa'
       ? game.timeFa
@@ -414,17 +374,9 @@ export default function PsychoScreen() {
 
   /* ================================================================
      OPEN NORU PUZZLE
-     
-     Package Name:
-     com.IliyaPardazesh.NoruPuzzle
-     
-     این تابع فقط برای Noru Puzzle استفاده می‌شود.
   ================================================================ */
 
   const openNoruPuzzle = async () => {
-    /*
-     * Noru Puzzle یک اپلیکیشن مستقل Android است.
-     */
     if (Platform.OS !== 'android') {
       Alert.alert(
         language === 'fa'
@@ -441,12 +393,6 @@ export default function PsychoScreen() {
     const packageName =
       'com.IliyaPardazesh.NoruPuzzle';
 
-    /*
-     * Android Intent
-     *
-     * این دستور اپلیکیشن مستقل Noru Puzzle
-     * را با Package Name آن اجرا می‌کند.
-     */
     const intentUrl =
       `intent:#Intent;package=${packageName};end`;
 
@@ -522,6 +468,7 @@ export default function PsychoScreen() {
           }}
           colors={colors}
           isRTL={isRTL}
+          isDark={isDark}
           backLabel={t.back}
         />
 
@@ -531,39 +478,56 @@ export default function PsychoScreen() {
             styles.content
           }
         >
-          {categories.map((category) => {
-            const Icon = category.icon;
+          {categories.map((categoryItem) => {
+            const Icon = categoryItem.icon;
 
             return (
               <TouchableOpacity
-                key={category.id}
-                activeOpacity={0.85}
+                key={categoryItem.id}
+                activeOpacity={0.88}
                 onPress={() =>
                   setSelectedCategory(
-                    category.id,
+                    categoryItem.id,
                   )
                 }
               >
                 <Card
-                  style={
-                    styles.categoryCard
-                  }
+                  style={StyleSheet.flatten([
+                    styles.categoryCard,
+                    {
+                      backgroundColor:
+                        isDark
+                          ? colors.surface
+                          : '#FFFFFF',
+                      borderColor: isDark
+                        ? 'rgba(255,255,255,0.07)'
+                        : 'rgba(0,0,0,0.04)',
+                      shadowColor: isDark
+                        ? '#000000'
+                        : colors.primary,
+                    },
+                  ])}
                 >
                   <View
                     style={[
                       styles.categoryIcon,
                       {
                         backgroundColor:
-                          colors.primary +
-                          '18',
+                          isDark
+                            ? `${colors.primary}20`
+                            : `${colors.primary}14`,
+                        borderColor: isDark
+                          ? `${colors.primary}35`
+                          : `${colors.primary}20`,
                       },
                     ]}
                   >
                     <Icon
-                      size={34}
+                      size={31}
                       color={
                         colors.primary
                       }
+                      strokeWidth={2.1}
                     />
                   </View>
 
@@ -590,8 +554,8 @@ export default function PsychoScreen() {
                       ]}
                     >
                       {language === 'fa'
-                        ? category.titleFa
-                        : category.title}
+                        ? categoryItem.titleFa
+                        : categoryItem.title}
                     </Text>
 
                     <Text
@@ -606,16 +570,17 @@ export default function PsychoScreen() {
                       ]}
                     >
                       {language === 'fa'
-                        ? category.descriptionFa
-                        : category.description}
+                        ? categoryItem.descriptionFa
+                        : categoryItem.description}
                     </Text>
                   </View>
 
                   <ChevronLeft
-                    size={22}
+                    size={21}
                     color={
                       colors.textSecondary
                     }
+                    strokeWidth={2.2}
                     style={
                       isRTL
                         ? {
@@ -644,8 +609,8 @@ export default function PsychoScreen() {
 
   const selectedCategoryData =
     categories.find(
-      (category) =>
-        category.id ===
+      (categoryItem) =>
+        categoryItem.id ===
         selectedCategory,
     );
 
@@ -679,6 +644,7 @@ export default function PsychoScreen() {
         onBack={handleBack}
         colors={colors}
         isRTL={isRTL}
+        isDark={isDark}
         backLabel={t.back}
       />
 
@@ -691,13 +657,41 @@ export default function PsychoScreen() {
         {filteredGames.map((game) => (
           <Card
             key={game.id}
-            style={styles.card}
+            style={StyleSheet.flatten([
+              styles.card,
+              {
+                backgroundColor:
+                  isDark
+                    ? colors.surface
+                    : '#FFFFFF',
+                borderColor: isDark
+                  ? 'rgba(255,255,255,0.07)'
+                  : 'rgba(0,0,0,0.04)',
+                shadowColor: isDark
+                  ? '#000000'
+                  : colors.primary,
+              },
+            ])}
           >
-            <Image
-              source={game.image}
-              style={styles.cover}
-              resizeMode="cover"
-            />
+            <View style={styles.coverWrapper}>
+              <Image
+                source={game.image}
+                style={styles.cover}
+                resizeMode="cover"
+              />
+
+              <View
+                style={[
+                  styles.coverOverlay,
+                  {
+                    backgroundColor:
+                      isDark
+                        ? 'rgba(0,0,0,0.10)'
+                        : 'rgba(0,0,0,0.02)',
+                  },
+                ]}
+              />
+            </View>
 
             <View style={styles.info}>
               <Text
@@ -745,12 +739,24 @@ export default function PsychoScreen() {
                     styles.detailItem
                   }
                 >
-                  <Brain
-                    size={16}
-                    color={
-                      colors.primary
-                    }
-                  />
+                  <View
+                    style={[
+                      styles.detailIcon,
+                      {
+                        backgroundColor:
+                          isDark
+                            ? `${colors.primary}20`
+                            : `${colors.primary}12`,
+                      },
+                    ]}
+                  >
+                    <Brain
+                      size={15}
+                      color={
+                        colors.primary
+                      }
+                    />
+                  </View>
 
                   <Text
                     style={[
@@ -770,12 +776,24 @@ export default function PsychoScreen() {
                     styles.detailItem
                   }
                 >
-                  <Clock
-                    size={16}
-                    color={
-                      colors.primary
-                    }
-                  />
+                  <View
+                    style={[
+                      styles.detailIcon,
+                      {
+                        backgroundColor:
+                          isDark
+                            ? `${colors.primary}20`
+                            : `${colors.primary}12`,
+                      },
+                    ]}
+                  >
+                    <Clock
+                      size={15}
+                      color={
+                        colors.primary
+                      }
+                    />
+                  </View>
 
                   <Text
                     style={[
@@ -790,16 +808,6 @@ export default function PsychoScreen() {
                   </Text>
                 </View>
               </View>
-
-              {/* ==================================================
-                 START GAME BUTTON
-
-                 بازی‌های داخلی:
-                 router.push()
-
-                 Noru Puzzle:
-                 Android Intent
-              ================================================== */}
 
               <TouchableOpacity
                 style={[
@@ -822,12 +830,25 @@ export default function PsychoScreen() {
                     game.route as any,
                   );
                 }}
-                activeOpacity={0.8}
+                activeOpacity={0.82}
               >
+                <Play
+                  size={17}
+                  color="#FFFFFF"
+                  fill="#FFFFFF"
+                  strokeWidth={2}
+                />
+
                 <Text
-                  style={
-                    styles.buttonText
-                  }
+                  style={[
+                    styles.buttonText,
+                    {
+                      marginLeft:
+                        isRTL ? 0 : 7,
+                      marginRight:
+                        isRTL ? 7 : 0,
+                    },
+                  ]}
                 >
                   {t.startGame}
                 </Text>
@@ -850,14 +871,13 @@ const styles = StyleSheet.create({
   },
 
   /* ================================================================
-     SHARED HEADER
+     HEADER
   ================================================================ */
 
   pageHeader: {
     width: '100%',
-
     paddingHorizontal: Spacing.lg,
-    paddingTop: 60,
+    paddingTop: 58,
     paddingBottom: 15,
 
     flexDirection: 'row',
@@ -871,8 +891,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
 
-    borderRadius: 22,
-
+    borderRadius: 14,
     borderWidth: 1,
 
     alignItems: 'center',
@@ -891,15 +910,12 @@ const styles = StyleSheet.create({
   pageHeaderTitle: {
     fontSize: 21,
     fontWeight: '800',
-
     lineHeight: 27,
   },
 
   pageHeaderSubtitle: {
     fontSize: 12,
-
     marginTop: 3,
-
     lineHeight: 18,
   },
 
@@ -910,58 +926,70 @@ const styles = StyleSheet.create({
   content: {
     paddingTop: 20,
     paddingHorizontal: Spacing.lg,
-    paddingBottom: 100,
+    paddingBottom: 110,
   },
 
   /* ================================================================
-     CATEGORY PAGE
+     CATEGORY CARDS
   ================================================================ */
 
   categoryCard: {
     minHeight: 120,
-
     marginBottom: Spacing.md,
-
     padding: Spacing.md,
 
     flexDirection: 'row',
     alignItems: 'center',
 
-    gap: 14,
+    borderWidth: 1,
+    borderRadius: 20,
+
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+
+    shadowRadius: 14,
+    shadowOpacity: 0.08,
+
+    elevation: 2,
   },
 
   categoryIcon: {
-    width: 64,
-    height: 64,
+    width: 62,
+    height: 62,
 
-    borderRadius: 20,
+    borderRadius: 19,
 
     alignItems: 'center',
     justifyContent: 'center',
 
     flexShrink: 0,
+
+    borderWidth: 1,
   },
 
   categoryInfo: {
     flex: 1,
     minWidth: 0,
+
+    marginHorizontal: 14,
   },
 
   categoryTitle: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '800',
+    lineHeight: 24,
   },
 
   categoryDescription: {
     fontSize: 13,
-
     marginTop: 5,
-
     lineHeight: 19,
   },
 
   /* ================================================================
-     GAME CARDS
+     GAME CARD
   ================================================================ */
 
   card: {
@@ -969,15 +997,41 @@ const styles = StyleSheet.create({
 
     overflow: 'hidden',
 
-    borderRadius: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+
+    shadowRadius: 16,
+    shadowOpacity: 0.09,
+
+    elevation: 3,
+  },
+
+  coverWrapper: {
+    width: '100%',
+    height: 175,
+
+    overflow: 'hidden',
+
+    backgroundColor: '#111111',
   },
 
   cover: {
     width: '100%',
-    height: 170,
-
-    borderRadius: 18,
+    height: '100%',
   },
+
+  coverOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  /* ================================================================
+     GAME INFO
+  ================================================================ */
 
   info: {
     padding: Spacing.md,
@@ -985,49 +1039,70 @@ const styles = StyleSheet.create({
 
   gameTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '800',
+    lineHeight: 26,
   },
 
   description: {
-    marginTop: 6,
-
+    marginTop: 7,
     fontSize: 14,
-
-    lineHeight: 20,
+    lineHeight: 21,
   },
+
+  /* ================================================================
+     DETAILS
+  ================================================================ */
 
   details: {
     marginTop: Spacing.md,
-
-    gap: 20,
+    alignItems: 'center',
+    gap: 18,
   },
 
   detailItem: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+
+  detailIcon: {
+    width: 28,
+    height: 28,
+
+    borderRadius: 9,
 
     alignItems: 'center',
-
-    gap: 5,
+    justifyContent: 'center',
   },
 
   detailText: {
     fontSize: 13,
+    fontWeight: '500',
   },
+
+  /* ================================================================
+     START BUTTON
+  ================================================================ */
 
   button: {
     marginTop: Spacing.md,
 
-    paddingVertical: 12,
+    minHeight: 48,
+
+    paddingHorizontal: 18,
 
     borderRadius:
       BorderRadius.full,
 
     alignItems: 'center',
+    justifyContent: 'center',
+
+    flexDirection: 'row',
   },
 
   buttonText: {
-    color: '#fff',
-
-    fontWeight: '700',
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
   },
 });

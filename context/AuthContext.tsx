@@ -1,8 +1,10 @@
 import React, {
   createContext,
+  useCallback,
   useContext,
-  useState,
   useEffect,
+  useMemo,
+  useState,
   ReactNode,
 } from 'react';
 
@@ -14,7 +16,10 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<void>;
   register: (
     name: string,
     email: string,
@@ -23,9 +28,10 @@ interface AuthContextType {
   logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(
-  undefined
-);
+const AuthContext =
+  createContext<AuthContextType | undefined>(
+    undefined
+  );
 
 const USER_KEY = '@neurolia_user';
 
@@ -34,161 +40,200 @@ export function AuthProvider({
 }: {
   children: ReactNode;
 }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] =
+    useState<User | null>(null);
 
-  // فقط برای بررسی session ذخیره‌شده
-  const [isLoading, setIsLoading] = useState(true);
-
-  /**
-   * Load saved session.
-   */
-  const loadUser = async () => {
-    try {
-      const savedUser = await AsyncStorage.getItem(USER_KEY);
-
-      console.log(
-        '[AUTH] Saved user:',
-        savedUser ? 'YES' : 'NO'
-      );
-
-      if (savedUser) {
-        const parsedUser = JSON.parse(savedUser);
-
-        setUser(parsedUser);
-      } else {
-        setUser(null);
-      }
-    } catch (error) {
-      console.error('[AUTH] Error loading user:', error);
-
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [isLoading, setIsLoading] =
+    useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
+    const loadUser = async () => {
+      try {
+        const savedUser =
+          await AsyncStorage.getItem(USER_KEY);
+
+        if (!mounted) {
+          return;
+        }
+
+        if (savedUser) {
+          try {
+            const parsedUser =
+              JSON.parse(savedUser);
+
+            setUser(parsedUser);
+          } catch (parseError) {
+            console.error(
+              '[AUTH] Invalid saved user:',
+              parseError
+            );
+
+            await AsyncStorage.removeItem(
+              USER_KEY
+            );
+
+            if (mounted) {
+              setUser(null);
+            }
+          }
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error(
+          '[AUTH] Failed to load user:',
+          error
+        );
+
+        if (mounted) {
+          setUser(null);
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
     loadUser();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  /**
-   * Login
-   *
-   * This is currently a mock login.
-   * User becomes authenticated ONLY after this
-   * function is successfully called.
-   */
-  const login = async (
-    email: string,
-    password: string
-  ) => {
-    setIsLoading(true);
+  const login = useCallback(
+    async (
+      email: string,
+      _password: string
+    ) => {
+      setIsLoading(true);
 
+      try {
+        /*
+         * Mock API delay.
+         *
+         * Kept for the current mock authentication
+         * flow, but isolated from rendering.
+         */
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, 1500);
+        });
+
+        const mockUser: User = {
+          id: '1',
+          name: 'کاربر نورولیا',
+          email,
+          level: 5,
+          xp: 1250,
+          streak: 12,
+        };
+
+        await AsyncStorage.setItem(
+          USER_KEY,
+          JSON.stringify(mockUser)
+        );
+
+        setUser(mockUser);
+      } catch (error) {
+        console.error(
+          '[AUTH] Login failed:',
+          error
+        );
+
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  const register = useCallback(
+    async (
+      name: string,
+      email: string,
+      _password: string
+    ) => {
+      setIsLoading(true);
+
+      try {
+        /*
+         * Mock API delay.
+         */
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, 1500);
+        });
+
+        const mockUser: User = {
+          id: '1',
+          name,
+          email,
+          level: 1,
+          xp: 0,
+          streak: 0,
+        };
+
+        await AsyncStorage.setItem(
+          USER_KEY,
+          JSON.stringify(mockUser)
+        );
+
+        setUser(mockUser);
+      } catch (error) {
+        console.error(
+          '[AUTH] Registration failed:',
+          error
+        );
+
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  const logout = useCallback(async () => {
     try {
-      console.log('[AUTH] Login started');
-
-      // Mock API delay
-      await new Promise((resolve) =>
-        setTimeout(resolve, 1500)
+      await AsyncStorage.removeItem(
+        USER_KEY
       );
 
-      const mockUser: User = {
-        id: '1',
-        name: 'کاربر نورولیا',
-        email,
-        level: 5,
-        xp: 1250,
-        streak: 12,
-      };
-
-      await AsyncStorage.setItem(
-        USER_KEY,
-        JSON.stringify(mockUser)
-      );
-
-      setUser(mockUser);
-
-      console.log('[AUTH] Login successful');
-    } catch (error) {
-      console.error('[AUTH] Login failed:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  /**
-   * Register
-   */
-  const register = async (
-    name: string,
-    email: string,
-    password: string
-  ) => {
-    setIsLoading(true);
-
-    try {
-      console.log('[AUTH] Registration started');
-
-      await new Promise((resolve) =>
-        setTimeout(resolve, 1500)
-      );
-
-      const mockUser: User = {
-        id: '1',
-        name,
-        email,
-        level: 1,
-        xp: 0,
-        streak: 0,
-      };
-
-      await AsyncStorage.setItem(
-        USER_KEY,
-        JSON.stringify(mockUser)
-      );
-
-      setUser(mockUser);
-
-      console.log('[AUTH] Registration successful');
+      setUser(null);
     } catch (error) {
       console.error(
-        '[AUTH] Registration failed:',
+        '[AUTH] Logout failed:',
         error
       );
 
       throw error;
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, []);
 
-  /**
-   * Logout
-   */
-  const logout = async () => {
-    try {
-      console.log('[AUTH] Logout');
+  const isAuthenticated =
+    user !== null;
 
-      await AsyncStorage.removeItem(USER_KEY);
-
-      setUser(null);
-    } catch (error) {
-      console.error('[AUTH] Logout failed:', error);
-
-      throw error;
-    }
-  };
-
-  const value: AuthContextType = {
-    user,
-    isAuthenticated: user !== null,
-    isLoading,
-
-    login,
-    register,
-    logout,
-  };
+  const value = useMemo<AuthContextType>(
+    () => ({
+      user,
+      isAuthenticated,
+      isLoading,
+      login,
+      register,
+      logout,
+    }),
+    [
+      user,
+      isAuthenticated,
+      isLoading,
+      login,
+      register,
+      logout,
+    ]
+  );
 
   return (
     <AuthContext.Provider value={value}>
@@ -197,10 +242,11 @@ export function AuthProvider({
   );
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
+export function useAuth(): AuthContextType {
+  const context =
+    useContext(AuthContext);
 
-  if (context === undefined) {
+  if (!context) {
     throw new Error(
       'useAuth must be used within an AuthProvider'
     );

@@ -1,4 +1,7 @@
-import { Stack } from 'expo-router';
+import React from 'react';
+import {
+  Stack,
+} from 'expo-router';
 
 export default function TabsLayout() {
   return (
@@ -6,7 +9,25 @@ export default function TabsLayout() {
       initialRouteName="index"
       screenOptions={{
         headerShown: false,
-        animation: 'fade',
+
+        /*
+         * BottomNav already controls navigation.
+         *
+         * Avoid running a full screen transition animation
+         * every time the user switches between main sections.
+         */
+        animation: 'none',
+
+        /*
+         * Prevent unnecessary gesture-driven transitions
+         * on the main application sections.
+         */
+        gestureEnabled: false,
+
+        /*
+         * Keep inactive native screens detached where supported.
+         */
+        freezeOnBlur: true,
       }}
     >
       <Stack.Screen

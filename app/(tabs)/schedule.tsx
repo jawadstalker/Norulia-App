@@ -6,7 +6,6 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  Dimensions,
 } from 'react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,8 +26,6 @@ import {
 } from 'lucide-react-native';
 import { Spacing } from '../../constants/theme';
 import { useRouter } from 'expo-router';
-
-const { width } = Dimensions.get('window');
 
 interface Event {
   id: string;
@@ -77,7 +74,8 @@ function toPersianDate(
   daysPassed += gregorianDay;
 
   const isLeap =
-    (gregorianYear % 4 === 0 && gregorianYear % 100 !== 0) ||
+    (gregorianYear % 4 === 0 &&
+      gregorianYear % 100 !== 0) ||
     gregorianYear % 400 === 0;
 
   if (isLeap && gregorianMonth > 2) {
@@ -137,6 +135,10 @@ function toPersianDate(
   };
 }
 
+/* ==========================================================================
+   Persian Weekday
+   ========================================================================== */
+
 function getPersianWeekday(date: Date): string {
   const weekdays = [
     'یکشنبه',
@@ -150,6 +152,10 @@ function getPersianWeekday(date: Date): string {
 
   return weekdays[date.getDay()];
 }
+
+/* ==========================================================================
+   Persian Month
+   ========================================================================== */
 
 function getPersianMonthName(month: number): string {
   const monthNames = [
@@ -183,7 +189,9 @@ function toPersianDigits(value: string | number): string {
     .map((digit) => {
       const number = parseInt(digit, 10);
 
-      return !isNaN(number) ? persianDigits[number] : digit;
+      return !isNaN(number)
+        ? persianDigits[number]
+        : digit;
     })
     .join('');
 }
@@ -198,96 +206,131 @@ export default function ScheduleScreen() {
   const router = useRouter();
 
   /*
-   * Soft purple palette
+   * IMPORTANT
    * ---------------------------------------------------------------
-   * Light:
-   * #F2EEFF -> #D8CEFA
+   * The requested layout is intentionally opposite to the normal
+   * language direction:
    *
-   * Dark:
-   * #342660 -> #21104F
+   * English  -> timeline/cards on the RIGHT
+   * Persian  -> timeline/cards on the LEFT
+   *
+   * Therefore:
+   *
+   * isRTL === true  -> Persian -> LEFT
+   * isRTL === false -> English -> RIGHT
    * ---------------------------------------------------------------
    */
 
-  const softPurple = isDark ? '#8B78C7' : '#9B8BC7';
-  const softPurpleStrong = isDark ? '#725BAF' : '#8B78B8';
-  const softPurpleLight = isDark ? '#B9A8E4' : '#CFC5EA';
+  const isLayoutRight = !isRTL;
 
-  /*
-   * Hero gradient
-   *
-   * Important:
-   * This tuple type prevents the expo-linear-gradient
-   * "string[] is not assignable to ColorValue[]" error.
-   */
+  /* ==========================================================================
+     Purple Palette
+     ========================================================================== */
+
+  const softPurple = isDark
+    ? '#8B78C7'
+    : '#9B8BC7';
+
+  const softPurpleStrong = isDark
+    ? '#725BAF'
+    : '#8B78B8';
+
   const heroGradient: [string, string] = isDark
     ? ['#342660', '#21104F']
     : ['#F2EEFF', '#D8CEFA'];
 
+  /* ==========================================================================
+     Events
+     ========================================================================== */
+
   const [events, setEvents] = useState<Event[]>([
     {
       id: '1',
-      title: t.meditationSession || 'Meditation Session',
+      title:
+        t.meditationSession ||
+        'Meditation Session',
       time: '09:00 AM',
-      category: t.mindfulness || 'Mindfulness',
-      duration: '20 ' + (t.minutes || 'min'),
+      category:
+        t.mindfulness ||
+        'Mindfulness',
+      duration:
+        '20 ' + (t.minutes || 'min'),
       completed: true,
       icon: Brain,
       color: softPurple,
     },
     {
       id: '2',
-      title: t.takeMedication || 'Take Medication',
+      title:
+        t.takeMedication ||
+        'Take Medication',
       time: '12:00 PM',
-      category: t.health || 'Health',
-      duration: '5 ' + (t.minutes || 'min'),
+      category:
+        t.health || 'Health',
+      duration:
+        '5 ' + (t.minutes || 'min'),
       completed: false,
       icon: Pill,
       color: softPurple,
     },
     {
       id: '3',
-      title: t.therapySession || 'Therapy Session',
+      title:
+        t.therapySession ||
+        'Therapy Session',
       time: '03:00 PM',
-      category: t.mentalHealth || 'Mental Health',
-      duration: '45 ' + (t.minutes || 'min'),
+      category:
+        t.mentalHealth ||
+        'Mental Health',
+      duration:
+        '45 ' + (t.minutes || 'min'),
       completed: false,
       icon: Heart,
       color: softPurpleStrong,
     },
     {
       id: '4',
-      title: t.eveningRelaxation || 'Evening Relaxation',
+      title:
+        t.eveningRelaxation ||
+        'Evening Relaxation',
       time: '08:00 PM',
-      category: t.wellness || 'Wellness',
-      duration: '30 ' + (t.minutes || 'min'),
+      category:
+        t.wellness || 'Wellness',
+      duration:
+        '30 ' + (t.minutes || 'min'),
       completed: false,
       icon: Moon,
       color: softPurpleStrong,
     },
   ]);
 
-  const [isFabOpen, setIsFabOpen] = useState(false);
+  const [isFabOpen, setIsFabOpen] =
+    useState(false);
 
   /* ==========================================================================
-     Events
+     Event Completion
      ========================================================================== */
 
-  const toggleCompletion = (id: string) => {
+  const toggleCompletion = (
+    id: string
+  ) => {
     setEvents((prev) =>
       prev.map((event) =>
         event.id === id
           ? {
               ...event,
-              completed: !event.completed,
+              completed:
+                !event.completed,
             }
           : event
       )
     );
   };
 
-  const completedCount = events.filter(
-    (event) => event.completed
-  ).length;
+  const completedCount =
+    events.filter(
+      (event) => event.completed
+    ).length;
 
   const totalCount = events.length;
 
@@ -299,14 +342,23 @@ export default function ScheduleScreen() {
     const hour = new Date().getHours();
 
     if (hour < 12) {
-      return t.goodMorning || 'Good morning';
+      return (
+        t.goodMorning ||
+        'Good morning'
+      );
     }
 
     if (hour < 17) {
-      return t.goodAfternoon || 'Good afternoon';
+      return (
+        t.goodAfternoon ||
+        'Good afternoon'
+      );
     }
 
-    return t.goodEvening || 'Good evening';
+    return (
+      t.goodEvening ||
+      'Good evening'
+    );
   };
 
   /* ==========================================================================
@@ -317,28 +369,43 @@ export default function ScheduleScreen() {
     const now = new Date();
 
     if (isRTL) {
-      const persianDate = toPersianDate(now);
-      const weekday = getPersianWeekday(now);
-      const monthName = getPersianMonthName(
-        persianDate.month
-      );
+      const persianDate =
+        toPersianDate(now);
 
-      const dayStr = toPersianDigits(persianDate.day);
-      const yearStr = toPersianDigits(persianDate.year);
+      const weekday =
+        getPersianWeekday(now);
+
+      const monthName =
+        getPersianMonthName(
+          persianDate.month
+        );
+
+      const dayStr =
+        toPersianDigits(
+          persianDate.day
+        );
+
+      const yearStr =
+        toPersianDigits(
+          persianDate.year
+        );
 
       return `${weekday} ${dayStr} ${monthName} ${yearStr}`;
     }
 
-    return now.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    return now.toLocaleDateString(
+      'en-US',
+      {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }
+    );
   };
 
   /* ==========================================================================
-     FAB
+     FAB Options
      ========================================================================== */
 
   const fabOptions = [
@@ -350,20 +417,45 @@ export default function ScheduleScreen() {
     },
     {
       id: 'medication',
-      label: t.addMedication || 'Add Medication',
+      label:
+        t.addMedication ||
+        'Add Medication',
       icon: Pill,
       color: softPurple,
     },
     {
       id: 'consultation',
-      label: t.addConsultation || 'Add Consultation',
+      label:
+        t.addConsultation ||
+        'Add Consultation',
       icon: Heart,
       color: softPurple,
     },
   ];
 
-  const handleNavigate = (route: string) => {
+  /* ==========================================================================
+     Navigation
+     ========================================================================== */
+
+  const handleNavigate = (
+    route: string
+  ) => {
     router.navigate(route as any);
+  };
+
+  /* ==========================================================================
+     Dynamic Card Styles
+     --------------------------------------------------------------------------
+     IMPORTANT:
+     Card.tsx expects ViewStyle, not ViewStyle[].
+     Therefore every Card receives ONE plain style object.
+     ========================================================================== */
+
+  const dateCardStyle = {
+    ...styles.dateCard,
+    backgroundColor: isDark
+      ? colors.surface
+      : '#FFFFFF',
   };
 
   /* ==========================================================================
@@ -380,11 +472,15 @@ export default function ScheduleScreen() {
       style={styles.container}
     >
       <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={
+          styles.content
+        }
+        showsVerticalScrollIndicator={
+          false
+        }
       >
         {/* ==================================================================
-            Hero Avatar Card
+            HERO
             ================================================================== */}
 
         <MotiView
@@ -404,8 +500,14 @@ export default function ScheduleScreen() {
         >
           <LinearGradient
             colors={heroGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            start={{
+              x: 0,
+              y: 0,
+            }}
+            end={{
+              x: 1,
+              y: 1,
+            }}
             style={[
               styles.hero,
               {
@@ -427,11 +529,7 @@ export default function ScheduleScreen() {
               },
             ]}
           >
-            {/* ==============================================================
-                Avatar
-                No decorative bubbles behind the avatar.
-                contain prevents the image from being cropped.
-                ============================================================== */}
+            {/* Avatar */}
 
             <MotiView
               from={{
@@ -450,7 +548,11 @@ export default function ScheduleScreen() {
                 stiffness: 140,
               }}
             >
-              <View style={styles.avatarContainer}>
+              <View
+                style={
+                  styles.avatarContainer
+                }
+              >
                 <Image
                   source={require('../../assets/avatars/modell.png')}
                   style={styles.avatar}
@@ -459,7 +561,7 @@ export default function ScheduleScreen() {
               </View>
             </MotiView>
 
-            {/* Greeting */}
+            {/* Hero Text */}
 
             <MotiView
               from={{
@@ -479,7 +581,6 @@ export default function ScheduleScreen() {
               <Text
                 style={[
                   styles.greeting,
-                  isRTL && styles.textRTL,
                   {
                     color: isDark
                       ? 'rgba(255,255,255,0.72)'
@@ -493,7 +594,6 @@ export default function ScheduleScreen() {
               <Text
                 style={[
                   styles.title,
-                  isRTL && styles.textRTL,
                   {
                     color: isDark
                       ? '#FFFFFF'
@@ -501,13 +601,13 @@ export default function ScheduleScreen() {
                   },
                 ]}
               >
-                {t.dailyPlanner || 'Daily Planner AI'}
+                {t.dailyPlanner ||
+                  'Daily Planner AI'}
               </Text>
 
               <Text
                 style={[
                   styles.subtitle,
-                  isRTL && styles.textRTL,
                   {
                     color: isDark
                       ? 'rgba(255,255,255,0.70)'
@@ -515,12 +615,15 @@ export default function ScheduleScreen() {
                   },
                 ]}
               >
-                {t.activitiesToday || 'You have'}{' '}
+                {t.activitiesToday ||
+                  'You have'}{' '}
                 {isRTL
                   ? toPersianDigits(
-                      totalCount - completedCount
+                      totalCount -
+                        completedCount
                     )
-                  : totalCount - completedCount}{' '}
+                  : totalCount -
+                    completedCount}{' '}
                 {t.activitiesToday?.toLowerCase() ||
                   'activities today'}
               </Text>
@@ -529,7 +632,7 @@ export default function ScheduleScreen() {
         </MotiView>
 
         {/* ==================================================================
-            Date Card
+            DATE CARD
             ================================================================== */}
 
         <MotiView
@@ -548,23 +651,22 @@ export default function ScheduleScreen() {
           }}
         >
           <Card
-            style={{
-              ...styles.dateCard,
-              backgroundColor: isDark
-                ? colors.surface
-                : '#FFFFFF',
-            }}
+            style={dateCardStyle}
           >
             <View
               style={[
                 styles.dateContent,
-                isRTL && styles.dateContentRTL,
+                isLayoutRight
+                  ? styles.dateContentRight
+                  : styles.dateContentLeft,
               ]}
             >
               <View
                 style={[
                   styles.dateLeft,
-                  isRTL && styles.dateLeftRTL,
+                  isLayoutRight
+                    ? styles.dateLeftRight
+                    : styles.dateLeftLeft,
                 ]}
               >
                 <Calendar
@@ -573,19 +675,22 @@ export default function ScheduleScreen() {
                 />
 
                 <View
-                  style={[
-                    styles.dateTextContainer,
-                    isRTL &&
-                      styles.dateTextContainerRTL,
-                  ]}
+                  style={
+                    isLayoutRight
+                      ? styles.dateTextRight
+                      : styles.dateTextLeft
+                  }
                 >
                   <Text
                     style={[
                       styles.dateDay,
                       {
-                        color: colors.text,
+                        color:
+                          colors.text,
                       },
-                      isRTL && styles.textRTL,
+                      isLayoutRight
+                        ? styles.textRight
+                        : styles.textLeft,
                     ]}
                   >
                     {getDateDisplay()}
@@ -608,7 +713,8 @@ export default function ScheduleScreen() {
                 style={[
                   styles.progressCircle,
                   {
-                    borderColor: softPurple,
+                    borderColor:
+                      softPurple,
                   },
                 ]}
               >
@@ -616,22 +722,31 @@ export default function ScheduleScreen() {
                   style={[
                     styles.progressText,
                     {
-                      color: softPurple,
+                      color:
+                        softPurple,
                     },
                   ]}
                 >
                   {isRTL
-                    ? toPersianDigits(completedCount)
+                    ? toPersianDigits(
+                        completedCount
+                      )
                     : completedCount}
                   /
                   {isRTL
-                    ? toPersianDigits(totalCount)
+                    ? toPersianDigits(
+                        totalCount
+                      )
                     : totalCount}
                 </Text>
               </MotiView>
             </View>
 
-            <View style={styles.progressBarContainer}>
+            <View
+              style={
+                styles.progressBarContainer
+              }
+            >
               <MotiView
                 from={{
                   width: 0,
@@ -653,7 +768,8 @@ export default function ScheduleScreen() {
                 style={[
                   styles.progressBar,
                   {
-                    backgroundColor: softPurple,
+                    backgroundColor:
+                      softPurple,
                   },
                 ]}
               />
@@ -662,284 +778,333 @@ export default function ScheduleScreen() {
         </MotiView>
 
         {/* ==================================================================
-            Timeline
+            TIMELINE
+            English  -> RIGHT
+            Persian  -> LEFT
             ================================================================== */}
 
-        <View
-          style={[
-            styles.timeline,
-            isRTL && styles.timelineRTL,
-          ]}
-        >
-          {events.map((event, index) => {
-            const EventIcon = event.icon;
+        <View style={styles.timeline}>
+          {events.map(
+            (event, index) => {
+              const EventIcon =
+                event.icon;
 
-            return (
-              <MotiView
-                key={event.id}
-                from={{
-                  opacity: 0,
-                  translateY: 40,
-                  scale: 0.95,
-                }}
-                animate={{
-                  opacity: 1,
-                  translateY: 0,
-                  scale: 1,
-                }}
-                transition={{
-                  delay: index * 150,
-                  type: 'spring',
-                  damping: 15,
-                }}
-              >
-                <View
-                  style={[
-                    styles.timelineItem,
-                    isRTL &&
-                      styles.timelineItemRTL,
-                  ]}
+              const eventCardStyle = {
+                ...styles.eventCard,
+                backgroundColor:
+                  isDark
+                    ? colors.surface
+                    : '#FFFFFF',
+
+                borderLeftWidth:
+                  isLayoutRight
+                    ? 0
+                    : 4,
+
+                borderRightWidth:
+                  isLayoutRight
+                    ? 4
+                    : 0,
+
+                borderLeftColor:
+                  !isLayoutRight
+                    ? event.completed
+                      ? '#10B981'
+                      : event.color
+                    : 'transparent',
+
+                borderRightColor:
+                  isLayoutRight
+                    ? event.completed
+                      ? '#10B981'
+                      : event.color
+                    : 'transparent',
+
+                opacity:
+                  event.completed
+                    ? 0.8
+                    : 1,
+              };
+
+              return (
+                <MotiView
+                  key={event.id}
+                  from={{
+                    opacity: 0,
+                    translateY: 40,
+                    scale: 0.95,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    translateY: 0,
+                    scale: 1,
+                  }}
+                  transition={{
+                    delay:
+                      index * 150,
+                    type: 'spring',
+                    damping: 15,
+                  }}
                 >
-                  {/* Timeline Line */}
-
-                  {index < events.length - 1 && (
-                    <View
-                      style={[
-                        styles.timelineLine,
-                        {
-                          backgroundColor:
-                            colors.border,
-                        },
-                        isRTL &&
-                          styles.timelineLineRTL,
-                      ]}
-                    />
-                  )}
-
-                  {/* Timeline Dot */}
-
                   <View
                     style={[
-                      styles.timelineDot,
-                      {
-                        backgroundColor:
-                          event.color,
-                        borderColor: isDark
-                          ? colors.surface
-                          : '#FFFFFF',
-                      },
-                      isRTL &&
-                        styles.timelineDotRTL,
+                      styles.timelineItem,
+                      isLayoutRight
+                        ? styles.timelineItemRight
+                        : styles.timelineItemLeft,
                     ]}
-                  />
-
-                  {/* Event Card */}
-
-                  <Card
-                    style={{
-                      ...styles.eventCard,
-                      backgroundColor: isDark
-                        ? colors.surface
-                        : '#FFFFFF',
-
-                      borderLeftColor:
-                        event.completed
-                          ? '#10B981'
-                          : event.color,
-
-                      borderLeftWidth:
-                        isRTL ? 0 : 4,
-
-                      borderRightWidth:
-                        isRTL ? 4 : 0,
-
-                      borderRightColor: isRTL
-                        ? event.completed
-                          ? '#10B981'
-                          : event.color
-                        : 'transparent',
-
-                      opacity: event.completed
-                        ? 0.8
-                        : 1,
-                    }}
                   >
-                    <TouchableOpacity
-                      onPress={() =>
-                        toggleCompletion(
-                          event.id
-                        )
-                      }
-                      style={[
-                        styles.eventContent,
-                        isRTL &&
-                          styles.eventContentRTL,
-                      ]}
-                      activeOpacity={0.7}
-                    >
-                      {/* Event Icon */}
+                    {/* Timeline Line */}
 
+                    {index <
+                      events.length -
+                        1 && (
                       <View
                         style={[
-                          styles.eventIconContainer,
+                          styles.timelineLine,
+                          isLayoutRight
+                            ? styles.timelineLineRight
+                            : styles.timelineLineLeft,
                           {
                             backgroundColor:
-                              `${event.color}20`,
+                              colors.border,
                           },
-                          isRTL &&
-                            styles.eventIconContainerRTL,
                         ]}
-                      >
-                        <EventIcon
-                          size={24}
-                          color={event.color}
-                        />
-                      </View>
+                      />
+                    )}
 
-                      {/* Event Text */}
+                    {/* Timeline Dot */}
 
-                      <View
+                    <View
+                      style={[
+                        styles.timelineDot,
+                        isLayoutRight
+                          ? styles.timelineDotRight
+                          : styles.timelineDotLeft,
+                        {
+                          backgroundColor:
+                            event.color,
+
+                          borderColor:
+                            isDark
+                              ? colors.surface
+                              : '#FFFFFF',
+                        },
+                      ]}
+                    />
+
+                    {/* Event Card */}
+
+                    <Card
+                      style={
+                        eventCardStyle
+                      }
+                    >
+                      <TouchableOpacity
+                        onPress={() =>
+                          toggleCompletion(
+                            event.id
+                          )
+                        }
                         style={[
-                          styles.eventTextContainer,
-                          isRTL &&
-                            styles.eventTextContainerRTL,
+                          styles.eventContent,
+                          isLayoutRight
+                            ? styles.eventContentRight
+                            : styles.eventContentLeft,
                         ]}
+                        activeOpacity={0.7}
                       >
-                        {/* Event Header */}
+                        {/* Event Icon */}
 
                         <View
                           style={[
-                            styles.eventHeader,
-                            isRTL &&
-                              styles.eventHeaderRTL,
+                            styles.eventIconContainer,
+                            isLayoutRight
+                              ? styles.eventIconRight
+                              : styles.eventIconLeft,
+                            {
+                              backgroundColor:
+                                `${event.color}20`,
+                            },
                           ]}
                         >
-                          <Text
-                            numberOfLines={2}
-                            style={[
-                              styles.eventTitle,
-                              {
-                                color:
-                                  colors.text,
-                                textDecorationLine:
-                                  event.completed
-                                    ? 'line-through'
-                                    : 'none',
-                              },
-                              isRTL &&
-                                styles.textRTL,
-                            ]}
-                          >
-                            {event.title}
-                          </Text>
+                          <EventIcon
+                            size={24}
+                            color={
+                              event.color
+                            }
+                          />
+                        </View>
 
-                          {/* Status Icon */}
+                        {/* Event Text */}
+
+                        <View
+                          style={
+                            styles.eventTextContainer
+                          }
+                        >
+                          {/* Header */}
 
                           <View
                             style={[
-                              styles.eventStatusIcon,
-                              isRTL &&
-                                styles.eventStatusIconRTL,
+                              styles.eventHeader,
+                              isLayoutRight
+                                ? styles.eventHeaderRight
+                                : styles.eventHeaderLeft,
                             ]}
                           >
-                            {event.completed ? (
-                              <MotiView
-                                from={{
-                                  scale: 0,
-                                }}
-                                animate={{
-                                  scale: 1,
-                                }}
-                                transition={{
-                                  type: 'spring',
-                                  damping: 12,
-                                }}
-                              >
-                                <CheckCircle
-                                  size={22}
-                                  color="#10B981"
+                            <Text
+                              numberOfLines={
+                                2
+                              }
+                              style={[
+                                styles.eventTitle,
+                                {
+                                  color:
+                                    colors.text,
+
+                                  textDecorationLine:
+                                    event.completed
+                                      ? 'line-through'
+                                      : 'none',
+                                },
+                                isLayoutRight
+                                  ? styles.textRight
+                                  : styles.textLeft,
+                              ]}
+                            >
+                              {
+                                event.title
+                              }
+                            </Text>
+
+                            {/* Status */}
+
+                            <View
+                              style={[
+                                styles.eventStatusIcon,
+                                isLayoutRight
+                                  ? styles.statusRight
+                                  : styles.statusLeft,
+                              ]}
+                            >
+                              {event.completed ? (
+                                <MotiView
+                                  from={{
+                                    scale: 0,
+                                  }}
+                                  animate={{
+                                    scale: 1,
+                                  }}
+                                  transition={{
+                                    type: 'spring',
+                                    damping: 12,
+                                  }}
+                                >
+                                  <CheckCircle
+                                    size={
+                                      22
+                                    }
+                                    color="#10B981"
+                                  />
+                                </MotiView>
+                              ) : (
+                                <Circle
+                                  size={
+                                    22
+                                  }
+                                  color={
+                                    colors.textTertiary
+                                  }
                                 />
-                              </MotiView>
-                            ) : (
-                              <Circle
-                                size={22}
-                                color={
-                                  colors.textTertiary
-                                }
-                              />
-                            )}
+                              )}
+                            </View>
+                          </View>
+
+                          {/* Details */}
+
+                          <View
+                            style={[
+                              styles.eventDetails,
+                              isLayoutRight
+                                ? styles.eventDetailsRight
+                                : styles.eventDetailsLeft,
+                            ]}
+                          >
+                            <Clock
+                              size={14}
+                              color={
+                                colors.textTertiary
+                              }
+                            />
+
+                            <Text
+                              style={[
+                                styles.eventTime,
+                                {
+                                  color:
+                                    colors.textSecondary,
+                                },
+                                isLayoutRight
+                                  ? styles.textRight
+                                  : styles.textLeft,
+                                isLayoutRight
+                                  ? styles.eventTimeRight
+                                  : styles.eventTimeLeft,
+                              ]}
+                            >
+                              {
+                                event.time
+                              }{' '}
+                              •{' '}
+                              {
+                                event.duration
+                              }
+                            </Text>
+                          </View>
+
+                          {/* Category */}
+
+                          <View
+                            style={[
+                              styles.eventCategory,
+                              isLayoutRight
+                                ? styles.eventCategoryRight
+                                : styles.eventCategoryLeft,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.eventCategoryText,
+                                {
+                                  color:
+                                    colors.textTertiary,
+                                },
+                                isLayoutRight
+                                  ? styles.textRight
+                                  : styles.textLeft,
+                              ]}
+                            >
+                              {
+                                event.category
+                              }
+                            </Text>
                           </View>
                         </View>
-
-                        {/* Event Details */}
-
-                        <View
-                          style={[
-                            styles.eventDetails,
-                            isRTL &&
-                              styles.eventDetailsRTL,
-                          ]}
-                        >
-                          <Clock
-                            size={14}
-                            color={
-                              colors.textTertiary
-                            }
-                          />
-
-                          <Text
-                            style={[
-                              styles.eventTime,
-                              {
-                                color:
-                                  colors.textSecondary,
-                              },
-                              isRTL &&
-                                styles.textRTL,
-                              isRTL &&
-                                styles.eventTimeRTL,
-                            ]}
-                          >
-                            {event.time} •{' '}
-                            {event.duration}
-                          </Text>
-                        </View>
-
-                        {/* Category */}
-
-                        <View
-                          style={[
-                            styles.eventCategory,
-                            isRTL &&
-                              styles.eventCategoryRTL,
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.eventCategoryText,
-                              {
-                                color:
-                                  colors.textTertiary,
-                              },
-                              isRTL &&
-                                styles.textRTL,
-                            ]}
-                          >
-                            {event.category}
-                          </Text>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  </Card>
-                </View>
-              </MotiView>
-            );
-          })}
+                      </TouchableOpacity>
+                    </Card>
+                  </View>
+                </MotiView>
+              );
+            }
+          )}
         </View>
       </ScrollView>
 
       {/* ====================================================================
-          FAB Menu
+          FAB MENU
+          English -> LEFT
+          Persian -> RIGHT
           ==================================================================== */}
 
       <AnimatePresence>
@@ -947,115 +1112,136 @@ export default function ScheduleScreen() {
           <View
             style={[
               styles.fabMenu,
-              isRTL && styles.fabMenuRTL,
+              isLayoutRight
+                ? styles.fabMenuLeft
+                : styles.fabMenuRight,
             ]}
           >
-            {fabOptions.map((option, index) => {
-              const OptionIcon = option.icon;
+            {fabOptions.map(
+              (option, index) => {
+                const OptionIcon =
+                  option.icon;
 
-              return (
-                <MotiView
-                  key={option.id}
-                  from={{
-                    opacity: 0,
-                    scale: 0.5,
-                    translateY: 20,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    scale: 1,
-                    translateY: 0,
-                  }}
-                  exit={{
-                    opacity: 0,
-                    scale: 0.5,
-                    translateY: 20,
-                  }}
-                  transition={{
-                    delay: index * 100,
-                    type: 'spring',
-                    damping: 15,
-                  }}
-                  style={[
-                    styles.fabOption,
-                    isRTL &&
-                      styles.fabOptionRTL,
-                  ]}
-                >
-                  <TouchableOpacity
-                    style={[
-                      styles.fabOptionButton,
-                      {
-                        backgroundColor:
-                          option.color,
-                      },
-                    ]}
-                    onPress={() => {
-                      setIsFabOpen(false);
-
-                      if (
-                        option.id === 'task'
-                      ) {
-                        handleNavigate(
-                          '/schedule/add'
-                        );
-                      } else if (
-                        option.id ===
-                        'medication'
-                      ) {
-                        handleNavigate(
-                          '/medication/add'
-                        );
-                      } else if (
-                        option.id ===
-                        'consultation'
-                      ) {
-                        handleNavigate(
-                          '/consultation/add'
-                        );
-                      }
+                return (
+                  <MotiView
+                    key={option.id}
+                    from={{
+                      opacity: 0,
+                      scale: 0.5,
+                      translateY: 20,
                     }}
-                    activeOpacity={0.8}
-                  >
-                    <OptionIcon
-                      size={24}
-                      color="#FFFFFF"
-                    />
-                  </TouchableOpacity>
-
-                  <Text
+                    animate={{
+                      opacity: 1,
+                      scale: 1,
+                      translateY: 0,
+                    }}
+                    exit={{
+                      opacity: 0,
+                      scale: 0.5,
+                      translateY: 20,
+                    }}
+                    transition={{
+                      delay:
+                        index * 100,
+                      type: 'spring',
+                      damping: 15,
+                    }}
                     style={[
-                      styles.fabOptionLabel,
-                      {
-                        color: '#FFFFFF',
-                      },
-                      isRTL &&
-                        styles.textRTL,
+                      styles.fabOption,
+                      isLayoutRight
+                        ? styles.fabOptionLeft
+                        : styles.fabOptionRight,
                     ]}
                   >
-                    {option.label}
-                  </Text>
-                </MotiView>
-              );
-            })}
+                    <TouchableOpacity
+                      style={[
+                        styles.fabOptionButton,
+                        {
+                          backgroundColor:
+                            option.color,
+                        },
+                      ]}
+                      onPress={() => {
+                        setIsFabOpen(
+                          false
+                        );
+
+                        if (
+                          option.id ===
+                          'task'
+                        ) {
+                          handleNavigate(
+                            '/schedule/add'
+                          );
+                        } else if (
+                          option.id ===
+                          'medication'
+                        ) {
+                          handleNavigate(
+                            '/medication/add'
+                          );
+                        } else if (
+                          option.id ===
+                          'consultation'
+                        ) {
+                          handleNavigate(
+                            '/consultation/add'
+                          );
+                        }
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <OptionIcon
+                        size={24}
+                        color="#FFFFFF"
+                      />
+                    </TouchableOpacity>
+
+                    <Text
+                      style={[
+                        styles.fabOptionLabel,
+                        {
+                          color:
+                            '#FFFFFF',
+                        },
+                        isLayoutRight
+                          ? styles.textLeft
+                          : styles.textRight,
+                      ]}
+                    >
+                      {
+                        option.label
+                      }
+                    </Text>
+                  </MotiView>
+                );
+              }
+            )}
           </View>
         )}
       </AnimatePresence>
 
       {/* ====================================================================
           FAB
+          English -> LEFT
+          Persian -> RIGHT
           ==================================================================== */}
 
       <TouchableOpacity
         style={[
           styles.fab,
           {
-            backgroundColor: softPurple,
+            backgroundColor:
+              softPurple,
           },
-          isRTL && styles.fabRTL,
+          isLayoutRight
+            ? styles.fabLeft
+            : styles.fabRight,
         ]}
         onPress={() =>
-          setIsFabOpen(!isFabOpen)
+          setIsFabOpen(
+            !isFabOpen
+          )
         }
         activeOpacity={0.8}
       >
@@ -1085,6 +1271,10 @@ export default function ScheduleScreen() {
    ========================================================================== */
 
 const styles = StyleSheet.create({
+  /* ==========================================================================
+     Container
+     ========================================================================== */
+
   container: {
     flex: 1,
     paddingTop: 40,
@@ -1130,11 +1320,6 @@ const styles = StyleSheet.create({
 
   /* ==========================================================================
      Avatar
-
-     Important:
-     No borderRadius and no overflow here.
-     This prevents the avatar from appearing trapped
-     inside a rectangular/circular clipping area.
      ========================================================================== */
 
   avatarContainer: {
@@ -1180,9 +1365,14 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
   },
 
-  textRTL: {
-    writingDirection: 'rtl',
+  textRight: {
+    writingDirection: 'ltr',
     textAlign: 'right',
+  },
+
+  textLeft: {
+    writingDirection: 'ltr',
+    textAlign: 'left',
   },
 
   /* ==========================================================================
@@ -1201,29 +1391,47 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
-  dateContentRTL: {
+  /*
+   * English:
+   * Date section visually sits on the RIGHT.
+   */
+
+  dateContentRight: {
     flexDirection: 'row-reverse',
+  },
+
+  /*
+   * Persian:
+   * Date section visually sits on the LEFT.
+   */
+
+  dateContentLeft: {
+    flexDirection: 'row',
   },
 
   dateLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
     flex: 1,
+    alignItems: 'center',
   },
 
-  dateLeftRTL: {
+  dateLeftRight: {
     flexDirection: 'row-reverse',
   },
 
-  dateTextContainer: {
-    marginLeft: Spacing.sm,
-    flex: 1,
+  dateLeftLeft: {
+    flexDirection: 'row',
   },
 
-  dateTextContainerRTL: {
-    marginLeft: 0,
+  dateTextRight: {
+    flex: 1,
     marginRight: Spacing.sm,
     alignItems: 'flex-end',
+  },
+
+  dateTextLeft: {
+    flex: 1,
+    marginLeft: Spacing.sm,
+    alignItems: 'flex-start',
   },
 
   dateDay: {
@@ -1234,13 +1442,12 @@ const styles = StyleSheet.create({
   progressCircle: {
     width: 50,
     height: 50,
+
     borderRadius: 25,
     borderWidth: 2,
 
     alignItems: 'center',
     justifyContent: 'center',
-
-    marginLeft: Spacing.sm,
   },
 
   progressText: {
@@ -1273,41 +1480,60 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.sm,
   },
 
-  timelineRTL: {
-    paddingTop: Spacing.sm,
-  },
+  /*
+   * English -> timeline on RIGHT
+   */
 
-  timelineItem: {
-    paddingLeft: 20,
+  timelineItemRight: {
+    paddingRight: 20,
+    paddingLeft: 0,
     paddingBottom: Spacing.md,
 
     position: 'relative',
   },
 
-  timelineItemRTL: {
-    paddingLeft: 0,
-    paddingRight: 20,
+  /*
+   * Persian -> timeline on LEFT
+   */
+
+  timelineItemLeft: {
+    paddingLeft: 20,
+    paddingRight: 0,
+    paddingBottom: Spacing.md,
+
+    position: 'relative',
   },
+
+  /* ==========================================================================
+     Timeline Line
+     ========================================================================== */
 
   timelineLine: {
     position: 'absolute',
 
-    left: 6,
     top: 24,
     bottom: 0,
 
     width: 2,
   },
 
-  timelineLineRTL: {
-    left: 'auto',
+  timelineLineRight: {
     right: 6,
+    left: 'auto',
   },
+
+  timelineLineLeft: {
+    left: 6,
+    right: 'auto',
+  },
+
+  /* ==========================================================================
+     Timeline Dot
+     ========================================================================== */
 
   timelineDot: {
     position: 'absolute',
 
-    left: 0,
     top: 8,
 
     width: 14,
@@ -1319,9 +1545,14 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
 
-  timelineDotRTL: {
-    left: 'auto',
+  timelineDotRight: {
     right: 0,
+    left: 'auto',
+  },
+
+  timelineDotLeft: {
+    left: 0,
+    right: 'auto',
   },
 
   /* ==========================================================================
@@ -1329,19 +1560,33 @@ const styles = StyleSheet.create({
      ========================================================================== */
 
   eventCard: {
-    marginLeft: Spacing.md,
     padding: Spacing.md,
   },
 
+  /*
+   * English cards are placed to the RIGHT.
+   */
+
+  /* ==========================================================================
+     Event Content
+     ========================================================================== */
+
   eventContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
     width: '100%',
+    alignItems: 'center',
   },
 
-  eventContentRTL: {
+  eventContentRight: {
     flexDirection: 'row-reverse',
   },
+
+  eventContentLeft: {
+    flexDirection: 'row',
+  },
+
+  /* ==========================================================================
+     Event Icon
+     ========================================================================== */
 
   eventIconContainer: {
     width: 48,
@@ -1352,14 +1597,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
 
-    marginRight: Spacing.md,
-
     flexShrink: 0,
   },
 
-  eventIconContainerRTL: {
-    marginRight: 0,
+  eventIconRight: {
     marginLeft: Spacing.md,
+  },
+
+  eventIconLeft: {
+    marginRight: Spacing.md,
   },
 
   /* ==========================================================================
@@ -1371,23 +1617,22 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
 
-  eventTextContainerRTL: {
-    alignItems: 'stretch',
-  },
-
   /* ==========================================================================
      Event Header
      ========================================================================== */
 
   eventHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
     width: '100%',
+    alignItems: 'center',
     minWidth: 0,
   },
 
-  eventHeaderRTL: {
+  eventHeaderRight: {
     flexDirection: 'row-reverse',
+  },
+
+  eventHeaderLeft: {
+    flexDirection: 'row',
   },
 
   eventTitle: {
@@ -1405,17 +1650,18 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
 
-    marginLeft: Spacing.md,
-
     flexShrink: 0,
 
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  eventStatusIconRTL: {
-    marginLeft: 0,
+  statusRight: {
     marginRight: Spacing.md,
+  },
+
+  statusLeft: {
+    marginLeft: Spacing.md,
   },
 
   /* ==========================================================================
@@ -1423,24 +1669,30 @@ const styles = StyleSheet.create({
      ========================================================================== */
 
   eventDetails: {
-    flexDirection: 'row',
     alignItems: 'center',
     marginTop: 6,
   },
 
-  eventDetailsRTL: {
+  eventDetailsRight: {
     flexDirection: 'row-reverse',
+    justifyContent: 'flex-start',
+  },
+
+  eventDetailsLeft: {
+    flexDirection: 'row',
     justifyContent: 'flex-start',
   },
 
   eventTime: {
     fontSize: 13,
-    marginLeft: 4,
   },
 
-  eventTimeRTL: {
-    marginLeft: 0,
+  eventTimeRight: {
     marginRight: 4,
+  },
+
+  eventTimeLeft: {
+    marginLeft: 4,
   },
 
   /* ==========================================================================
@@ -1451,8 +1703,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  eventCategoryRTL: {
+  eventCategoryRight: {
     alignItems: 'flex-end',
+  },
+
+  eventCategoryLeft: {
+    alignItems: 'flex-start',
   },
 
   eventCategoryText: {
@@ -1467,7 +1723,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
 
     bottom: 30,
-    right: 30,
 
     width: 60,
     height: 60,
@@ -1492,28 +1747,59 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
 
-  fabRTL: {
-    right: 'auto',
+  /*
+   * English -> FAB LEFT
+   */
+
+  fabLeft: {
     left: 30,
+    right: 'auto',
   },
+
+  /*
+   * Persian -> FAB RIGHT
+   */
+
+  fabRight: {
+    right: 30,
+    left: 'auto',
+  },
+
+  /* ==========================================================================
+     FAB Menu
+     ========================================================================== */
 
   fabMenu: {
     position: 'absolute',
 
     bottom: 100,
-    right: 20,
-
-    alignItems: 'flex-end',
 
     zIndex: 5,
   },
 
-  fabMenuRTL: {
-    right: 'auto',
-    left: 20,
+  /*
+   * English -> menu LEFT
+   */
 
+  fabMenuLeft: {
+    left: 20,
+    right: 'auto',
     alignItems: 'flex-start',
   },
+
+  /*
+   * Persian -> menu RIGHT
+   */
+
+  fabMenuRight: {
+    right: 20,
+    left: 'auto',
+    alignItems: 'flex-end',
+  },
+
+  /* ==========================================================================
+     FAB Options
+     ========================================================================== */
 
   fabOption: {
     alignItems: 'center',
@@ -1525,7 +1811,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 
-  fabOptionRTL: {
+  fabOptionLeft: {
+    flexDirection: 'row',
+  },
+
+  fabOptionRight: {
     flexDirection: 'row-reverse',
   },
 
@@ -1555,7 +1845,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
 
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor:
+      'rgba(0,0,0,0.7)',
 
     paddingHorizontal: 12,
     paddingVertical: 4,
