@@ -432,7 +432,7 @@ export default function ScheduleScreen() {
             >
               <View style={styles.avatarContainer}>
                 <Image
-                  source={require('../../assets/avatars/model3.png')}
+                  source={require('../../assets/avatars/model2.png')}
                   style={styles.avatar}
                 />
               </View>
@@ -1111,34 +1111,34 @@ const styles = StyleSheet.create({
      ========================================================================== */
 
   avatarContainer: {
-    width: 120,
-    height: 120,
+    width: 190,
+    height: 190,
 
-    borderRadius: 60,
+    // borderRadius: 60,
 
-    overflow: 'hidden',
+    // overflow: 'hidden',
 
     alignItems: 'center',
     justifyContent: 'center',
 
-    backgroundColor: 'rgba(255,255,255,0.30)',
+    // backgroundColor: 'rgba(255,255,255,0.30)',
 
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.20,
-    shadowRadius: 16,
-    elevation: 8,
+    // shadowColor: '#000',
+    // shadowOffset: {
+    //   width: 0,
+    //   height: 8,
+    // },
+    // shadowOpacity: 0.20,
+    // shadowRadius: 16,
+    // elevation: 8,
 
-    marginBottom: Spacing.sm,
+    // marginBottom: Spacing.sm,
   },
 
   avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 200,
+    height: 200,
+    // borderRadius: 60,
   },
 
   /* ==========================================================================
