@@ -54,9 +54,31 @@ import {
 import { useFrameworkReady } from '../hooks/useFrameworkReady';
 
 
+// --------------------------------------------------
 // Prevent native splash from hiding automatically
+// --------------------------------------------------
+
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+
+// --------------------------------------------------
+// Font names
+// --------------------------------------------------
+
+export const FONT_FAMILY = {
+  persian: 'XBNiloofar',
+  english: {
+    regular: 'Inter_400Regular',
+    medium: 'Inter_500Medium',
+    semiBold: 'Inter_600SemiBold',
+    bold: 'Inter_700Bold',
+  },
+};
+
+
+// --------------------------------------------------
+// APP CONTENT
+// --------------------------------------------------
 
 function AppContent() {
   const {
@@ -176,12 +198,6 @@ function AppContent() {
 
   // --------------------------------------------------
   // AUTHENTICATED APP
-  //
-  // IMPORTANT:
-  // Assessment is completely removed from the
-  // initial authentication flow.
-  //
-  // Login → App directly
   // --------------------------------------------------
 
   return (
@@ -201,13 +217,16 @@ function AppContent() {
         }
       />
 
+
       {/* Main application */}
+
       <View style={styles.contentContainer}>
         <Stack
           screenOptions={{
             headerShown: false,
           }}
         >
+
           <Stack.Screen
             name="(tabs)"
           />
@@ -215,17 +234,20 @@ function AppContent() {
           <Stack.Screen
             name="settings"
           />
+
         </Stack>
       </View>
 
 
       {/* Bottom Navigation */}
+
       <BottomNavBar
         currentRoute={pathname}
         onNavigate={(route) => {
           router.navigate(route as any);
         }}
       />
+
     </View>
   );
 }
@@ -238,18 +260,31 @@ function AppContent() {
 export default function RootLayout() {
   useFrameworkReady();
 
+
+  // --------------------------------------------------
+  // Load fonts
+  // --------------------------------------------------
+
   const [
     fontsLoaded,
     fontError,
   ] = useFonts({
+
+    // English fonts
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+
+    // Persian font
+    XBNiloofar: require('../XB Niloofar.ttf'),
   });
 
 
+  // --------------------------------------------------
   // Hide native splash after fonts load
+  // --------------------------------------------------
+
   useEffect(() => {
     if (
       fontsLoaded ||
@@ -265,7 +300,10 @@ export default function RootLayout() {
   ]);
 
 
+  // --------------------------------------------------
   // Wait for fonts
+  // --------------------------------------------------
+
   if (
     !fontsLoaded &&
     !fontError
@@ -274,10 +312,15 @@ export default function RootLayout() {
   }
 
 
+  // --------------------------------------------------
+  // APP PROVIDERS
+  // --------------------------------------------------
+
   return (
     <GestureHandlerRootView
       style={styles.container}
     >
+
       <SafeAreaProvider>
 
         <ThemeProvider>
@@ -299,10 +342,18 @@ export default function RootLayout() {
         </ThemeProvider>
 
       </SafeAreaProvider>
+
     </GestureHandlerRootView>
   );
 }
+
+
+// --------------------------------------------------
+// STYLES
+// --------------------------------------------------
+
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
   },
@@ -310,4 +361,5 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
   },
+
 });
