@@ -9,7 +9,6 @@ import React, {
 import {
   Animated,
   Easing,
-  Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -34,28 +33,23 @@ import Svg, {
 
 /* =========================================================
    COLORS
-   Based directly on splash.html
 ========================================================= */
 
 const COLORS = {
   bg: '#24142F',
-  bg2: '#37214F',
-
   fg: '#F3EEF9',
   muted: '#B3A7BE',
-
-  border: 'rgba(255,255,255,0.12)',
 
   accent: '#C39BEF',
   accentHi: '#E6D8F8',
   accentLo: '#8758C8',
 
-  orbA: 'rgba(132,79,189,0.22)',
-  orbB: 'rgba(148,93,199,0.18)',
-  orbC: 'rgba(159,108,196,0.13)',
-
   deep: '#151020',
 };
+
+/* =========================================================
+   CONSTANTS
+========================================================= */
 
 const WORD = 'Norulia';
 
@@ -65,7 +59,7 @@ const LABELS = [
   'Ready',
 ] as const;
 
-const DEFAULT_COMPLETE_TIME = 6300;
+const SPLASH_DURATION = 3500;
 
 /* =========================================================
    TYPES
@@ -73,7 +67,6 @@ const DEFAULT_COMPLETE_TIME = 6300;
 
 export interface SplashScreenProps {
   onComplete?: () => void;
-  autoCompleteAfter?: number;
 }
 
 /* =========================================================
@@ -91,7 +84,6 @@ Z
 
 /* =========================================================
    CLOUD
-   Native approximation of the cloud SVG used by the HTML
 ========================================================= */
 
 function Cloud() {
@@ -146,7 +138,7 @@ function Sparkle({
   rotate,
 }: {
   style: any;
-  opacity: Animated.Value;
+  opacity: Animated.Value | Animated.AnimatedInterpolation<number>;
   scale: Animated.AnimatedInterpolation<number>;
   rotate: Animated.AnimatedInterpolation<string>;
 }) {
@@ -158,9 +150,14 @@ function Sparkle({
         style,
         {
           opacity,
+
           transform: [
-            { scale },
-            { rotate },
+            {
+              scale,
+            },
+            {
+              rotate,
+            },
           ],
         },
       ]}
@@ -173,8 +170,6 @@ function Sparkle({
         <Path
           d={SPARKLE_PATH}
           fill="#FFFFFF"
-          stroke="#FFFFFF"
-          strokeWidth={0.4}
         />
       </Svg>
     </Animated.View>
@@ -187,66 +182,120 @@ function Sparkle({
 
 function Mascot({
   progress,
-  blink,
-  blush,
-  wave,
   bob,
+  wave,
 }: {
   progress: Animated.Value;
-  blink: Animated.Value;
-  blush: Animated.Value;
-  wave: Animated.Value;
   bob: Animated.Value;
+  wave: Animated.Value;
 }) {
-  const entranceY = progress.interpolate({
-    inputRange: [0, 0.55, 0.8, 1],
-    outputRange: [34, -7, 2, 0],
-  });
+  const entranceY =
+    progress.interpolate({
+      inputRange: [
+        0,
+        0.35,
+        0.65,
+        0.82,
+        1,
+      ],
+      outputRange: [
+        38,
+        -8,
+        4,
+        -2,
+        0,
+      ],
+    });
 
-  const entranceScale = progress.interpolate({
-    inputRange: [0, 0.55, 0.8, 1],
-    outputRange: [0.3, 1.12, 0.96, 1],
-  });
+  const entranceScale =
+    progress.interpolate({
+      inputRange: [
+        0,
+        0.35,
+        0.65,
+        0.82,
+        1,
+      ],
+      outputRange: [
+        0.3,
+        1.12,
+        0.97,
+        1.02,
+        1,
+      ],
+    });
 
-  const entranceRotate = progress.interpolate({
-    inputRange: [0, 0.55, 1],
-    outputRange: ['14deg', '-4deg', '0deg'],
-  });
+  const entranceRotate =
+    progress.interpolate({
+      inputRange: [
+        0,
+        0.5,
+        1,
+      ],
+      outputRange: [
+        '14deg',
+        '-4deg',
+        '0deg',
+      ],
+    });
 
-  const bobY = bob.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0, -5, 0],
-  });
+  const bobY =
+    bob.interpolate({
+      inputRange: [
+        0,
+        0.5,
+        1,
+      ],
+      outputRange: [
+        0,
+        -5,
+        0,
+      ],
+    });
 
-  const bobScaleX = bob.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [1, 1.04, 1],
-  });
+  const bobScaleX =
+    bob.interpolate({
+      inputRange: [
+        0,
+        0.5,
+        1,
+      ],
+      outputRange: [
+        1,
+        1.035,
+        1,
+      ],
+    });
 
-  const bobScaleY = bob.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [1, 0.95, 1],
-  });
+  const bobScaleY =
+    bob.interpolate({
+      inputRange: [
+        0,
+        0.5,
+        1,
+      ],
+      outputRange: [
+        1,
+        0.965,
+        1,
+      ],
+    });
 
-  const blinkScale = blink.interpolate({
-    inputRange: [0, 0.9, 0.93, 0.96, 1],
-    outputRange: [1, 1, 0.08, 1, 1],
-  });
-
-  const blushOpacity = blush.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0.45, 0.85, 0.45],
-  });
-
-  const blushScale = blush.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [1, 1.18, 1],
-  });
-
-  const armRotate = wave.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: ['-8deg', '26deg', '-8deg'],
-  });
+  const armRotate =
+    wave.interpolate({
+      inputRange: [
+        0,
+        0.35,
+        0.65,
+        1,
+      ],
+      outputRange: [
+        '-8deg',
+        '22deg',
+        '28deg',
+        '-8deg',
+      ],
+    });
 
   return (
     <Animated.View
@@ -261,10 +310,11 @@ function Mascot({
               translateX: -25,
             },
             {
-              translateY: Animated.add(
-                entranceY,
-                bobY,
-              ),
+              translateY:
+                Animated.add(
+                  entranceY,
+                  bobY,
+                ),
             },
             {
               scale: entranceScale,
@@ -313,8 +363,6 @@ function Mascot({
           </LinearGradient>
         </Defs>
 
-        {/* Body */}
-
         <Path
           d="
             M60 9
@@ -329,20 +377,13 @@ function Mascot({
           strokeWidth="4"
         />
 
-        {/* Left blush */}
-
-        <Animated.View>
-          <Ellipse
-            cx="44"
-            cy="78"
-            rx="9"
-            ry="6"
-            fill="rgba(255,220,244,0.65)"
-            opacity={0.55}
-          />
-        </Animated.View>
-
-        {/* Right blush */}
+        <Ellipse
+          cx="44"
+          cy="78"
+          rx="9"
+          ry="6"
+          fill="rgba(255,220,244,0.65)"
+        />
 
         <Ellipse
           cx="76"
@@ -350,60 +391,51 @@ function Mascot({
           rx="9"
           ry="6"
           fill="rgba(255,220,244,0.65)"
-          opacity={0.55}
         />
 
-        {/* Eyes */}
+        <Ellipse
+          cx="45"
+          cy="57"
+          rx="7"
+          ry="10"
+          fill="#FFFFFF"
+        />
 
-        <G
-          transform={`translate(0,0)`}
-        >
-          <Ellipse
-            cx="45"
-            cy="57"
-            rx="7"
-            ry="10"
-            fill="#FFFFFF"
-          />
+        <Ellipse
+          cx="75"
+          cy="57"
+          rx="7"
+          ry="10"
+          fill="#FFFFFF"
+        />
 
-          <Ellipse
-            cx="75"
-            cy="57"
-            rx="7"
-            ry="10"
-            fill="#FFFFFF"
-          />
+        <Circle
+          cx="47"
+          cy="60"
+          r="4"
+          fill="#3B2455"
+        />
 
-          <Circle
-            cx="47"
-            cy="60"
-            r="4"
-            fill="#3B2455"
-          />
+        <Circle
+          cx="77"
+          cy="60"
+          r="4"
+          fill="#3B2455"
+        />
 
-          <Circle
-            cx="77"
-            cy="60"
-            r="4"
-            fill="#3B2455"
-          />
+        <Circle
+          cx="48.5"
+          cy="58"
+          r="1.3"
+          fill="#FFFFFF"
+        />
 
-          <Circle
-            cx="48.5"
-            cy="58"
-            r="1.3"
-            fill="#FFFFFF"
-          />
-
-          <Circle
-            cx="78.5"
-            cy="58"
-            r="1.3"
-            fill="#FFFFFF"
-          />
-        </G>
-
-        {/* Mouth */}
+        <Circle
+          cx="78.5"
+          cy="58"
+          r="1.3"
+          fill="#FFFFFF"
+        />
 
         <Path
           d="M48 78 Q60 90 72 78"
@@ -413,19 +445,17 @@ function Mascot({
           strokeLinecap="round"
         />
 
-        {/* Arm */}
-
         <Animated.View
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            transform: [
-              {
-                rotate: armRotate,
-              },
-            ],
-          }}
+          style={[
+            styles.mascotArm,
+            {
+              transform: [
+                {
+                  rotate: armRotate,
+                },
+              ],
+            },
+          ]}
         >
           <Svg
             viewBox="0 0 40 55"
@@ -448,8 +478,6 @@ function Mascot({
           </Svg>
         </Animated.View>
 
-        {/* Ear / side ornament */}
-
         <Ellipse
           cx="106"
           cy="35"
@@ -466,157 +494,162 @@ function Mascot({
 }
 
 /* =========================================================
-   SPLASH
+   SPLASH SCREEN
 ========================================================= */
 
 export function SplashScreen({
   onComplete,
-  autoCompleteAfter = DEFAULT_COMPLETE_TIME,
 }: SplashScreenProps) {
-  const { width, height } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
+  const { width, height } =
+    useWindowDimensions();
 
-  const [playKey, setPlayKey] = useState(0);
-  const [statusIndex, setStatusIndex] = useState(0);
-  const [showReplay, setShowReplay] = useState(false);
+  const insets =
+    useSafeAreaInsets();
 
-  const makeValue = () =>
-    new Animated.Value(0);
+  const [statusIndex, setStatusIndex] =
+    useState(0);
 
-  /* ---------------------------------------------
-     Main animation values
-  --------------------------------------------- */
+  /* =======================================================
+     CORE ANIMATIONS
+  ======================================================= */
 
-  const stage = useRef(makeValue()).current;
+  const stage =
+    useRef(new Animated.Value(0)).current;
 
-  const eyebrow = useRef(makeValue()).current;
+  const eyebrow =
+    useRef(new Animated.Value(0)).current;
 
-  const glow = useRef(makeValue()).current;
+  const mark =
+    useRef(new Animated.Value(0)).current;
 
-  const ripple1 = useRef(makeValue()).current;
-  const ripple2 = useRef(makeValue()).current;
+  const markPulse =
+    useRef(new Animated.Value(0)).current;
 
-  const mark = useRef(makeValue()).current;
+  const word =
+    useRef(new Animated.Value(0)).current;
 
-  const word = useRef(makeValue()).current;
+  const wordHighlight =
+    useRef(new Animated.Value(0)).current;
 
-  const shine = useRef(makeValue()).current;
+  const mascot =
+    useRef(new Animated.Value(0)).current;
 
-  const mascot = useRef(makeValue()).current;
+  const mascotBob =
+    useRef(new Animated.Value(0)).current;
 
-  const mascotBob = useRef(makeValue()).current;
+  const mascotWave =
+    useRef(new Animated.Value(0)).current;
 
-  const mascotBlink = useRef(makeValue()).current;
+  const divider =
+    useRef(new Animated.Value(0)).current;
 
-  const mascotBlush = useRef(makeValue()).current;
+  const tagline =
+    useRef(new Animated.Value(0)).current;
 
-  const mascotWave = useRef(makeValue()).current;
+  const taglineHighlight =
+    useRef(new Animated.Value(0)).current;
 
-  const divider = useRef(makeValue()).current;
+  const status =
+    useRef(new Animated.Value(0)).current;
 
-  const tagline = useRef(makeValue()).current;
+  const loading =
+    useRef(new Animated.Value(0)).current;
 
-  const status = useRef(makeValue()).current;
+  const sparkleMaster =
+    useRef(new Animated.Value(0)).current;
 
-  const loading = useRef(makeValue()).current;
+  const sparklePulse =
+    useRef(new Animated.Value(0)).current;
 
-  const sparkleMaster = useRef(makeValue()).current;
-
-  /* ---------------------------------------------
-     Letters
-  --------------------------------------------- */
+  /* =======================================================
+     LETTERS
+  ======================================================= */
 
   const letters = useMemo(
     () => WORD.split(''),
     [],
   );
 
-  /* ---------------------------------------------
-     Reset
-  --------------------------------------------- */
+  /*
+   * Each letter has its own quick highlight.
+   *
+   * Important:
+   * This is NOT a second appearance animation.
+   * The text is already visible.
+   * Only its brightness/opacity changes for a short moment.
+   */
 
-  const reset = useCallback(() => {
-    [
+  const letterHighlights =
+    useMemo(
+      () =>
+        letters.map(
+          () =>
+            new Animated.Value(0),
+        ),
+      [letters],
+    );
+
+  /* =======================================================
+     RESET
+  ======================================================= */
+
+  const resetAnimations =
+    useCallback(() => {
+      [
+        stage,
+        eyebrow,
+        mark,
+        markPulse,
+        word,
+        wordHighlight,
+        mascot,
+        mascotBob,
+        mascotWave,
+        divider,
+        tagline,
+        taglineHighlight,
+        status,
+        loading,
+        sparkleMaster,
+        sparklePulse,
+        ...letterHighlights,
+      ].forEach((value) => {
+        value.stopAnimation();
+
+        value.setValue(0);
+      });
+
+      setStatusIndex(0);
+    }, [
       stage,
       eyebrow,
-
-      glow,
-
-      ripple1,
-      ripple2,
-
       mark,
-
+      markPulse,
       word,
-
-      shine,
-
+      wordHighlight,
       mascot,
       mascotBob,
-      mascotBlink,
-      mascotBlush,
       mascotWave,
-
       divider,
       tagline,
-
+      taglineHighlight,
       status,
       loading,
-
       sparkleMaster,
-    ].forEach((value) => {
-      value.stopAnimation();
-      value.setValue(0);
-    });
+      sparklePulse,
+      letterHighlights,
+    ]);
 
-    setStatusIndex(0);
-    setShowReplay(false);
-  }, [
-    stage,
-    eyebrow,
-
-    glow,
-
-    ripple1,
-    ripple2,
-
-    mark,
-
-    word,
-
-    shine,
-
-    mascot,
-    mascotBob,
-    mascotBlink,
-    mascotBlush,
-    mascotWave,
-
-    divider,
-    tagline,
-
-    status,
-    loading,
-
-    sparkleMaster,
-  ]);
-
-  /* ---------------------------------------------
-     Replay
-  --------------------------------------------- */
-
-  const replay = useCallback(() => {
-    reset();
-
-    setPlayKey((value) => value + 1);
-  }, [reset]);
-
-  /* ---------------------------------------------
-     Main timeline
-  --------------------------------------------- */
+  /* =======================================================
+     MAIN ANIMATION
+  ======================================================= */
 
   useEffect(() => {
-    const timers: ReturnType<typeof setTimeout>[] = [];
+    resetAnimations();
+
+    const timers: ReturnType<
+      typeof setTimeout
+    >[] = [];
 
     const timer = (
       callback: () => void,
@@ -630,436 +663,558 @@ export function SplashScreen({
       );
     };
 
-    /* Stage */
+    /* =====================================================
+       BACKGROUND
+    ===================================================== */
 
     Animated.timing(stage, {
       toValue: 1,
-      duration: 900,
-      delay: 50,
-      easing: Easing.out(Easing.cubic),
+      duration: 500,
+      delay: 20,
+      easing: Easing.out(
+        Easing.cubic,
+      ),
       useNativeDriver: true,
     }).start();
 
-    /* Eyebrow */
+    /* =====================================================
+       IPS
+    ===================================================== */
 
     Animated.timing(eyebrow, {
       toValue: 1,
-      duration: 850,
-      delay: 450,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-
-    /* Glow */
-
-    Animated.sequence([
-      Animated.delay(1050),
-
-      Animated.timing(glow, {
-        toValue: 1,
-        duration: 1500,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(glow, {
-            toValue: 1.08,
-            duration: 2300,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-
-          Animated.timing(glow, {
-            toValue: 1,
-            duration: 2300,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]),
+      duration: 420,
+      delay: 160,
+      easing: Easing.out(
+        Easing.cubic,
       ),
-    ]).start();
-
-    /* Ripple 1 */
-
-    Animated.sequence([
-      Animated.delay(1800),
-
-      Animated.timing(ripple1, {
-        toValue: 1,
-        duration: 1500,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    /* Ripple 2 */
-
-    Animated.sequence([
-      Animated.delay(3100),
-
-      Animated.timing(ripple2, {
-        toValue: 1,
-        duration: 1500,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    /* N mark */
-
-    Animated.timing(mark, {
-      toValue: 1,
-      duration: 1150,
-      delay: 950,
-      easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
 
-    /* Word */
+    /* =====================================================
+       N LOGO
+    ===================================================== */
+
+    Animated.sequence([
+      Animated.timing(mark, {
+        toValue: 1,
+        duration: 620,
+        delay: 300,
+        easing: Easing.out(
+          Easing.back(1.3),
+        ),
+        useNativeDriver: true,
+      }),
+
+      Animated.timing(markPulse, {
+        toValue: 1,
+        duration: 280,
+        easing: Easing.inOut(
+          Easing.ease,
+        ),
+        useNativeDriver: true,
+      }),
+
+      Animated.timing(markPulse, {
+        toValue: 0,
+        duration: 300,
+        easing: Easing.inOut(
+          Easing.ease,
+        ),
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    /* =====================================================
+       NORULIA
+       
+       فقط یک بار وارد می‌شود.
+       Highlight جداگانه بعداً اجرا می‌شود.
+    ===================================================== */
 
     Animated.timing(word, {
       toValue: 1,
-      duration: 1150,
-      delay: 1900,
-      easing: Easing.out(Easing.cubic),
+      duration: 680,
+      delay: 760,
+      easing: Easing.out(
+        Easing.cubic,
+      ),
       useNativeDriver: true,
     }).start();
 
-    /* Shine */
+    /* =====================================================
+       FAST LETTER HIGHLIGHT
+       
+       شروع بعد از اینکه متن کاملاً وارد شد.
+    ===================================================== */
 
-    Animated.timing(shine, {
-      toValue: 1,
-      duration: 1600,
-      delay: 4250,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
+    timer(() => {
+      Animated.stagger(
+        65,
+        letterHighlights.map(
+          (letter) =>
+            Animated.sequence([
+              Animated.timing(
+                letter,
+                {
+                  toValue: 1,
+                  duration: 90,
+                  easing:
+                    Easing.out(
+                      Easing.quad,
+                    ),
+                  useNativeDriver: true,
+                },
+              ),
 
-    /* Mascot entrance */
+              Animated.timing(
+                letter,
+                {
+                  toValue: 0,
+                  duration: 180,
+                  easing:
+                    Easing.inOut(
+                      Easing.quad,
+                    ),
+                  useNativeDriver: true,
+                },
+              ),
+            ]),
+        ),
+      ).start();
+    }, 1500);
+
+    /* =====================================================
+       SECOND QUICK TEXT HIGHLIGHT
+       
+       خیلی کوتاه و بسیار ظریف.
+    ===================================================== */
+
+    timer(() => {
+      Animated.sequence([
+        Animated.timing(
+          wordHighlight,
+          {
+            toValue: 1,
+            duration: 120,
+            easing: Easing.out(
+              Easing.quad,
+            ),
+            useNativeDriver: true,
+          },
+        ),
+
+        Animated.timing(
+          wordHighlight,
+          {
+            toValue: 0,
+            duration: 220,
+            easing: Easing.inOut(
+              Easing.quad,
+            ),
+            useNativeDriver: true,
+          },
+        ),
+      ]).start();
+    }, 2300);
+
+    /* =====================================================
+       MASCOT
+    ===================================================== */
 
     Animated.timing(mascot, {
       toValue: 1,
-      duration: 950,
-      delay: 3550,
-      easing: Easing.out(Easing.cubic),
+      duration: 560,
+      delay: 1120,
+      easing: Easing.out(
+        Easing.back(1.15),
+      ),
       useNativeDriver: true,
     }).start();
 
-    /* Mascot bob */
+    /* =====================================================
+       MASCOT BOB
+    ===================================================== */
 
     timer(() => {
       Animated.loop(
         Animated.sequence([
-          Animated.timing(mascotBob, {
-            toValue: 1,
-            duration: 1200,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
+          Animated.timing(
+            mascotBob,
+            {
+              toValue: 1,
+              duration: 650,
+              easing:
+                Easing.inOut(
+                  Easing.ease,
+                ),
+              useNativeDriver: true,
+              isInteraction: false,
+            },
+          ),
 
-          Animated.timing(mascotBob, {
-            toValue: 0,
-            duration: 1200,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
+          Animated.timing(
+            mascotBob,
+            {
+              toValue: 0,
+              duration: 650,
+              easing:
+                Easing.inOut(
+                  Easing.ease,
+                ),
+              useNativeDriver: true,
+              isInteraction: false,
+            },
+          ),
         ]),
       ).start();
-    }, 4700);
+    }, 1650);
 
-    /* Mascot blink */
+    /* =====================================================
+       MASCOT WAVE
+    ===================================================== */
 
     timer(() => {
       Animated.loop(
         Animated.sequence([
-          Animated.delay(3000),
+          Animated.timing(
+            mascotWave,
+            {
+              toValue: 1,
+              duration: 450,
+              easing:
+                Easing.inOut(
+                  Easing.ease,
+                ),
+              useNativeDriver: true,
+              isInteraction: false,
+            },
+          ),
 
-          Animated.timing(mascotBlink, {
-            toValue: 1,
-            duration: 380,
-            easing: Easing.linear,
-            useNativeDriver: true,
-          }),
-
-          Animated.timing(mascotBlink, {
-            toValue: 0,
-            duration: 380,
-            easing: Easing.linear,
-            useNativeDriver: true,
-          }),
+          Animated.timing(
+            mascotWave,
+            {
+              toValue: 0,
+              duration: 450,
+              easing:
+                Easing.inOut(
+                  Easing.ease,
+                ),
+              useNativeDriver: true,
+              isInteraction: false,
+            },
+          ),
         ]),
       ).start();
-    }, 4700);
+    }, 1550);
 
-    /* Mascot blush */
-
-    timer(() => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(mascotBlush, {
-            toValue: 1,
-            duration: 1300,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-
-          Animated.timing(mascotBlush, {
-            toValue: 0,
-            duration: 1300,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]),
-      ).start();
-    }, 4700);
-
-    /* Mascot arm */
-
-    timer(() => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(mascotWave, {
-            toValue: 1,
-            duration: 750,
-            delay: 300,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-
-          Animated.timing(mascotWave, {
-            toValue: 0,
-            duration: 750,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]),
-      ).start();
-    }, 4700);
-
-    /* Divider */
+    /* =====================================================
+       DIVIDER
+    ===================================================== */
 
     Animated.timing(divider, {
       toValue: 1,
-      duration: 1100,
-      delay: 3050,
-      easing: Easing.out(Easing.cubic),
+      duration: 520,
+      delay: 1260,
+      easing: Easing.out(
+        Easing.cubic,
+      ),
       useNativeDriver: true,
     }).start();
 
-    /* Tagline */
+    /* =====================================================
+       TAGLINE
+    ===================================================== */
 
     Animated.timing(tagline, {
       toValue: 1,
-      duration: 800,
-      delay: 3200,
-      easing: Easing.out(Easing.cubic),
+      duration: 500,
+      delay: 1360,
+      easing: Easing.out(
+        Easing.cubic,
+      ),
       useNativeDriver: true,
     }).start();
 
-    /* Status */
+    /* =====================================================
+       TAGLINE QUICK HIGHLIGHT
+    ===================================================== */
+
+    timer(() => {
+      Animated.sequence([
+        Animated.timing(
+          taglineHighlight,
+          {
+            toValue: 1,
+            duration: 120,
+            easing: Easing.out(
+              Easing.quad,
+            ),
+            useNativeDriver: true,
+          },
+        ),
+
+        Animated.timing(
+          taglineHighlight,
+          {
+            toValue: 0,
+            duration: 260,
+            easing: Easing.inOut(
+              Easing.quad,
+            ),
+            useNativeDriver: true,
+          },
+        ),
+      ]).start();
+    }, 2050);
+
+    /* =====================================================
+       STATUS
+    ===================================================== */
 
     Animated.timing(status, {
       toValue: 1,
-      duration: 700,
-      delay: 1000,
-      easing: Easing.out(Easing.cubic),
+      duration: 420,
+      delay: 260,
+      easing: Easing.out(
+        Easing.cubic,
+      ),
       useNativeDriver: true,
     }).start();
 
-    /* Loading */
+    /* =====================================================
+       PROGRESS
+       
+       دقیقاً 3500ms
+    ===================================================== */
 
     Animated.timing(loading, {
       toValue: 1,
-      duration: 5600,
-      delay: 500,
+      duration: SPLASH_DURATION,
       easing: Easing.linear,
       useNativeDriver: false,
     }).start();
 
-    /* Sparkle master */
+    /* =====================================================
+       SPARKLES
+    ===================================================== */
 
-    Animated.timing(sparkleMaster, {
-      toValue: 1,
-      duration: 550,
-      delay: 4550,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
+    Animated.timing(
+      sparkleMaster,
+      {
+        toValue: 1,
+        duration: 520,
+        delay: 1380,
+        easing: Easing.out(
+          Easing.back(1.2),
+        ),
+        useNativeDriver: true,
+      },
+    ).start();
 
-    /* Status text */
+    /* =====================================================
+       SPARKLE PULSE
+    ===================================================== */
 
-    timer(
-      () => setStatusIndex(1),
-      3600,
-    );
+    timer(() => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(
+            sparklePulse,
+            {
+              toValue: 1,
+              duration: 430,
+              easing:
+                Easing.inOut(
+                  Easing.ease,
+                ),
+              useNativeDriver: true,
+              isInteraction: false,
+            },
+          ),
 
-    timer(
-      () => setStatusIndex(2),
-      5200,
-    );
+          Animated.timing(
+            sparklePulse,
+            {
+              toValue: 0,
+              duration: 430,
+              easing:
+                Easing.inOut(
+                  Easing.ease,
+                ),
+              useNativeDriver: true,
+              isInteraction: false,
+            },
+          ),
+        ]),
+        {
+          iterations: 2,
+        },
+      ).start();
+    }, 1650);
 
-    /* Replay */
+    /* =====================================================
+       STATUS LABELS
+    ===================================================== */
 
-    timer(
-      () => setShowReplay(true),
-      6300,
-    );
+    timer(() => {
+      setStatusIndex(1);
+    }, 1450);
 
-    /* Complete */
+    timer(() => {
+      setStatusIndex(2);
+    }, 2650);
+
+    /* =====================================================
+       COMPLETE
+       
+       EXACTLY 3.5 SECONDS
+    ===================================================== */
 
     if (onComplete) {
       timer(
         onComplete,
-        Math.max(
-          0,
-          autoCompleteAfter,
-        ),
+        SPLASH_DURATION,
       );
     }
 
+    /* =====================================================
+       CLEANUP
+    ===================================================== */
+
     return () => {
-      timers.forEach(clearTimeout);
+      timers.forEach(
+        clearTimeout,
+      );
 
       [
         stage,
         eyebrow,
-
-        glow,
-
-        ripple1,
-        ripple2,
-
         mark,
+        markPulse,
         word,
-        shine,
-
+        wordHighlight,
         mascot,
         mascotBob,
-        mascotBlink,
-        mascotBlush,
         mascotWave,
-
         divider,
         tagline,
-
+        taglineHighlight,
         status,
         loading,
-
         sparkleMaster,
+        sparklePulse,
+        ...letterHighlights,
       ].forEach((value) => {
         value.stopAnimation();
       });
     };
   }, [
-    playKey,
+    resetAnimations,
     onComplete,
-    autoCompleteAfter,
+    stage,
+    eyebrow,
+    mark,
+    markPulse,
+    word,
+    wordHighlight,
+    mascot,
+    mascotBob,
+    mascotWave,
+    divider,
+    tagline,
+    taglineHighlight,
+    status,
+    loading,
+    sparkleMaster,
+    sparklePulse,
+    letterHighlights,
   ]);
 
-  /* =========================================================
-     ANIMATED STYLES
-  ========================================================= */
+  /* =======================================================
+     N MARK
+  ======================================================= */
 
-  /* Glow */
-
-  const glowScale = glow.interpolate({
-    inputRange: [0, 1, 1.08],
-    outputRange: [0.72, 1, 1.06],
-  });
-
-  /* Mark */
-
-  const markTranslateY = mark.interpolate({
-    inputRange: [
-      0,
-      0.45,
-      0.65,
-      0.8,
-      1,
-    ],
-    outputRange: [
-      42,
-      -8,
-      3,
-      0,
-      0,
-    ],
-  });
-
-  const markScale = mark.interpolate({
-    inputRange: [
-      0,
-      0.45,
-      0.65,
-      0.8,
-      1,
-    ],
-    outputRange: [
-      0.3,
-      1.1,
-      0.94,
-      1.03,
-      1,
-    ],
-  });
-
-  const markRotate = mark.interpolate({
-    inputRange: [
-      0,
-      0.45,
-      0.65,
-      1,
-    ],
-    outputRange: [
-      '-8deg',
-      '1.5deg',
-      '0deg',
-      '0deg',
-    ],
-  });
-
-  /* Ripple */
-
-  const ripple1Scale =
-    ripple1.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0.42, 1.6],
-    });
-
-  const ripple2Scale =
-    ripple2.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0.42, 1.6],
-    });
-
-  const ripple1Opacity =
-    ripple1.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0.65, 0],
-    });
-
-  const ripple2Opacity =
-    ripple2.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0.65, 0],
-    });
-
-  /* Word */
-
-  const wordTranslateY =
-    word.interpolate({
+  const markTranslateY =
+    mark.interpolate({
       inputRange: [
         0,
+        0.35,
         0.55,
         0.75,
         1,
       ],
       outputRange: [
-        48,
+        35,
         -8,
         3,
+        -1,
+        0,
+      ],
+    });
+
+  const markScale =
+    mark.interpolate({
+      inputRange: [
+        0,
+        0.35,
+        0.55,
+        0.75,
+        1,
+      ],
+      outputRange: [
+        0.45,
+        1.1,
+        0.97,
+        1.02,
+        1,
+      ],
+    });
+
+  const markRotate =
+    mark.interpolate({
+      inputRange: [
+        0,
+        0.5,
+        1,
+      ],
+      outputRange: [
+        '-5deg',
+        '1deg',
+        '0deg',
+      ],
+    });
+
+  const markPulseScale =
+    markPulse.interpolate({
+      inputRange: [
+        0,
+        1,
+      ],
+      outputRange: [
+        1,
+        1.035,
+      ],
+    });
+
+  /* =======================================================
+     WORD
+  ======================================================= */
+
+  const wordTranslateY =
+    word.interpolate({
+      inputRange: [
+        0,
+        0.35,
+        0.6,
+        0.8,
+        1,
+      ],
+      outputRange: [
+        35,
+        -7,
+        3,
+        -1,
         0,
       ],
     });
@@ -1068,61 +1223,51 @@ export function SplashScreen({
     word.interpolate({
       inputRange: [
         0,
-        0.55,
-        0.75,
+        0.35,
+        0.6,
+        0.8,
         1,
       ],
       outputRange: [
-        0.45,
-        1.08,
-        0.96,
+        0.82,
+        1.045,
+        0.985,
+        1.01,
         1,
       ],
     });
 
-  /* Shine */
-
-  const shineOpacity =
-    shine.interpolate({
+  const wordHighlightOpacity =
+    wordHighlight.interpolate({
       inputRange: [
         0,
-        0.12,
-        0.86,
         1,
       ],
       outputRange: [
         0,
-        1,
-        1,
-        0,
+        0.32,
       ],
     });
 
-  const shineTranslate =
-    shine.interpolate({
-      inputRange: [
-        0,
-        0.12,
-        0.86,
-        1,
-      ],
-      outputRange: [
-        170,
-        125,
-        -115,
-        -170,
-      ],
-    });
-
-  /* Divider */
+  /* =======================================================
+     DIVIDER
+  ======================================================= */
 
   const dividerScale =
     divider.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 1],
+      inputRange: [
+        0,
+        1,
+      ],
+      outputRange: [
+        0,
+        1,
+      ],
     });
 
-  /* Tagline */
+  /* =======================================================
+     TAGLINE
+  ======================================================= */
 
   const taglineY =
     tagline.interpolate({
@@ -1132,15 +1277,58 @@ export function SplashScreen({
         1,
       ],
       outputRange: [
-        16,
-        -4,
+        12,
+        -2,
         0,
       ],
     });
 
-  /* =========================================================
+  const taglineHighlightOpacity =
+    taglineHighlight.interpolate({
+      inputRange: [
+        0,
+        1,
+      ],
+      outputRange: [
+        0,
+        0.25,
+      ],
+    });
+
+  /* =======================================================
+     SPARKLE SCALE
+  ======================================================= */
+
+  const sparkleScale =
+    Animated.add(
+      sparkleMaster,
+      sparklePulse.interpolate({
+        inputRange: [
+          0,
+          1,
+        ],
+        outputRange: [
+          0,
+          0.08,
+        ],
+      }),
+    ).interpolate({
+      inputRange: [
+        0,
+        0.7,
+        1.08,
+      ],
+      outputRange: [
+        0,
+        1.15,
+        1,
+      ],
+      extrapolate: 'clamp',
+    });
+
+  /* =======================================================
      RENDER
-  ========================================================= */
+  ======================================================= */
 
   return (
     <Animated.View
@@ -1152,11 +1340,13 @@ export function SplashScreen({
         },
       ]}
     >
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView
+        style={styles.safe}
+      >
 
-        {/* ===============================================
+        {/* =================================================
             GRAIN
-        =============================================== */}
+        ================================================= */}
 
         <View
           pointerEvents="none"
@@ -1179,73 +1369,75 @@ export function SplashScreen({
                 <Stop
                   offset="0"
                   stopColor="#FFFFFF"
-                  stopOpacity="0.03"
+                  stopOpacity="0.025"
                 />
 
                 <Stop
                   offset="0.5"
                   stopColor="#FFFFFF"
-                  stopOpacity="0.08"
+                  stopOpacity="0.06"
                 />
 
                 <Stop
                   offset="1"
                   stopColor="#FFFFFF"
-                  stopOpacity="0.02"
+                  stopOpacity="0.015"
                 />
               </LinearGradient>
             </Defs>
 
             <Rect
-              width="160"
-              height="160"
+              width={160}
+              height={160}
               fill="url(#grainGradient)"
             />
 
             {Array.from({
-              length: 180,
-            }).map((_, index) => {
-              const x =
-                (index * 37) % 160;
+              length: 150,
+            }).map(
+              (_, index) => {
+                const x =
+                  (index * 37) % 160;
 
-              const y =
-                (index * 61) % 160;
+                const y =
+                  (index * 61) % 160;
 
-              const r =
-                index % 3 === 0
-                  ? 0.8
-                  : 0.35;
+                const r =
+                  index % 3 === 0
+                    ? 0.7
+                    : 0.3;
 
-              return (
-                <Circle
-                  key={index}
-                  cx={x}
-                  cy={y}
-                  r={r}
-                  fill="#FFFFFF"
-                  opacity={
-                    index % 4 === 0
-                      ? 0.12
-                      : 0.05
-                  }
-                />
-              );
-            })}
+                return (
+                  <Circle
+                    key={index}
+                    cx={x}
+                    cy={y}
+                    r={r}
+                    fill="#FFFFFF"
+                    opacity={
+                      index % 4 === 0
+                        ? 0.08
+                        : 0.035
+                    }
+                  />
+                );
+              },
+            )}
           </Svg>
         </View>
 
-        {/* ===============================================
+        {/* =================================================
             VIGNETTE
-        =============================================== */}
+        ================================================= */}
 
         <View
           pointerEvents="none"
           style={styles.vignette}
         />
 
-        {/* ===============================================
-            CLOUDS
-        =============================================== */}
+        {/* =================================================
+            CLOUD 1
+        ================================================= */}
 
         <Animated.View
           pointerEvents="none"
@@ -1257,10 +1449,13 @@ export function SplashScreen({
                 {
                   translateX:
                     loading.interpolate({
-                      inputRange: [0, 1],
+                      inputRange: [
+                        0,
+                        1,
+                      ],
                       outputRange: [
-                        -170,
-                        width + 170,
+                        -180,
+                        width + 180,
                       ],
                     }),
                 },
@@ -1270,6 +1465,10 @@ export function SplashScreen({
         >
           <Cloud />
         </Animated.View>
+
+        {/* =================================================
+            CLOUD 2
+        ================================================= */}
 
         <Animated.View
           pointerEvents="none"
@@ -1281,10 +1480,13 @@ export function SplashScreen({
                 {
                   translateX:
                     loading.interpolate({
-                      inputRange: [0, 1],
+                      inputRange: [
+                        0,
+                        1,
+                      ],
                       outputRange: [
-                        -250,
-                        width + 250,
+                        -260,
+                        width + 260,
                       ],
                     }),
                 },
@@ -1294,6 +1496,10 @@ export function SplashScreen({
         >
           <Cloud />
         </Animated.View>
+
+        {/* =================================================
+            CLOUD 3
+        ================================================= */}
 
         <Animated.View
           pointerEvents="none"
@@ -1305,10 +1511,13 @@ export function SplashScreen({
                 {
                   translateX:
                     loading.interpolate({
-                      inputRange: [0, 1],
+                      inputRange: [
+                        0,
+                        1,
+                      ],
                       outputRange: [
-                        -210,
-                        width + 210,
+                        -220,
+                        width + 220,
                       ],
                     }),
                 },
@@ -1319,11 +1528,13 @@ export function SplashScreen({
           <Cloud />
         </Animated.View>
 
-        {/* ===============================================
+        {/* =================================================
             MAIN LOCKUP
-        =============================================== */}
+        ================================================= */}
 
-        <View style={styles.lockup}>
+        <View
+          style={styles.lockup}
+        >
 
           {/* IPS */}
 
@@ -1332,72 +1543,52 @@ export function SplashScreen({
               styles.brandEyebrow,
               {
                 opacity: eyebrow,
+
+                transform: [
+                  {
+                    translateY:
+                      eyebrow.interpolate({
+                        inputRange: [
+                          0,
+                          1,
+                        ],
+                        outputRange: [
+                          -8,
+                          0,
+                        ],
+                      }),
+                  },
+                  {
+                    scale:
+                      eyebrow.interpolate({
+                        inputRange: [
+                          0,
+                          1,
+                        ],
+                        outputRange: [
+                          0.94,
+                          1,
+                        ],
+                      }),
+                  },
+                ],
               },
             ]}
           >
             IPS
           </Animated.Text>
 
-          {/* =============================================
-              LOGO
-          ============================================= */}
+          {/* =================================================
+              N LOGO
+              
+              NO BORDER
+              NO CIRCLE
+              NO RIPPLE
+          ================================================= */}
 
-          <View style={styles.markWrap}>
-
-            {/* Glow */}
-
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                styles.markGlow,
-                {
-                  opacity: glow,
-                  transform: [
-                    {
-                      scale: glowScale,
-                    },
-                  ],
-                },
-              ]}
-            />
-
-            {/* Ripple 1 */}
-
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                styles.ripple,
-                {
-                  opacity: ripple1Opacity,
-                  transform: [
-                    {
-                      scale: ripple1Scale,
-                    },
-                  ],
-                },
-              ]}
-            />
-
-            {/* Ripple 2 */}
-
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                styles.ripple,
-                styles.ripple2,
-                {
-                  opacity: ripple2Opacity,
-                  transform: [
-                    {
-                      scale: ripple2Scale,
-                    },
-                  ],
-                },
-              ]}
-            />
-
-            {/* N */}
-
+          <View
+            style={styles.markWrap}
+          >
             <Animated.View
               style={{
                 opacity: mark,
@@ -1407,13 +1598,16 @@ export function SplashScreen({
                     translateY:
                       markTranslateY,
                   },
-
                   {
-                    scale: markScale,
+                    scale:
+                      Animated.multiply(
+                        markScale,
+                        markPulseScale,
+                      ),
                   },
-
                   {
-                    rotate: markRotate,
+                    rotate:
+                      markRotate,
                   },
                 ],
               }}
@@ -1483,24 +1677,30 @@ export function SplashScreen({
                   cx="30"
                   cy="34"
                   r="3.5"
-                  fill={COLORS.accentHi}
+                  fill={
+                    COLORS.accentHi
+                  }
                 />
 
                 <Circle
                   cx="90"
                   cy="34"
                   r="3.5"
-                  fill={COLORS.accentHi}
+                  fill={
+                    COLORS.accentHi
+                  }
                 />
               </Svg>
             </Animated.View>
           </View>
 
-          {/* =============================================
-              WORDMARK
-          ============================================= */}
+          {/* =================================================
+              NORULIA
+          ================================================= */}
 
-          <View style={styles.wordmarkWrap}>
+          <View
+            style={styles.wordmarkWrap}
+          >
 
             <Animated.View
               style={[
@@ -1511,7 +1711,6 @@ export function SplashScreen({
                       translateY:
                         wordTranslateY,
                     },
-
                     {
                       scale:
                         wordScale,
@@ -1520,25 +1719,28 @@ export function SplashScreen({
                 },
               ]}
             >
+
               {letters.map(
                 (
                   letter,
                   index,
                 ) => {
                   const start =
-                    index / letters.length;
+                    index /
+                    letters.length;
 
-                  const opacity =
+                  const letterOpacity =
                     word.interpolate({
                       inputRange: [
                         0,
                         Math.max(
-                          0.1,
-                          start,
+                          0.06,
+                          start * 0.55,
                         ),
                         Math.min(
-                          1,
-                          start + 0.25,
+                          0.96,
+                          start * 0.55 +
+                            0.2,
                         ),
                         1,
                       ],
@@ -1548,51 +1750,109 @@ export function SplashScreen({
                         1,
                         1,
                       ],
+                      extrapolate:
+                        'clamp',
+                    });
+
+                  const highlightOpacity =
+                    letterHighlights[
+                      index
+                    ].interpolate({
+                      inputRange: [
+                        0,
+                        0.35,
+                        1,
+                      ],
+                      outputRange: [
+                        0,
+                        0.35,
+                        0,
+                      ],
+                    });
+
+                  const combinedOpacity =
+                    Animated.add(
+                      letterOpacity,
+                      highlightOpacity,
+                    ).interpolate({
+                      inputRange: [
+                        0,
+                        1,
+                        1.35,
+                      ],
+                      outputRange: [
+                        0,
+                        1,
+                        1,
+                      ],
+                      extrapolate:
+                        'clamp',
+                    });
+
+                  const highlightScale =
+                    letterHighlights[
+                      index
+                    ].interpolate({
+                      inputRange: [
+                        0,
+                        0.5,
+                        1,
+                      ],
+                      outputRange: [
+                        1,
+                        1.035,
+                        1,
+                      ],
                     });
 
                   return (
                     <Animated.Text
-                      key={`${letter}-${index}-${playKey}`}
+                      key={`${letter}-${index}`}
                       style={[
                         styles.wordmarkChar,
                         {
-                          opacity,
+                          opacity:
+                            combinedOpacity,
+
+                          color:
+                            letterHighlights[
+                              index
+                            ].interpolate({
+                              inputRange: [
+                                0,
+                                0.5,
+                                1,
+                              ],
+                              outputRange: [
+                                COLORS.fg,
+                                COLORS.accentHi,
+                                COLORS.fg,
+                              ],
+                            }),
 
                           transform: [
                             {
                               translateY:
-                                word.interpolate({
-                                  inputRange: [
-                                    0,
-                                    0.55,
-                                    0.75,
-                                    1,
-                                  ],
-                                  outputRange: [
-                                    48,
-                                    -8,
-                                    3,
-                                    0,
-                                  ],
-                                }),
+                                word.interpolate(
+                                  {
+                                    inputRange: [
+                                      0,
+                                      0.55,
+                                      0.78,
+                                      1,
+                                    ],
+                                    outputRange: [
+                                      35,
+                                      -5,
+                                      2,
+                                      0,
+                                    ],
+                                  },
+                                ),
                             },
-
                             {
                               scale:
-                                word.interpolate({
-                                  inputRange: [
-                                    0,
-                                    0.55,
-                                    0.75,
-                                    1,
-                                  ],
-                                  outputRange: [
-                                    0.45,
-                                    1.08,
-                                    0.96,
-                                    1,
-                                  ],
-                                }),
+                                highlightScale,
                             },
                           ],
                         },
@@ -1603,174 +1863,216 @@ export function SplashScreen({
                   );
                 },
               )}
+
+              {/* =================================================
+                  VERY FAST WORD HIGHLIGHT
+                  
+                  فقط brightness.
+                  هیچ حرکت مجددی ندارد.
+              ================================================= */}
+
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.wordHighlight,
+                  {
+                    opacity:
+                      wordHighlightOpacity,
+
+                    transform: [
+                      {
+                        translateX:
+                          wordHighlight.interpolate(
+                            {
+                              inputRange: [
+                                0,
+                                1,
+                              ],
+                              outputRange: [
+                                -65,
+                                65,
+                              ],
+                            },
+                          ),
+                      },
+                      {
+                        scaleX:
+                          wordHighlight.interpolate(
+                            {
+                              inputRange: [
+                                0,
+                                1,
+                              ],
+                              outputRange: [
+                                0.15,
+                                0.15,
+                              ],
+                            },
+                          ),
+                      },
+                    ],
+                  },
+                ]}
+              />
             </Animated.View>
 
-            {/* ===========================================
-                SHIMMER
-            =========================================== */}
-
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                styles.shine,
-                {
-                  opacity:
-                    shineOpacity,
-
-                  transform: [
-                    {
-                      translateX:
-                        shineTranslate,
-                    },
-                  ],
-                },
-              ]}
-            >
-              {letters.map(
-                (
-                  letter,
-                  index,
-                ) => (
-                  <Text
-                    key={`shine-${index}`}
-                    style={
-                      styles.shineChar
-                    }
-                  >
-                    {letter}
-                  </Text>
-                ),
-              )}
-            </Animated.View>
-
-            {/* ===========================================
+            {/* =================================================
                 MASCOT
-            =========================================== */}
+            ================================================= */}
 
             <Mascot
               progress={mascot}
-              blink={mascotBlink}
-              blush={mascotBlush}
-              wave={mascotWave}
               bob={mascotBob}
+              wave={mascotWave}
             />
 
-            {/* ===========================================
-                SIX SPARKLES
-            =========================================== */}
+            {/* =================================================
+                SPARKLES
+            ================================================= */}
 
             <Sparkle
               style={styles.sparkle1}
-              opacity={sparkleMaster}
-              scale={sparkleMaster.interpolate({
-                inputRange: [0, 0.7, 1],
-                outputRange: [0, 1.15, 1],
-              })}
-              rotate={sparkleMaster.interpolate({
-                inputRange: [0, 0.7, 1],
-                outputRange: [
-                  '-60deg',
-                  '8deg',
-                  '0deg',
-                ],
-              })}
+              opacity={
+                sparkleMaster
+              }
+              scale={sparkleScale}
+              rotate={sparkleMaster.interpolate(
+                {
+                  inputRange: [
+                    0,
+                    0.7,
+                    1,
+                  ],
+                  outputRange: [
+                    '-60deg',
+                    '8deg',
+                    '0deg',
+                  ],
+                },
+              )}
             />
 
             <Sparkle
               style={styles.sparkle2}
-              opacity={sparkleMaster}
-              scale={sparkleMaster.interpolate({
-                inputRange: [0, 0.7, 1],
-                outputRange: [0, 1.15, 1],
-              })}
-              rotate={sparkleMaster.interpolate({
-                inputRange: [0, 0.7, 1],
-                outputRange: [
-                  '-60deg',
-                  '8deg',
-                  '0deg',
-                ],
-              })}
+              opacity={
+                sparkleMaster
+              }
+              scale={sparkleScale}
+              rotate={sparkleMaster.interpolate(
+                {
+                  inputRange: [
+                    0,
+                    0.7,
+                    1,
+                  ],
+                  outputRange: [
+                    '-60deg',
+                    '8deg',
+                    '0deg',
+                  ],
+                },
+              )}
             />
 
             <Sparkle
               style={styles.sparkle3}
-              opacity={sparkleMaster}
-              scale={sparkleMaster.interpolate({
-                inputRange: [0, 0.7, 1],
-                outputRange: [0, 1.15, 1],
-              })}
-              rotate={sparkleMaster.interpolate({
-                inputRange: [0, 0.7, 1],
-                outputRange: [
-                  '-60deg',
-                  '8deg',
-                  '0deg',
-                ],
-              })}
+              opacity={
+                sparkleMaster
+              }
+              scale={sparkleScale}
+              rotate={sparkleMaster.interpolate(
+                {
+                  inputRange: [
+                    0,
+                    0.7,
+                    1,
+                  ],
+                  outputRange: [
+                    '-60deg',
+                    '8deg',
+                    '0deg',
+                  ],
+                },
+              )}
             />
 
             <Sparkle
               style={styles.sparkle4}
-              opacity={sparkleMaster}
-              scale={sparkleMaster.interpolate({
-                inputRange: [0, 0.7, 1],
-                outputRange: [0, 1.15, 1],
-              })}
-              rotate={sparkleMaster.interpolate({
-                inputRange: [0, 0.7, 1],
-                outputRange: [
-                  '-60deg',
-                  '8deg',
-                  '0deg',
-                ],
-              })}
+              opacity={
+                sparkleMaster
+              }
+              scale={sparkleScale}
+              rotate={sparkleMaster.interpolate(
+                {
+                  inputRange: [
+                    0,
+                    0.7,
+                    1,
+                  ],
+                  outputRange: [
+                    '-60deg',
+                    '8deg',
+                    '0deg',
+                  ],
+                },
+              )}
             />
 
             <Sparkle
               style={styles.sparkle5}
-              opacity={sparkleMaster}
-              scale={sparkleMaster.interpolate({
-                inputRange: [0, 0.7, 1],
-                outputRange: [0, 1.15, 1],
-              })}
-              rotate={sparkleMaster.interpolate({
-                inputRange: [0, 0.7, 1],
-                outputRange: [
-                  '-60deg',
-                  '8deg',
-                  '0deg',
-                ],
-              })}
+              opacity={
+                sparkleMaster
+              }
+              scale={sparkleScale}
+              rotate={sparkleMaster.interpolate(
+                {
+                  inputRange: [
+                    0,
+                    0.7,
+                    1,
+                  ],
+                  outputRange: [
+                    '-60deg',
+                    '8deg',
+                    '0deg',
+                  ],
+                },
+              )}
             />
 
             <Sparkle
               style={styles.sparkle6}
-              opacity={sparkleMaster}
-              scale={sparkleMaster.interpolate({
-                inputRange: [0, 0.7, 1],
-                outputRange: [0, 1.15, 1],
-              })}
-              rotate={sparkleMaster.interpolate({
-                inputRange: [0, 0.7, 1],
-                outputRange: [
-                  '-60deg',
-                  '8deg',
-                  '0deg',
-                ],
-              })}
+              opacity={
+                sparkleMaster
+              }
+              scale={sparkleScale}
+              rotate={sparkleMaster.interpolate(
+                {
+                  inputRange: [
+                    0,
+                    0.7,
+                    1,
+                  ],
+                  outputRange: [
+                    '-60deg',
+                    '8deg',
+                    '0deg',
+                  ],
+                },
+              )}
             />
-
           </View>
 
-          {/* =============================================
+          {/* =================================================
               DIVIDER
-          ============================================= */}
+          ================================================= */}
 
           <Animated.View
             style={[
               styles.divider,
               {
+                opacity: divider,
+
                 transform: [
                   {
                     scaleX:
@@ -1781,48 +2083,65 @@ export function SplashScreen({
             ]}
           />
 
-          {/* =============================================
+          {/* =================================================
               TAGLINE
-          ============================================= */}
+          ================================================= */}
 
-          <Animated.Text
+          <Animated.View
             style={[
-              styles.tagline,
+              styles.taglineWrap,
               {
                 opacity: tagline,
 
                 transform: [
                   {
-                    translateY: taglineY,
-                  },
-
-                  {
-                    scale:
-                      tagline.interpolate({
-                        inputRange: [
-                          0,
-                          0.6,
-                          1,
-                        ],
-                        outputRange: [
-                          0.85,
-                          1.05,
-                          1,
-                        ],
-                      }),
+                    translateY:
+                      taglineY,
                   },
                 ],
               },
             ]}
           >
-            Mind, beautifully calibrated.
-          </Animated.Text>
+            <Text
+              style={styles.tagline}
+            >
+              Mind, beautifully calibrated.
+            </Text>
 
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.taglineHighlight,
+                {
+                  opacity:
+                    taglineHighlightOpacity,
+
+                  transform: [
+                    {
+                      translateX:
+                        taglineHighlight.interpolate(
+                          {
+                            inputRange: [
+                              0,
+                              1,
+                            ],
+                            outputRange: [
+                              -80,
+                              80,
+                            ],
+                          },
+                        ),
+                    },
+                  ],
+                },
+              ]}
+            />
+          </Animated.View>
         </View>
 
-        {/* ===============================================
+        {/* =================================================
             BOTTOM STATUS
-        =============================================== */}
+        ================================================= */}
 
         <Animated.View
           style={[
@@ -1833,19 +2152,59 @@ export function SplashScreen({
               paddingBottom:
                 Math.max(
                   18,
-                  insets.bottom + 18,
+                  insets.bottom +
+                    18,
                 ),
             },
           ]}
         >
+          <Animated.View
+            style={[
+              styles.statusDot,
+              {
+                opacity:
+                  status.interpolate({
+                    inputRange: [
+                      0,
+                      0.5,
+                      1,
+                    ],
+                    outputRange: [
+                      0.35,
+                      1,
+                      0.75,
+                    ],
+                  }),
+                transform: [
+                  {
+                    scale:
+                      status.interpolate({
+                        inputRange: [
+                          0,
+                          0.5,
+                          1,
+                        ],
+                        outputRange: [
+                          0.6,
+                          1.25,
+                          1,
+                        ],
+                      }),
+                  },
+                ],
+              },
+            ]}
+          />
 
-          <View style={styles.statusDot} />
-
-          <Text style={styles.statusCore}>
+          <Text
+            style={styles.statusCore}
+          >
             IPS CORE
           </Text>
 
-          <View style={styles.progressTrack}>
+          <View
+            style={styles.progressTrack}
+          >
             <Animated.View
               style={[
                 styles.progressFill,
@@ -1854,10 +2213,16 @@ export function SplashScreen({
                     loading.interpolate({
                       inputRange: [
                         0,
+                        0.08,
+                        0.45,
+                        0.78,
                         1,
                       ],
                       outputRange: [
                         '0%',
+                        '7%',
+                        '45%',
+                        '78%',
                         '100%',
                       ],
                     }),
@@ -1866,68 +2231,37 @@ export function SplashScreen({
             />
           </View>
 
-          <Text style={styles.statusLabel}>
-            {LABELS[statusIndex]}
-          </Text>
-
-        </Animated.View>
-
-        {/* ===============================================
-            REPLAY
-        =============================================== */}
-
-        {showReplay && (
-          <Pressable
-            onPress={replay}
-            accessibilityRole="button"
-            accessibilityLabel="Replay animation"
-            style={({ pressed }) => [
-              styles.replay,
-              pressed &&
-                styles.replayPressed,
+          <Animated.Text
+            style={[
+              styles.statusLabel,
+              {
+                opacity:
+                  status,
+              },
             ]}
           >
-            <Svg
-              viewBox="0 0 12 12"
-              width={12}
-              height={12}
-              fill="none"
-            >
-              <Path
-                d="
-                  M6 1.5
-                  A4.5 4.5 0 1 0
-                  10.28 4.8
-                  M6 1.5V.6
-                  M6 1.5H6.9
-                "
-                stroke={COLORS.fg}
-                strokeWidth={1.3}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
-
-            <Text style={styles.replayText}>
-              Replay
-            </Text>
-          </Pressable>
-        )}
-
+            {LABELS[statusIndex]}
+          </Animated.Text>
+        </Animated.View>
       </SafeAreaView>
     </Animated.View>
   );
 }
 
 /* =========================================================
+   DEFAULT
+========================================================= */
+
+export default SplashScreen;
+
+/* =========================================================
    STYLES
 ========================================================= */
 
 const styles = StyleSheet.create({
-
-  /* ---------------------------------------------
-     Stage
-  --------------------------------------------- */
+  /* =======================================================
+     STAGE
+  ======================================================= */
 
   stage: {
     position: 'relative',
@@ -1954,9 +2288,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  /* ---------------------------------------------
-     Grain
-  --------------------------------------------- */
+  /* =======================================================
+     GRAIN
+  ======================================================= */
 
   grain: {
     ...StyleSheet.absoluteFillObject,
@@ -1966,9 +2300,9 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
 
-  /* ---------------------------------------------
-     Vignette
-  --------------------------------------------- */
+  /* =======================================================
+     VIGNETTE
+  ======================================================= */
 
   vignette: {
     ...StyleSheet.absoluteFillObject,
@@ -1979,9 +2313,9 @@ const styles = StyleSheet.create({
       'rgba(0,0,0,0.13)',
   },
 
-  /* ---------------------------------------------
-     Clouds
-  --------------------------------------------- */
+  /* =======================================================
+     CLOUDS
+  ======================================================= */
 
   cloud: {
     position: 'absolute',
@@ -2025,9 +2359,9 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
 
-  /* ---------------------------------------------
-     Lockup
-  --------------------------------------------- */
+  /* =======================================================
+     LOCKUP
+  ======================================================= */
 
   lockup: {
     position: 'relative',
@@ -2039,9 +2373,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
   },
 
-  /* ---------------------------------------------
+  /* =======================================================
      IPS
-  --------------------------------------------- */
+  ======================================================= */
 
   brandEyebrow: {
     fontFamily:
@@ -2058,13 +2392,13 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
 
-  /* ---------------------------------------------
-     Mark
-  --------------------------------------------- */
+  /* =======================================================
+     MARK
+     
+     هیچ border / circle / shadow
+  ======================================================= */
 
   markWrap: {
-    position: 'relative',
-
     width: 170,
 
     height: 170,
@@ -2072,44 +2406,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
 
     justifyContent: 'center',
+
+    overflow: 'visible',
   },
 
-  markGlow: {
-    position: 'absolute',
-
-    width: 250,
-
-    height: 250,
-
-    borderRadius: 999,
-
-    backgroundColor:
-      'rgba(161,100,214,0.32)',
-  },
-
-  ripple: {
-    position: 'absolute',
-
-    width: 150,
-
-    height: 150,
-
-    borderRadius: 999,
-
-    borderWidth: 1,
-
-    borderColor:
-      'rgba(210,180,245,0.4)',
-  },
-
-  ripple2: {
-    borderColor:
-      'rgba(210,180,245,0.28)',
-  },
-
-  /* ---------------------------------------------
-     Wordmark
-  --------------------------------------------- */
+  /* =======================================================
+     WORDMARK
+  ======================================================= */
 
   wordmarkWrap: {
     position: 'relative',
@@ -2127,6 +2430,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
 
     justifyContent: 'center',
+
+    overflow: 'visible',
   },
 
   wordmarkChar: {
@@ -2142,53 +2447,38 @@ const styles = StyleSheet.create({
     letterSpacing: -1.15,
   },
 
-  /* ---------------------------------------------
-     Shine
-  --------------------------------------------- */
+  /* =======================================================
+     FAST TEXT HIGHLIGHT
+     
+     فقط یک لایه بسیار ظریف برای ایجاد
+     احساس عبور نور.
+  ======================================================= */
 
-  shine: {
+  wordHighlight: {
     position: 'absolute',
 
-    top: 0,
+    top: 5,
 
-    bottom: 0,
+    left: '50%',
 
-    flexDirection: 'row',
+    width: 22,
 
-    alignItems: 'center',
+    height: 54,
 
-    justifyContent: 'center',
+    borderRadius: 999,
 
-    overflow: 'hidden',
+    backgroundColor:
+      'rgba(255,255,255,0.8)',
+
+    transformOrigin:
+      '50% 50%',
+
+    opacity: 0,
   },
 
-  shineChar: {
-    fontFamily:
-      'Sora_700Bold',
-
-    fontSize: 58,
-
-    lineHeight: 66,
-
-    color:
-      'rgba(255,255,255,0.92)',
-
-    letterSpacing: -1.15,
-
-    textShadowColor:
-      'rgba(218,190,255,0.85)',
-
-    textShadowRadius: 8,
-
-    textShadowOffset: {
-      width: 0,
-      height: 0,
-    },
-  },
-
-  /* ---------------------------------------------
-     Mascot
-  --------------------------------------------- */
+  /* =======================================================
+     MASCOT
+  ======================================================= */
 
   mascot: {
     position: 'absolute',
@@ -2203,39 +2493,47 @@ const styles = StyleSheet.create({
 
     height: 50,
 
-    shadowColor: '#120820',
-
-    shadowOpacity: 0.45,
-
-    shadowRadius: 14,
-
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-
-    elevation: 8,
+    overflow: 'visible',
   },
 
-  /* ---------------------------------------------
-     Sparkles
-  --------------------------------------------- */
+  mascotArm: {
+    position: 'absolute',
+
+    left: 0,
+
+    top: 0,
+
+    width: 20,
+
+    height: 28,
+
+    transformOrigin:
+      '50% 50%',
+  },
+
+  /* =======================================================
+     SPARKLES
+     
+     NO SHADOW
+     NO ELEVATION
+     NO BORDER
+  ======================================================= */
 
   sparkle: {
     position: 'absolute',
 
     zIndex: 8,
 
-    pointerEvents: 'none',
-
     width: 16,
 
     height: 16,
 
     alignItems: 'center',
+
     justifyContent: 'center',
 
-    backgroundColor: 'transparent',
+    backgroundColor:
+      'transparent',
 
     overflow: 'visible',
 
@@ -2244,55 +2542,67 @@ const styles = StyleSheet.create({
 
   sparkle1: {
     top: -44,
+
     left: -26,
 
     width: 15,
+
     height: 15,
   },
 
   sparkle2: {
     top: -50,
+
     right: 4,
 
     width: 12,
+
     height: 12,
   },
 
   sparkle3: {
     top: -4,
+
     left: -54,
 
     width: 13,
+
     height: 13,
   },
 
   sparkle4: {
     top: 2,
+
     right: -42,
 
     width: 18,
+
     height: 18,
   },
 
   sparkle5: {
     bottom: -22,
+
     left: 22,
 
     width: 14,
+
     height: 14,
   },
 
   sparkle6: {
     bottom: -28,
+
     right: 16,
 
     width: 11,
+
     height: 11,
   },
 
-  /* ---------------------------------------------
-     Divider
-  --------------------------------------------- */
+  /* =======================================================
+     DIVIDER
+  ======================================================= */
 
   divider: {
     width: 150,
@@ -2307,9 +2617,19 @@ const styles = StyleSheet.create({
       'rgba(255,255,255,0.1)',
   },
 
-  /* ---------------------------------------------
-     Tagline
-  --------------------------------------------- */
+  /* =======================================================
+     TAGLINE
+  ======================================================= */
+
+  taglineWrap: {
+    position: 'relative',
+
+    overflow: 'hidden',
+
+    alignItems: 'center',
+
+    justifyContent: 'center',
+  },
 
   tagline: {
     fontFamily:
@@ -2322,9 +2642,28 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
   },
 
-  /* ---------------------------------------------
-     Status
-  --------------------------------------------- */
+  taglineHighlight: {
+    position: 'absolute',
+
+    left: '50%',
+
+    top: 1,
+
+    width: 16,
+
+    height: 20,
+
+    borderRadius: 999,
+
+    backgroundColor:
+      'rgba(255,255,255,0.75)',
+
+    opacity: 0,
+  },
+
+  /* =======================================================
+     STATUS
+  ======================================================= */
 
   statusBar: {
     position: 'absolute',
@@ -2359,9 +2698,9 @@ const styles = StyleSheet.create({
     shadowColor:
       COLORS.accent,
 
-    shadowOpacity: 0.9,
+    shadowOpacity: 0.8,
 
-    shadowRadius: 8,
+    shadowRadius: 6,
 
     shadowOffset: {
       width: 0,
@@ -2418,60 +2757,4 @@ const styles = StyleSheet.create({
 
     textTransform: 'uppercase',
   },
-
-  /* ---------------------------------------------
-     Replay
-  --------------------------------------------- */
-
-  replay: {
-    position: 'absolute',
-
-    zIndex: 30,
-
-    bottom: 72,
-
-    left: '50%',
-
-    marginLeft: -55,
-
-    flexDirection: 'row',
-
-    alignItems: 'center',
-
-    gap: 8,
-
-    paddingVertical: 10,
-
-    paddingHorizontal: 18,
-
-    borderRadius: 999,
-
-    backgroundColor:
-      'rgba(255,255,255,0.04)',
-
-    borderWidth: 1,
-
-    borderColor:
-      COLORS.border,
-  },
-
-  replayPressed: {
-    backgroundColor:
-      'rgba(255,255,255,0.12)',
-  },
-
-  replayText: {
-    fontFamily:
-      'Inter_500Medium',
-
-    fontSize: 11,
-
-    letterSpacing: 1.5,
-
-    color: COLORS.fg,
-
-    textTransform: 'uppercase',
-  },
 });
-
-export default SplashScreen;

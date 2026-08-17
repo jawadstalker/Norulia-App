@@ -25,7 +25,7 @@ import {
   Moon,
   Sparkles,
 } from 'lucide-react-native';
-import { Spacing, BorderRadius } from '../../constants/theme';
+import { Spacing } from '../../constants/theme';
 import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
@@ -197,12 +197,32 @@ export default function ScheduleScreen() {
   const { t, isRTL } = useLanguage();
   const router = useRouter();
 
-  // 🔹 رنگ‌های بنفش ملایم‌تر و روشن‌تر
-  const softPurple = '#A78BFA'; // بنفش ملایم (violet-400)
-  const softPurpleStrong = '#8B5CF6'; // بنفش کمی پررنگ‌تر (violet-500)
-  const softPurpleLight = '#C4B5FD'; // بنفش بسیار روشن (violet-300)
+  /*
+   * Soft purple palette
+   * ---------------------------------------------------------------
+   * Light:
+   * #F2EEFF -> #D8CEFA
+   *
+   * Dark:
+   * #342660 -> #21104F
+   * ---------------------------------------------------------------
+   */
 
-  // 🔹 همه آیکون‌ها به رنگ بنفش تم یکدست شده‌اند
+  const softPurple = isDark ? '#8B78C7' : '#9B8BC7';
+  const softPurpleStrong = isDark ? '#725BAF' : '#8B78B8';
+  const softPurpleLight = isDark ? '#B9A8E4' : '#CFC5EA';
+
+  /*
+   * Hero gradient
+   *
+   * Important:
+   * This tuple type prevents the expo-linear-gradient
+   * "string[] is not assignable to ColorValue[]" error.
+   */
+  const heroGradient: [string, string] = isDark
+    ? ['#342660', '#21104F']
+    : ['#F2EEFF', '#D8CEFA'];
+
   const [events, setEvents] = useState<Event[]>([
     {
       id: '1',
@@ -212,7 +232,7 @@ export default function ScheduleScreen() {
       duration: '20 ' + (t.minutes || 'min'),
       completed: true,
       icon: Brain,
-      color: softPurple, // ← بنفش
+      color: softPurple,
     },
     {
       id: '2',
@@ -222,7 +242,7 @@ export default function ScheduleScreen() {
       duration: '5 ' + (t.minutes || 'min'),
       completed: false,
       icon: Pill,
-      color: softPurple, // ← بنفش (قبلاً سبز)
+      color: softPurple,
     },
     {
       id: '3',
@@ -232,7 +252,7 @@ export default function ScheduleScreen() {
       duration: '45 ' + (t.minutes || 'min'),
       completed: false,
       icon: Heart,
-      color: softPurpleStrong, // ← بنفش (قبلاً صورتی)
+      color: softPurpleStrong,
     },
     {
       id: '4',
@@ -242,7 +262,7 @@ export default function ScheduleScreen() {
       duration: '30 ' + (t.minutes || 'min'),
       completed: false,
       icon: Moon,
-      color: softPurpleStrong, // ← بنفش (قبلاً بنفش تیره‌تر)
+      color: softPurpleStrong,
     },
   ]);
 
@@ -265,7 +285,10 @@ export default function ScheduleScreen() {
     );
   };
 
-  const completedCount = events.filter((event) => event.completed).length;
+  const completedCount = events.filter(
+    (event) => event.completed
+  ).length;
+
   const totalCount = events.length;
 
   /* ==========================================================================
@@ -296,7 +319,9 @@ export default function ScheduleScreen() {
     if (isRTL) {
       const persianDate = toPersianDate(now);
       const weekday = getPersianWeekday(now);
-      const monthName = getPersianMonthName(persianDate.month);
+      const monthName = getPersianMonthName(
+        persianDate.month
+      );
 
       const dayStr = toPersianDigits(persianDate.day);
       const yearStr = toPersianDigits(persianDate.year);
@@ -321,19 +346,19 @@ export default function ScheduleScreen() {
       id: 'task',
       label: t.add || 'Add Task',
       icon: Sparkles,
-      color: softPurple, // ← بنفش
+      color: softPurple,
     },
     {
       id: 'medication',
       label: t.addMedication || 'Add Medication',
       icon: Pill,
-      color: softPurple, // ← بنفش (قبلاً سبز)
+      color: softPurple,
     },
     {
       id: 'consultation',
       label: t.addConsultation || 'Add Consultation',
       icon: Heart,
-      color: softPurple, // ← بنفش (قبلاً صورتی)
+      color: softPurple,
     },
   ];
 
@@ -349,8 +374,8 @@ export default function ScheduleScreen() {
     <LinearGradient
       colors={
         isDark
-          ? ['#0a0a0f', '#14141e']
-          : ['#f5f0ff', '#ffffff']
+          ? ['#0A0A0F', '#14141E']
+          : ['#FAF8FF', '#FFFFFF']
       }
       style={styles.container}
     >
@@ -378,40 +403,35 @@ export default function ScheduleScreen() {
           style={styles.heroWrapper}
         >
           <LinearGradient
-            colors={[
-              softPurple,
-              softPurpleStrong,
-            ]}
+            colors={heroGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[
               styles.hero,
               {
-                borderColor: 'rgba(255,255,255,0.18)',
+                borderColor: isDark
+                  ? 'rgba(255,255,255,0.10)'
+                  : 'rgba(107,90,166,0.06)',
+
+                shadowColor: isDark
+                  ? '#000000'
+                  : '#6B5AA6',
+
+                shadowOpacity: isDark
+                  ? 0.20
+                  : 0.08,
+
+                elevation: isDark
+                  ? 8
+                  : 3,
               },
             ]}
           >
-            {/* Decorative blobs */}
-
-            <View
-              style={[
-                styles.heroBlobA,
-                {
-                  backgroundColor: '#FFFFFF',
-                },
-              ]}
-            />
-
-            <View
-              style={[
-                styles.heroBlobB,
-                {
-                  backgroundColor: '#FFFFFF',
-                },
-              ]}
-            />
-
-            {/* Avatar */}
+            {/* ==============================================================
+                Avatar
+                No decorative bubbles behind the avatar.
+                contain prevents the image from being cropped.
+                ============================================================== */}
 
             <MotiView
               from={{
@@ -434,6 +454,7 @@ export default function ScheduleScreen() {
                 <Image
                   source={require('../../assets/avatars/model2.png')}
                   style={styles.avatar}
+                  resizeMode="contain"
                 />
               </View>
             </MotiView>
@@ -459,6 +480,11 @@ export default function ScheduleScreen() {
                 style={[
                   styles.greeting,
                   isRTL && styles.textRTL,
+                  {
+                    color: isDark
+                      ? 'rgba(255,255,255,0.72)'
+                      : 'rgba(65,53,100,0.68)',
+                  },
                 ]}
               >
                 {getGreeting()}, Alex
@@ -468,6 +494,11 @@ export default function ScheduleScreen() {
                 style={[
                   styles.title,
                   isRTL && styles.textRTL,
+                  {
+                    color: isDark
+                      ? '#FFFFFF'
+                      : '#493A6F',
+                  },
                 ]}
               >
                 {t.dailyPlanner || 'Daily Planner AI'}
@@ -477,6 +508,11 @@ export default function ScheduleScreen() {
                 style={[
                   styles.subtitle,
                   isRTL && styles.textRTL,
+                  {
+                    color: isDark
+                      ? 'rgba(255,255,255,0.70)'
+                      : 'rgba(65,53,100,0.62)',
+                  },
                 ]}
               >
                 {t.activitiesToday || 'You have'}{' '}
@@ -516,7 +552,7 @@ export default function ScheduleScreen() {
               ...styles.dateCard,
               backgroundColor: isDark
                 ? colors.surface
-                : '#ffffff',
+                : '#FFFFFF',
             }}
           >
             <View
@@ -617,8 +653,7 @@ export default function ScheduleScreen() {
                 style={[
                   styles.progressBar,
                   {
-                    backgroundColor:
-                      softPurple,
+                    backgroundColor: softPurple,
                   },
                 ]}
               />
@@ -689,6 +724,9 @@ export default function ScheduleScreen() {
                       {
                         backgroundColor:
                           event.color,
+                        borderColor: isDark
+                          ? colors.surface
+                          : '#FFFFFF',
                       },
                       isRTL &&
                         styles.timelineDotRTL,
@@ -702,7 +740,7 @@ export default function ScheduleScreen() {
                       ...styles.eventCard,
                       backgroundColor: isDark
                         ? colors.surface
-                        : '#ffffff',
+                        : '#FFFFFF',
 
                       borderLeftColor:
                         event.completed
@@ -746,8 +784,7 @@ export default function ScheduleScreen() {
                           styles.eventIconContainer,
                           {
                             backgroundColor:
-                              event.color +
-                              '20',
+                              `${event.color}20`,
                           },
                           isRTL &&
                             styles.eventIconContainerRTL,
@@ -978,6 +1015,7 @@ export default function ScheduleScreen() {
                         );
                       }
                     }}
+                    activeOpacity={0.8}
                   >
                     <OptionIcon
                       size={24}
@@ -1042,11 +1080,14 @@ export default function ScheduleScreen() {
   );
 }
 
+/* ==========================================================================
+   Styles
+   ========================================================================== */
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 40,
     flex: 1,
+    paddingTop: 40,
   },
 
   content: {
@@ -1055,6 +1096,10 @@ const styles = StyleSheet.create({
     paddingBottom: 160,
   },
 
+  /* ==========================================================================
+     Hero
+     ========================================================================== */
+
   heroWrapper: {
     width: '100%',
     marginBottom: Spacing.lg,
@@ -1062,83 +1107,53 @@ const styles = StyleSheet.create({
 
   hero: {
     width: '100%',
-    minHeight: 300,
+    minHeight: 290,
 
-    paddingTop: 42,
+    paddingTop: 30,
     paddingBottom: 36,
 
     alignItems: 'center',
     justifyContent: 'center',
 
     borderRadius: 32,
+    borderWidth: 1,
 
-    // borderWidth: 1,
+    overflow: 'hidden',
 
-    // overflow: 'hidden',
-
-    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 10,
     },
-    shadowOpacity: 0.15,
+
     shadowRadius: 20,
-    elevation: 8,
-  },
-
-  heroBlobA: {
-    position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    opacity: 0.08,
-    top: -60,
-    right: -40,
-  },
-
-  heroBlobB: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    opacity: 0.08,
-    bottom: -30,
-    left: -30,
   },
 
   /* ==========================================================================
      Avatar
+
+     Important:
+     No borderRadius and no overflow here.
+     This prevents the avatar from appearing trapped
+     inside a rectangular/circular clipping area.
      ========================================================================== */
 
   avatarContainer: {
-    width: 200,
-    height: 200,
-
-    // borderRadius: 60,
-
-    // overflow: 'hidden',
+    width: 220,
+    height: 220,
 
     alignItems: 'center',
     justifyContent: 'center',
 
-    // backgroundColor: 'rgba(255,255,255,0.30)',
+    overflow: 'visible',
 
-    // shadowColor: '#000',
-    // shadowOffset: {
-    //   width: 0,
-    //   height: 8,
-    // },
-    // shadowOpacity: 0.20,
-    // shadowRadius: 16,
-    // elevation: 8,
-
-    // marginBottom: Spacing.sm,
+    marginBottom: Spacing.sm,
   },
 
   avatar: {
-    width: 200,
-    height: 200,
-    // borderRadius: 60,
+    width: 220,
+    height: 220,
+
+    resizeMode: 'contain',
   },
 
   /* ==========================================================================
@@ -1148,7 +1163,6 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 14,
     fontWeight: '500',
-    color: 'rgba(255,255,255,0.75)',
     textAlign: 'center',
     marginTop: Spacing.sm,
   },
@@ -1156,14 +1170,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#FFFFFF',
     textAlign: 'center',
     marginTop: Spacing.xs,
   },
 
   subtitle: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.75)',
     textAlign: 'center',
     marginTop: Spacing.xs,
   },
@@ -1224,8 +1236,10 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     borderWidth: 2,
+
     alignItems: 'center',
     justifyContent: 'center',
+
     marginLeft: Spacing.sm,
   },
 
@@ -1236,9 +1250,13 @@ const styles = StyleSheet.create({
 
   progressBarContainer: {
     height: 4,
-    backgroundColor: '#e5e7eb',
+
+    backgroundColor: '#E5E7EB',
+
     borderRadius: 2,
+
     marginTop: Spacing.md,
+
     overflow: 'hidden',
   },
 
@@ -1262,6 +1280,7 @@ const styles = StyleSheet.create({
   timelineItem: {
     paddingLeft: 20,
     paddingBottom: Spacing.md,
+
     position: 'relative',
   },
 
@@ -1272,9 +1291,11 @@ const styles = StyleSheet.create({
 
   timelineLine: {
     position: 'absolute',
+
     left: 6,
     top: 24,
     bottom: 0,
+
     width: 2,
   },
 
@@ -1285,13 +1306,16 @@ const styles = StyleSheet.create({
 
   timelineDot: {
     position: 'absolute',
+
     left: 0,
     top: 8,
+
     width: 14,
     height: 14,
+
     borderRadius: 7,
     borderWidth: 2,
-    borderColor: '#fff',
+
     zIndex: 1,
   },
 
@@ -1322,6 +1346,7 @@ const styles = StyleSheet.create({
   eventIconContainer: {
     width: 48,
     height: 48,
+
     borderRadius: 24,
 
     alignItems: 'center',
@@ -1453,11 +1478,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
 
     shadowColor: '#000',
+
     shadowOffset: {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.3,
+
+    shadowOpacity: 0.22,
     shadowRadius: 8,
 
     elevation: 6,
@@ -1512,12 +1539,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
 
     shadowColor: '#000',
+
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.25,
+
+    shadowOpacity: 0.20,
     shadowRadius: 4,
+
     elevation: 4,
   },
 
