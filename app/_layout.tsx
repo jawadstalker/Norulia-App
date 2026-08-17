@@ -3,6 +3,7 @@ import { Stack, useRouter, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import {
   View,
+  Text,
   StyleSheet,
   I18nManager,
   ActivityIndicator,
@@ -53,10 +54,9 @@ import {
 
 import { useFrameworkReady } from '../hooks/useFrameworkReady';
 
-
-// Prevent native splash from hiding automatically
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+const PERSIAN_FONT = 'XBNiloofar';
 
 function AppContent() {
   const {
@@ -71,6 +71,7 @@ function AppContent() {
 
   const {
     isRTL,
+    language,
   } = useLanguage();
 
   const router = useRouter();
@@ -78,31 +79,35 @@ function AppContent() {
 
   const [showSplash, setShowSplash] = useState(true);
 
-
-  // --------------------------------------------------
-  // RTL
-  // --------------------------------------------------
-
+  // Keep RTL behavior synchronized with the selected language.
   useEffect(() => {
     I18nManager.allowRTL(isRTL);
     I18nManager.forceRTL(isRTL);
   }, [isRTL]);
 
-
-  // --------------------------------------------------
-  // Splash completion
-  // --------------------------------------------------
+  // Use XB Niloofar as the default font for the entire Persian UI.
+  // English continues to use Inter. Components that explicitly provide
+  // a fontFamily keep their own font setting.
+  useEffect(() => {
+    Text.defaultProps = {
+      ...(Text.defaultProps || {}),
+      style: [
+        ...(Array.isArray(Text.defaultProps?.style)
+          ? Text.defaultProps.style
+          : Text.defaultProps?.style
+            ? [Text.defaultProps.style]
+            : []),
+        {
+          fontFamily: language === 'fa' ? PERSIAN_FONT : 'Inter_400Regular',
+        },
+      ],
+    };
+  }, [language]);
 
   const handleSplashComplete = () => {
     setShowSplash(false);
-
     SplashScreen.hideAsync().catch(() => {});
   };
-
-
-  // --------------------------------------------------
-  // APP SPLASH
-  // --------------------------------------------------
 
   if (showSplash) {
     return (
@@ -111,11 +116,6 @@ function AppContent() {
       />
     );
   }
-
-
-  // --------------------------------------------------
-  // AUTH LOADING
-  // --------------------------------------------------
 
   if (authLoading) {
     return (
@@ -145,11 +145,6 @@ function AppContent() {
     );
   }
 
-
-  // --------------------------------------------------
-  // LOGIN / REGISTER
-  // --------------------------------------------------
-
   if (!isAuthenticated) {
     return (
       <View
@@ -173,17 +168,6 @@ function AppContent() {
     );
   }
 
-
-  // --------------------------------------------------
-  // AUTHENTICATED APP
-  //
-  // IMPORTANT:
-  // Assessment is completely removed from the
-  // initial authentication flow.
-  //
-  // Login → App directly
-  // --------------------------------------------------
-
   return (
     <View
       style={[
@@ -201,7 +185,6 @@ function AppContent() {
         }
       />
 
-      {/* Main application */}
       <View style={styles.contentContainer}>
         <Stack
           screenOptions={{
@@ -218,8 +201,6 @@ function AppContent() {
         </Stack>
       </View>
 
-
-      {/* Bottom Navigation */}
       <BottomNavBar
         currentRoute={pathname}
         onNavigate={(route) => {
@@ -229,11 +210,6 @@ function AppContent() {
     </View>
   );
 }
-
-
-// --------------------------------------------------
-// ROOT LAYOUT
-// --------------------------------------------------
 
 export default function RootLayout() {
   useFrameworkReady();
@@ -246,10 +222,9 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    XBNiloofar: require('../XB Niloofar.ttf'),
   });
 
-
-  // Hide native splash after fonts load
   useEffect(() => {
     if (
       fontsLoaded ||
@@ -264,8 +239,6 @@ export default function RootLayout() {
     fontError,
   ]);
 
-
-  // Wait for fonts
   if (
     !fontsLoaded &&
     !fontError
@@ -273,35 +246,25 @@ export default function RootLayout() {
     return null;
   }
 
-
   return (
     <GestureHandlerRootView
       style={styles.container}
     >
       <SafeAreaProvider>
-
         <ThemeProvider>
-
           <LanguageProvider>
-
             <AuthProvider>
-
               <AssessmentProvider>
-
                 <AppContent />
-
               </AssessmentProvider>
-
             </AuthProvider>
-
           </LanguageProvider>
-
         </ThemeProvider>
-
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
