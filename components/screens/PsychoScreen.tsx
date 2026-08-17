@@ -191,6 +191,7 @@ export default function PsychoScreen() {
   const { colors } = useTheme();
   const { t, language, isRTL } = useLanguage();
   const router = useRouter();
+  
 
   const { category } = useLocalSearchParams<{
     category?: string;

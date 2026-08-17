@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -7,6 +6,9 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  Linking,
+  Platform,
+  Alert,
 } from 'react-native';
 
 import {
@@ -191,40 +193,55 @@ const games = [
     route: '/games/lost-island',
   },
 
+  // {
+  //   id: '11',
+  //   category: 'adventure',
+  //   title: 'Forest Adventure',
+  //   titleFa: 'ماجراجویی در جنگل',
+  //   description:
+  //     'Discover the secrets of the forest',
+  //   descriptionFa:
+  //     'رازهای جنگل را کشف کنید',
+  //   image: require('../../assets/games/game3.png'),
+  //   level: 'Hard',
+  //   levelFa: 'سخت',
+  //   time: '20 min',
+  //   timeFa: '۲۰ دقیقه',
+  //   route: '/games/forest-adventure',
+  // },
+
+  /* ================================================================
+     NORU PUZZLE — EXTERNAL ANDROID APP
+     
+     این بازی داخل Neurolia اجرا نمی‌شود.
+     با Android Intent اپلیکیشن مستقل Noru Puzzle باز می‌شود.
+  ================================================================ */
+
   {
-    id: '11',
+    id: '12',
     category: 'adventure',
-    title: 'Forest Adventure',
-    titleFa: 'ماجراجویی در جنگل',
+    title: 'Noru Puzzle',
+    titleFa: 'پازل نورو',
     description:
-      'Discover the secrets of the forest',
+      'Enter a mysterious psychological puzzle adventure',
     descriptionFa:
-      'رازهای جنگل را کشف کنید',
+      'وارد یک ماجراجویی پازلی و روانشناختی مرموز شوید',
     image: require('../../assets/games/game3.png'),
-    level: 'Hard',
-    levelFa: 'سخت',
-    time: '20 min',
-    timeFa: '۲۰ دقیقه',
-    route: '/games/forest-adventure',
+    level: 'Medium',
+    levelFa: 'متوسط',
+    time: '15 min',
+    timeFa: '۱۵ دقیقه',
+
+    /*
+     * این route واقعی Expo Router نیست.
+     * فقط یک شناسه برای تشخیص بازی خارجی است.
+     */
+    route: 'external:noru-puzzle',
   },
 ];
 
 /* ================================================================
    SHARED HEADER
-   ================================================================
-
-   مهم:
-   این Header در هر دو صفحه استفاده می‌شود.
-
-   ساختار فیزیکی همیشه:
-
-   ┌──────┐ ┌─────────────────────────────┐
-   │  ←   │ │ عنوان                       │
-   └──────┘ │ توضیحات                     │
-            └─────────────────────────────┘
-
-   دکمه همیشه سمت چپ است.
-   RTL فقط روی متن تأثیر دارد.
 ================================================================ */
 
 interface PageHeaderProps {
@@ -253,19 +270,6 @@ function PageHeader({
         },
       ]}
     >
-      {/* ==========================================================
-         BACK BUTTON
-
-         این دکمه هیچ وابستگی به RTL ندارد.
-
-         نه row-reverse
-         نه scaleX
-         نه right
-         نه position وابسته به RTL
-
-         بنابراین همیشه سمت چپ می‌ماند.
-      ========================================================== */}
-
       <TouchableOpacity
         onPress={onBack}
         activeOpacity={0.75}
@@ -285,13 +289,6 @@ function PageHeader({
           strokeWidth={2.5}
         />
       </TouchableOpacity>
-
-      {/* ==========================================================
-         TITLE AREA
-
-         این قسمت مستقل از دکمه برگشت است.
-         RTL فقط این بخش را راست‌چین می‌کند.
-      ========================================================== */}
 
       <View
         style={[
@@ -373,15 +370,15 @@ export default function PsychoScreen() {
     ? 'right'
     : 'left';
 
-
-
   useEffect(() => {
     if (category === 'stress') {
       setSelectedCategory('stress');
     }
   }, [category]);
 
-
+  /* ================================================================
+     GAME HELPERS
+  ================================================================ */
 
   const getGameTitle = (
     game: typeof games[0],
@@ -415,19 +412,84 @@ export default function PsychoScreen() {
       : game.time;
   };
 
+  /* ================================================================
+     OPEN NORU PUZZLE
+     
+     Package Name:
+     com.IliyaPardazesh.NoruPuzzle
+     
+     این تابع فقط برای Noru Puzzle استفاده می‌شود.
+  ================================================================ */
+
+  const openNoruPuzzle = async () => {
+    /*
+     * Noru Puzzle یک اپلیکیشن مستقل Android است.
+     */
+    if (Platform.OS !== 'android') {
+      Alert.alert(
+        language === 'fa'
+          ? 'فقط اندروید'
+          : 'Android Only',
+        language === 'fa'
+          ? 'Noru Puzzle در حال حاضر فقط برای اندروید در دسترس است.'
+          : 'Noru Puzzle is currently available on Android only.',
+      );
+
+      return;
+    }
+
+    const packageName =
+      'com.IliyaPardazesh.NoruPuzzle';
+
+    /*
+     * Android Intent
+     *
+     * این دستور اپلیکیشن مستقل Noru Puzzle
+     * را با Package Name آن اجرا می‌کند.
+     */
+    const intentUrl =
+      `intent:#Intent;package=${packageName};end`;
+
+    try {
+      await Linking.openURL(intentUrl);
+    } catch (error) {
+      console.error(
+        'Failed to open Noru Puzzle:',
+        error,
+      );
+
+      Alert.alert(
+        language === 'fa'
+          ? 'بازی نصب نیست'
+          : 'Game Not Installed',
+        language === 'fa'
+          ? 'برای اجرای پازل نورو ابتدا بازی را روی دستگاه نصب کنید.'
+          : 'Please install Noru Puzzle before launching it.',
+      );
+    }
+  };
+
+  /* ================================================================
+     FILTERED GAMES
+  ================================================================ */
+
   const filteredGames = games.filter(
     (game) =>
       game.category ===
       selectedCategory,
   );
 
-
+  /* ================================================================
+     BACK
+  ================================================================ */
 
   const handleBack = () => {
     setSelectedCategory(null);
   };
 
-
+  /* ================================================================
+     CATEGORY PAGE
+  ================================================================ */
 
   if (!selectedCategory) {
     return (
@@ -440,13 +502,6 @@ export default function PsychoScreen() {
           },
         ]}
       >
-        {/* ======================================================
-           SHARED HEADER
-
-           همان Header صفحه دوم است.
-           بنابراین جای دکمه دقیقاً یکسان است.
-        ====================================================== */}
-
         <PageHeader
           title={
             language === 'fa'
@@ -476,10 +531,6 @@ export default function PsychoScreen() {
             styles.content
           }
         >
-          {/* ====================================================
-             CATEGORIES
-          ==================================================== */}
-
           {categories.map((category) => {
             const Icon = category.icon;
 
@@ -589,7 +640,7 @@ export default function PsychoScreen() {
 
   /* ================================================================
      SELECTED CATEGORY
-================================================================ */
+  ================================================================ */
 
   const selectedCategoryData =
     categories.find(
@@ -599,8 +650,8 @@ export default function PsychoScreen() {
     );
 
   /* ================================================================
-     PAGE 2 — GAMES
-================================================================ */
+     GAMES PAGE
+  ================================================================ */
 
   return (
     <View
@@ -612,13 +663,6 @@ export default function PsychoScreen() {
         },
       ]}
     >
-      {/* ==========================================================
-         SHARED HEADER
-
-         دقیقاً همان Header صفحه اول.
-         دکمه همیشه سمت چپ.
-      ========================================================== */}
-
       <PageHeader
         title={
           language === 'fa'
@@ -644,10 +688,6 @@ export default function PsychoScreen() {
           styles.content
         }
       >
-        {/* ======================================================
-           GAMES
-        ====================================================== */}
-
         {filteredGames.map((game) => (
           <Card
             key={game.id}
@@ -751,6 +791,16 @@ export default function PsychoScreen() {
                 </View>
               </View>
 
+              {/* ==================================================
+                 START GAME BUTTON
+
+                 بازی‌های داخلی:
+                 router.push()
+
+                 Noru Puzzle:
+                 Android Intent
+              ================================================== */}
+
               <TouchableOpacity
                 style={[
                   styles.button,
@@ -759,11 +809,19 @@ export default function PsychoScreen() {
                       colors.primary,
                   },
                 ]}
-                onPress={() =>
+                onPress={() => {
+                  if (
+                    game.route ===
+                    'external:noru-puzzle'
+                  ) {
+                    openNoruPuzzle();
+                    return;
+                  }
+
                   router.push(
                     game.route as any,
-                  )
-                }
+                  );
+                }}
                 activeOpacity={0.8}
               >
                 <Text
@@ -793,14 +851,6 @@ const styles = StyleSheet.create({
 
   /* ================================================================
      SHARED HEADER
-
-     هر دو صفحه دقیقاً از همین Header استفاده می‌کنند.
-
-     ترتیب فیزیکی:
-     
-     [ BACK ] [ TITLE / SUBTITLE ]
-
-     بنابراین در RTL هم دکمه سمت چپ باقی می‌ماند.
   ================================================================ */
 
   pageHeader: {
@@ -830,11 +880,6 @@ const styles = StyleSheet.create({
 
     flexShrink: 0,
 
-    /*
-     * مهم:
-     * این margin همیشه یکسان است.
-     * RTL روی آن تأثیر نمی‌گذارد.
-     */
     marginRight: 12,
   },
 
