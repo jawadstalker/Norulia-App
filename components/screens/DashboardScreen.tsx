@@ -24,15 +24,14 @@ import {
 } from '../../constants/theme';
 
 import {
-  Sparkles,
-  Puzzle,
-  Globe,
-  Plus,
-  Pill,
-  Video,
+  BrainCircuit,      
+  BookOpen,        
+  Sparkles,          
+  Pill,            
+  Stethoscope,      
+  SlidersHorizontal, 
   TrendingUp,
   LayoutGrid,
-  Settings,
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
@@ -45,19 +44,19 @@ const menuItems = [
   {
     id: 'psycho',
     titleKey: 'psychoPhysical',
-    icon: Puzzle,
+    icon: BrainCircuit,
     route: '/psycho',
   },
   {
     id: 'cultural',
     titleKey: 'culturalInterventions',
-    icon: Globe,
+    icon: BookOpen,
     route: '/cultural',
   },
   {
     id: 'plus',
     titleKey: 'plusModule',
-    icon: Plus,
+    icon: Sparkles,
     route: '/(tabs)/plus',
   },
   {
@@ -69,13 +68,13 @@ const menuItems = [
   {
     id: 'consultation',
     titleKey: 'consultation',
-    icon: Video,
+    icon: Stethoscope,
     route: '/consultation',
   },
   {
     id: 'settings',
     titleKey: 'settings',
-    icon: Settings,
+    icon: SlidersHorizontal,
     route: '/(tabs)/profile',
   },
 ];
@@ -426,26 +425,6 @@ export function DashboardScreen() {
                   />
                 </View>
               </View>
-
-              {/* AI Badge */}
-
-              <View
-                style={[
-                  styles.aiBadge,
-                  {
-                    right:
-                      width / 2 - 64 - 6,
-                  },
-                ]}
-              >
-                <Sparkles
-                  size={12}
-                  color="#FFFFFF"
-                  strokeWidth={2}
-                />
-              </View>
-
-              {/* Character title */}
 
               <Text
                 style={[

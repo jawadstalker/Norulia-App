@@ -1,16 +1,39 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
+
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
+
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
-import { Card } from '../../components/ui/Card';
-import { Settings, LogOut, Trophy, Flame, Star, ChevronRight, ChevronLeft, Sparkles, Shield } from 'lucide-react-native';
-import { Spacing, BorderRadius } from '../../constants/theme';
-import { useRouter } from 'expo-router';
 
-const { width } = Dimensions.get('window');
+import { Card } from '../../components/ui/Card';
+
+import {
+  Settings,
+  LogOut,
+  Trophy,
+  Flame,
+  Star,
+  ChevronRight,
+  ChevronLeft,
+  Shield,
+} from 'lucide-react-native';
+
+import {
+  Spacing,
+  BorderRadius,
+} from '../../constants/theme';
+
+import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
   const { colors } = useTheme();
@@ -18,140 +41,374 @@ export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const router = useRouter();
 
-  const ChevronIcon = isRTL ? ChevronLeft : ChevronRight;
+  const ChevronIcon = isRTL
+    ? ChevronLeft
+    : ChevronRight;
 
   const stats = [
-    { label: t.level, value: user?.level || 1, icon: Trophy, color: colors.warning },
-    { label: t.streak, value: user?.streak || 0, icon: Flame, color: colors.error },
-    { label: t.xp, value: user?.xp || 0, icon: Star, color: colors.primary }, // ✅ اصلاح شد
+    {
+      label: t.level,
+      value: user?.level || 1,
+      icon: Trophy,
+      color: colors.warning,
+    },
+    {
+      label: t.streak,
+      value: user?.streak || 0,
+      icon: Flame,
+      color: colors.error,
+    },
+    {
+      label: t.xp,
+      value: user?.xp || 0,
+      icon: Star,
+      color: colors.primary,
+    },
   ];
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.background,
+        },
+      ]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <LinearGradient
-        colors={[colors.primary, colors.accent || colors.primary]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[
-          styles.hero,
-          {
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.18)',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 10 },
-            shadowOpacity: 0.15,
-            shadowRadius: 20,
-            elevation: 8,
-          }
-        ]}
-      >
-        <View style={[styles.heroBlobA, { backgroundColor: '#FFFFFF' }]} />
-        <View style={[styles.heroBlobB, { backgroundColor: '#FFFFFF' }]} />
+      {/* =====================================================
+          PROFILE HERO
+      ===================================================== */}
+
+<LinearGradient
+  colors={[
+    '#242052',
+    '#38306F',
+  ]}
+  start={{
+    x: 0,
+    y: 0,
+  }}
+  end={{
+    x: 1,
+    y: 1,
+  }}
+  style={styles.hero}
+>
+        {/* =================================================
+            CHARACTER
+
+            فقط خود PNG
+            بدون دایره
+            بدون glow
+            بدون border
+            بدون background
+            بدون star
+        ================================================= */}
 
         <MotiView
-          from={{ opacity: 0, scale: 0.85, translateY: 12 }}
-          animate={{ opacity: 1, scale: 1, translateY: 0 }}
-          transition={{ type: 'spring', damping: 14, stiffness: 140 }}
+          from={{
+            opacity: 0,
+            translateY: 24,
+            scale: 0.82,
+          }}
+          animate={{
+            opacity: 1,
+            translateY: 0,
+            scale: 1,
+          }}
+          transition={{
+            type: 'spring',
+            damping: 14,
+            stiffness: 120,
+            mass: 0.8,
+          }}
+          style={styles.characterContainer}
         >
-          <LinearGradient
-            colors={['#FFFFFF', 'rgba(255,255,255,0.4)']}
-            style={styles.avatarRing}
-          >
-            <View style={styles.avatarInner}>
-              <Image
-                source={require('../../assets/avatars/model 2.jpg')}
-                style={styles.profileAvatar}
-              />
-            </View>
-          </LinearGradient>
-
-          <View style={[styles.crownBadge, { backgroundColor: colors.warning }]}>
-            <Star size={13} color="#FFFFFF" fill="#FFFFFF" />
-          </View>
+          <Image
+            source={require(
+              '../../assets/avatars/Head.png'
+            )}
+            style={styles.characterHead}
+          />
         </MotiView>
 
-        <MotiView
-          from={{ opacity: 0, translateY: 10 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 450, delay: 120 }}
-        >
-          <Text style={styles.userName}>{user?.name || t.appName}</Text>
-          <Text style={styles.email}>{user?.email || 'user@neurolia.app'}</Text>
+        {/* =================================================
+            USER INFORMATION
+        ================================================= */}
 
-          <View style={styles.badge}>
-            <Sparkles size={13} color="#FFFFFF" />
-            <Text style={styles.badgeText}>{t.premiumMember}</Text>
-          </View>
+        <MotiView
+          from={{
+            opacity: 0,
+            translateY: 12,
+          }}
+          animate={{
+            opacity: 1,
+            translateY: 0,
+          }}
+          transition={{
+            type: 'timing',
+            duration: 450,
+            delay: 180,
+          }}
+        >
+          <Text style={styles.userName}>
+            {user?.name || t.appName}
+          </Text>
+
+          <Text style={styles.email}>
+            {user?.email || 'user@neurolia.app'}
+          </Text>
         </MotiView>
       </LinearGradient>
 
-      <View style={[styles.body, { backgroundColor: colors.background }]}>
+      {/* =====================================================
+          BODY
+      ===================================================== */}
+
+      <View
+        style={[
+          styles.body,
+          {
+            backgroundColor: colors.background,
+          },
+        ]}
+      >
+        {/* ===================================================
+            STATISTICS
+        =================================================== */}
+
         <View style={styles.statsRow}>
-          {stats.map((stat, index) => (
-            <MotiView
-              key={index}
-              from={{ opacity: 0, translateY: 16 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ type: 'timing', duration: 400, delay: 150 + index * 90 }}
-              style={styles.statWrap}
-            >
-              <Card style={styles.statCard} padding="sm">
-                <View style={[styles.statIconWrap, { backgroundColor: stat.color + '18' }]}>
-                  <stat.icon size={18} color={stat.color} />
-                </View>
-                <Text style={[styles.statValue, { color: colors.text }]}>{stat.value}</Text>
-                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{stat.label}</Text>
-              </Card>
-            </MotiView>
-          ))}
+          {stats.map((stat, index) => {
+            const StatIcon = stat.icon;
+
+            return (
+              <MotiView
+                key={index}
+                from={{
+                  opacity: 0,
+                  translateY: 16,
+                }}
+                animate={{
+                  opacity: 1,
+                  translateY: 0,
+                }}
+                transition={{
+                  type: 'timing',
+                  duration: 400,
+                  delay: 150 + index * 90,
+                }}
+                style={styles.statWrap}
+              >
+                <Card
+                  style={styles.statCard}
+                  padding="sm"
+                >
+                  <View
+                    style={[
+                      styles.statIconWrap,
+                      {
+                        backgroundColor:
+                          stat.color + '18',
+                      },
+                    ]}
+                  >
+                    <StatIcon
+                      size={18}
+                      color={stat.color}
+                    />
+                  </View>
+
+                  <Text
+                    style={[
+                      styles.statValue,
+                      {
+                        color: colors.text,
+                      },
+                    ]}
+                  >
+                    {stat.value}
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.statLabel,
+                      {
+                        color:
+                          colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    {stat.label}
+                  </Text>
+                </Card>
+              </MotiView>
+            );
+          })}
         </View>
 
+        {/* ===================================================
+            MENU
+        =================================================== */}
+
         <MotiView
-          from={{ opacity: 0, translateY: 16 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 400, delay: 420 }}
+          from={{
+            opacity: 0,
+            translateY: 16,
+          }}
+          animate={{
+            opacity: 1,
+            translateY: 0,
+          }}
+          transition={{
+            type: 'timing',
+            duration: 400,
+            delay: 420,
+          }}
         >
           <Card style={styles.menuCard}>
+            {/* Settings */}
+
             <TouchableOpacity
-              onPress={() => router.push('/settings')}
+              onPress={() =>
+                router.push('/settings')
+              }
               style={styles.menuItem}
               activeOpacity={0.7}
             >
-              <View style={[styles.menuIconWrap, { backgroundColor: colors.primary + '18' }]}>
-                <Settings size={19} color={colors.primary} />
+              <View
+                style={[
+                  styles.menuIconWrap,
+                  {
+                    backgroundColor:
+                      colors.primary + '18',
+                  },
+                ]}
+              >
+                <Settings
+                  size={19}
+                  color={colors.primary}
+                />
               </View>
-              <Text style={[styles.menuText, { color: colors.text }]}>{t.settings}</Text>
-              <ChevronIcon size={19} color={colors.textTertiary} />
+
+              <Text
+                style={[
+                  styles.menuText,
+                  {
+                    color: colors.text,
+                  },
+                ]}
+              >
+                {t.settings}
+              </Text>
+
+              <ChevronIcon
+                size={19}
+                color={colors.textTertiary}
+              />
             </TouchableOpacity>
 
-            <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+            {/* Divider */}
+
+            <View
+              style={[
+                styles.menuDivider,
+                {
+                  backgroundColor:
+                    colors.border,
+                },
+              ]}
+            />
+
+            {/* Privacy */}
 
             <View style={styles.menuItem}>
-              <View style={[styles.menuIconWrap, { backgroundColor: colors.success + '18' || colors.primary + '18' }]}>
-                <Shield size={19} color={colors.success || colors.primary} />
+              <View
+                style={[
+                  styles.menuIconWrap,
+                  {
+                    backgroundColor:
+                      (colors.success ||
+                        colors.primary) + '18',
+                  },
+                ]}
+              >
+                <Shield
+                  size={19}
+                  color={
+                    colors.success ||
+                    colors.primary
+                  }
+                />
               </View>
-              <Text style={[styles.menuText, { color: colors.text }]}>{t.privacySecurity}</Text>
-              <ChevronIcon size={19} color={colors.textTertiary} />
+
+              <Text
+                style={[
+                  styles.menuText,
+                  {
+                    color: colors.text,
+                  },
+                ]}
+              >
+                {t.privacySecurity}
+              </Text>
+
+              <ChevronIcon
+                size={19}
+                color={colors.textTertiary}
+              />
             </View>
           </Card>
         </MotiView>
 
+        {/* ===================================================
+            LOGOUT
+        =================================================== */}
+
         <MotiView
-          from={{ opacity: 0, translateY: 16 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 400, delay: 500 }}
+          from={{
+            opacity: 0,
+            translateY: 16,
+          }}
+          animate={{
+            opacity: 1,
+            translateY: 0,
+          }}
+          transition={{
+            type: 'timing',
+            duration: 400,
+            delay: 500,
+          }}
         >
           <TouchableOpacity
             onPress={logout}
-            style={[styles.logoutButton, { backgroundColor: colors.error + '12', borderColor: colors.error + '30' }]}
+            style={[
+              styles.logoutButton,
+              {
+                backgroundColor:
+                  colors.error + '12',
+                borderColor:
+                  colors.error + '30',
+              },
+            ]}
             activeOpacity={0.75}
           >
-            <LogOut size={19} color={colors.error} />
-            <Text style={[styles.logoutText, { color: colors.error }]}>{t.logout}</Text>
+            <LogOut
+              size={19}
+              color={colors.error}
+            />
+
+            <Text
+              style={[
+                styles.logoutText,
+                {
+                  color: colors.error,
+                },
+              ]}
+            >
+              {t.logout}
+            </Text>
           </TouchableOpacity>
         </MotiView>
       </View>
@@ -159,195 +416,266 @@ export default function ProfileScreen() {
   );
 }
 
+/* =========================================================
+   STYLES
+========================================================= */
+
 const styles = StyleSheet.create({
   container: {
+    paddingTop: 50,
     flex: 1,
   },
+
   content: {
     paddingBottom: 100,
   },
+
+  /* =======================================================
+     HERO BACKGROUND
+     
+     این قسمت عمداً باقی مانده است.
+     فقط دایره‌ها حذف شده‌اند.
+  ======================================================= */
+
   hero: {
-    width: width - Spacing.lg * 2,
     marginHorizontal: Spacing.lg,
+
     marginTop: Spacing.lg,
-    paddingTop: 50,
-    paddingBottom: 42,
+
+    paddingTop: 28,
+
+    paddingBottom: 36,
+
+    paddingHorizontal: Spacing.lg,
+
     alignItems: 'center',
+
     borderRadius: 32,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
+
     overflow: 'hidden',
+
+    borderWidth: 1,
+
+    borderColor:
+      'rgba(255,255,255,0.14)',
+
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
+
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+
     shadowOpacity: 0.15,
+
     shadowRadius: 20,
+
     elevation: 8,
   },
-  heroBlobA: {
-    position: 'absolute',
+
+  /* =======================================================
+     CHARACTER
+  ======================================================= */
+
+  characterContainer: {
+    width: 145,
+
+    height: 145,
+
+    alignItems: 'center',
+
+    justifyContent: 'center',
+
+    marginBottom: 2,
+  },
+
+  characterHead: {
     width: 180,
-    height: 180,
-    borderRadius: 90,
-    opacity: 0.08,
-    top: -60,
-    right: -40,
+
+    height: 170,
+
+    resizeMode: 'contain',
   },
-  heroBlobB: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    opacity: 0.08,
-    bottom: -30,
-    left: -30,
-  },
-  avatarRing: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  avatarInner: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-  profileAvatar: {
-    width: 106,
-    height: 106,
-    borderRadius: 53,
-  },
-  crownBadge: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
+
+  /* =======================================================
+     USER INFORMATION
+  ======================================================= */
+
   userName: {
     fontSize: 22,
+
     fontWeight: '700',
+
     color: '#FFFFFF',
+
     textAlign: 'center',
+
     marginTop: Spacing.md,
   },
+
   email: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.75)',
+
+    color:
+      'rgba(255,255,255,0.72)',
+
     textAlign: 'center',
-    marginTop: 3,
+
+    marginTop: 4,
   },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginTop: Spacing.sm,
-    gap: 6,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
+
+  /* =======================================================
+     BODY
+  ======================================================= */
+
   body: {
-    marginTop: 16,
     paddingHorizontal: Spacing.lg,
+
     paddingTop: Spacing.lg,
   },
+
+  /* =======================================================
+     STATS
+  ======================================================= */
+
   statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+
+    justifyContent:
+      'space-between',
+
     marginBottom: Spacing.lg,
   },
+
   statWrap: {
     flex: 1,
+
     marginHorizontal: 4,
   },
+
   statCard: {
     alignItems: 'center',
+
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
+
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+
+    shadowOpacity: 0.05,
+
+    shadowRadius: 8,
+
+    elevation: 2,
   },
+
   statIconWrap: {
     width: 36,
+
     height: 36,
+
     borderRadius: 18,
+
     alignItems: 'center',
+
     justifyContent: 'center',
+
     marginBottom: 6,
   },
+
   statValue: {
     fontSize: 19,
+
     fontWeight: '700',
   },
+
   statLabel: {
     fontSize: 11,
+
     marginTop: 2,
   },
+
+  /* =======================================================
+     MENU
+  ======================================================= */
+
   menuCard: {
     marginBottom: Spacing.lg,
+
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
+
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+
+    shadowOpacity: 0.05,
+
     shadowRadius: 10,
-    elevation: 3,
+
+    elevation: 2,
   },
+
   menuItem: {
     flexDirection: 'row',
+
     alignItems: 'center',
+
     paddingVertical: Spacing.sm,
+
     gap: Spacing.md,
   },
+
   menuIconWrap: {
     width: 36,
+
     height: 36,
+
     borderRadius: 12,
+
     alignItems: 'center',
+
     justifyContent: 'center',
   },
+
   menuText: {
     flex: 1,
+
     fontSize: 15,
+
     fontWeight: '500',
   },
+
   menuDivider: {
     height: 1,
+
     marginVertical: 4,
   },
+
+  /* =======================================================
+     LOGOUT
+  ======================================================= */
+
   logoutButton: {
     flexDirection: 'row',
+
     alignItems: 'center',
+
     justifyContent: 'center',
+
     padding: Spacing.lg,
+
     borderRadius: BorderRadius.lg,
+
     borderWidth: 1,
+
     gap: Spacing.sm,
   },
+
   logoutText: {
     fontSize: 15,
+
     fontWeight: '600',
   },
 });

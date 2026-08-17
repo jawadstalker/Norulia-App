@@ -132,13 +132,22 @@ export default function ProtocolScreen() {
   const rowDirection = fa ? 'row-reverse' : 'row';
   const contentAlign = fa ? 'flex-end' : 'flex-start';
 
-  const accent = isDark ? '#C084FC' : '#7C3AED';
-  const accentStrong = isDark ? '#A855F7' : '#6D28D9';
-  const background = isDark ? '#09090F' : '#F7F5FC';
-  const card = isDark ? '#14141D' : '#FFFFFF';
-  const cardSecondary = isDark ? '#1A1923' : '#F1EEFA';
-  const softAccent = isDark ? 'rgba(168,85,247,0.13)' : 'rgba(124,58,237,0.08)';
-  const softAccentStrong = isDark ? 'rgba(168,85,247,0.22)' : 'rgba(124,58,237,0.13)';
+  const accent = colors.primary;
+  const accentStrong = colors.primaryDark;
+  
+  const background = colors.background;
+  
+  const card = colors.surface;
+  
+  const cardSecondary = colors.surfaceSecondary;
+  
+  const softAccent = isDark
+    ? 'rgba(123, 97, 255, 0.13)'
+    : 'rgba(124, 58, 237, 0.08)';
+  
+  const softAccentStrong = isDark
+    ? 'rgba(123, 97, 255, 0.22)'
+    : 'rgba(124, 58, 237, 0.13)';
 
   const [mode, setMode] = useState<ProtocolMode>('single');
   const [view, setView] = useState<ViewMode>('home');
@@ -1298,6 +1307,7 @@ const styles = StyleSheet.create({
   },
 
   dayIndicator: {
+    
     minWidth: 90,
     height: 40,
     paddingHorizontal: 14,

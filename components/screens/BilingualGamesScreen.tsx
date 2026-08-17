@@ -1,3 +1,8 @@
+// ============================================================
+//                      BILINGUAL GAMES SCREEN
+//              (دکمه برگشت در چپ، عنوان در راست)
+// ============================================================
+
 import React from 'react';
 import {
   View,
@@ -117,19 +122,48 @@ export default function BilingualGamesScreen() {
         },
       ]}
     >
+      {/* ==================== HEADER ==================== */}
       <View
         style={[
           styles.header,
           {
-            flexDirection: isRTL ? 'row-reverse' : 'row',
+            flexDirection: 'row', // همیشه چپ به راست
           },
         ]}
       >
+        {/* دکمه برگشت - همیشه در سمت چپ */}
+        <TouchableOpacity
+          onPress={handleBack}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={language === 'fa' ? 'بازگشت' : 'Back'}
+          hitSlop={{
+            top: 10,
+            bottom: 10,
+            left: 10,
+            right: 10,
+          }}
+          style={[
+            styles.backButton,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <ArrowLeft
+            size={23}
+            color={colors.text}
+            strokeWidth={2.5}
+          />
+        </TouchableOpacity>
+
+        {/* عنوان و آیکون - همیشه در سمت راست */}
         <View
           style={[
             styles.headerContent,
             {
-              alignItems: isRTL ? 'flex-end' : 'flex-start',
+              alignItems: 'flex-end', // همیشه راست‌چین
             },
           ]}
         >
@@ -137,9 +171,7 @@ export default function BilingualGamesScreen() {
             style={[
               styles.titleRow,
               {
-                flexDirection: isRTL
-                  ? 'row-reverse'
-                  : 'row',
+                flexDirection: 'row-reverse', // آیکون سمت راست عنوان
               },
             ]}
           >
@@ -161,9 +193,7 @@ export default function BilingualGamesScreen() {
               style={[
                 styles.titleTextContainer,
                 {
-                  alignItems: isRTL
-                    ? 'flex-end'
-                    : 'flex-start',
+                  alignItems: 'flex-end', // راست‌چین
                 },
               ]}
             >
@@ -172,7 +202,7 @@ export default function BilingualGamesScreen() {
                   styles.headerTitle,
                   {
                     color: colors.text,
-                    textAlign: textAlignStyle,
+                    textAlign: 'right', // همیشه راست
                   },
                 ]}
               >
@@ -186,7 +216,7 @@ export default function BilingualGamesScreen() {
                   styles.headerSubtitle,
                   {
                     color: colors.textSecondary,
-                    textAlign: textAlignStyle,
+                    textAlign: 'right', // همیشه راست
                   },
                 ]}
               >
@@ -198,34 +228,9 @@ export default function BilingualGamesScreen() {
             </View>
           </View>
         </View>
-
-        <TouchableOpacity
-  onPress={handleBack}
-  activeOpacity={0.8}
-  accessibilityRole="button"
-  accessibilityLabel={language === 'fa' ? 'بازگشت' : 'Back'}
-  hitSlop={{
-    top: 10,
-    bottom: 10,
-    left: 10,
-    right: 10,
-  }}
-  style={[
-    styles.backButton,
-    {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-    },
-  ]}
->
-  <ArrowLeft
-    size={23}
-    color={colors.text}
-    strokeWidth={2.5}
-  />
-</TouchableOpacity>
       </View>
 
+      {/* ==================== INTRO CARD ==================== */}
       <View
         style={[
           styles.introCard,
@@ -292,6 +297,7 @@ export default function BilingualGamesScreen() {
         </View>
       </View>
 
+      {/* ==================== GAMES LIST ==================== */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
@@ -492,15 +498,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
+    flexDirection: 'row', // همیشه چپ به راست
   },
 
   headerContent: {
     flex: 1,
+    alignItems: 'flex-end', // همیشه راست‌چین
   },
 
   titleRow: {
     alignItems: 'center',
     gap: 11,
+    flexDirection: 'row-reverse', // آیکون سمت راست عنوان
   },
 
   headerIcon: {
@@ -513,18 +522,21 @@ const styles = StyleSheet.create({
 
   titleTextContainer: {
     flex: 1,
+    alignItems: 'flex-end', // راست‌چین
   },
 
   headerTitle: {
     fontSize: 22,
     fontWeight: '900',
     letterSpacing: -0.4,
+    textAlign: 'right', // همیشه راست
   },
 
   headerSubtitle: {
     fontSize: 12,
     marginTop: 4,
     fontWeight: '500',
+    textAlign: 'right', // همیشه راست
   },
 
   backButton: {
@@ -541,6 +553,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 2,
+    flexShrink: 0, // جلوگیری از کوچک شدن دکمه
   },
 
   introCard: {

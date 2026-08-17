@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+
 import {
   View,
   Text,
@@ -9,7 +15,9 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
+
 import { MotiView, AnimatePresence } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,13 +35,29 @@ import {
   MessageCircle,
   ChevronDown,
   MoreHorizontal,
+  AlertCircle,
+  RotateCcw,
 } from 'lucide-react-native';
 
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { BorderRadius } from '../../constants/theme';
 
-const MIN_TAP_TARGET = 44;
+/* =========================================================
+   API
+========================================================= */
+
+const CHAT_API_URL =
+  'https://smith-wrongful-punctual.ngrok-free.dev/chat';
+
+/*
+ * اگر backend شما بعداً به URL دیگری منتقل شد،
+ * فقط همین مقدار را تغییر بده.
+ */
+
+/* =========================================================
+   TYPES
+========================================================= */
 
 interface Message {
   id: string;
@@ -42,149 +66,610 @@ interface Message {
   timestamp: string;
 }
 
+interface ChatResponse {
+  response?: unknown;
+  message?: unknown;
+  reply?: unknown;
+  answer?: unknown;
+  text?: unknown;
+  content?: unknown;
+  data?: unknown;
+  error?: unknown;
+}
+
+/* =========================================================
+   QUICK ACTIONS
+========================================================= */
+
 const suggestions = [
   {
     icon: Activity,
     label: 'analyzeSymptoms',
+    fallback: 'Analyze my symptoms',
   },
   {
     icon: Pill,
     label: 'medication',
+    fallback: 'Help me with my medication',
   },
   {
     icon: Calendar,
     label: 'schedule',
+    fallback: 'Help me with my schedule',
   },
   {
     icon: FileText,
     label: 'protocol',
+    fallback: 'Explain my protocol',
   },
 ];
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+const normalizeResponseText = (
+  value: unknown
+): string | null => {
+  if (typeof value === 'string') {
+    return value.trim() || null;
+  }
+
+  if (
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
+    return String(value);
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const result = normalizeResponseText(item);
+
+      if (result) {
+        return result;
+      }
+    }
+  }
+
+  if (
+    value &&
+    typeof value === 'object'
+  ) {
+    const object = value as Record<string, unknown>;
+
+    const possibleKeys = [
+      'response',
+      'message',
+      'reply',
+      'answer',
+      'text',
+      'content',
+    ];
+
+    for (const key of possibleKeys) {
+      if (key in object) {
+        const result =
+          normalizeResponseText(object[key]);
+
+        if (result) {
+          return result;
+        }
+      }
+    }
+
+    if ('data' in object) {
+      const result =
+        normalizeResponseText(object.data);
+
+      if (result) {
+        return result;
+      }
+    }
+
+    if ('choices' in object) {
+      const result =
+        normalizeResponseText(object.choices);
+
+      if (result) {
+        return result;
+      }
+    }
+  }
+
+  return null;
+};
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 export default function AssistantScreen() {
   const { colors, isDark } = useTheme();
   const { t, isRTL, language } = useLanguage();
   const insets = useSafeAreaInsets();
 
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputText, setInputText] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [showScrollButton, setShowScrollButton] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [messages, setMessages] =
+    useState<Message[]>([]);
 
-  const scrollRef = useRef<ScrollView>(null);
-  const inputRef = useRef<TextInput>(null);
+  const [inputText, setInputText] =
+    useState('');
 
-  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const responseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const scrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isTyping, setIsTyping] =
+    useState(false);
 
-  const rowDirection = isRTL ? 'row-reverse' : 'row';
+  const [showScrollButton, setShowScrollButton] =
+    useState(false);
 
-  const getCurrentTime = () => {
+  const [notice, setNotice] =
+    useState<string | null>(null);
+
+  const [requestError, setRequestError] =
+    useState(false);
+
+  const scrollRef =
+    useRef<ScrollView>(null);
+
+  const inputRef =
+    useRef<TextInput>(null);
+
+  const noticeTimer =
+    useRef<ReturnType<typeof setTimeout> | null>(
+      null
+    );
+
+  const scrollTimer =
+    useRef<ReturnType<typeof setTimeout> | null>(
+      null
+    );
+
+  const abortController =
+    useRef<AbortController | null>(null);
+
+  const conversationId =
+    useRef(
+      `neurolia-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 8)}`
+    );
+
+  const rowDirection = isRTL
+    ? 'row-reverse'
+    : 'row';
+
+  /* =======================================================
+     TIME
+  ======================================================= */
+
+  const getCurrentTime = useCallback(() => {
     return new Date().toLocaleTimeString(
-      language === 'fa' ? 'fa-IR' : 'en-US',
+      language === 'fa'
+        ? 'fa-IR'
+        : 'en-US',
       {
         hour: '2-digit',
         minute: '2-digit',
       }
     );
-  };
+  }, [language]);
 
-  const lightHaptic = () => {
+  /* =======================================================
+     HAPTICS
+  ======================================================= */
+
+  const lightHaptic = useCallback(() => {
     Haptics.impactAsync(
       Haptics.ImpactFeedbackStyle.Light
     ).catch(() => {});
-  };
+  }, []);
 
-  const showNotice = (message: string) => {
-    Haptics.notificationAsync(
-      Haptics.NotificationFeedbackType.Warning
-    ).catch(() => {});
+  /* =======================================================
+     NOTICE
+  ======================================================= */
 
-    if (noticeTimer.current) {
-      clearTimeout(noticeTimer.current);
-    }
+  const showNotice = useCallback(
+    (message: string) => {
+      Haptics.notificationAsync(
+        Haptics.NotificationFeedbackType.Warning
+      ).catch(() => {});
 
-    setNotice(message);
+      if (noticeTimer.current) {
+        clearTimeout(noticeTimer.current);
+      }
 
-    noticeTimer.current = setTimeout(() => {
-      setNotice(null);
-    }, 1800);
-  };
+      setNotice(message);
 
-  const handleSend = (value?: string) => {
-    const text = (value ?? inputText).trim();
+      noticeTimer.current =
+        setTimeout(() => {
+          setNotice(null);
+        }, 2200);
+    },
+    []
+  );
 
-    if (!text || isTyping) {
-      return;
-    }
+  /* =======================================================
+     SCROLL
+  ======================================================= */
 
-    lightHaptic();
-
-    const userMessage: Message = {
-      id: `${Date.now()}-user`,
-      text,
-      isUser: true,
-      timestamp: getCurrentTime(),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInputText('');
-    setIsTyping(true);
-
-    responseTimer.current = setTimeout(() => {
-      const responses = [
-        t.breathingExercise ||
-          "I understand. Let's work through this together. Would you like to try a short breathing exercise?",
-
-        t.mindfulnessSession ||
-          'Based on your recent activity, a short mindfulness session could be helpful.',
-
-        t.progressInsight ||
-          "You're making good progress. Keep following your daily routine.",
-
-        t.weeklyReport ||
-          'I can help you review your recent progress and organize your next steps.',
-      ];
-
-      const response: Message = {
-        id: `${Date.now()}-assistant`,
-        text: responses[Math.floor(Math.random() * responses.length)],
-        isUser: false,
-        timestamp: getCurrentTime(),
-      };
-
-      setMessages(prev => [...prev, response]);
-      setIsTyping(false);
-      responseTimer.current = null;
-    }, 1300 + Math.random() * 900);
-  };
-
-  const handleScroll = (event: any) => {
-    const {
-      contentOffset,
-      contentSize,
-      layoutMeasurement,
-    } = event.nativeEvent;
-
-    const distance =
-      contentSize.height -
-      contentOffset.y -
-      layoutMeasurement.height;
-
-    setShowScrollButton(
-      distance > 100 && messages.length > 0
-    );
-  };
-
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     lightHaptic();
 
     scrollRef.current?.scrollToEnd({
       animated: true,
     });
-  };
+  }, [lightHaptic]);
+
+  const handleScroll = useCallback(
+    (event: any) => {
+      const {
+        contentOffset,
+        contentSize,
+        layoutMeasurement,
+      } = event.nativeEvent;
+
+      const distance =
+        contentSize.height -
+        contentOffset.y -
+        layoutMeasurement.height;
+
+      setShowScrollButton(
+        distance > 100 &&
+          messages.length > 0
+      );
+    },
+    [messages.length]
+  );
+
+  /* =======================================================
+     ADD MESSAGE
+  ======================================================= */
+
+  const addMessage = useCallback(
+    (
+      text: string,
+      isUser: boolean
+    ) => {
+      const message: Message = {
+        id: `${Date.now()}-${
+          isUser ? 'user' : 'assistant'
+        }-${Math.random()
+          .toString(36)
+          .slice(2, 7)}`,
+
+        text,
+
+        isUser,
+
+        timestamp: getCurrentTime(),
+      };
+
+      setMessages(prev => [
+        ...prev,
+        message,
+      ]);
+    },
+    [getCurrentTime]
+  );
+
+  /* =======================================================
+     API REQUEST
+  ======================================================= */
+
+  const requestAssistant = useCallback(
+    async (text: string) => {
+      /*
+       * Abort request قبلی
+       */
+      abortController.current?.abort();
+
+      const controller =
+        new AbortController();
+
+      abortController.current =
+        controller;
+
+      /*
+       * Body اصلی.
+       *
+       * message مهم‌ترین فیلد است.
+       *
+       * conversation_id برای حفظ session
+       * در backend فرستاده می‌شود.
+       */
+
+      const body = {
+        message: text,
+
+        conversation_id:
+          conversationId.current,
+
+        language:
+          language === 'fa'
+            ? 'fa'
+            : 'en',
+      };
+
+      const response =
+        await fetch(
+          CHAT_API_URL,
+          {
+            method: 'POST',
+
+            headers: {
+              'Content-Type':
+                'application/json',
+
+              Accept:
+                'application/json, text/plain, */*',
+            },
+
+            body: JSON.stringify(body),
+
+            signal:
+              controller.signal,
+          }
+        );
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP ${response.status}`
+        );
+      }
+
+      /*
+       * بعضی backendها JSON برمی‌گردانند،
+       * بعضی text.
+       *
+       * اول text می‌گیریم تا هر دو حالت
+       * را پشتیبانی کنیم.
+       */
+
+      const raw =
+        await response.text();
+
+      if (!raw.trim()) {
+        throw new Error(
+          'Empty response from server'
+        );
+      }
+
+      /*
+       * JSON
+       */
+
+      try {
+        const parsed =
+          JSON.parse(raw) as ChatResponse;
+
+        const textResponse =
+          normalizeResponseText(parsed);
+
+        if (textResponse) {
+          return textResponse;
+        }
+
+        /*
+         * اگر JSON معتبر بود ولی ساختارش
+         * متفاوت بود، خود JSON را نمایش
+         * نمی‌دهیم.
+         */
+        throw new Error(
+          'Unable to find assistant response'
+        );
+      } catch (jsonError) {
+        /*
+         * اگر JSON نبود، خود response
+         * را به عنوان text قبول می‌کنیم.
+         */
+
+        if (
+          raw.trim().startsWith('{') ||
+          raw.trim().startsWith('[')
+        ) {
+          throw jsonError;
+        }
+
+        return raw.trim();
+      }
+    },
+    [language]
+  );
+
+  /* =======================================================
+     SEND MESSAGE
+  ======================================================= */
+
+  const handleSend = useCallback(
+    async (value?: string) => {
+      const text =
+        (value ?? inputText).trim();
+
+      if (
+        !text ||
+        isTyping
+      ) {
+        return;
+      }
+
+      lightHaptic();
+
+      setRequestError(false);
+
+      /*
+       * User message
+       */
+
+      addMessage(
+        text,
+        true
+      );
+
+      setInputText('');
+
+      setIsTyping(true);
+
+      /*
+       * Keyboard را در صورت نیاز ببند
+       */
+
+      inputRef.current?.blur();
+
+      /*
+       * اجازه بده UI اول پیام کاربر
+       * را render کند.
+       */
+
+      await new Promise(resolve =>
+        setTimeout(resolve, 80)
+      );
+
+      try {
+        const answer =
+          await requestAssistant(text);
+
+        /*
+         * پاسخ خالی
+         */
+
+        if (!answer) {
+          throw new Error(
+            'Assistant returned empty response'
+          );
+        }
+
+        addMessage(
+          answer,
+          false
+        );
+      } catch (error) {
+        /*
+         * Abort خطای واقعی نیست
+         */
+
+        if (
+          error instanceof Error &&
+          error.name === 'AbortError'
+        ) {
+          return;
+        }
+
+        console.error(
+          'NEUROLIA AI CHAT ERROR:',
+          error
+        );
+
+        setRequestError(true);
+
+        addMessage(
+          language === 'fa'
+            ? 'در ارتباط با دستیار هوشمند مشکلی پیش آمد. اتصال سرور را بررسی کنید و دوباره تلاش کنید.'
+            : 'I could not connect to the AI assistant. Please check the server connection and try again.',
+          false
+        );
+      } finally {
+        setIsTyping(false);
+
+        abortController.current =
+          null;
+      }
+    },
+    [
+      inputText,
+      isTyping,
+      lightHaptic,
+      addMessage,
+      requestAssistant,
+      language,
+    ]
+  );
+
+  /* =======================================================
+     RETRY
+  ======================================================= */
+
+  const handleRetry = useCallback(() => {
+    const lastUserMessage =
+      [...messages]
+        .reverse()
+        .find(message => message.isUser);
+
+    if (!lastUserMessage) {
+      return;
+    }
+
+    /*
+     * آخرین پاسخ خطا را حذف کن
+     */
+
+    setMessages(prev => {
+      const lastAssistantIndex =
+        [...prev]
+          .map((message, index) => ({
+            message,
+            index,
+          }))
+          .reverse()
+          .find(
+            item => !item.message.isUser
+          );
+
+      if (
+        lastAssistantIndex &&
+        lastAssistantIndex.index >
+          prev.findIndex(
+            message =>
+              message.id ===
+              lastUserMessage.id
+          )
+      ) {
+        return prev.filter(
+          (_, index) =>
+            index !==
+            lastAssistantIndex.index
+        );
+      }
+
+      return prev;
+    });
+
+    setRequestError(false);
+
+    handleSend(
+      lastUserMessage.text
+    );
+  }, [
+    messages,
+    handleSend,
+  ]);
+
+  /* =======================================================
+     QUICK ACTION
+  ======================================================= */
+
+  const handleSuggestion = useCallback(
+    (suggestion: {
+      label: string;
+      fallback: string;
+    }) => {
+      const translation =
+        t[
+          suggestion.label as keyof typeof t
+        ];
+
+      const text =
+        typeof translation === 'string' &&
+        translation.trim()
+          ? translation
+          : suggestion.fallback;
+
+      handleSend(text);
+    },
+    [t, handleSend]
+  );
+
+  /* =======================================================
+     SCROLL AFTER MESSAGE
+  ======================================================= */
 
   useEffect(() => {
     if (messages.length === 0) {
@@ -192,60 +677,96 @@ export default function AssistantScreen() {
     }
 
     if (scrollTimer.current) {
-      clearTimeout(scrollTimer.current);
+      clearTimeout(
+        scrollTimer.current
+      );
     }
 
-    scrollTimer.current = setTimeout(() => {
-      scrollRef.current?.scrollToEnd({
-        animated: true,
-      });
-    }, 80);
+    scrollTimer.current =
+      setTimeout(() => {
+        scrollRef.current?.scrollToEnd({
+          animated: true,
+        });
+      }, 100);
 
     return () => {
       if (scrollTimer.current) {
-        clearTimeout(scrollTimer.current);
+        clearTimeout(
+          scrollTimer.current
+        );
       }
     };
   }, [messages]);
 
+  /* =======================================================
+     CLEANUP
+  ======================================================= */
+
   useEffect(() => {
     return () => {
-      if (noticeTimer.current) {
-        clearTimeout(noticeTimer.current);
-      }
+      abortController.current?.abort();
 
-      if (responseTimer.current) {
-        clearTimeout(responseTimer.current);
+      if (noticeTimer.current) {
+        clearTimeout(
+          noticeTimer.current
+        );
       }
 
       if (scrollTimer.current) {
-        clearTimeout(scrollTimer.current);
+        clearTimeout(
+          scrollTimer.current
+        );
       }
     };
   }, []);
 
+  /* =======================================================
+     COLORS
+  ======================================================= */
+
+  const backgroundGradient =
+    isDark
+      ? [
+          colors.background,
+          colors.surfaceSecondary,
+        ] as const
+      : [
+          colors.background,
+          '#FFFFFF',
+        ] as const;
+
+  const buttonGradient =
+    [
+      colors.primary,
+      colors.primaryLight,
+    ] as const;
+
+  /* =======================================================
+     RENDER
+  ======================================================= */
+
   return (
     <LinearGradient
-      colors={
-        isDark
-          ? ['#09090B', '#101014']
-          : ['#F7F8FF', '#FFFFFF']
-      }
+      colors={backgroundGradient}
       style={styles.gradient}
     >
       <KeyboardAvoidingView
         style={styles.container}
         behavior={
-          Platform.OS === 'ios' ? 'padding' : 'height'
+          Platform.OS === 'ios'
+            ? 'padding'
+            : 'height'
         }
         keyboardVerticalOffset={
-          Platform.OS === 'ios' ? 88 : 0
+          Platform.OS === 'ios'
+            ? 88
+            : 0
         }
       >
 
-        {/* =====================================================
+        {/* =================================================
             HEADER
-           ===================================================== */}
+        ================================================= */}
 
         <MotiView
           from={{
@@ -263,7 +784,11 @@ export default function AssistantScreen() {
           style={[
             styles.header,
             {
-              paddingTop: Math.max(insets.top, 8),
+              paddingTop:
+                Math.max(
+                  insets.top,
+                  8
+                ),
             },
           ]}
         >
@@ -271,20 +796,34 @@ export default function AssistantScreen() {
             style={[
               styles.headerContent,
               {
-                flexDirection: rowDirection,
+                flexDirection:
+                  rowDirection,
               },
             ]}
           >
+
+            {/* Avatar */}
+
             <View
               style={[
                 styles.avatarWrapper,
                 {
-                  backgroundColor: colors.primary,
+                  backgroundColor:
+                    isDark
+                      ? 'rgba(130,116,216,0.22)'
+                      : 'rgba(130,116,216,0.14)',
+
+                  borderColor:
+                    isDark
+                      ? 'rgba(164,155,230,0.32)'
+                      : 'rgba(130,116,216,0.18)',
                 },
               ]}
             >
               <Image
-                source={require('../../assets/avatars/model 2.jpg')}
+                source={require(
+                  '../../assets/avatars/model 2.jpg'
+                )}
                 style={styles.avatar}
               />
 
@@ -292,21 +831,25 @@ export default function AssistantScreen() {
                 style={[
                   styles.onlineDot,
                   {
-                    borderColor: isDark
-                      ? '#101014'
-                      : '#FFFFFF',
+                    borderColor:
+                      isDark
+                        ? colors.surfaceSecondary
+                        : '#FFFFFF',
                   },
                 ]}
               />
             </View>
 
+            {/* Identity */}
+
             <View
               style={[
                 styles.headerIdentity,
                 {
-                  alignItems: isRTL
-                    ? 'flex-end'
-                    : 'flex-start',
+                  alignItems:
+                    isRTL
+                      ? 'flex-end'
+                      : 'flex-start',
                 },
               ]}
             >
@@ -314,7 +857,8 @@ export default function AssistantScreen() {
                 style={[
                   styles.nameLine,
                   {
-                    flexDirection: rowDirection,
+                    flexDirection:
+                      rowDirection,
                   },
                 ]}
               >
@@ -322,26 +866,31 @@ export default function AssistantScreen() {
                   style={[
                     styles.aiName,
                     {
-                      color: colors.text,
+                      color:
+                        colors.text,
                     },
                   ]}
                 >
-                  {t.novaAI || 'Nova AI'}
+                  {t.novaAI ||
+                    'Nova AI'}
                 </Text>
 
                 <View
                   style={[
                     styles.aiBadge,
                     {
-                      backgroundColor: isDark
-                        ? 'rgba(99,102,241,0.18)'
-                        : 'rgba(99,102,241,0.10)',
+                      backgroundColor:
+                        isDark
+                          ? 'rgba(130,116,216,0.18)'
+                          : 'rgba(130,116,216,0.10)',
                     },
                   ]}
                 >
                   <Sparkles
                     size={12}
-                    color={colors.primary}
+                    color={
+                      colors.primary
+                    }
                     strokeWidth={2.3}
                   />
                 </View>
@@ -351,24 +900,33 @@ export default function AssistantScreen() {
                 style={[
                   styles.onlineRow,
                   {
-                    flexDirection: rowDirection,
+                    flexDirection:
+                      rowDirection,
                   },
                 ]}
               >
-                <View style={styles.onlineIndicator} />
+                <View
+                  style={
+                    styles.onlineIndicator
+                  }
+                />
 
                 <Text
                   style={[
                     styles.onlineText,
                     {
-                      color: colors.textSecondary,
+                      color:
+                        colors.textSecondary,
                     },
                   ]}
                 >
-                  {t.online || 'Online'}
+                  {t.online ||
+                    'Online'}
                 </Text>
               </View>
             </View>
+
+            {/* More */}
 
             <TouchableOpacity
               activeOpacity={0.7}
@@ -382,15 +940,18 @@ export default function AssistantScreen() {
               style={[
                 styles.moreButton,
                 {
-                  backgroundColor: isDark
-                    ? 'rgba(255,255,255,0.055)'
-                    : 'rgba(15,23,42,0.045)',
+                  backgroundColor:
+                    isDark
+                      ? 'rgba(255,255,255,0.055)'
+                      : 'rgba(15,23,42,0.045)',
                 },
               ]}
             >
               <MoreHorizontal
                 size={21}
-                color={colors.textSecondary}
+                color={
+                  colors.textSecondary
+                }
                 strokeWidth={2}
               />
             </TouchableOpacity>
@@ -400,15 +961,16 @@ export default function AssistantScreen() {
             style={[
               styles.headerLine,
               {
-                backgroundColor: colors.border,
+                backgroundColor:
+                  colors.border,
               },
             ]}
           />
         </MotiView>
 
-        {/* =====================================================
-            CHAT AREA
-           ===================================================== */}
+        {/* =================================================
+            CHAT
+        ================================================= */}
 
         <View style={styles.chatArea}>
           <ScrollView
@@ -416,15 +978,20 @@ export default function AssistantScreen() {
             style={styles.scroll}
             contentContainerStyle={[
               styles.scrollContent,
-              messages.length === 0 && styles.emptyScroll,
+              messages.length === 0 &&
+                styles.emptyScroll,
             ]}
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator={
+              false
+            }
             keyboardShouldPersistTaps="handled"
             onScroll={handleScroll}
             scrollEventThrottle={100}
           >
 
-            {/* ================= EMPTY STATE ================= */}
+            {/* =============================================
+                EMPTY STATE
+            ============================================= */}
 
             {messages.length === 0 && (
               <MotiView
@@ -446,15 +1013,18 @@ export default function AssistantScreen() {
                   style={[
                     styles.welcomeIcon,
                     {
-                      backgroundColor: isDark
-                        ? 'rgba(99,102,241,0.14)'
-                        : 'rgba(99,102,241,0.09)',
+                      backgroundColor:
+                        isDark
+                          ? 'rgba(130,116,216,0.15)'
+                          : 'rgba(130,116,216,0.09)',
                     },
                   ]}
                 >
                   <MessageCircle
                     size={25}
-                    color={colors.primary}
+                    color={
+                      colors.primary
+                    }
                     strokeWidth={2}
                   />
                 </View>
@@ -463,18 +1033,21 @@ export default function AssistantScreen() {
                   style={[
                     styles.welcomeTitle,
                     {
-                      color: colors.text,
+                      color:
+                        colors.text,
                     },
                   ]}
                 >
-                  {t.hello || 'Hello'}
+                  {t.hello ||
+                    'Hello'}
                 </Text>
 
                 <Text
                   style={[
                     styles.welcomeDescription,
                     {
-                      color: colors.textSecondary,
+                      color:
+                        colors.textSecondary,
                     },
                   ]}
                 >
@@ -486,7 +1059,8 @@ export default function AssistantScreen() {
                   style={[
                     styles.welcomeHint,
                     {
-                      color: colors.textTertiary,
+                      color:
+                        colors.textTertiary,
                     },
                   ]}
                 >
@@ -494,19 +1068,36 @@ export default function AssistantScreen() {
                     'How can I help you today?'}
                 </Text>
 
-                <View style={styles.quickActions}>
+                <View
+                  style={
+                    styles.quickActions
+                  }
+                >
                   {suggestions.map(
-                    (suggestion, index) => {
-                      const Icon = suggestion.icon;
+                    (
+                      suggestion,
+                      index
+                    ) => {
+                      const Icon =
+                        suggestion.icon;
 
-                      const label =
+                      const translation =
                         t[
                           suggestion.label as keyof typeof t
-                        ] || suggestion.label;
+                        ];
+
+                      const label =
+                        typeof translation ===
+                          'string' &&
+                        translation.trim()
+                          ? translation
+                          : suggestion.fallback;
 
                       return (
                         <MotiView
-                          key={suggestion.label}
+                          key={
+                            suggestion.label
+                          }
                           from={{
                             opacity: 0,
                             translateY: 10,
@@ -518,22 +1109,28 @@ export default function AssistantScreen() {
                           transition={{
                             type: 'timing',
                             duration: 300,
-                            delay: index * 70,
+                            delay:
+                              index * 70,
                           }}
-                          style={styles.quickActionWrapper}
+                          style={
+                            styles.quickActionWrapper
+                          }
                         >
                           <TouchableOpacity
-                            activeOpacity={0.78}
+                            activeOpacity={
+                              0.78
+                            }
                             onPress={() =>
-                              handleSend(label)
+                              handleSuggestion(
+                                suggestion
+                              )
                             }
                             style={[
                               styles.quickAction,
                               {
                                 backgroundColor:
-                                  isDark
-                                    ? colors.surface
-                                    : '#FFFFFF',
+                                  colors.surface,
+
                                 borderColor:
                                   colors.border,
                               },
@@ -545,24 +1142,29 @@ export default function AssistantScreen() {
                                 {
                                   backgroundColor:
                                     isDark
-                                      ? 'rgba(99,102,241,0.12)'
-                                      : 'rgba(99,102,241,0.07)',
+                                      ? 'rgba(130,116,216,0.13)'
+                                      : 'rgba(130,116,216,0.07)',
                                 },
                               ]}
                             >
                               <Icon
                                 size={20}
-                                color={colors.primary}
+                                color={
+                                  colors.primary
+                                }
                                 strokeWidth={2}
                               />
                             </View>
 
                             <Text
-                              numberOfLines={2}
+                              numberOfLines={
+                                2
+                              }
                               style={[
                                 styles.quickLabel,
                                 {
-                                  color: colors.text,
+                                  color:
+                                    colors.text,
                                 },
                               ]}
                             >
@@ -577,254 +1179,345 @@ export default function AssistantScreen() {
               </MotiView>
             )}
 
-            {/* ================= MESSAGES ================= */}
+            {/* =============================================
+                MESSAGES
+            ============================================= */}
 
-            {messages.map((message, index) => (
-              <MotiView
-                key={message.id}
-                from={{
-                  opacity: 0,
-                  translateY: 12,
-                }}
-                animate={{
-                  opacity: 1,
-                  translateY: 0,
-                }}
-                transition={{
-                  type: 'timing',
-                  duration: 280,
-                  delay:
-                    index === messages.length - 1
-                      ? 50
-                      : 0,
-                }}
-                style={[
-                  styles.messageRow,
-                  {
-                    flexDirection: message.isUser
-                      ? isRTL
-                        ? 'row'
-                        : 'row-reverse'
-                      : rowDirection,
-                  },
-                ]}
-              >
-                {!message.isUser && (
+            {messages.map(
+              (
+                message,
+                index
+              ) => (
+                <MotiView
+                  key={
+                    message.id
+                  }
+                  from={{
+                    opacity: 0,
+                    translateY: 12,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    translateY: 0,
+                  }}
+                  transition={{
+                    type: 'timing',
+                    duration: 280,
+                    delay:
+                      index ===
+                      messages.length -
+                        1
+                        ? 50
+                        : 0,
+                  }}
+                  style={[
+                    styles.messageRow,
+                    {
+                      flexDirection:
+                        message.isUser
+                          ? isRTL
+                            ? 'row'
+                            : 'row-reverse'
+                          : rowDirection,
+                    },
+                  ]}
+                >
+                  {!message.isUser && (
+                    <View
+                      style={[
+                        styles.messageAvatar,
+                        {
+                          backgroundColor:
+                            colors.surfaceSecondary,
+
+                          borderColor:
+                            colors.border,
+                        },
+                      ]}
+                    >
+                      <Image
+                        source={require(
+                          '../../assets/avatars/model 2.jpg'
+                        )}
+                        style={
+                          styles.messageAvatarImage
+                        }
+                      />
+                    </View>
+                  )}
+
+                  <View
+                    style={
+                      styles.messageColumn
+                    }
+                  >
+                    {!message.isUser && (
+                      <Text
+                        style={[
+                          styles.sender,
+                          {
+                            color:
+                              colors.textSecondary,
+
+                            textAlign:
+                              isRTL
+                                ? 'right'
+                                : 'left',
+                          },
+                        ]}
+                      >
+                        {t.novaAI ||
+                          'Nova AI'}
+                      </Text>
+                    )}
+
+                    {message.isUser ? (
+                      <LinearGradient
+                        colors={
+                          buttonGradient
+                        }
+                        start={{
+                          x: 0,
+                          y: 0,
+                        }}
+                        end={{
+                          x: 1,
+                          y: 1,
+                        }}
+                        style={[
+                          styles.userBubble,
+                          isRTL
+                            ? styles.userBubbleRTL
+                            : styles.userBubbleLTR,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.messageText,
+                            {
+                              color:
+                                '#FFFFFF',
+
+                              textAlign:
+                                isRTL
+                                  ? 'right'
+                                  : 'left',
+                            },
+                          ]}
+                        >
+                          {
+                            message.text
+                          }
+                        </Text>
+                      </LinearGradient>
+                    ) : (
+                      <View
+                        style={[
+                          styles.assistantBubble,
+                          {
+                            backgroundColor:
+                              colors.surface,
+
+                            borderColor:
+                              colors.border,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.messageText,
+                            {
+                              color:
+                                colors.text,
+
+                              textAlign:
+                                isRTL
+                                  ? 'right'
+                                  : 'left',
+                            },
+                          ]}
+                        >
+                          {
+                            message.text
+                          }
+                        </Text>
+                      </View>
+                    )}
+
+                    <Text
+                      style={[
+                        styles.timestamp,
+                        {
+                          color:
+                            colors.textTertiary,
+
+                          textAlign:
+                            message.isUser
+                              ? isRTL
+                                ? 'left'
+                                : 'right'
+                              : isRTL
+                                ? 'right'
+                                : 'left',
+                        },
+                      ]}
+                    >
+                      {
+                        message.timestamp
+                      }
+                    </Text>
+                  </View>
+                </MotiView>
+              )
+            )}
+
+            {/* =============================================
+                TYPING
+            ============================================= */}
+
+            <AnimatePresence>
+              {isTyping && (
+                <MotiView
+                  from={{
+                    opacity: 0,
+                    translateY: 8,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    translateY: 0,
+                  }}
+                  exit={{
+                    opacity: 0,
+                    translateY: 5,
+                  }}
+                  style={[
+                    styles.typingRow,
+                    {
+                      flexDirection:
+                        rowDirection,
+                    },
+                  ]}
+                >
                   <View
                     style={[
                       styles.messageAvatar,
                       {
                         backgroundColor:
                           colors.surfaceSecondary,
+
+                        borderColor:
+                          colors.border,
                       },
                     ]}
                   >
                     <Image
-                      source={require('../../assets/avatars/model 2.jpg')}
-                      style={styles.messageAvatarImage}
+                      source={require(
+                        '../../assets/avatars/model 2.jpg'
+                      )}
+                      style={
+                        styles.messageAvatarImage
+                      }
                     />
                   </View>
-                )}
-
-                <View style={styles.messageColumn}>
-                  {!message.isUser && (
-                    <Text
-                      style={[
-                        styles.sender,
-                        {
-                          color: colors.textSecondary,
-                          textAlign: isRTL
-                            ? 'right'
-                            : 'left',
-                        },
-                      ]}
-                    >
-                      {t.novaAI || 'Nova AI'}
-                    </Text>
-                  )}
-
-                  {message.isUser ? (
-                    <LinearGradient
-                      colors={[
-                        colors.primary,
-                        '#8B5CF6',
-                      ]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={[
-                        styles.userBubble,
-                        isRTL
-                          ? styles.userBubbleRTL
-                          : styles.userBubbleLTR,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.messageText,
-                          {
-                            color: '#FFFFFF',
-                            textAlign: isRTL
-                              ? 'right'
-                              : 'left',
-                          },
-                        ]}
-                      >
-                        {message.text}
-                      </Text>
-                    </LinearGradient>
-                  ) : (
-                    <View
-                      style={[
-                        styles.botBubble,
-                        {
-                          backgroundColor: isDark
-                            ? colors.surface
-                            : '#FFFFFF',
-                          borderColor: colors.border,
-                        },
-                        isRTL
-                          ? styles.botBubbleRTL
-                          : styles.botBubbleLTR,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.messageText,
-                          {
-                            color: colors.text,
-                            textAlign: isRTL
-                              ? 'right'
-                              : 'left',
-                          },
-                        ]}
-                      >
-                        {message.text}
-                      </Text>
-                    </View>
-                  )}
-
-                  <Text
-                    style={[
-                      styles.timestamp,
-                      {
-                        color: colors.textTertiary,
-                        textAlign: message.isUser
-                          ? isRTL
-                            ? 'left'
-                            : 'right'
-                          : isRTL
-                            ? 'right'
-                            : 'left',
-                      },
-                    ]}
-                  >
-                    {message.timestamp}
-                  </Text>
-                </View>
-              </MotiView>
-            ))}
-
-            {/* ================= TYPING ================= */}
-
-            {isTyping && (
-              <MotiView
-                from={{
-                  opacity: 0,
-                  translateY: 8,
-                }}
-                animate={{
-                  opacity: 1,
-                  translateY: 0,
-                }}
-                transition={{
-                  type: 'timing',
-                  duration: 220,
-                }}
-                style={[
-                  styles.messageRow,
-                  {
-                    flexDirection: rowDirection,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.messageAvatar,
-                    {
-                      backgroundColor:
-                        colors.surfaceSecondary,
-                    },
-                  ]}
-                >
-                  <Image
-                    source={require('../../assets/avatars/model 2.jpg')}
-                    style={styles.messageAvatarImage}
-                  />
-                </View>
-
-                <View
-                  style={[
-                    styles.typingBubble,
-                    {
-                      backgroundColor: isDark
-                        ? colors.surface
-                        : '#FFFFFF',
-                      borderColor: colors.border,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.typingText,
-                      {
-                        color: colors.textSecondary,
-                      },
-                    ]}
-                  >
-                    {t.analyzing || 'Thinking'}
-                  </Text>
 
                   <View
                     style={[
-                      styles.typingDots,
+                      styles.typingBubble,
                       {
-                        flexDirection: rowDirection,
+                        backgroundColor:
+                          colors.surface,
+
+                        borderColor:
+                          colors.border,
                       },
                     ]}
                   >
-                    {[0, 150, 300].map(delay => (
+                    <View
+                      style={
+                        styles.typingDots
+                      }
+                    >
                       <MotiView
-                        key={delay}
                         from={{
                           opacity: 0.3,
-                          scale: 0.75,
+                          translateY: 0,
                         }}
                         animate={{
-                          opacity: [0.3, 1, 0.3],
-                          scale: [0.75, 1, 0.75],
+                          opacity: 1,
+                          translateY: -3,
                         }}
                         transition={{
-                          loop: true,
-                          duration: 700,
-                          delay,
                           type: 'timing',
+                          duration: 350,
+                          loop: true,
                         }}
                         style={[
-                          styles.typingDot,
+                          styles.dot,
                           {
                             backgroundColor:
                               colors.primary,
                           },
                         ]}
                       />
-                    ))}
+
+                      <MotiView
+                        from={{
+                          opacity: 0.3,
+                          translateY: 0,
+                        }}
+                        animate={{
+                          opacity: 1,
+                          translateY: -3,
+                        }}
+                        transition={{
+                          type: 'timing',
+                          duration: 350,
+                          delay: 100,
+                          loop: true,
+                        }}
+                        style={[
+                          styles.dot,
+                          {
+                            backgroundColor:
+                              colors.primary,
+                          },
+                        ]}
+                      />
+
+                      <MotiView
+                        from={{
+                          opacity: 0.3,
+                          translateY: 0,
+                        }}
+                        animate={{
+                          opacity: 1,
+                          translateY: -3,
+                        }}
+                        transition={{
+                          type: 'timing',
+                          duration: 350,
+                          delay: 200,
+                          loop: true,
+                        }}
+                        style={[
+                          styles.dot,
+                          {
+                            backgroundColor:
+                              colors.primary,
+                          },
+                        ]}
+                      />
+                    </View>
                   </View>
-                </View>
-              </MotiView>
-            )}
+                </MotiView>
+              )}
+            </AnimatePresence>
+
           </ScrollView>
 
-          {/* Scroll to bottom */}
+          {/* =============================================
+              SCROLL BUTTON
+          ============================================= */}
 
           <AnimatePresence>
             {showScrollButton && (
@@ -841,37 +1534,259 @@ export default function AssistantScreen() {
                   opacity: 0,
                   scale: 0.8,
                 }}
-                style={styles.scrollButtonWrapper}
+                style={
+                  styles.scrollButtonWrapper
+                }
               >
                 <TouchableOpacity
                   activeOpacity={0.8}
-                  onPress={scrollToBottom}
+                  onPress={
+                    scrollToBottom
+                  }
                   style={[
                     styles.scrollButton,
                     {
                       backgroundColor:
-                        colors.primary,
+                        colors.surface,
+
+                      borderColor:
+                        colors.border,
                     },
                   ]}
                 >
                   <ChevronDown
                     size={20}
-                    color="#FFFFFF"
-                    strokeWidth={2.3}
+                    color={
+                      colors.text
+                    }
                   />
                 </TouchableOpacity>
               </MotiView>
             )}
           </AnimatePresence>
+        </View>
 
-          {/* Notice */}
+        {/* =================================================
+            INPUT
+        ================================================= */}
 
-          <AnimatePresence>
-            {notice && (
+        <View
+          style={[
+            styles.inputArea,
+            {
+              paddingBottom:
+                Math.max(
+                  insets.bottom,
+                  10
+                ),
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.inputWrapper,
+              {
+                backgroundColor:
+                  colors.surface,
+
+                borderColor:
+                  colors.border,
+              },
+            ]}
+          >
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() =>
+                showNotice(
+                  language === 'fa'
+                    ? 'افزودن فایل به‌زودی'
+                    : 'Attachments coming soon'
+                )
+              }
+              style={
+                styles.inputIconButton
+              }
+            >
+              <Plus
+                size={21}
+                color={
+                  colors.textSecondary
+                }
+                strokeWidth={2}
+              />
+            </TouchableOpacity>
+
+            <TextInput
+              ref={inputRef}
+              value={inputText}
+              onChangeText={
+                setInputText
+              }
+              placeholder={
+                t.typeMessage ||
+                (language === 'fa'
+                  ? 'پیام خود را بنویسید...'
+                  : 'Type a message...')
+              }
+              placeholderTextColor={
+                colors.textTertiary
+              }
+              multiline
+              maxLength={2000}
+              editable={!isTyping}
+              textAlign={
+                isRTL
+                  ? 'right'
+                  : 'left'
+              }
+              style={[
+                styles.input,
+                {
+                  color:
+                    colors.text,
+                },
+              ]}
+              onSubmitEditing={() => {
+                if (
+                  Platform.OS !==
+                  'web'
+                ) {
+                  handleSend();
+                }
+              }}
+            />
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() =>
+                showNotice(
+                  language === 'fa'
+                    ? 'ورودی صوتی به‌زودی'
+                    : 'Voice input coming soon'
+                )
+              }
+              style={
+                styles.inputIconButton
+              }
+            >
+              <Mic
+                size={20}
+                color={
+                  colors.textSecondary
+                }
+                strokeWidth={2}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.82}
+              disabled={
+                !inputText.trim() ||
+                isTyping
+              }
+              onPress={() =>
+                handleSend()
+              }
+              style={[
+                styles.sendButton,
+                {
+                  backgroundColor:
+                    inputText.trim() &&
+                    !isTyping
+                      ? colors.primary
+                      : isDark
+                        ? 'rgba(255,255,255,0.08)'
+                        : 'rgba(15,23,42,0.07)',
+                },
+              ]}
+            >
+              {isTyping ? (
+                <ActivityIndicator
+                  size="small"
+                  color="#FFFFFF"
+                />
+              ) : (
+                <Send
+                  size={18}
+                  color={
+                    inputText.trim()
+                      ? '#FFFFFF'
+                      : colors.textTertiary
+                  }
+                  strokeWidth={2.2}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* =================================================
+            NOTICE
+        ================================================= */}
+
+        <AnimatePresence>
+          {notice && (
+            <MotiView
+              from={{
+                opacity: 0,
+                translateY: 20,
+                scale: 0.96,
+              }}
+              animate={{
+                opacity: 1,
+                translateY: 0,
+                scale: 1,
+              }}
+              exit={{
+                opacity: 0,
+                translateY: 10,
+                scale: 0.97,
+              }}
+              style={[
+                styles.notice,
+                {
+                  backgroundColor:
+                    colors.surface,
+
+                  borderColor:
+                    colors.border,
+                },
+              ]}
+            >
+              <AlertCircle
+                size={17}
+                color={
+                  colors.primary
+                }
+              />
+
+              <Text
+                style={[
+                  styles.noticeText,
+                  {
+                    color:
+                      colors.text,
+                  },
+                ]}
+              >
+                {notice}
+              </Text>
+            </MotiView>
+          )}
+        </AnimatePresence>
+
+        {/* =================================================
+            ERROR RETRY
+        ================================================= */}
+
+        <AnimatePresence>
+          {requestError &&
+            !isTyping && (
               <MotiView
                 from={{
                   opacity: 0,
-                  translateY: 8,
+                  translateY: 10,
                 }}
                 animate={{
                   opacity: 1,
@@ -879,254 +1794,224 @@ export default function AssistantScreen() {
                 }}
                 exit={{
                   opacity: 0,
-                  translateY: 8,
+                  translateY: 10,
                 }}
                 style={[
-                  styles.notice,
+                  styles.errorBar,
                   {
-                    backgroundColor: isDark
-                      ? '#27272A'
-                      : '#1F2937',
+                    backgroundColor:
+                      isDark
+                        ? 'rgba(228,123,123,0.12)'
+                        : 'rgba(217,107,107,0.08)',
+
+                    borderColor:
+                      isDark
+                        ? 'rgba(228,123,123,0.22)'
+                        : 'rgba(217,107,107,0.18)',
                   },
                 ]}
               >
-                <Text style={styles.noticeText}>
-                  {notice}
+                <AlertCircle
+                  size={16}
+                  color={
+                    colors.error
+                  }
+                />
+
+                <Text
+                  style={[
+                    styles.errorText,
+                    {
+                      color:
+                        colors.error,
+                    },
+                  ]}
+                >
+                  {language ===
+                  'fa'
+                    ? 'اتصال به سرور برقرار نشد'
+                    : 'Connection failed'}
                 </Text>
+
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={
+                    handleRetry
+                  }
+                  style={
+                    styles.retryButton
+                  }
+                >
+                  <RotateCcw
+                    size={15}
+                    color={
+                      colors.error
+                    }
+                  />
+
+                  <Text
+                    style={[
+                      styles.retryText,
+                      {
+                        color:
+                          colors.error,
+                      },
+                    ]}
+                  >
+                    {language ===
+                    'fa'
+                      ? 'تلاش مجدد'
+                      : 'Retry'}
+                  </Text>
+                </TouchableOpacity>
               </MotiView>
             )}
-          </AnimatePresence>
-        </View>
+        </AnimatePresence>
 
-        {/* =====================================================
-            INPUT
-           ===================================================== */}
-
-        <MotiView
-          from={{
-            opacity: 0,
-            translateY: 15,
-          }}
-          animate={{
-            opacity: 1,
-            translateY: 0,
-          }}
-          transition={{
-            type: 'timing',
-            duration: 350,
-          }}
-          style={[
-            styles.inputWrapper,
-            {
-              backgroundColor: isDark
-                ? 'rgba(24,24,27,0.97)'
-                : 'rgba(255,255,255,0.97)',
-              borderColor: colors.border,
-              marginBottom:
-                insets.bottom > 0
-                  ? insets.bottom
-                  : 8,
-            },
-          ]}
-        >
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() =>
-              showNotice(
-                language === 'fa'
-                  ? 'پیوست فایل به‌زودی اضافه می‌شود'
-                  : 'File attachments are coming soon'
-              )
-            }
-            style={styles.inputIconButton}
-          >
-            <Plus
-              size={21}
-              color={colors.textTertiary}
-              strokeWidth={2}
-            />
-          </TouchableOpacity>
-
-          <TextInput
-            ref={inputRef}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder={
-              t.askNova ||
-              (language === 'fa'
-                ? 'از Nova چیزی بپرسید...'
-                : 'Ask Nova anything...')
-            }
-            placeholderTextColor={colors.textTertiary}
-            multiline
-            style={[
-              styles.input,
-              {
-                color: colors.text,
-                textAlign: isRTL
-                  ? 'right'
-                  : 'left',
-              },
-            ]}
-            returnKeyType="send"
-            blurOnSubmit={false}
-            onSubmitEditing={() => handleSend()}
-          />
-
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() =>
-              showNotice(
-                language === 'fa'
-                  ? 'ورودی صوتی به‌زودی اضافه می‌شود'
-                  : 'Voice input is coming soon'
-              )
-            }
-            style={styles.inputIconButton}
-          >
-            <Mic
-              size={20}
-              color={colors.textTertiary}
-              strokeWidth={2}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.78}
-            disabled={!inputText.trim()}
-            onPress={() => handleSend()}
-            style={[
-              styles.sendButton,
-              {
-                backgroundColor: inputText.trim()
-                  ? colors.primary
-                  : isDark
-                    ? '#27272A'
-                    : '#E5E7EB',
-              },
-            ]}
-          >
-            <Send
-              size={18}
-              color={
-                inputText.trim()
-                  ? '#FFFFFF'
-                  : colors.textTertiary
-              }
-              strokeWidth={2.4}
-            />
-          </TouchableOpacity>
-        </MotiView>
       </KeyboardAvoidingView>
     </LinearGradient>
   );
 }
+
+/* =========================================================
+   STYLES
+========================================================= */
+
 const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
+
   container: {
     flex: 1,
-    paddingHorizontal: 16,
   },
 
+  /* =======================================================
+     HEADER
+  ======================================================= */
+
   header: {
-    width: '100%',
+    paddingHorizontal: 18,
   },
+
   headerContent: {
-    paddingTop: 50,
-    minHeight: 66,
+    minHeight: 72,
     alignItems: 'center',
   },
+
   avatarWrapper: {
     width: 50,
     height: 50,
-    borderRadius: 16,
-    alignItems: 'center',
+    borderRadius: 25,
+
     justifyContent: 'center',
-    position: 'relative',
+    alignItems: 'center',
+
+    borderWidth: 1,
+
     overflow: 'visible',
   },
 
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
 
   onlineDot: {
     position: 'absolute',
+
     right: -1,
-    bottom: -1,
-    width: 13,
-    height: 13,
-    borderRadius: 7,
-    backgroundColor: '#4ADE80',
+    bottom: 1,
+
+    width: 12,
+    height: 12,
+
+    borderRadius: 6,
+
+    backgroundColor: '#55C99A',
+
     borderWidth: 2,
   },
 
   headerIdentity: {
     flex: 1,
-    marginHorizontal: 11,
+
+    marginHorizontal: 12,
   },
 
   nameLine: {
     alignItems: 'center',
+
+    gap: 7,
   },
 
   aiName: {
-    fontSize: 18,
-    lineHeight: 23,
+    fontSize: 17,
     fontWeight: '700',
+
+    letterSpacing: -0.2,
   },
 
   aiBadge: {
     width: 23,
     height: 23,
+
     borderRadius: 8,
-    alignItems: 'center',
+
     justifyContent: 'center',
-    marginHorizontal: 6,
+    alignItems: 'center',
   },
 
   onlineRow: {
     alignItems: 'center',
-    marginTop: 2,
+
+    marginTop: 3,
+
+    gap: 5,
   },
 
   onlineIndicator: {
     width: 6,
     height: 6,
+
     borderRadius: 3,
-    backgroundColor: '#4ADE80',
-    marginHorizontal: 5,
+
+    backgroundColor: '#55C99A',
   },
 
   onlineText: {
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 12,
+
+    fontWeight: '500',
   },
 
   moreButton: {
     width: 42,
     height: 42,
-    borderRadius: 14,
-    alignItems: 'center',
+
+    borderRadius: 13,
+
     justifyContent: 'center',
+    alignItems: 'center',
   },
 
   headerLine: {
-    height: StyleSheet.hairlineWidth,
-    width: '100%',
-    marginTop: 5,
-    opacity: 0.7,
+    height: 1,
+
+    marginTop: 2,
+
+    opacity: 0.65,
   },
 
-  /* ================= CHAT ================= */
+  /* =======================================================
+     CHAT
+  ======================================================= */
 
   chatArea: {
     flex: 1,
-    minHeight: 0,
+
+    position: 'relative',
   },
 
   scroll: {
@@ -1134,284 +2019,418 @@ const styles = StyleSheet.create({
   },
 
   scrollContent: {
-    paddingTop: 12,
-    paddingBottom: 18,
+    paddingHorizontal: 18,
+    paddingTop: 20,
+    paddingBottom: 20,
   },
 
   emptyScroll: {
     flexGrow: 1,
+
+    justifyContent: 'center',
   },
 
-  /* ================= WELCOME ================= */
+  /* =======================================================
+     WELCOME
+  ======================================================= */
 
   welcome: {
-    flex: 1,
-    justifyContent: 'center',
+    width: '100%',
+
     alignItems: 'center',
-    paddingHorizontal: 4,
+
     paddingVertical: 20,
   },
 
   welcomeIcon: {
-    width: 54,
-    height: 54,
-    borderRadius: 18,
-    alignItems: 'center',
+    width: 62,
+    height: 62,
+
+    borderRadius: 21,
+
     justifyContent: 'center',
-    marginBottom: 13,
+    alignItems: 'center',
+
+    marginBottom: 18,
   },
 
   welcomeTitle: {
     fontSize: 26,
-    lineHeight: 34,
     fontWeight: '700',
-    textAlign: 'center',
+
+    letterSpacing: -0.5,
   },
 
   welcomeDescription: {
+    marginTop: 6,
+
     fontSize: 15,
-    lineHeight: 22,
-    textAlign: 'center',
-    marginTop: 2,
+
+    fontWeight: '500',
   },
 
   welcomeHint: {
+    marginTop: 5,
+
     fontSize: 13,
-    lineHeight: 19,
-    textAlign: 'center',
-    marginTop: 3,
   },
 
-  /* ================= QUICK ACTIONS ================= */
+  /* =======================================================
+     QUICK ACTIONS
+  ======================================================= */
 
   quickActions: {
     width: '100%',
+
     flexDirection: 'row',
+
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginTop: 24,
-    rowGap: 10,
+
+    justifyContent: 'center',
+
+    marginTop: 28,
+
+    gap: 10,
   },
 
   quickActionWrapper: {
-    width: '48.5%',
+    width: '47%',
+    maxWidth: 190,
   },
 
   quickAction: {
-    minHeight: 91,
-    borderRadius: 17,
+    minHeight: 78,
+
+    borderRadius: 18,
+
     borderWidth: 1,
+
+    padding: 12,
+
+    flexDirection: 'row',
+
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+
+    gap: 10,
   },
 
   quickIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: 'center',
+    width: 40,
+    height: 40,
+
+    borderRadius: 13,
+
     justifyContent: 'center',
-    marginBottom: 7,
+    alignItems: 'center',
   },
 
   quickLabel: {
-    fontSize: 12.5,
-    lineHeight: 17,
+    flex: 1,
+
+    fontSize: 13,
+
     fontWeight: '600',
-    textAlign: 'center',
+
+    lineHeight: 18,
   },
 
-  /* ================= MESSAGES ================= */
+  /* =======================================================
+     MESSAGE
+  ======================================================= */
 
   messageRow: {
     width: '100%',
+
     alignItems: 'flex-end',
-    marginBottom: 15,
-    paddingHorizontal: 4,
+
+    marginBottom: 17,
   },
 
   messageAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 11,
+    width: 34,
+    height: 34,
+
+    borderRadius: 12,
+
+    justifyContent: 'center',
+    alignItems: 'center',
+
+    borderWidth: 1,
+
     overflow: 'hidden',
+
     marginHorizontal: 7,
   },
 
   messageAvatarImage: {
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
+
+    borderRadius: 10,
   },
 
   messageColumn: {
-    maxWidth: '76%',
-    minWidth: 0,
+    maxWidth: '78%',
   },
 
   sender: {
-    fontSize: 10.5,
-    fontWeight: '500',
-    marginHorizontal: 4,
-    marginBottom: 4,
+    fontSize: 11,
+
+    fontWeight: '600',
+
+    marginBottom: 5,
+
+    paddingHorizontal: 3,
   },
 
   userBubble: {
     paddingHorizontal: 15,
     paddingVertical: 11,
-    borderRadius: 19,
+
+    borderRadius: 18,
+
     maxWidth: '100%',
   },
 
   userBubbleLTR: {
-    borderTopRightRadius: 5,
+    borderBottomRightRadius: 5,
   },
 
   userBubbleRTL: {
-    borderTopLeftRadius: 5,
+    borderBottomLeftRadius: 5,
   },
 
-  botBubble: {
-    borderWidth: 1,
+  assistantBubble: {
     paddingHorizontal: 15,
-    paddingVertical: 11,
-    borderRadius: 19,
-    maxWidth: '100%',
-  },
+    paddingVertical: 12,
 
-  botBubbleLTR: {
-    borderTopLeftRadius: 5,
-  },
+    borderRadius: 18,
 
-  botBubbleRTL: {
-    borderTopRightRadius: 5,
+    borderWidth: 1,
+
+    borderBottomLeftRadius: 5,
   },
 
   messageText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 14,
+
+    lineHeight: 21,
+
+    fontWeight: '400',
   },
 
   timestamp: {
-    fontSize: 9.5,
-    marginTop: 4,
-    marginHorizontal: 4,
-    opacity: 0.65,
+    fontSize: 10,
+
+    marginTop: 5,
+
+    paddingHorizontal: 3,
   },
 
-  /* ================= TYPING ================= */
+  /* =======================================================
+     TYPING
+  ======================================================= */
+
+  typingRow: {
+    alignItems: 'center',
+
+    marginBottom: 12,
+  },
 
   typingBubble: {
-    minHeight: 42,
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+    minWidth: 64,
+    height: 42,
 
-  typingText: {
-    fontSize: 11.5,
-    marginHorizontal: 4,
+    borderRadius: 16,
+
+    borderWidth: 1,
+
+    justifyContent: 'center',
+    alignItems: 'center',
+
+    paddingHorizontal: 15,
   },
 
   typingDots: {
+    flexDirection: 'row',
+
     alignItems: 'center',
+
+    gap: 4,
   },
 
-  typingDot: {
-    width: 5,
-    height: 5,
+  dot: {
+    width: 6,
+    height: 6,
+
     borderRadius: 3,
-    marginHorizontal: 2,
   },
 
-  /* ================= SCROLL BUTTON ================= */
+  /* =======================================================
+     SCROLL BUTTON
+  ======================================================= */
 
   scrollButtonWrapper: {
     position: 'absolute',
-    bottom: 12,
-    alignSelf: 'center',
+
+    right: 18,
+    bottom: 18,
   },
 
   scrollButton: {
-    width: MIN_TAP_TARGET,
-    height: MIN_TAP_TARGET,
-    borderRadius: MIN_TAP_TARGET / 2,
-    alignItems: 'center',
+    width: 42,
+    height: 42,
+
+    borderRadius: 14,
+
     justifyContent: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.18,
-    shadowRadius: 7,
+    alignItems: 'center',
+
+    borderWidth: 1,
   },
 
-  /* ================= NOTICE ================= */
+  /* =======================================================
+     INPUT
+  ======================================================= */
 
-  notice: {
-    position: 'absolute',
-    bottom: 12,
-    alignSelf: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 9,
-    borderRadius: BorderRadius.full,
+  inputArea: {
+    paddingHorizontal: 14,
+    paddingTop: 8,
   },
-
-  noticeText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-
-  /* ================= INPUT ================= */
 
   inputWrapper: {
-    width: '100%',
     minHeight: 56,
-    borderRadius: 19,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 5,
-    paddingVertical: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
-  },
 
-  inputIconButton: {
-    width: 43,
-    height: 43,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 20,
+
+    borderWidth: 1,
+
+    flexDirection: 'row',
+
+    alignItems: 'flex-end',
+
+    paddingHorizontal: 7,
+    paddingVertical: 6,
   },
 
   input: {
     flex: 1,
+
     minHeight: 42,
-    maxHeight: 100,
-    fontSize: 15,
+    maxHeight: 120,
+
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+
+    fontSize: 14,
+
     lineHeight: 20,
-    paddingHorizontal: 4,
-    paddingVertical: 9,
+  },
+
+  inputIconButton: {
+    width: 40,
+    height: 42,
+
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   sendButton: {
-    width: 44,
-    height: 44,
+    width: 42,
+    height: 42,
+
     borderRadius: 14,
-    alignItems: 'center',
+
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  /* =======================================================
+     NOTICE
+  ======================================================= */
+
+  notice: {
+    position: 'absolute',
+
+    left: 22,
+    right: 22,
+
+    bottom: 88,
+
+    minHeight: 46,
+
+    borderRadius: 15,
+
+    borderWidth: 1,
+
+    paddingHorizontal: 14,
+
+    flexDirection: 'row',
+
+    alignItems: 'center',
+
+    gap: 9,
+
+    elevation: 8,
+  },
+
+  noticeText: {
+    flex: 1,
+
+    fontSize: 12,
+
+    fontWeight: '600',
+  },
+
+  /* =======================================================
+     ERROR
+  ======================================================= */
+
+  errorBar: {
+    position: 'absolute',
+
+    left: 18,
+    right: 18,
+
+    bottom: 76,
+
+    minHeight: 42,
+
+    borderRadius: 13,
+
+    borderWidth: 1,
+
+    paddingHorizontal: 12,
+
+    flexDirection: 'row',
+
+    alignItems: 'center',
+
+    gap: 7,
+  },
+
+  errorText: {
+    flex: 1,
+
+    fontSize: 11,
+
+    fontWeight: '600',
+  },
+
+  retryButton: {
+    flexDirection: 'row',
+
+    alignItems: 'center',
+
+    gap: 5,
+
+    paddingHorizontal: 7,
+    paddingVertical: 5,
+  },
+
+  retryText: {
+    fontSize: 11,
+
+    fontWeight: '700',
   },
 });
