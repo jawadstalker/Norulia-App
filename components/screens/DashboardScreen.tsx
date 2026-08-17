@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   View,
@@ -6,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  Dimensions,
   Image,
   TouchableOpacity,
 } from 'react-native';
@@ -24,17 +22,15 @@ import {
 } from '../../constants/theme';
 
 import {
-  BrainCircuit,      
-  BookOpen,        
-  Sparkles,          
-  Pill,            
-  Stethoscope,      
-  SlidersHorizontal, 
+  BrainCircuit,
+  BookOpen,
+  Sparkles,
+  Pill,
+  Stethoscope,
+  SlidersHorizontal,
   TrendingUp,
   LayoutGrid,
 } from 'lucide-react-native';
-
-const { width } = Dimensions.get('window');
 
 /* =========================================================
    QUICK ACCESS ITEMS
@@ -102,17 +98,22 @@ function getGreeting(t: any) {
 ========================================================= */
 
 export function DashboardScreen() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { t, isRTL } = useLanguage();
   const router = useRouter();
 
-  const [refreshing, setRefreshing] =
-    React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
 
   const refreshTimerRef =
-    React.useRef<ReturnType<typeof setTimeout> | null>(
-      null
-    );
+    React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /* =======================================================
+     HERO GRADIENT
+  ======================================================= */
+
+  const heroGradient = isDark
+    ? ['#3D2E70', '#261268']
+    : ['#F0ECFA', '#E3DCF5'];
 
   /* =======================================================
      REFRESH
@@ -184,30 +185,26 @@ export function DashboardScreen() {
             },
           ]}
         >
-          {/* =================================================
-              ICON
-          ================================================= */}
+          {/* ICON */}
 
           <View
             style={[
               styles.menuIconContainer,
               {
-                backgroundColor: isRTL
+                backgroundColor: isDark
                   ? 'rgba(255,255,255,0.06)'
-                  : 'rgba(15,23,42,0.045)',
+                  : 'rgba(107,90,166,0.07)',
               },
             ]}
           >
             <IconComponent
               size={24}
-              color={colors.textSecondary}
+              color={colors.primary}
               strokeWidth={1.9}
             />
           </View>
 
-          {/* =================================================
-              TITLE
-          ================================================= */}
+          {/* TITLE */}
 
           <Text
             numberOfLines={2}
@@ -216,11 +213,6 @@ export function DashboardScreen() {
               styles.menuCardTitle,
               {
                 color: colors.text,
-
-                /*
-                 * کارت‌ها همیشه وسط‌چین هستند.
-                 * فقط جهت نوشتار بر اساس زبان تغییر می‌کند.
-                 */
                 textAlign: 'center',
                 writingDirection: isRTL
                   ? 'rtl'
@@ -250,9 +242,7 @@ export function DashboardScreen() {
     >
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={
-          styles.scrollContent
-        }
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -294,8 +284,9 @@ export function DashboardScreen() {
             style={[
               styles.greetingChip,
               {
-                backgroundColor:
-                  colors.primary + '14',
+                backgroundColor: isDark
+                  ? 'rgba(123,97,255,0.12)'
+                  : 'rgba(107,90,166,0.09)',
               },
             ]}
           >
@@ -378,10 +369,7 @@ export function DashboardScreen() {
           }}
         >
           <LinearGradient
-            colors={[
-              colors.primary,
-              colors.accent || colors.primary,
-            ]}
+            colors={heroGradient}
             start={{
               x: 0,
               y: 0,
@@ -390,7 +378,26 @@ export function DashboardScreen() {
               x: 1,
               y: 1,
             }}
-            style={styles.characterCard}
+            style={[
+              styles.characterCard,
+              {
+                borderColor: isDark
+                  ? 'rgba(255,255,255,0.10)'
+                  : 'rgba(107,90,166,0.06)',
+
+                shadowColor: isDark
+                  ? '#000000'
+                  : '#6B5AA6',
+
+                shadowOpacity: isDark
+                  ? 0.20
+                  : 0.08,
+
+                elevation: isDark
+                  ? 8
+                  : 3,
+              },
+            ]}
           >
             {/* Decorative blobs */}
 
@@ -398,7 +405,9 @@ export function DashboardScreen() {
               style={[
                 styles.heroBlobA,
                 {
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: isDark
+                    ? '#FFFFFF'
+                    : '#6B5AA6',
                 },
               ]}
             />
@@ -407,17 +416,47 @@ export function DashboardScreen() {
               style={[
                 styles.heroBlobB,
                 {
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: isDark
+                    ? '#FFFFFF'
+                    : '#6B5AA6',
                 },
               ]}
             />
 
-            <View style={styles.characterWrapper}>
-              {/* Avatar */}
+            {/* CHARACTER */}
 
-              <View style={styles.avatarRing}>
+            <View style={styles.characterWrapper}>
+              <View
+                style={[
+                  styles.avatarRing,
+                  {
+                    backgroundColor: isDark
+                      ? 'rgba(255,255,255,0.18)'
+                      : 'rgba(107,90,166,0.10)',
+
+                    shadowColor: isDark
+                      ? '#000000'
+                      : '#6B5AA6',
+
+                    shadowOpacity: isDark
+                      ? 0.20
+                      : 0.06,
+
+                    elevation: isDark
+                      ? 5
+                      : 2,
+                  },
+                ]}
+              >
                 <View
-                  style={styles.avatarContainer}
+                  style={[
+                    styles.avatarContainer,
+                    {
+                      backgroundColor: isDark
+                        ? 'rgba(255,255,255,0.96)'
+                        : 'rgba(255,255,255,0.82)',
+                    },
+                  ]}
                 >
                   <Image
                     source={require('../../assets/avatars/model1.jpg')}
@@ -426,13 +465,20 @@ export function DashboardScreen() {
                 </View>
               </View>
 
+              {/* TITLE */}
+
               <Text
                 style={[
                   styles.characterTitle,
                   {
+                    color: isDark
+                      ? '#FFFFFF'
+                      : '#2F2850',
+
                     textAlign: isRTL
                       ? 'right'
                       : 'left',
+
                     writingDirection: isRTL
                       ? 'rtl'
                       : 'ltr',
@@ -442,15 +488,20 @@ export function DashboardScreen() {
                 {t.dashboardReadyHelp}
               </Text>
 
-              {/* Character subtitle */}
+              {/* SUBTITLE */}
 
               <Text
                 style={[
                   styles.characterSubtitle,
                   {
+                    color: isDark
+                      ? 'rgba(255,255,255,0.80)'
+                      : '#675F7E',
+
                     textAlign: isRTL
                       ? 'right'
                       : 'left',
+
                     writingDirection: isRTL
                       ? 'rtl'
                       : 'ltr',
@@ -482,7 +533,12 @@ export function DashboardScreen() {
             delay: 200,
           }}
         >
-          <Card style={styles.progressCard}>
+          <Card
+            style={{
+              ...styles.progressCard,
+              backgroundColor: colors.surface,
+            }}
+          >
             <View
               style={[
                 styles.progressHeader,
@@ -493,14 +549,13 @@ export function DashboardScreen() {
                 },
               ]}
             >
-              {/* Icon */}
-
               <View
                 style={[
                   styles.progressIconWrap,
                   {
-                    backgroundColor:
-                      colors.primary + '18',
+                    backgroundColor: isDark
+                      ? 'rgba(123,97,255,0.12)'
+                      : 'rgba(107,90,166,0.08)',
                   },
                 ]}
               >
@@ -510,8 +565,6 @@ export function DashboardScreen() {
                   strokeWidth={2}
                 />
               </View>
-
-              {/* Title */}
 
               <Text
                 style={[
@@ -530,8 +583,6 @@ export function DashboardScreen() {
                 {t.dashboardCognitiveProgress}
               </Text>
 
-              {/* Percent */}
-
               <Text
                 style={[
                   styles.progressPercent,
@@ -546,15 +597,12 @@ export function DashboardScreen() {
 
             {/* Progress bar */}
 
-            <View
-              style={styles.progressBarContainer}
-            >
+            <View style={styles.progressBarContainer}>
               <View
                 style={[
                   styles.progressBarBg,
                   {
-                    backgroundColor:
-                      colors.border,
+                    backgroundColor: colors.border,
                   },
                 ]}
               />
@@ -583,8 +631,7 @@ export function DashboardScreen() {
                 <LinearGradient
                   colors={[
                     colors.primary,
-                    colors.accent ||
-                      colors.primary,
+                    colors.accent || colors.primary,
                   ]}
                   start={{
                     x: 0,
@@ -594,9 +641,7 @@ export function DashboardScreen() {
                     x: 1,
                     y: 0,
                   }}
-                  style={
-                    styles.progressBarFill
-                  }
+                  style={styles.progressBarFill}
                 />
               </MotiView>
             </View>
@@ -617,8 +662,7 @@ export function DashboardScreen() {
                 style={[
                   styles.progressText,
                   {
-                    color:
-                      colors.textSecondary,
+                    color: colors.textSecondary,
                     textAlign: isRTL
                       ? 'right'
                       : 'left',
@@ -693,10 +737,6 @@ export function DashboardScreen() {
           style={[
             styles.menuGrid,
             {
-              /*
-               * خود Grid از چپ/راست بر اساس زبان شروع می‌شود.
-               * کارت‌ها داخل هر سطر در سه ستون قرار می‌گیرند.
-               */
               flexDirection: isRTL
                 ? 'row-reverse'
                 : 'row',
@@ -774,6 +814,8 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     overflow: 'hidden',
     padding: Spacing.lg,
+
+    borderWidth: 1,
   },
 
   heroBlobA: {
@@ -781,7 +823,7 @@ const styles = StyleSheet.create({
     width: 160,
     height: 160,
     borderRadius: 80,
-    opacity: 0.08,
+    opacity: 0.07,
     top: -50,
     right: -40,
   },
@@ -791,7 +833,7 @@ const styles = StyleSheet.create({
     width: 110,
     height: 110,
     borderRadius: 55,
-    opacity: 0.08,
+    opacity: 0.06,
     bottom: -30,
     left: -30,
   },
@@ -807,16 +849,13 @@ const styles = StyleSheet.create({
     borderRadius: 64,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor:
-      'rgba(255,255,255,0.25)',
-    shadowColor: '#000',
+
     shadowOffset: {
       width: 0,
       height: 6,
     },
-    shadowOpacity: 0.2,
+
     shadowRadius: 12,
-    elevation: 6,
   },
 
   avatarContainer: {
@@ -826,26 +865,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
   },
 
   avatar: {
     width: 118,
     height: 118,
-  },
-
-  aiBadge: {
-    position: 'absolute',
-    top: Spacing.md + 4,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor:
-      'rgba(255,255,255,0.28)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
+    resizeMode: 'cover',
   },
 
   characterTitle: {
@@ -854,7 +879,6 @@ const styles = StyleSheet.create({
     lineHeight: 27,
     fontWeight: '700',
     marginTop: Spacing.md,
-    color: '#FFFFFF',
   },
 
   characterSubtitle: {
@@ -862,7 +886,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
     marginTop: 4,
-    color: 'rgba(255,255,255,0.8)',
   },
 
   /* =========================================================
@@ -871,13 +894,17 @@ const styles = StyleSheet.create({
 
   progressCard: {
     marginBottom: Spacing.lg,
-    shadowColor: '#000',
+
+    shadowColor: '#000000',
+
     shadowOffset: {
       width: 0,
       height: 4,
     },
+
     shadowOpacity: 0.06,
     shadowRadius: 10,
+
     elevation: 3,
   },
 
@@ -989,13 +1016,16 @@ const styles = StyleSheet.create({
 
     position: 'relative',
 
-    shadowColor: '#000',
+    shadowColor: '#000000',
+
     shadowOffset: {
       width: 0,
       height: 3,
     },
+
     shadowOpacity: 0.035,
     shadowRadius: 7,
+
     elevation: 2,
   },
 
@@ -1026,4 +1056,3 @@ const styles = StyleSheet.create({
     height: 30,
   },
 });
-

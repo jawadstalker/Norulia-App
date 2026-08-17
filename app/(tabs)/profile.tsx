@@ -36,7 +36,7 @@ import {
 import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { t, isRTL } = useLanguage();
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -45,24 +45,49 @@ export default function ProfileScreen() {
     ? ChevronLeft
     : ChevronRight;
 
+  /*
+   * =========================================================
+   * PROFILE HERO GRADIENT
+   *
+   * Dark:
+   * Deep / premium purple
+   *
+   * Light:
+   * Soft / pastel purple
+   * =========================================================
+   */
+
+  const heroGradient: [string, string] = isDark
+    ? ['#342660', '#21104F']
+    : ['#F2EEFF', '#D8CEFA'];
+
+  /*
+   * =========================================================
+   * SINGLE ICON COLOR
+   *
+   * تمام آیکون‌های صفحه از یک رنگ واحد استفاده می‌کنند.
+   * =========================================================
+   */
+
+  const iconColor = isDark
+    ? '#CFC6FF'
+    : '#6B5AA6';
+
   const stats = [
     {
       label: t.level,
       value: user?.level || 1,
       icon: Trophy,
-      color: colors.warning,
     },
     {
       label: t.streak,
       value: user?.streak || 0,
       icon: Flame,
-      color: colors.error,
     },
     {
       label: t.xp,
       value: user?.xp || 0,
       icon: Star,
-      color: colors.primary,
     },
   ];
 
@@ -82,57 +107,80 @@ export default function ProfileScreen() {
       ===================================================== */}
 
 <LinearGradient
-  colors={[
-    '#242052',
-    '#38306F',
+  colors={heroGradient}
+  start={{ x: 0, y: 0 }}
+  end={{ x: 1, y: 1 }}
+  style={[
+    styles.hero,
+    {
+      borderColor: isDark
+        ? 'rgba(255,255,255,0.10)'
+        : 'rgba(107,90,166,0.06)',
+
+      shadowColor: isDark
+        ? '#000000'
+        : '#6B5AA6',
+
+      shadowOpacity: isDark
+        ? 0.20
+        : 0.08,
+
+      elevation: isDark
+        ? 8
+        : 3,
+    },
   ]}
-  start={{
-    x: 0,
-    y: 0,
-  }}
-  end={{
-    x: 1,
-    y: 1,
-  }}
-  style={styles.hero}
 >
-        {/* =================================================
-            CHARACTER
 
-            فقط خود PNG
-            بدون دایره
-            بدون glow
-            بدون border
-            بدون background
-            بدون star
-        ================================================= */}
 
-        <MotiView
-          from={{
-            opacity: 0,
-            translateY: 24,
-            scale: 0.82,
-          }}
-          animate={{
-            opacity: 1,
-            translateY: 0,
-            scale: 1,
-          }}
-          transition={{
-            type: 'spring',
-            damping: 14,
-            stiffness: 120,
-            mass: 0.8,
-          }}
-          style={styles.characterContainer}
-        >
-          <Image
-            source={require(
-              '../../assets/avatars/Head.png'
-            )}
-            style={styles.characterHead}
+        <View style={styles.characterStage}>
+
+          {/* Soft ambient light */}
+
+          <MotiView
+            pointerEvents="none"
+            from={{
+              opacity: 0,
+              scale: 0.7,
+            }}
+            animate={{
+              opacity: 0.18,
+              scale: 1,
+            }}
+            transition={{
+              type: 'timing',
+              duration: 900,
+            }}
+            style={styles.characterAmbientLight}
           />
-        </MotiView>
+
+          {/* Character */}
+
+          <MotiView
+            from={{
+              opacity: 0,
+              translateY: 30,
+              scale: 0.82,
+            }}
+            animate={{
+              opacity: 1,
+              translateY: 0,
+              scale: 1,
+            }}
+            transition={{
+              type: 'spring',
+              damping: 13,
+              stiffness: 120,
+              mass: 0.8,
+            }}
+            style={styles.characterWrapper}
+          >
+            <Image
+              source={require('../../assets/avatars/Head.png')}
+              style={styles.characterHead}
+            />
+          </MotiView>
+        </View>
 
         {/* =================================================
             USER INFORMATION
@@ -141,7 +189,7 @@ export default function ProfileScreen() {
         <MotiView
           from={{
             opacity: 0,
-            translateY: 12,
+            translateY: 14,
           }}
           animate={{
             opacity: 1,
@@ -150,16 +198,59 @@ export default function ProfileScreen() {
           transition={{
             type: 'timing',
             duration: 450,
-            delay: 180,
+            delay: 220,
           }}
+          style={styles.userInfo}
         >
-          <Text style={styles.userName}>
+          <Text
+            style={[
+              styles.userName,
+              {
+                color: isDark
+                  ? '#FFFFFF'
+                  : '#29213F',
+              },
+            ]}
+          >
             {user?.name || t.appName}
           </Text>
 
-          <Text style={styles.email}>
+          <Text
+            style={[
+              styles.email,
+              {
+                color: isDark
+                  ? 'rgba(255,255,255,0.72)'
+                  : 'rgba(41,33,63,0.62)',
+              },
+            ]}
+          >
             {user?.email || 'user@neurolia.app'}
           </Text>
+
+          {/* Small profile accent */}
+
+          <View
+            style={[
+              styles.profileAccent,
+              {
+                backgroundColor: isDark
+                  ? 'rgba(255,255,255,0.22)'
+                  : 'rgba(41,33,63,0.16)',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.profileAccentDot,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255,255,255,0.85)'
+                    : 'rgba(41,33,63,0.60)',
+                },
+              ]}
+            />
+          </View>
         </MotiView>
       </LinearGradient>
 
@@ -189,15 +280,17 @@ export default function ProfileScreen() {
                 from={{
                   opacity: 0,
                   translateY: 16,
+                  scale: 0.96,
                 }}
                 animate={{
                   opacity: 1,
                   translateY: 0,
+                  scale: 1,
                 }}
                 transition={{
                   type: 'timing',
                   duration: 400,
-                  delay: 150 + index * 90,
+                  delay: 250 + index * 90,
                 }}
                 style={styles.statWrap}
               >
@@ -209,14 +302,15 @@ export default function ProfileScreen() {
                     style={[
                       styles.statIconWrap,
                       {
-                        backgroundColor:
-                          stat.color + '18',
+                        backgroundColor: isDark
+                          ? 'rgba(207,198,255,0.10)'
+                          : 'rgba(107,90,166,0.10)',
                       },
                     ]}
                   >
                     <StatIcon
                       size={18}
-                      color={stat.color}
+                      color={iconColor}
                     />
                   </View>
 
@@ -235,8 +329,7 @@ export default function ProfileScreen() {
                     style={[
                       styles.statLabel,
                       {
-                        color:
-                          colors.textSecondary,
+                        color: colors.textSecondary,
                       },
                     ]}
                   >
@@ -255,7 +348,7 @@ export default function ProfileScreen() {
         <MotiView
           from={{
             opacity: 0,
-            translateY: 16,
+            translateY: 18,
           }}
           animate={{
             opacity: 1,
@@ -263,17 +356,16 @@ export default function ProfileScreen() {
           }}
           transition={{
             type: 'timing',
-            duration: 400,
-            delay: 420,
+            duration: 450,
+            delay: 540,
           }}
         >
           <Card style={styles.menuCard}>
+
             {/* Settings */}
 
             <TouchableOpacity
-              onPress={() =>
-                router.push('/settings')
-              }
+              onPress={() => router.push('/settings')}
               style={styles.menuItem}
               activeOpacity={0.7}
             >
@@ -281,14 +373,15 @@ export default function ProfileScreen() {
                 style={[
                   styles.menuIconWrap,
                   {
-                    backgroundColor:
-                      colors.primary + '18',
+                    backgroundColor: isDark
+                      ? 'rgba(207,198,255,0.10)'
+                      : 'rgba(107,90,166,0.10)',
                   },
                 ]}
               >
                 <Settings
                   size={19}
-                  color={colors.primary}
+                  color={iconColor}
                 />
               </View>
 
@@ -315,8 +408,7 @@ export default function ProfileScreen() {
               style={[
                 styles.menuDivider,
                 {
-                  backgroundColor:
-                    colors.border,
+                  backgroundColor: colors.border,
                 },
               ]}
             />
@@ -328,18 +420,15 @@ export default function ProfileScreen() {
                 style={[
                   styles.menuIconWrap,
                   {
-                    backgroundColor:
-                      (colors.success ||
-                        colors.primary) + '18',
+                    backgroundColor: isDark
+                      ? 'rgba(207,198,255,0.10)'
+                      : 'rgba(107,90,166,0.10)',
                   },
                 ]}
               >
                 <Shield
                   size={19}
-                  color={
-                    colors.success ||
-                    colors.primary
-                  }
+                  color={iconColor}
                 />
               </View>
 
@@ -369,7 +458,7 @@ export default function ProfileScreen() {
         <MotiView
           from={{
             opacity: 0,
-            translateY: 16,
+            translateY: 18,
           }}
           animate={{
             opacity: 1,
@@ -377,8 +466,8 @@ export default function ProfileScreen() {
           }}
           transition={{
             type: 'timing',
-            duration: 400,
-            delay: 500,
+            duration: 450,
+            delay: 620,
           }}
         >
           <TouchableOpacity
@@ -386,10 +475,8 @@ export default function ProfileScreen() {
             style={[
               styles.logoutButton,
               {
-                backgroundColor:
-                  colors.error + '12',
-                borderColor:
-                  colors.error + '30',
+                backgroundColor: colors.error + '12',
+                borderColor: colors.error + '30',
               },
             ]}
             activeOpacity={0.75}
@@ -422,7 +509,6 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 50,
     flex: 1,
   },
 
@@ -431,33 +517,25 @@ const styles = StyleSheet.create({
   },
 
   /* =======================================================
-     HERO BACKGROUND
-     
-     این قسمت عمداً باقی مانده است.
-     فقط دایره‌ها حذف شده‌اند.
+     HERO
   ======================================================= */
 
   hero: {
     marginHorizontal: Spacing.lg,
-
     marginTop: Spacing.lg,
 
-    paddingTop: 28,
-
-    paddingBottom: 36,
-
+    paddingTop: 20,
+    paddingBottom: 34,
     paddingHorizontal: Spacing.lg,
 
     alignItems: 'center',
 
     borderRadius: 32,
-
     overflow: 'hidden',
 
     borderWidth: 1,
 
-    borderColor:
-      'rgba(255,255,255,0.14)',
+    borderColor: 'rgba(255,255,255,0.14)',
 
     shadowColor: '#000',
 
@@ -467,61 +545,114 @@ const styles = StyleSheet.create({
     },
 
     shadowOpacity: 0.15,
-
     shadowRadius: 20,
 
     elevation: 8,
   },
 
   /* =======================================================
+     CHARACTER STAGE
+  ======================================================= */
+
+  characterStage: {
+    width: 190,
+    height: 175,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    position: 'relative',
+  },
+
+  /* =======================================================
+     SOFT AMBIENT LIGHT
+  ======================================================= */
+
+  characterAmbientLight: {
+    position: 'absolute',
+
+    width: 150,
+    height: 100,
+
+    borderRadius: 75,
+
+    backgroundColor: '#FFFFFF',
+
+    opacity: 0.15,
+
+    transform: [
+      {
+        scaleY: 0.75,
+      },
+    ],
+  },
+
+  /* =======================================================
      CHARACTER
   ======================================================= */
 
-  characterContainer: {
-    width: 145,
-
-    height: 145,
+  characterWrapper: {
+    width: 175,
+    height: 175,
 
     alignItems: 'center',
-
     justifyContent: 'center',
 
-    marginBottom: 2,
+    zIndex: 2,
   },
 
   characterHead: {
-    width: 180,
-
-    height: 170,
+    width: 175,
+    height: 175,
 
     resizeMode: 'contain',
   },
 
   /* =======================================================
-     USER INFORMATION
+     USER INFO
   ======================================================= */
+
+  userInfo: {
+    alignItems: 'center',
+  },
 
   userName: {
     fontSize: 22,
-
     fontWeight: '700',
-
-    color: '#FFFFFF',
 
     textAlign: 'center',
 
-    marginTop: Spacing.md,
+    marginTop: Spacing.sm,
   },
 
   email: {
     fontSize: 13,
 
-    color:
-      'rgba(255,255,255,0.72)',
-
     textAlign: 'center',
 
     marginTop: 4,
+  },
+
+  /* =======================================================
+     PROFILE ACCENT
+  ======================================================= */
+
+  profileAccent: {
+    width: 42,
+    height: 2,
+
+    marginTop: 12,
+
+    borderRadius: 2,
+
+    alignItems: 'flex-end',
+  },
+
+  profileAccentDot: {
+    width: 10,
+    height: 2,
+
+    borderRadius: 2,
   },
 
   /* =======================================================
@@ -530,7 +661,6 @@ const styles = StyleSheet.create({
 
   body: {
     paddingHorizontal: Spacing.lg,
-
     paddingTop: Spacing.lg,
   },
 
@@ -541,8 +671,7 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
 
-    justifyContent:
-      'space-between',
+    justifyContent: 'space-between',
 
     marginBottom: Spacing.lg,
   },
@@ -564,7 +693,6 @@ const styles = StyleSheet.create({
     },
 
     shadowOpacity: 0.05,
-
     shadowRadius: 8,
 
     elevation: 2,
@@ -572,13 +700,11 @@ const styles = StyleSheet.create({
 
   statIconWrap: {
     width: 36,
-
     height: 36,
 
     borderRadius: 18,
 
     alignItems: 'center',
-
     justifyContent: 'center',
 
     marginBottom: 6,
@@ -586,7 +712,6 @@ const styles = StyleSheet.create({
 
   statValue: {
     fontSize: 19,
-
     fontWeight: '700',
   },
 
@@ -611,7 +736,6 @@ const styles = StyleSheet.create({
     },
 
     shadowOpacity: 0.05,
-
     shadowRadius: 10,
 
     elevation: 2,
@@ -629,13 +753,11 @@ const styles = StyleSheet.create({
 
   menuIconWrap: {
     width: 36,
-
     height: 36,
 
     borderRadius: 12,
 
     alignItems: 'center',
-
     justifyContent: 'center',
   },
 
@@ -661,7 +783,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
 
     alignItems: 'center',
-
     justifyContent: 'center',
 
     padding: Spacing.lg,
