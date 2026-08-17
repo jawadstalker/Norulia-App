@@ -452,7 +452,7 @@ export default function ScheduleScreen() {
             >
               <View style={styles.avatarContainer}>
                 <Image
-                  source={require('../../assets/avatars/model2.png')}
+                  source={require('../../assets/avatars/modell.png')}
                   style={styles.avatar}
                   resizeMode="contain"
                 />
