@@ -1855,4 +1855,12 @@ const styles = StyleSheet.create({
 
     overflow: 'hidden',
   },
+  timelineItem: {
+    width: '100%',
+  
+    position: 'relative',
+  
+    paddingBottom:
+      Spacing.md,
+  },
 });

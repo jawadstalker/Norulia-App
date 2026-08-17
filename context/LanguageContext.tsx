@@ -17,18 +17,16 @@ import { Language } from '../types';
    TYPES
 ================================================================ */
 
-/*
- * translations.fa و translations.en در پروژه فعلی
- * دقیقاً ساختار یکسانی ندارند.
+/**
+ * Translation objects in the project have evolved over time and
+ * are not guaranteed to expose exactly the same keys in both
+ * languages.
  *
- * بنابراین نباید t را فقط به typeof translations.fa
- * محدود کنیم.
- *
- * این type اجازه می‌دهد t مطابق زبان انتخاب‌شده
- * از ساختار واقعی translations گرفته شود.
+ * Using a string-keyed translation map keeps the context type
+ * compatible with the real translation objects while preserving
+ * proper string values for the UI.
  */
-type TranslationValue =
-  (typeof translations)[keyof typeof translations];
+export type TranslationValue = Record<string, string>;
 
 interface LanguageContextType {
   language: Language;
@@ -48,6 +46,21 @@ const LanguageContext =
   );
 
 const LANGUAGE_KEY = '@neurolia_language';
+
+/* ================================================================
+   TRANSLATION RESOLVER
+================================================================ */
+
+function getTranslations(
+  language: Language
+): TranslationValue {
+  const selected =
+    translations[
+      language as keyof typeof translations
+    ];
+
+  return selected as TranslationValue;
+}
 
 /* ================================================================
    PROVIDER
@@ -93,7 +106,7 @@ export function LanguageProvider({
       }
     };
 
-    loadLanguage();
+    void loadLanguage();
 
     return () => {
       mounted = false;
@@ -106,17 +119,10 @@ export function LanguageProvider({
 
   const setLanguage = useCallback(
     async (newLanguage: Language) => {
-      /*
-       * جلوگیری از update غیرضروری.
-       */
       if (newLanguage === language) {
         return;
       }
 
-      /*
-       * ابتدا UI را تغییر می‌دهیم تا کاربر
-       * مجبور نباشد منتظر AsyncStorage بماند.
-       */
       setLanguageState(newLanguage);
 
       try {
@@ -145,10 +151,7 @@ export function LanguageProvider({
           ? 'en'
           : 'fa';
 
-      /*
-       * ذخیره‌سازی خارج از render انجام می‌شود.
-       */
-      AsyncStorage.setItem(
+      void AsyncStorage.setItem(
         LANGUAGE_KEY,
         nextLanguage
       ).catch((error) => {
@@ -172,18 +175,10 @@ export function LanguageProvider({
      TRANSLATIONS
   ============================================================== */
 
-  const t = useMemo<TranslationValue>(() => {
-    /*
-     * Language از نوع پروژه است و translations
-     * شامل fa/en است.
-     *
-     * این cast فقط برای هماهنگ کردن TypeScript
-     * با ساختار فعلی پروژه استفاده شده است.
-     */
-    return translations[
-      language as keyof typeof translations
-    ];
-  }, [language]);
+  const t = useMemo<TranslationValue>(
+    () => getTranslations(language),
+    [language]
+  );
 
   /* ==============================================================
      CONTEXT VALUE

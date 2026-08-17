@@ -1,4 +1,9 @@
-import { useEffect, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+
 import {
   Stack,
   useRouter,
@@ -11,6 +16,7 @@ import {
   View,
   StyleSheet,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 
 import {
@@ -31,6 +37,7 @@ import {
 } from '@expo-google-fonts/inter';
 
 import * as SplashScreen from 'expo-splash-screen';
+import * as NavigationBar from 'expo-navigation-bar';
 
 import {
   ThemeProvider,
@@ -66,19 +73,17 @@ import {
   useFrameworkReady,
 } from '../hooks/useFrameworkReady';
 
-
-// --------------------------------------------------
-// Prevent native splash from hiding automatically
-// --------------------------------------------------
+/* ================================================================
+   NATIVE SPLASH
+================================================================ */
 
 SplashScreen.preventAutoHideAsync().catch(
   () => {}
 );
 
-
-// --------------------------------------------------
-// Font names
-// --------------------------------------------------
+/* ================================================================
+   FONT FAMILY
+================================================================ */
 
 export const FONT_FAMILY = {
   persian: 'XBNiloofar',
@@ -91,10 +96,80 @@ export const FONT_FAMILY = {
   },
 };
 
+/* ================================================================
+   ROUTE NORMALIZER
+================================================================ */
 
-// --------------------------------------------------
-// APP CONTENT
-// --------------------------------------------------
+function normalizeRoute(
+  value: string
+): string {
+  if (!value) {
+    return '/';
+  }
+
+  const normalized =
+    value
+      .replace(
+        /\/\([^)]+\)/g,
+        ''
+      )
+      .replace(
+        /\/{2,}/g,
+        '/'
+      );
+
+  if (
+    normalized.length > 1 &&
+    normalized.endsWith('/')
+  ) {
+    return normalized.slice(
+      0,
+      -1
+    );
+  }
+
+  return normalized || '/';
+}
+
+/* ================================================================
+   ANDROID SYSTEM NAVIGATION BAR
+================================================================ */
+
+async function hideAndroidNavigationBar() {
+  if (
+    Platform.OS !== 'android'
+  ) {
+    return;
+  }
+
+  try {
+    await NavigationBar.setVisibilityAsync(
+      'hidden'
+    );
+
+    await NavigationBar.setBehaviorAsync(
+      'overlay-swipe'
+    );
+
+    await NavigationBar.setBackgroundColorAsync(
+      '#00000000'
+    );
+
+    await NavigationBar.setButtonStyleAsync(
+      'light'
+    );
+  } catch {
+    /*
+     * Some Android versions or Expo Go
+     * versions may not support every
+     * navigation-bar API.
+     */
+  }
+}
+
+/* ================================================================
+   APP CONTENT
+================================================================ */
 
 function AppContent() {
   const {
@@ -107,55 +182,137 @@ function AppContent() {
     theme,
   } = useTheme();
 
-  const router = useRouter();
-  const pathname = usePathname();
+  const router =
+    useRouter();
 
-  const [showSplash, setShowSplash] =
-    useState(true);
+  const pathname =
+    usePathname();
 
+  const [
+    showSplash,
+    setShowSplash,
+  ] = useState(true);
 
-  // --------------------------------------------------
-  // IMPORTANT
-  // --------------------------------------------------
-  //
-  // There is intentionally NO I18nManager
-  // manipulation here.
-  //
-  // LanguageContext is the single source of truth
-  // for RTL/LTR.
-  //
-  // --------------------------------------------------
+  /* ==============================================================
+     SYSTEM NAVIGATION BAR
+  ============================================================== */
 
+  useEffect(() => {
+    hideAndroidNavigationBar();
+  }, []);
 
-  // --------------------------------------------------
-  // Splash completion
-  // --------------------------------------------------
+  /*
+   * Android can occasionally restore its
+   * navigation bar after focus changes,
+   * dialogs or transitions.
+   */
+  useEffect(() => {
+    if (
+      Platform.OS !== 'android'
+    ) {
+      return;
+    }
 
-  const handleSplashComplete = () => {
-    setShowSplash(false);
+    const interval =
+      setInterval(() => {
+        hideAndroidNavigationBar();
+      }, 2000);
 
-    SplashScreen.hideAsync().catch(
-      () => {}
+    return () => {
+      clearInterval(
+        interval
+      );
+    };
+  }, []);
+
+  /* ==============================================================
+     SPLASH COMPLETE
+  ============================================================== */
+
+  const handleSplashComplete =
+    useCallback(() => {
+      setShowSplash(false);
+
+      SplashScreen
+        .hideAsync()
+        .catch(() => {});
+
+      hideAndroidNavigationBar();
+    }, []);
+
+  /* ==============================================================
+     BOTTOM NAVIGATION
+  ============================================================== */
+
+  const handleBottomNavigation =
+    useCallback(
+      (route: string) => {
+        if (!route) {
+          return;
+        }
+
+        const current =
+          normalizeRoute(
+            pathname || '/'
+          );
+
+        const target =
+          normalizeRoute(route);
+
+        /*
+         * Already on this route.
+         * Do absolutely nothing.
+         */
+        if (
+          current === target
+        ) {
+          return;
+        }
+
+        /*
+         * replace() prevents the navigation
+         * stack from growing every time the
+         * user changes a bottom tab.
+         */
+        router.replace(
+          route as any
+        );
+
+        /*
+         * Restore Android immersive
+         * navigation after route change.
+         */
+        if (
+          Platform.OS === 'android'
+        ) {
+          setTimeout(() => {
+            hideAndroidNavigationBar();
+          }, 150);
+        }
+      },
+      [
+        pathname,
+        router,
+      ]
     );
-  };
 
-
-  // --------------------------------------------------
-  // APP SPLASH
-  // --------------------------------------------------
+  /* ==============================================================
+     CUSTOM SPLASH
+  ============================================================== */
 
   if (showSplash) {
     return (
       <AppSplashScreen
-        onComplete={handleSplashComplete}
+        onComplete={
+          handleSplashComplete
+        }
       />
     );
   }
 
-
-  // --------------------------------------------------
-  // AUTH LOADING
-  // --------------------------------------------------
+  /* ==============================================================
+     AUTH LOADING
+  ============================================================== */
 
   if (authLoading) {
     return (
@@ -184,16 +341,17 @@ function AppContent() {
 
         <ActivityIndicator
           size="large"
-          color={colors.primary}
+          color={
+            colors.primary
+          }
         />
       </View>
     );
   }
 
-
-  // --------------------------------------------------
-  // LOGIN / REGISTER
-  // --------------------------------------------------
+  /* ==============================================================
+     LOGIN / REGISTER
+  ============================================================== */
 
   if (!isAuthenticated) {
     return (
@@ -219,10 +377,9 @@ function AppContent() {
     );
   }
 
-
-  // --------------------------------------------------
-  // AUTHENTICATED APP
-  // --------------------------------------------------
+  /* ==============================================================
+     AUTHENTICATED APPLICATION
+  ============================================================== */
 
   return (
     <View
@@ -242,57 +399,67 @@ function AppContent() {
         }
       />
 
-      {/* --------------------------------------------
-          MAIN APPLICATION
-         -------------------------------------------- */}
+      {/* ========================================================
+          MAIN ROUTER
+
+          IMPORTANT:
+          BottomNavBar is NOT inside this Stack.
+          It exists exactly once below the Stack.
+      ======================================================== */}
 
       <View
-        style={styles.contentContainer}
+        style={
+          styles.contentContainer
+        }
       >
         <Stack
           screenOptions={{
             headerShown: false,
+            animation: 'none',
           }}
-        >
-          <Stack.Screen
-            name="(tabs)"
-          />
-
-          <Stack.Screen
-            name="settings"
-          />
-        </Stack>
+        />
       </View>
 
+      {/* ========================================================
+          SINGLE GLOBAL BOTTOM NAVIGATION
 
-      {/* --------------------------------------------
-          BOTTOM NAVIGATION
-         -------------------------------------------- */}
+          This is the ONLY BottomNavBar in the app.
+          
+          Because it is outside Stack:
+          
+          - Home        -> visible
+          - Protocol    -> visible
+          - Nova        -> visible
+          - Schedule    -> visible
+          - Profile     -> visible
+          - Settings    -> visible
+          
+          And it won't be duplicated by
+          the tabs navigator.
+      ======================================================== */}
 
       <BottomNavBar
-        currentRoute={pathname}
-        onNavigate={(route) => {
-          router.navigate(
-            route as any
-          );
-        }}
+        currentRoute={
+          pathname || '/'
+        }
+        onNavigate={
+          handleBottomNavigation
+        }
       />
     </View>
   );
 }
 
-
-// --------------------------------------------------
-// ROOT LAYOUT
-// --------------------------------------------------
+/* ================================================================
+   ROOT LAYOUT
+================================================================ */
 
 export default function RootLayout() {
   useFrameworkReady();
 
-
-  // --------------------------------------------------
-  // Load fonts
-  // --------------------------------------------------
+  /* ==============================================================
+     FONTS
+  ============================================================== */
 
   const [
     fontsLoaded,
@@ -303,15 +470,15 @@ export default function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
 
-    XBNiloofar: require(
-      '../XB Niloofar.ttf'
-    ),
+    XBNiloofar:
+      require(
+        '../XB Niloofar.ttf'
+      ),
   });
 
-
-  // --------------------------------------------------
-  // Hide native splash after fonts load
-  // --------------------------------------------------
+  /* ==============================================================
+     NATIVE SPLASH
+  ============================================================== */
 
   useEffect(() => {
     if (
@@ -321,16 +488,17 @@ export default function RootLayout() {
       SplashScreen
         .hideAsync()
         .catch(() => {});
+
+      hideAndroidNavigationBar();
     }
   }, [
     fontsLoaded,
     fontError,
   ]);
 
-
-  // --------------------------------------------------
-  // Wait for fonts
-  // --------------------------------------------------
+  /* ==============================================================
+     WAIT FOR FONTS
+  ============================================================== */
 
   if (
     !fontsLoaded &&
@@ -339,14 +507,15 @@ export default function RootLayout() {
     return null;
   }
 
-
-  // --------------------------------------------------
-  // APP PROVIDERS
-  // --------------------------------------------------
+  /* ==============================================================
+     PROVIDERS
+  ============================================================== */
 
   return (
     <GestureHandlerRootView
-      style={styles.container}
+      style={
+        styles.container
+      }
     >
       <SafeAreaProvider>
         <ThemeProvider>
@@ -363,17 +532,17 @@ export default function RootLayout() {
   );
 }
 
+/* ================================================================
+   STYLES
+================================================================ */
 
-// --------------------------------------------------
-// STYLES
-// --------------------------------------------------
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  contentContainer: {
-    flex: 1,
-  },
-});
+    contentContainer: {
+      flex: 1,
+    },
+  });

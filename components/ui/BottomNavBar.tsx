@@ -1,17 +1,14 @@
 import React, {
   memo,
   useCallback,
-  useEffect,
   useMemo,
-  useRef,
 } from 'react';
 
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
-  LayoutChangeEvent,
+  Pressable,
 } from 'react-native';
 
 import {
@@ -21,7 +18,6 @@ import {
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -49,39 +45,46 @@ import {
    TYPES
 ================================================================ */
 
+type NavItemId =
+  | 'home'
+  | 'brain'
+  | 'nova'
+  | 'calendar'
+  | 'profile';
+
 interface NavItem {
-  id:
-    | 'home'
-    | 'brain'
-    | 'nova'
-    | 'calendar'
-    | 'profile';
-
+  id: NavItemId;
   icon: typeof Home;
-
   route: string;
-
   isCenter?: boolean;
 }
 
 interface BottomNavBarProps {
   currentRoute: string;
-
-  onNavigate: (
-    route: string
-  ) => void;
-}
-
-interface ItemLayout {
-  x: number;
-  width: number;
+  onNavigate: (route: string) => void;
 }
 
 /* ================================================================
    CONSTANTS
 ================================================================ */
 
-const navItems: NavItem[] = [
+const NAV_COUNT = 5;
+
+const BAR_HEIGHT = 76;
+
+const CONTENT_HEIGHT = 60;
+
+const ACTIVE_HEIGHT = 50;
+
+const ACTIVE_MARGIN = 5;
+
+const NOVA_SIZE = 54;
+
+/* ================================================================
+   NAVIGATION ITEMS
+================================================================ */
+
+const NAV_ITEMS: readonly NavItem[] = [
   {
     id: 'home',
     icon: Home,
@@ -114,41 +117,104 @@ const navItems: NavItem[] = [
   },
 ];
 
-const ACTIVE_PILL_HEIGHT = 54;
-
-const CENTER_BUTTON_SIZE = 60;
-
 /* ================================================================
-   HELPERS
+   ROUTE NORMALIZATION
 ================================================================ */
 
-/*
- * Convert:
- *
- * /(tabs)/schedule
- *
- * to:
- *
- * /schedule
- *
- * This prevents route-group differences from causing
- * unnecessary navigation.
- */
 function normalizeRoute(
   path: string
 ): string {
-  const normalized =
-    path
-      .replace(
-        /\/\([^)]+\)/g,
-        ''
-      )
-      .replace(
-        /\/{2,}/g,
-        '/'
-      );
+  if (!path) {
+    return '/';
+  }
 
-  return normalized || '/';
+  let result = path
+    .replace(
+      /\/\([^)]+\)/g,
+      ''
+    )
+    .replace(
+      /\/{2,}/g,
+      '/'
+    );
+
+  if (
+    result.length > 1 &&
+    result.endsWith('/')
+  ) {
+    result =
+      result.slice(
+        0,
+        -1
+      );
+  }
+
+  return result || '/';
+}
+
+/* ================================================================
+   ACTIVE ROUTE
+================================================================ */
+
+function getActiveItem(
+  route: string
+): NavItemId | null {
+  const normalized =
+    normalizeRoute(route);
+
+  if (
+    normalized === '/' ||
+    normalized === '/index'
+  ) {
+    return 'home';
+  }
+
+  if (
+    normalized === '/protocol' ||
+    normalized.startsWith(
+      '/protocol/'
+    )
+  ) {
+    return 'brain';
+  }
+
+  if (
+    normalized === '/assistant' ||
+    normalized.startsWith(
+      '/assistant/'
+    )
+  ) {
+    return 'nova';
+  }
+
+  if (
+    normalized === '/schedule' ||
+    normalized.startsWith(
+      '/schedule/'
+    )
+  ) {
+    return 'calendar';
+  }
+
+  if (
+    normalized === '/profile' ||
+    normalized.startsWith(
+      '/profile/'
+    )
+  ) {
+    return 'profile';
+  }
+
+  /*
+   * Important:
+   *
+   * Pages such as settings do not belong
+   * to any bottom navigation item.
+   *
+   * Therefore we return null instead
+   * of incorrectly activating another item.
+   */
+  return null;
 }
 
 /* ================================================================
@@ -164,8 +230,9 @@ function BottomNavBarComponent({
     isDark,
   } = useTheme();
 
-  const { t } =
-    useLanguage();
+  const {
+    t,
+  } = useLanguage();
 
   const insets =
     useSafeAreaInsets();
@@ -178,75 +245,129 @@ function BottomNavBarComponent({
     useMemo(
       () =>
         normalizeRoute(
-          currentRoute || '/'
+          currentRoute
         ),
       [currentRoute]
     );
 
   /* ==============================================================
-     ACTIVE ROUTE
+     ACTIVE ITEM
   ============================================================== */
 
-  const isActiveRoute =
-    useCallback(
-      (item: NavItem) => {
-        switch (item.id) {
-          case 'home':
-            return (
-              normalizedRoute ===
-                '/' ||
-              normalizedRoute ===
-                '/index'
-            );
-
-          case 'brain':
-            return (
-              normalizedRoute ===
-                '/protocol' ||
-              normalizedRoute.startsWith(
-                '/protocol/'
-              )
-            );
-
-          case 'nova':
-            return (
-              normalizedRoute ===
-                '/assistant' ||
-              normalizedRoute.startsWith(
-                '/assistant/'
-              )
-            );
-
-          case 'calendar':
-            return (
-              normalizedRoute ===
-                '/schedule' ||
-              normalizedRoute.startsWith(
-                '/schedule/'
-              )
-            );
-
-          case 'profile':
-            return (
-              normalizedRoute ===
-                '/profile' ||
-              normalizedRoute.startsWith(
-                '/profile/'
-              )
-            );
-
-          default:
-            return false;
-        }
-      },
+  const activeItem =
+    useMemo(
+      () =>
+        getActiveItem(
+          normalizedRoute
+        ),
       [normalizedRoute]
+    );
+
+  /* ==============================================================
+     ACTIVE INDEX
+  ============================================================== */
+
+  const activeIndex =
+    useMemo(() => {
+      if (!activeItem) {
+        return -1;
+      }
+
+      return NAV_ITEMS.findIndex(
+        (item) =>
+          item.id ===
+          activeItem
+      );
+    }, [activeItem]);
+
+  /* ==============================================================
+     INDICATOR POSITION
+  ============================================================== */
+
+  const indicatorX =
+    useSharedValue(
+      activeIndex >= 0
+        ? activeIndex /
+          NAV_COUNT
+        : 0
+    );
+
+  const indicatorOpacity =
+    useSharedValue(
+      activeIndex >= 0
+        ? 1
+        : 0
+    );
+
+  /*
+   * The indicator uses a normalized
+   * 0..1 position.
+   *
+   * This avoids onLayout,
+   * refs and layout callbacks.
+   *
+   * Much less work for React Native.
+   */
+
+  React.useEffect(() => {
+    if (
+      activeIndex < 0
+    ) {
+      indicatorOpacity.value =
+        withTiming(
+          0,
+          {
+            duration: 100,
+          }
+        );
+
+      return;
+    }
+
+    indicatorX.value =
+      withTiming(
+        activeIndex /
+          NAV_COUNT,
+        {
+          duration: 180,
+        }
+      );
+
+    indicatorOpacity.value =
+      withTiming(
+        1,
+        {
+          duration: 120,
+        }
+      );
+  }, [
+    activeIndex,
+    indicatorOpacity,
+    indicatorX,
+  ]);
+
+  /* ==============================================================
+     INDICATOR STYLE
+  ============================================================== */
+
+  const indicatorStyle =
+    useAnimatedStyle(
+      () => ({
+        left: `${indicatorX.value * 100}%`,
+
+        opacity:
+          indicatorOpacity.value,
+
+        width: `${100 / NAV_COUNT}%`,
+      }),
+      []
     );
 
   /* ==============================================================
      NAVIGATION
   ============================================================== */
 
-  const handlePress =
+  const handleNavigate =
     useCallback(
       (route: string) => {
         const target =
@@ -254,10 +375,6 @@ function BottomNavBarComponent({
             route
           );
 
-        /*
-         * Never navigate to the current
-         * tab again.
-         */
         if (
           target ===
           normalizedRoute
@@ -274,186 +391,14 @@ function BottomNavBarComponent({
     );
 
   /* ==============================================================
-     ACTIVE PILL
-  ============================================================== */
-
-  const pillX =
-    useSharedValue(0);
-
-  const pillWidth =
-    useSharedValue(0);
-
-  const pillOpacity =
-    useSharedValue(0);
-
-  const itemLayouts =
-    useRef<
-      Record<
-        string,
-        ItemLayout
-      >
-    >({});
-
-  const movePillTo =
-    useCallback(
-      (itemId: string) => {
-        const layout =
-          itemLayouts.current[
-            itemId
-          ];
-
-        if (!layout) {
-          return;
-        }
-
-        const horizontalMargin = 6;
-
-        const targetX =
-          layout.x +
-          horizontalMargin;
-
-        const targetWidth =
-          Math.max(
-            layout.width -
-              horizontalMargin *
-                2,
-            48
-          );
-
-        pillX.value =
-          withSpring(
-            targetX,
-            {
-              stiffness: 360,
-              damping: 30,
-              mass: 0.7,
-            }
-          );
-
-        pillWidth.value =
-          withSpring(
-            targetWidth,
-            {
-              stiffness: 360,
-              damping: 30,
-              mass: 0.7,
-            }
-          );
-
-        pillOpacity.value =
-          withTiming(1, {
-            duration: 140,
-          });
-      },
-      [
-        pillX,
-        pillWidth,
-        pillOpacity,
-      ]
-    );
-
-  /* ==============================================================
-     ITEM LAYOUT
-  ============================================================== */
-
-  const handleItemLayout =
-    useCallback(
-      (item: NavItem) =>
-        (
-          event: LayoutChangeEvent
-        ) => {
-          const {
-            x,
-            width,
-          } =
-            event.nativeEvent
-              .layout;
-
-          itemLayouts.current[
-            item.id
-          ] = {
-            x,
-            width,
-          };
-
-          if (
-            !item.isCenter &&
-            isActiveRoute(item)
-          ) {
-            movePillTo(
-              item.id
-            );
-          }
-        },
-      [
-        isActiveRoute,
-        movePillTo,
-      ]
-    );
-
-  /* ==============================================================
-     ACTIVE PILL SYNC
-  ============================================================== */
-
-  useEffect(() => {
-    const activeItem =
-      navItems.find(
-        (item) =>
-          !item.isCenter &&
-          isActiveRoute(item)
-      );
-
-    if (!activeItem) {
-      pillOpacity.value =
-        withTiming(0, {
-          duration: 120,
-        });
-
-      return;
-    }
-
-    movePillTo(
-      activeItem.id
-    );
-  }, [
-    normalizedRoute,
-    isActiveRoute,
-    movePillTo,
-    pillOpacity,
-  ]);
-
-  /* ==============================================================
-     ANIMATED PILL
-  ============================================================== */
-
-  const pillStyle =
-    useAnimatedStyle(
-      () => ({
-        transform: [
-          {
-            translateX:
-              pillX.value,
-          },
-        ],
-
-        width:
-          pillWidth.value,
-
-        opacity:
-          pillOpacity.value,
-      }),
-      []
-    );
-
-  /* ==============================================================
-     LABELS
+     LABEL
   ============================================================== */
 
   const getLabel =
     useCallback(
       (
-        id: NavItem['id']
-      ) => {
+        id: NavItemId
+      ): string => {
         switch (id) {
           case 'home':
             return (
@@ -467,6 +412,9 @@ function BottomNavBarComponent({
               'Protocol'
             );
 
+          case 'nova':
+            return 'Nova';
+
           case 'calendar':
             return (
               t.plan ||
@@ -478,9 +426,6 @@ function BottomNavBarComponent({
               t.profile ||
               'Profile'
             );
-
-          case 'nova':
-            return 'Nova';
 
           default:
             return '';
@@ -495,19 +440,31 @@ function BottomNavBarComponent({
 
   const backgroundColor =
     isDark
-      ? 'rgba(28, 23, 45, 0.97)'
-      : 'rgba(255, 255, 255, 0.97)';
+      ? '#17131F'
+      : '#FFFFFF';
 
   const borderColor =
     isDark
-      ? 'rgba(255,255,255,0.07)'
+      ? 'rgba(255,255,255,0.08)'
       : colors.border;
 
-  const activeBackground =
-    `${colors.primary}18`;
+  const inactiveColor =
+    isDark
+      ? 'rgba(255,255,255,0.55)'
+      : colors.textTertiary;
 
-  const activeBorder =
-    `${colors.primary}22`;
+  const activeColor =
+    colors.primary;
+
+  const indicatorBackground =
+    isDark
+      ? `${colors.primary}1C`
+      : `${colors.primary}12`;
+
+  const indicatorBorder =
+    isDark
+      ? `${colors.primary}30`
+      : `${colors.primary}18`;
 
   /* ==============================================================
      RENDER
@@ -519,7 +476,6 @@ function BottomNavBarComponent({
         styles.container,
         {
           backgroundColor,
-
           borderTopColor:
             borderColor,
 
@@ -535,14 +491,17 @@ function BottomNavBarComponent({
 
           shadowOpacity:
             isDark
-              ? 0.18
+              ? 0.24
               : 0.06,
 
-          shadowRadius: 12,
+          shadowRadius:
+            isDark
+              ? 14
+              : 10,
 
           shadowOffset: {
             width: 0,
-            height: -4,
+            height: -3,
           },
 
           elevation: 10,
@@ -550,160 +509,239 @@ function BottomNavBarComponent({
       ]}
     >
       {/* ==========================================================
-          ACTIVE PILL
+          NAVIGATION AREA
+
+          IMPORTANT:
+
+          The active background belongs to the
+          navigation column itself.
+
+          There is only ONE active indicator.
       ========================================================== */}
 
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.activePill,
-          pillStyle,
-          {
-            backgroundColor:
-              activeBackground,
+      <View
+        style={
+          styles.navigationArea
+        }
+      >
+        {/* ========================================================
+            ACTIVE INDICATOR
+        ======================================================== */}
 
-            borderColor:
-              activeBorder,
-          },
-        ]}
-      />
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.activeIndicator,
+            indicatorStyle,
+            {
+              backgroundColor:
+                indicatorBackground,
 
-      {/* ==========================================================
-          NAV ITEMS
-      ========================================================== */}
+              borderColor:
+                indicatorBorder,
+            },
+          ]}
+        />
 
-      {navItems.map(
-        (item) => {
-          const Icon =
-            item.icon;
+        {/* ========================================================
+            ITEMS
+        ======================================================== */}
 
-          const isActive =
-            isActiveRoute(
-              item
-            );
+        {NAV_ITEMS.map(
+          (item) => {
+            const Icon =
+              item.icon;
 
-          /* ========================================================
-             CENTER NOVA
-          ======================================================== */
+            const isActive =
+              activeItem ===
+              item.id;
 
-          if (
-            item.isCenter
-          ) {
+            /* ====================================================
+               NOVA
+            ==================================================== */
+
+            if (
+              item.isCenter
+            ) {
+              return (
+                <View
+                  key={item.id}
+                  style={
+                    styles.navColumn
+                  }
+                >
+                  <Pressable
+                    onPress={() =>
+                      handleNavigate(
+                        item.route
+                      )
+                    }
+                    accessibilityRole="button"
+                    accessibilityLabel="Nova AI"
+                    android_ripple={
+                      {
+                        color:
+                          'transparent',
+                        borderless:
+                          false,
+                      }
+                    }
+                    style={({ pressed }) => [
+                      styles.novaButton,
+
+                      {
+                        backgroundColor:
+                          isActive
+                            ? colors.primary
+                            : isDark
+                            ? '#292231'
+                            : '#F1EFF5',
+
+                        borderColor:
+                          isDark
+                            ? '#17131F'
+                            : '#FFFFFF',
+
+                        opacity:
+                          pressed
+                            ? 0.82
+                            : 1,
+
+                        shadowColor:
+                          isActive
+                            ? colors.primary
+                            : '#000000',
+
+                        shadowOpacity:
+                          isActive
+                            ? isDark
+                              ? 0.30
+                              : 0.18
+                            : isDark
+                            ? 0.12
+                            : 0.06,
+                      },
+                    ]}
+                  >
+                    <Sparkles
+                      size={23}
+                      color={
+                        isActive
+                          ? '#FFFFFF'
+                          : isDark
+                          ? colors.textSecondary
+                          : colors.textTertiary
+                      }
+                      strokeWidth={
+                        isActive
+                          ? 2.4
+                          : 2
+                      }
+                    />
+                  </Pressable>
+
+                  <Text
+                    numberOfLines={
+                      1
+                    }
+                    style={[
+                      styles.label,
+                      {
+                        color:
+                          isActive
+                            ? activeColor
+                            : inactiveColor,
+                      },
+                    ]}
+                  >
+                    Nova
+                  </Text>
+                </View>
+              );
+            }
+
+            /* ====================================================
+               NORMAL ITEM
+            ==================================================== */
+
             return (
               <View
                 key={item.id}
                 style={
-                  styles.centerContainer
+                  styles.navColumn
                 }
               >
-                <TouchableOpacity
+                <Pressable
                   onPress={() =>
-                    handlePress(
+                    handleNavigate(
                       item.route
                     )
                   }
-                  activeOpacity={
-                    0.88
-                  }
                   accessibilityRole="button"
-                  accessibilityLabel="Nova AI"
-                  style={[
-                    styles.novaButton,
-                    {
-                      backgroundColor:
-                        isActive
-                          ? colors.primary
-                          : colors.surfaceSecondary,
+                  accessibilityLabel={getLabel(
+                    item.id
+                  )}
+                  android_ripple={{
+                    color:
+                      'transparent',
+                    borderless:
+                      false,
+                  }}
+                  style={({ pressed }) => [
+                    styles.navButton,
 
-                      shadowColor:
-                        isActive
-                          ? colors.primary
-                          : 'transparent',
+                    {
+                      opacity:
+                        pressed
+                          ? 0.70
+                          : 1,
                     },
                   ]}
                 >
-                  <Sparkles
-                    size={25}
-                    color={
-                      isActive
-                        ? '#FFFFFF'
-                        : colors.textTertiary
+                  <View
+                    style={
+                      styles.iconBox
                     }
-                    strokeWidth={
-                      isActive
-                        ? 2.4
-                        : 1.9
+                  >
+                    <Icon
+                      size={21}
+                      color={
+                        isActive
+                          ? activeColor
+                          : inactiveColor
+                      }
+                      strokeWidth={
+                        isActive
+                          ? 2.35
+                          : 1.9
+                      }
+                    />
+                  </View>
+
+                  <Text
+                    numberOfLines={
+                      1
                     }
-                  />
-                </TouchableOpacity>
+                    style={[
+                      styles.label,
+                      {
+                        color:
+                          isActive
+                            ? activeColor
+                            : inactiveColor,
+                      },
+                    ]}
+                  >
+                    {getLabel(
+                      item.id
+                    )}
+                  </Text>
+                </Pressable>
               </View>
             );
           }
-
-          /* ========================================================
-             NORMAL ITEM
-          ======================================================== */
-
-          return (
-            <TouchableOpacity
-              key={item.id}
-              onLayout={handleItemLayout(
-                item
-              )}
-              onPress={() =>
-                handlePress(
-                  item.route
-                )
-              }
-              activeOpacity={0.78}
-              accessibilityRole="button"
-              accessibilityLabel={getLabel(
-                item.id
-              )}
-              style={
-                styles.navItem
-              }
-            >
-              <View
-                style={
-                  styles.iconContainer
-                }
-              >
-                <Icon
-                  size={22}
-                  color={
-                    isActive
-                      ? colors.primary
-                      : colors.textTertiary
-                  }
-                  strokeWidth={
-                    isActive
-                      ? 2.35
-                      : 1.9
-                  }
-                />
-              </View>
-
-              <Text
-                numberOfLines={1}
-                style={[
-                  styles.label,
-                  {
-                    color:
-                      isActive
-                        ? colors.primary
-                        : colors.textTertiary,
-                  },
-                ]}
-              >
-                {getLabel(
-                  item.id
-                )}
-              </Text>
-            </TouchableOpacity>
-          );
-        }
-      )}
+        )}
+      </View>
     </View>
   );
 }
@@ -723,66 +761,126 @@ export const BottomNavBar =
 
 const styles =
   StyleSheet.create({
+    /* ============================================================
+       OUTER BAR
+    ============================================================ */
+
     container: {
-      position:
-        'relative',
+      width: '100%',
 
-      flexDirection:
-        'row',
+      height:
+        BAR_HEIGHT,
 
-      alignItems:
-        'center',
+      minHeight:
+        BAR_HEIGHT,
+
+      borderTopWidth:
+        StyleSheet.hairlineWidth,
+
+      overflow:
+        'visible',
+
+      zIndex: 100,
+
+      elevation: 10,
+    },
+
+    /* ============================================================
+       NAVIGATION AREA
+    ============================================================ */
+
+    navigationArea: {
+      position: 'relative',
+
+      flex: 1,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
 
       justifyContent:
         'space-between',
 
       width: '100%',
 
-      height: 76,
+      height:
+        CONTENT_HEIGHT,
 
-      minHeight: 76,
+      minHeight:
+        CONTENT_HEIGHT,
 
-      paddingHorizontal: 6,
+      paddingHorizontal: 4,
 
-      paddingTop: 9,
+      paddingTop: 2,
+    },
 
-      borderTopWidth:
-        StyleSheet.hairlineWidth,
+    /* ============================================================
+       ACTIVE INDICATOR
 
-      zIndex: 100,
+       IMPORTANT:
 
-      elevation: 10,
+       The indicator is INSIDE the navigation area.
+
+       Therefore it can never move outside
+       the bottom navigation.
+    ============================================================ */
+
+    activeIndicator: {
+      position: 'absolute',
+
+      top:
+        ACTIVE_MARGIN,
+
+      height:
+        ACTIVE_HEIGHT,
+
+      borderRadius:
+        ACTIVE_HEIGHT / 2,
+
+      borderWidth: 1,
+
+      marginHorizontal: 1,
+
+      zIndex: 0,
+    },
+
+    /* ============================================================
+       COLUMN
+    ============================================================ */
+
+    navColumn: {
+      flex: 1,
+
+      height:
+        CONTENT_HEIGHT,
+
+      minWidth: 0,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      zIndex: 2,
 
       overflow:
         'visible',
     },
 
-    activePill: {
-      position:
-        'absolute',
+    /* ============================================================
+       NORMAL BUTTON
 
-      left: 0,
+       No fixed Touchable opacity highlight.
+       No negative margins.
+       No absolute positioning.
+    ============================================================ */
 
-      top: 8,
+    navButton: {
+      width: '100%',
 
       height:
-        ACTIVE_PILL_HEIGHT,
-
-      borderRadius:
-        ACTIVE_PILL_HEIGHT /
-        2,
-
-      borderWidth: 1,
-
-      zIndex: 0,
-    },
-
-    navItem: {
-      flex: 1,
-
-      minWidth: 0,
-
-      height: 60,
+        CONTENT_HEIGHT,
 
       alignItems:
         'center',
@@ -792,24 +890,38 @@ const styles =
 
       paddingHorizontal: 2,
 
-      paddingVertical: 4,
+      paddingVertical: 3,
 
-      gap: 3,
+      borderRadius: 12,
 
-      zIndex: 2,
+      backgroundColor:
+        'transparent',
+
+      overflow:
+        'hidden',
     },
 
-    iconContainer: {
-      width: 30,
+    /* ============================================================
+       ICON BOX
+    ============================================================ */
 
-      height: 28,
+    iconBox: {
+      width: 28,
+
+      height: 25,
 
       alignItems:
         'center',
 
       justifyContent:
         'center',
+
+      marginBottom: 2,
     },
+
+    /* ============================================================
+       LABEL
+    ============================================================ */
 
     label: {
       fontSize: 10,
@@ -825,40 +937,35 @@ const styles =
 
       includeFontPadding:
         false,
+
+      maxWidth:
+        '100%',
     },
 
-    centerContainer: {
-      flex: 1,
+    /* ============================================================
+       NOVA BUTTON
 
-      height: 76,
+       No negative top.
 
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      zIndex: 20,
-
-      position:
-        'relative',
-    },
+       This is the important fix for the
+       icon/button escaping the navbar.
+    ============================================================ */
 
     novaButton: {
-      position:
-        'absolute',
-
-      top: -18,
-
       width:
-        CENTER_BUTTON_SIZE,
+        NOVA_SIZE,
 
       height:
-        CENTER_BUTTON_SIZE,
+        NOVA_SIZE,
+
+      maxWidth:
+        NOVA_SIZE,
+
+      maxHeight:
+        NOVA_SIZE,
 
       borderRadius:
-        CENTER_BUTTON_SIZE /
-        2,
+        NOVA_SIZE / 2,
 
       alignItems:
         'center',
@@ -868,24 +975,16 @@ const styles =
 
       borderWidth: 3,
 
-      borderColor:
-        '#FFFFFF',
-
-      shadowColor:
-        '#000000',
-
       shadowOffset: {
         width: 0,
-        height: 5,
+
+        height: 3,
       },
 
-      shadowOpacity:
-        0.18,
+      shadowRadius: 7,
 
-      shadowRadius: 8,
+      elevation: 7,
 
-      elevation: 10,
-
-      zIndex: 30,
+      marginBottom: 1,
     },
   });

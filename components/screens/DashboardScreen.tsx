@@ -106,9 +106,12 @@ export function DashboardScreen() {
   const isVerySmallScreen =
     width < 350;
 
-  const heroGradient = isDark
-    ? ['#3D2E70', '#261268']
-    : ['#F0ECFA', '#E3DCF5'];
+    const heroGradient: [
+      string,
+      string
+    ] = isDark
+      ? ['#3D2E70', '#261268']
+      : ['#F0ECFA', '#E3DCF5'];
 
   const onRefresh =
     React.useCallback(() => {
