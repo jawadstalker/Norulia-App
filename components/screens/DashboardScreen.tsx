@@ -866,7 +866,7 @@ const styles = StyleSheet.create({
     // overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingRight: 120,
+    paddingRight: 140,
   },
 
   avatar: {
