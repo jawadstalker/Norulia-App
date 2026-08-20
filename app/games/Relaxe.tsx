@@ -11,8 +11,6 @@ import { useRouter } from 'expo-router';
 
 import {
   ArrowLeft,
-  Volume2,
-  VolumeX,
   RotateCcw,
   Play,
   CheckCircle2,
@@ -416,7 +414,7 @@ export default function CalmBreathingScreen() {
           </Text>
         </View>
 
-        {/* SOUND */}
+        {/* SOUND
 
         <TouchableOpacity
           onPress={() => setIsMuted(v => !v)}
@@ -448,7 +446,7 @@ export default function CalmBreathingScreen() {
               strokeWidth={2.2}
             />
           )}
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       {/* ======================================================
