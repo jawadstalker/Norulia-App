@@ -11,6 +11,7 @@ import {
   MaterialCommunityIcons,
 } from '@expo/vector-icons';
 import { MotiView } from 'moti';
+import { Svg, Polygon } from 'react-native-svg';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import {
@@ -112,7 +113,7 @@ const colorNames = {
   '#EF4444': 'Red',
   '#3B82F6': 'Blue',
   '#10B981': 'Green',
-  '#FCD34D': 'Yellow',
+  '#F59E0B': 'Yellow',
   '#8B5CF6': 'Purple',
   '#EC4899': 'Pink',
 };
@@ -121,7 +122,7 @@ const colorNamesFa = {
   '#EF4444': 'قرمز',
   '#3B82F6': 'آبی',
   '#10B981': 'سبز',
-  '#FCD34D': 'زرد',
+  '#F59E0B': 'زرد',
   '#8B5CF6': 'بنفش',
   '#EC4899': 'صورتی',
 };
@@ -253,6 +254,9 @@ const ShapeComponent = ({
   color: string;
   size?: number;
 }) => {
+  const halfSize = size / 2;
+  const quarterSize = size / 4;
+
   switch (type) {
     case 'circle':
       return (
@@ -328,16 +332,16 @@ const ShapeComponent = ({
 
     case 'hexagon':
       return (
-        <View
-          style={[
-            styles.hexagonShape,
-            {
-              width: size * 0.9,
-              height: size * 0.8,
-              backgroundColor: color,
-            },
-          ]}
-        />
+        <Svg
+          width={size}
+          height={size}
+          viewBox="0 0 100 100"
+        >
+          <Polygon
+            points="50,5 95,27.5 95,72.5 50,95 5,72.5 5,27.5"
+            fill={color}
+          />
+        </Svg>
       );
 
     default:
@@ -355,7 +359,6 @@ const ShapeComponent = ({
       );
   }
 };
-
 
 interface PageHeaderProps {
   title: string;
@@ -383,19 +386,6 @@ function PageHeader({
         },
       ]}
     >
-      {/* ==========================================================
-         BACK BUTTON
-
-         این دکمه هیچ وابستگی به RTL ندارد.
-
-         نه row-reverse
-         نه scaleX
-         نه right
-         نه position وابسته به RTL
-
-         بنابراین همیشه سمت چپ می‌ماند.
-      ========================================================== */}
-
       <TouchableOpacity
         onPress={onBack}
         activeOpacity={0.75}
@@ -415,13 +405,6 @@ function PageHeader({
           color={colors.text}
         />
       </TouchableOpacity>
-
-      {/* ==========================================================
-         TITLE AREA
-
-         این قسمت مستقل از دکمه برگشت است.
-         RTL فقط این بخش را راست‌چین می‌کند.
-      ========================================================== */}
 
       <View
         style={[
@@ -522,14 +505,7 @@ export default function MemoryChallenge() {
     selectedLevel,
   ]);
 
-  /* ================================================================
-     BACK HANDLER
-     
-     منطق یکپارچه برای برگشت در همه حالت‌ها
-  ================================================================ */
-
   const handleBack = () => {
-    // اگر بازی در حال انجام است یا تمام شده، اول به صفحه شروع برگرد
     if (gameStarted || gameFinished) {
       setGameStarted(false);
       setGameFinished(false);
@@ -539,7 +515,6 @@ export default function MemoryChallenge() {
       return;
     }
 
-    // اگر در صفحه شروع هستیم، به صفحه قبلی برو
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -717,10 +692,6 @@ export default function MemoryChallenge() {
   const textAlignStyle =
     isRTL ? 'right' : 'left';
 
-  /* ================================================================
-     PAGE 1 — START
-  ================================================================ */
-
   if (!gameStarted) {
     return (
       <View
@@ -732,10 +703,6 @@ export default function MemoryChallenge() {
           },
         ]}
       >
-        {/* ======================================================
-           SHARED HEADER — دقیقاً مثل PsychoScreen
-        ====================================================== */}
-
         <PageHeader
           title={
             language === 'fa'
@@ -946,10 +913,6 @@ export default function MemoryChallenge() {
     );
   }
 
-  /* ================================================================
-     PAGE 2 — RESULT
-  ================================================================ */
-
   if (gameFinished) {
     const maxScore =
       TOTAL_ROUNDS * 20;
@@ -975,10 +938,6 @@ export default function MemoryChallenge() {
           },
         ]}
       >
-        {/* ======================================================
-           SHARED HEADER — دقیقاً مثل PsychoScreen
-        ====================================================== */}
-
         <PageHeader
           title={
             language === 'fa'
@@ -1195,10 +1154,6 @@ export default function MemoryChallenge() {
     );
   }
 
-  /* ================================================================
-     PAGE 3 — GAME PLAY
-  ================================================================ */
-
   const targetShapeName =
     getShapeName(target.shape);
 
@@ -1220,11 +1175,6 @@ export default function MemoryChallenge() {
         },
       ]}
     >
-      {/* ======================================================
-         SHARED HEADER — دقیقاً مثل PsychoScreen
-         با نمایش امتیاز در subtitle
-      ====================================================== */}
-
       <PageHeader
         title={
           language === 'fa'
@@ -1330,8 +1280,9 @@ export default function MemoryChallenge() {
             },
           ]}
         >
-          {targetColorName}{' '}
-          {targetShapeName}
+          {language === 'fa'
+            ? `${targetShapeName} ${targetColorName}`
+            : `${targetColorName} ${targetShapeName}`}
         </Text>
 
         <View
@@ -1375,59 +1326,29 @@ export default function MemoryChallenge() {
   );
 }
 
-/* ================================================================
-   STYLES
-================================================================ */
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
 
-  /* ================================================================
-     SHARED HEADER — دقیقاً مثل PsychoScreen
-
-     هر سه صفحه دقیقاً از همین Header استفاده می‌کنند.
-
-     ترتیب فیزیکی:
-     
-     [ BACK ] [ TITLE / SUBTITLE ]
-
-     بنابراین در RTL هم دکمه سمت چپ باقی می‌ماند.
-  ================================================================ */
-
   pageHeader: {
     width: '100%',
-
     paddingHorizontal: Spacing.lg,
     paddingTop: 60,
     paddingBottom: 15,
-
     flexDirection: 'row',
     alignItems: 'center',
-
-    borderBottomWidth:
-      StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
 
   unifiedBackButton: {
     width: 44,
     height: 44,
-
     borderRadius: 22,
-
     borderWidth: 1,
-
     alignItems: 'center',
     justifyContent: 'center',
-
     flexShrink: 0,
-
-    /*
-     * مهم:
-     * این margin همیشه یکسان است.
-     * RTL روی آن تأثیر نمی‌گذارد.
-     */
     marginRight: 12,
   },
 
@@ -1439,21 +1360,14 @@ const styles = StyleSheet.create({
   pageHeaderTitle: {
     fontSize: 21,
     fontWeight: '800',
-
     lineHeight: 27,
   },
 
   pageHeaderSubtitle: {
     fontSize: 12,
-
     marginTop: 3,
-
     lineHeight: 18,
   },
-
-  /* ================================================================
-     CONTENT
-  ================================================================ */
 
   content: {
     paddingTop: 20,
@@ -1466,10 +1380,6 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
 
-  /* ================================================================
-     LEVELS
-  ================================================================ */
-
   levelsContainer: {
     gap: 0,
   },
@@ -1477,12 +1387,9 @@ const styles = StyleSheet.create({
   levelCard: {
     minHeight: 82,
     borderWidth: 1.5,
-    borderRadius:
-      BorderRadius.lg,
-    padding:
-      Spacing.md,
-    marginBottom:
-      Spacing.md,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
   },
 
   levelContent: {
@@ -1501,14 +1408,12 @@ const styles = StyleSheet.create({
 
   levelInfo: {
     flex: 1,
-    marginLeft:
-      Spacing.md,
+    marginLeft: Spacing.md,
   },
 
   levelInfoRTL: {
     flex: 1,
-    marginRight:
-      Spacing.md,
+    marginRight: Spacing.md,
   },
 
   levelTitle: {
@@ -1530,20 +1435,14 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
 
-  /* ================================================================
-     BUTTONS
-  ================================================================ */
-
   startButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    marginTop:
-      Spacing.md,
+    marginTop: Spacing.md,
     paddingVertical: 16,
-    borderRadius:
-      BorderRadius.full,
+    borderRadius: BorderRadius.full,
   },
 
   startText: {
@@ -1552,22 +1451,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  /* ================================================================
-     GAME PLAY
-  ================================================================ */
-
   progressContainer: {
-    paddingHorizontal:
-      Spacing.lg,
-    paddingTop:
-      Spacing.md,
-    paddingBottom:
-      Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
   },
 
   progressHeader: {
-    justifyContent:
-      'flex-end',
+    justifyContent: 'flex-end',
     marginBottom: 7,
   },
 
@@ -1578,23 +1469,20 @@ const styles = StyleSheet.create({
 
   progressBackground: {
     height: 6,
-    borderRadius:
-      BorderRadius.full,
+    borderRadius: BorderRadius.full,
     overflow: 'hidden',
   },
 
   progressFill: {
     height: '100%',
-    borderRadius:
-      BorderRadius.full,
+    borderRadius: BorderRadius.full,
   },
 
   gameContent: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding:
-      Spacing.lg,
+    padding: Spacing.lg,
   },
 
   instruction: {
@@ -1605,8 +1493,7 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: '800',
     marginTop: 8,
-    marginBottom:
-      Spacing.xl,
+    marginBottom: Spacing.xl,
   },
 
   options: {
@@ -1620,16 +1507,11 @@ const styles = StyleSheet.create({
   shapeOption: {
     width: 100,
     height: 100,
-    borderRadius:
-      BorderRadius.lg,
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  /* ================================================================
-     SHAPES
-  ================================================================ */
 
   circleShape: {
     borderRadius: 999,
@@ -1642,16 +1524,13 @@ const styles = StyleSheet.create({
   triangleShape: {
     width: 0,
     height: 0,
-    backgroundColor:
-      'transparent',
+    backgroundColor: 'transparent',
     borderStyle: 'solid',
     borderLeftWidth: 30,
     borderRightWidth: 30,
     borderBottomWidth: 50,
-    borderLeftColor:
-      'transparent',
-    borderRightColor:
-      'transparent',
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
   },
 
   diamondShape: {
@@ -1663,27 +1542,18 @@ const styles = StyleSheet.create({
     lineHeight: 55,
   },
 
-  hexagonShape: {
-    borderRadius: 2,
-  },
-
-  /* ================================================================
-     RESULT
-  ================================================================ */
-
   resultContainer: {
     alignItems: 'center',
-    paddingTop: Spacing.xl,
+    padding: 20,
   },
 
   resultHeader: {
     alignItems: 'center',
-    marginBottom:
-      Spacing.md,
+    marginBottom: Spacing.md,
   },
 
   resultIconBox: {
-    width: 82,
+        width: 82,
     height: 82,
     borderRadius: 26,
     alignItems: 'center',
@@ -1698,22 +1568,17 @@ const styles = StyleSheet.create({
   resultTitle: {
     fontSize: 24,
     fontWeight: '700',
-    marginBottom:
-      Spacing.md,
+    marginBottom: Spacing.md,
     textAlign: 'center',
   },
 
   resultScoreContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    paddingHorizontal:
-      Spacing.xl,
-    paddingVertical:
-      Spacing.md,
-    borderRadius:
-      BorderRadius.lg,
-    marginBottom:
-      Spacing.xs,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.xs,
     borderWidth: 1,
   },
 
@@ -1729,32 +1594,27 @@ const styles = StyleSheet.create({
 
   resultDescription: {
     fontSize: 16,
-    marginBottom:
-      Spacing.md,
+    marginBottom: Spacing.md,
     textAlign: 'center',
   },
 
   feedbackText: {
     fontSize: 17,
     fontWeight: '700',
-    marginBottom:
-      Spacing.md,
+    marginBottom: Spacing.md,
     textAlign: 'center',
   },
 
   percentageBar: {
     width: '80%',
     height: 8,
-    borderRadius:
-      BorderRadius.full,
+    borderRadius: BorderRadius.full,
     overflow: 'hidden',
-    marginBottom:
-      Spacing.lg,
+    marginBottom: Spacing.lg,
   },
 
   percentageFill: {
     height: '100%',
-    borderRadius:
-      BorderRadius.full,
+    borderRadius: BorderRadius.full,
   },
 });
