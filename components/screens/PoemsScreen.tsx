@@ -25,14 +25,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ArrowLeft,
   Award,
-  BookOpen,
-  BookMarked,
   CalendarDays,
   Check,
   ChevronLeft,
   Clock3,
+  Feather,
   Flame,
-  Hash,
   Info,
   Lightbulb,
   ListChecks,
@@ -749,7 +747,6 @@ export default function HafezScreen() {
           },
         ]}
       >
-        {/* Back — همیشه سمت چپ */}
         <TouchableOpacity
           onPress={() => {
             if (isHome) {
@@ -776,7 +773,6 @@ export default function HafezScreen() {
           />
         </TouchableOpacity>
 
-        {/* عنوان */}
         <View style={styles.headerTitleWrapper}>
           <Text
             numberOfLines={1}
@@ -805,7 +801,6 @@ export default function HafezScreen() {
           )}
         </View>
 
-        {/* آیکون سمت راست */}
         <View
           style={[
             styles.headerIcon,
@@ -816,7 +811,7 @@ export default function HafezScreen() {
             },
           ]}
         >
-          <BookOpen
+          <Feather
             size={22}
             strokeWidth={2}
             color={colors.primary}
@@ -886,7 +881,7 @@ export default function HafezScreen() {
                     { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : `${primary}14` },
                   ]}
                 >
-                  <BookOpen size={24} color={primary} strokeWidth={2} />
+                  <Feather size={24} color={primary} strokeWidth={2} />
                 </View>
 
                 <View style={styles.poemInfo}>
@@ -949,7 +944,7 @@ export default function HafezScreen() {
               { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : `${primary}14` },
             ]}
           >
-            <BookOpen size={28} color={primary} strokeWidth={2} />
+            <Feather size={28} color={primary} strokeWidth={2} />
           </View>
           <View style={styles.studyHeroText}>
             <Text style={[styles.studyPoet, { color: colors.textSecondary }]}>
@@ -1016,7 +1011,7 @@ export default function HafezScreen() {
           </Text>
           <View style={styles.meaningList}>
             <InfoCard
-              icon={<BookMarked size={18} color={primary} />}
+              icon={<PenLine size={18} color={primary} />}
               title="معنی روان"
               text={currentPoem.meaning.summary}
               colors={colors}
@@ -1675,7 +1670,7 @@ export default function HafezScreen() {
           onPress={() => setCurrentView('study')}
           style={[styles.secondaryButton, { borderColor: subtleBorder }]}
         >
-          <BookOpen size={18} color={colors.textSecondary} />
+          <Feather size={18} color={colors.textSecondary} />
           <Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>
             بازگشت به شعر
           </Text>
@@ -1815,7 +1810,7 @@ const styles = StyleSheet.create({
   headerBackButton: {
     width: 42,
     height: 42,
-    borderRadius: 14,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,

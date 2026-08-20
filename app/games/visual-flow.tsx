@@ -87,7 +87,6 @@ interface DifficultyConfig {
   titleEn: string;
   descriptionFa: string;
   descriptionEn: string;
-  icon: React.ReactNode;
   minCoherence: number;
   maxCoherence: number;
   minSpeed: number;
@@ -95,6 +94,7 @@ interface DifficultyConfig {
   dots: number;
 }
 
+// حذف آیکون از اینجا - فقط داده‌های خام
 const DIFFICULTIES: DifficultyConfig[] = [
   {
     id: 'easy',
@@ -102,7 +102,6 @@ const DIFFICULTIES: DifficultyConfig[] = [
     titleEn: 'Easy',
     descriptionFa: 'حرکت نقاط واضح و قابل تشخیص',
     descriptionEn: 'Clear and easy-to-detect movement',
-    icon: <Leaf size={28} color="#34D399" />,
     minCoherence: 0.7,
     maxCoherence: 0.9,
     minSpeed: 1.5,
@@ -115,7 +114,6 @@ const DIFFICULTIES: DifficultyConfig[] = [
     titleEn: 'Medium',
     descriptionFa: 'حرکت نقاط با کمی آشفتگی',
     descriptionEn: 'Movement with moderate noise',
-    icon: <Brain size={28} color="#F59E0B" />,
     minCoherence: 0.5,
     maxCoherence: 0.7,
     minSpeed: 1.8,
@@ -128,7 +126,6 @@ const DIFFICULTIES: DifficultyConfig[] = [
     titleEn: 'Hard',
     descriptionFa: 'تشخیص جهت حرکت دشوارتر است',
     descriptionEn: 'Direction is harder to detect',
-    icon: <Flame size={28} color="#EF4444" />,
     minCoherence: 0.35,
     maxCoherence: 0.55,
     minSpeed: 2.0,
@@ -141,7 +138,6 @@ const DIFFICULTIES: DifficultyConfig[] = [
     titleEn: 'Expert',
     descriptionFa: 'حرکت بسیار پراکنده و سریع',
     descriptionEn: 'Fast and highly scattered movement',
-    icon: <Crown size={28} color="#8B5CF6" />,
     minCoherence: 0.2,
     maxCoherence: 0.4,
     minSpeed: 2.3,
@@ -297,6 +293,20 @@ export default function VisualFlowScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { language, isRTL } = useLanguage();
+
+  /* ================================================================
+     ICON MAP - آیکون‌ها با رنگ dynamic
+  ================================================================ */
+
+  const difficultyIcons = useMemo(
+    () => ({
+      easy: Leaf,
+      medium: Brain,
+      hard: Flame,
+      expert: Crown,
+    }),
+    []
+  );
 
   /* ================================================================
      SCREEN STATE
@@ -930,10 +940,6 @@ export default function VisualFlowScreen() {
         return;
       }
 
-      /*
-       * بلافاصله Trial را غیرفعال می‌کنیم
-       * تا چند بار لمس / swipe ثبت نشود.
-       */
       trialActiveRef.current = false;
 
       setTrialActive(false);
@@ -1547,6 +1553,9 @@ export default function VisualFlowScreen() {
               ) => {
                 const isRecommended =
                   index === 0;
+                
+                // دریافت کامپوننت آیکون متناسب با سطح
+                const IconComponent = difficultyIcons[difficulty.id];
 
                 return (
                   <TouchableOpacity
@@ -1569,7 +1578,7 @@ export default function VisualFlowScreen() {
                       },
                     ]}
                   >
-                    {/* ICON */}
+                    {/* ICON - با رنگ primary از Theme */}
 
                     <View
                       style={[
@@ -1581,9 +1590,10 @@ export default function VisualFlowScreen() {
                         },
                       ]}
                     >
-                      {
-                        difficulty.icon
-                      }
+                      <IconComponent
+                        size={28}
+                        color={colors.primary}
+                      />
                     </View>
 
                     {/* TEXT */}

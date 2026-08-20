@@ -22,7 +22,6 @@ import {
   Clock,
   Eye,
   EyeOff,
-  Heart,
   Play,
   RefreshCw,
   Sparkles,
@@ -2394,50 +2393,54 @@ export default function QuranScreen() {
             styles.scrollContent
           }
         >
-          {/* HEADER */}
+          {/* ======================================================
+              HEADER - NEW DESIGN
+          ====================================================== */}
 
-          <View style={styles.header}>
+          <View
+            style={[
+              styles.header,
+              {
+                borderBottomColor: colors.border || 'rgba(255,255,255,0.08)',
+              },
+            ]}
+          >
+            {/* LEFT - Back Button */}
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={handleBack}
               style={[
-                styles.headerButton,
+                styles.headerBackButton,
                 {
                   backgroundColor: colors.surface || 'rgba(255,255,255,0.06)',
                   borderColor: colors.border || 'rgba(255,255,255,0.1)',
                 },
               ]}
             >
-              <ArrowLeft
-                size={21}
-                color={colors.text || '#fff'}
-              />
+              <ArrowLeft size={21} strokeWidth={2.2} color={colors.text || '#fff'} />
             </TouchableOpacity>
 
+            {/* CENTER - Title */}
             <View style={styles.headerCenter}>
-              <View style={styles.headerTitleRow}>
-                <BookOpen
-                  size={18}
-                  color={colors.primary}
-                />
-
-                <Text
-                  style={[
-                    styles.headerTitle,
-                    {
-                      color: colors.text || '#fff',
-                    },
-                  ]}
-                >
-                  حفظ قرآن
-                </Text>
-              </View>
-
               <Text
+                numberOfLines={1}
+                style={[
+                  styles.headerTitle,
+                  {
+                    color: colors.text || '#fff',
+                    textAlign: 'right',
+                  },
+                ]}
+              >
+                حفظ قرآن
+              </Text>
+              <Text
+                numberOfLines={1}
                 style={[
                   styles.headerSubtitle,
                   {
                     color: colors.textSecondary || '#aaa',
+                    textAlign: 'right',
                   },
                 ]}
               >
@@ -2445,35 +2448,19 @@ export default function QuranScreen() {
               </Text>
             </View>
 
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() =>
-                setFavorite(
-                  value => !value,
-                )
-              }
+            {/* RIGHT - Icon */}
+            <View
               style={[
-                styles.headerButton,
+                styles.headerIcon,
                 {
-                  backgroundColor: colors.surface || 'rgba(255,255,255,0.06)',
-                  borderColor: colors.border || 'rgba(255,255,255,0.1)',
+                  backgroundColor: isDark
+                    ? 'rgba(139,92,246,0.14)'
+                    : 'rgba(139,92,246,0.08)',
                 },
               ]}
             >
-              <Heart
-                size={20}
-                color={
-                  favorite
-                    ? '#FF6B81'
-                    : colors.textSecondary || '#aaa'
-                }
-                fill={
-                  favorite
-                    ? '#FF6B81'
-                    : 'transparent'
-                }
-              />
-            </TouchableOpacity>
+              <BookOpen size={22} strokeWidth={2} color={colors.primary} />
+            </View>
           </View>
 
           {/* DAY INFO */}
@@ -2947,46 +2934,62 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
   },
 
-  /* HEADER */
+  /* =========================================================
+     HEADER - NEW STYLES
+  ========================================================= */
 
   header: {
-    paddingTop:40,
+    minHeight: 76,
+    paddingHorizontal: 16,
+    paddingTop: 40,
+    paddingBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    // borderBottomWidth: StyleSheet.hairlineWidth,
+    marginBottom: 12,
+  },
+
+  headerBackButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    flexShrink: 0,
   },
 
   headerCenter: {
     flex: 1,
-    alignItems: 'center',
-  },
-
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
-
-  headerButton: {
-    width: 43,
-    height: 43,
-    borderRadius: 15,
-    borderWidth: 1,
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'center',
+    marginHorizontal: 12,
+    minWidth: 0,
   },
 
   headerTitle: {
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: '800',
   },
 
   headerSubtitle: {
     marginTop: 3,
-    fontSize: 11,
+    fontSize: 12,
+    fontWeight: '500',
   },
 
-  /* DAY */
+  headerIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+
+  /* =========================================================
+     DAY
+  ========================================================= */
 
   dayCard: {
     borderRadius: 22,
