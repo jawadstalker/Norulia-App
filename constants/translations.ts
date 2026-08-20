@@ -477,6 +477,8 @@ export const translations = {
     startGame: 'Start Game',
     pauseGame: 'Pause Game',
     gameCompleted: 'Game Completed',
+// en
+home: 'Home',
 
     // ===== Dashboard =====
     cognitiveHealth: 'Cognitive Health',
@@ -538,7 +540,7 @@ export const translations = {
     missed: 'Missed',
     noMedicationsToday: 'No medications scheduled for today',
 // ===== Navigation =====
-home: 'خانه',
+// home: 'خانه',
 back: 'بازگشت',
 nextStep: 'مرحله بعد',
 previous: 'قبلی',

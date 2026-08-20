@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
 import {
   View,
   Text,
@@ -7,8 +14,8 @@ import {
   Animated,
   Dimensions,
   PanResponder,
-  Alert,
 } from 'react-native';
+
 import { useRouter } from 'expo-router';
 
 import {
@@ -18,7 +25,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Palette,
   Target,
   Zap,
   BarChart3,
@@ -28,7 +34,6 @@ import {
   XCircle,
   MousePointer2,
   Brain,
-  Eye,
   Gauge,
   Award,
   Flame,
@@ -40,7 +45,7 @@ import {
 
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { Spacing, BorderRadius } from '../../constants/theme';
+import { Spacing } from '../../constants/theme';
 
 /* ================================================================
    GAME CONFIG
@@ -53,11 +58,9 @@ const TOTAL_TRIALS = 30;
  */
 const MIN_COMPLETED_TESTS = 5;
 
-const NUM_DOTS = 80;
-
 const DIRECTIONS = ['Up', 'Down', 'Left', 'Right'] as const;
 
-type Direction = typeof DIRECTIONS[number];
+type Direction = (typeof DIRECTIONS)[number];
 
 type Dot = {
   x: number;
@@ -85,16 +88,10 @@ interface DifficultyConfig {
   descriptionFa: string;
   descriptionEn: string;
   icon: React.ReactNode;
-
-  /**
-   * coherence بیشتر = حرکت منظم‌تر = آسان‌تر
-   */
   minCoherence: number;
   maxCoherence: number;
-
   minSpeed: number;
   maxSpeed: number;
-
   dots: number;
 }
 
@@ -106,13 +103,12 @@ const DIFFICULTIES: DifficultyConfig[] = [
     descriptionFa: 'حرکت نقاط واضح و قابل تشخیص',
     descriptionEn: 'Clear and easy-to-detect movement',
     icon: <Leaf size={28} color="#34D399" />,
-    minCoherence: 0.70,
-    maxCoherence: 0.90,
+    minCoherence: 0.7,
+    maxCoherence: 0.9,
     minSpeed: 1.5,
     maxSpeed: 2.2,
     dots: 60,
   },
-
   {
     id: 'medium',
     titleFa: 'متوسط',
@@ -120,13 +116,12 @@ const DIFFICULTIES: DifficultyConfig[] = [
     descriptionFa: 'حرکت نقاط با کمی آشفتگی',
     descriptionEn: 'Movement with moderate noise',
     icon: <Brain size={28} color="#F59E0B" />,
-    minCoherence: 0.50,
-    maxCoherence: 0.70,
+    minCoherence: 0.5,
+    maxCoherence: 0.7,
     minSpeed: 1.8,
     maxSpeed: 2.6,
     dots: 80,
   },
-
   {
     id: 'hard',
     titleFa: 'سخت',
@@ -140,7 +135,6 @@ const DIFFICULTIES: DifficultyConfig[] = [
     maxSpeed: 3.0,
     dots: 90,
   },
-
   {
     id: 'expert',
     titleFa: 'خیلی سخت',
@@ -148,8 +142,8 @@ const DIFFICULTIES: DifficultyConfig[] = [
     descriptionFa: 'حرکت بسیار پراکنده و سریع',
     descriptionEn: 'Fast and highly scattered movement',
     icon: <Crown size={28} color="#8B5CF6" />,
-    minCoherence: 0.20,
-    maxCoherence: 0.40,
+    minCoherence: 0.2,
+    maxCoherence: 0.4,
     minSpeed: 2.3,
     maxSpeed: 3.5,
     dots: 100,
@@ -160,18 +154,14 @@ const DIFFICULTIES: DifficultyConfig[] = [
    TRANSLATIONS
 ================================================================ */
 
-const directionTranslation: {
-  [key in Direction]: string;
-} = {
+const directionTranslation: Record<Direction, string> = {
   Up: 'بالا',
   Down: 'پایین',
   Left: 'چپ',
   Right: 'راست',
 };
 
-const directionTranslationEn: {
-  [key in Direction]: string;
-} = {
+const directionTranslationEn: Record<Direction, string> = {
   Up: 'Up',
   Down: 'Down',
   Left: 'Left',
@@ -210,7 +200,6 @@ interface TestSession {
 
 /* ================================================================
    PAGE HEADER
-   همان معماری قبلی
 ================================================================ */
 
 interface PageHeaderProps {
@@ -239,13 +228,7 @@ function PageHeader({
         },
       ]}
     >
-      {/* ==========================================================
-          BACK BUTTON
-
-          همیشه سمت چپ
-          مستقل از RTL
-      ========================================================== */}
-
+      {/* Back button همیشه سمت چپ */}
       <TouchableOpacity
         onPress={onBack}
         activeOpacity={0.75}
@@ -266,17 +249,12 @@ function PageHeader({
         />
       </TouchableOpacity>
 
-      {/* ==========================================================
-          TITLE
-      ========================================================== */}
-
+      {/* Header text */}
       <View
         style={[
           styles.pageHeaderText,
           {
-            alignItems: isRTL
-              ? 'flex-end'
-              : 'flex-start',
+            alignItems: isRTL ? 'flex-end' : 'flex-start',
           },
         ]}
       >
@@ -317,7 +295,6 @@ function PageHeader({
 
 export default function VisualFlowScreen() {
   const router = useRouter();
-
   const { colors } = useTheme();
   const { language, isRTL } = useLanguage();
 
@@ -333,7 +310,6 @@ export default function VisualFlowScreen() {
     useState<DifficultyLevel | null>(null);
 
   const [trialCount, setTrialCount] = useState(0);
-
   const [score, setScore] = useState(0);
 
   const [currentDirection, setCurrentDirection] =
@@ -341,17 +317,12 @@ export default function VisualFlowScreen() {
 
   const [coherence, setCoherence] = useState(0);
 
-  const [trialActive, setTrialActive] =
-    useState(false);
+  const [trialActive, setTrialActive] = useState(false);
 
   const [dots, setDots] = useState<Dot[]>([]);
 
-  const [results, setResults] =
-    useState<TrialResult[]>([]);
+  const [results, setResults] = useState<TrialResult[]>([]);
 
-  /**
-   * تمام آزمون‌های قبلی
-   */
   const [completedTests, setCompletedTests] =
     useState<TestSession[]>([]);
 
@@ -371,8 +342,7 @@ export default function VisualFlowScreen() {
 
   const startTimeRef = useRef(0);
 
-  const animationRef =
-    useRef<number | null>(null);
+  const animationRef = useRef<number | null>(null);
 
   const timeoutRef =
     useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -382,14 +352,28 @@ export default function VisualFlowScreen() {
   const directionRef =
     useRef<Direction | null>(null);
 
-  const coherenceRef =
-    useRef(0);
+  const coherenceRef = useRef(0);
 
-  const trialActiveRef =
-    useRef(false);
+  const trialActiveRef = useRef(false);
 
-  const gameEndedRef =
-    useRef(false);
+  const gameEndedRef = useRef(false);
+
+  /**
+   * تعداد Trialها را در ref نگه می‌داریم
+   * تا مشکل stale state نداشته باشیم.
+   */
+  const trialCountRef = useRef(0);
+
+  /**
+   * امتیاز را هم در ref نگه می‌داریم.
+   */
+  const scoreRef = useRef(0);
+
+  /**
+   * سطح انتخاب‌شده در ref
+   */
+  const selectedDifficultyRef =
+    useRef<DifficultyLevel | null>(null);
 
   /* ================================================================
      ANIMATION
@@ -405,122 +389,115 @@ export default function VisualFlowScreen() {
      TEXT
   ================================================================ */
 
-  const t = {
-    title:
-      language === 'fa'
-        ? 'جریان بصری'
-        : 'Visual Flow',
+  const t = useMemo(
+    () => ({
+      title:
+        language === 'fa'
+          ? 'جریان بصری'
+          : 'Visual Flow',
 
-    subtitle:
-      language === 'fa'
-        ? 'جهت حرکت دسته‌ی نقاط را پیدا کن!'
-        : 'Find the main direction of the moving dots!',
+      subtitle:
+        language === 'fa'
+          ? 'جهت حرکت دسته‌ی نقاط را پیدا کن!'
+          : 'Find the main direction of the moving dots!',
 
-    back:
-      language === 'fa'
-        ? 'بازگشت'
-        : 'Back',
+      back:
+        language === 'fa'
+          ? 'بازگشت'
+          : 'Back',
 
-    selectDifficulty:
-      language === 'fa'
-        ? 'سطح بازی را انتخاب کن'
-        : 'Choose your difficulty',
+      selectDifficulty:
+        language === 'fa'
+          ? 'سطح بازی را انتخاب کن'
+          : 'Choose your difficulty',
 
-    selectDescription:
-      language === 'fa'
-        ? 'از آسان شروع کن یا سطح چالش‌برانگیزتری انتخاب کن'
-        : 'Start easy or choose a more challenging level',
+      selectDescription:
+        language === 'fa'
+          ? 'از آسان شروع کن یا سطح چالش‌برانگیزتری انتخاب کن'
+          : 'Start easy or choose a more challenging level',
 
-    start:
-      language === 'fa'
-        ? 'شروع آزمون'
-        : 'Start Test',
+      start:
+        language === 'fa'
+          ? 'شروع آزمون'
+          : 'Start Test',
 
-    round:
-      language === 'fa'
-        ? 'دور'
-        : 'Round',
+      round:
+        language === 'fa'
+          ? 'دور'
+          : 'Round',
 
-    score:
-      language === 'fa'
-        ? 'امتیاز'
-        : 'Score',
+      score:
+        language === 'fa'
+          ? 'امتیاز'
+          : 'Score',
 
-    difficulty:
-      language === 'fa'
-        ? 'سختی'
-        : 'Difficulty',
+      difficulty:
+        language === 'fa'
+          ? 'انسجام'
+          : 'Coherence',
 
-    correct:
-      language === 'fa'
-        ? 'درسته!'
-        : 'Correct!',
+      correct:
+        language === 'fa'
+          ? 'درسته!'
+          : 'Correct!',
 
-    wrong:
-      language === 'fa'
-        ? 'اشتباه!'
-        : 'Wrong!',
+      wrong:
+        language === 'fa'
+          ? 'اشتباه!'
+          : 'Wrong!',
 
-    restart:
-      language === 'fa'
-        ? 'آزمون بعدی'
-        : 'Next Test',
+      correctAnswers:
+        language === 'fa'
+          ? 'پاسخ صحیح'
+          : 'Correct answers',
 
-    correctAnswers:
-      language === 'fa'
-        ? 'پاسخ صحیح'
-        : 'Correct answers',
+      accuracy:
+        language === 'fa'
+          ? 'دقت'
+          : 'Accuracy',
 
-    accuracy:
-      language === 'fa'
-        ? 'دقت'
-        : 'Accuracy',
+      reaction:
+        language === 'fa'
+          ? 'میانگین زمان واکنش'
+          : 'Average reaction time',
 
-    reaction:
-      language === 'fa'
-        ? 'میانگین زمان واکنش'
-        : 'Average reaction time',
+      finalScore:
+        language === 'fa'
+          ? 'امتیاز'
+          : 'Score',
 
-    finalScore:
-      language === 'fa'
-        ? 'امتیاز'
-        : 'Score',
+      testProgress:
+        language === 'fa'
+          ? 'آزمون'
+          : 'Test',
 
-    testProgress:
-      language === 'fa'
-        ? 'آزمون'
-        : 'Test',
+      finalResults:
+        language === 'fa'
+          ? 'نتایج نهایی'
+          : 'Final Results',
 
-    completed:
-      language === 'fa'
-        ? 'آزمون تمام شد!'
-        : 'Test completed!',
+      testsRemaining:
+        language === 'fa'
+          ? 'آزمون دیگر تا نمایش نتایج'
+          : 'more tests until results',
 
-    finalResults:
-      language === 'fa'
-        ? 'نتایج نهایی'
-        : 'Final Results',
+      minimumTests:
+        language === 'fa'
+          ? 'برای نمایش نتایج حداقل ۵ آزمون کامل انجام بده'
+          : 'Complete at least 5 tests to see your results',
 
-    testsRemaining:
-      language === 'fa'
-        ? 'آزمون دیگر تا نمایش نتایج'
-        : 'more tests until results',
+      findDirection:
+        language === 'fa'
+          ? 'جهت حرکت را پیدا کن و پاسخ بده!'
+          : 'Find the direction and answer!',
 
-    minimumTests:
-      language === 'fa'
-        ? 'برای نمایش نتایج حداقل ۵ آزمون کامل انجام بده'
-        : 'Complete at least 5 tests to see your results',
-
-    findDirection:
-      language === 'fa'
-        ? 'جهت حرکت را پیدا کن و پاسخ بده!'
-        : 'Find the direction and answer!',
-
-    identifyDirection:
-      language === 'fa'
-        ? 'جهت حرکت دسته‌ی نقاط را تشخیص بده!'
-        : 'Identify the direction of the moving dots!',
-  };
+      identifyDirection:
+        language === 'fa'
+          ? 'جهت حرکت دسته‌ی نقاط را تشخیص بده!'
+          : 'Identify the direction of the moving dots!',
+    }),
+    [language]
+  );
 
   /* ================================================================
      INITIAL ANIMATION
@@ -539,15 +516,26 @@ export default function VisualFlowScreen() {
         useNativeDriver: true,
       }),
     ]).start();
+  }, [fadeAnim, scaleAnim]);
 
+  /* ================================================================
+     CLEANUP ON UNMOUNT
+  ================================================================ */
+
+  useEffect(() => {
     return () => {
       if (animationRef.current !== null) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
       }
 
       if (timeoutRef.current !== null) {
         clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
+
+      trialActiveRef.current = false;
+      gameEndedRef.current = true;
     };
   }, []);
 
@@ -555,13 +543,22 @@ export default function VisualFlowScreen() {
      GET DIFFICULTY CONFIG
   ================================================================ */
 
-  const getDifficultyConfig = useCallback(() => {
-    return (
-      DIFFICULTIES.find(
-        item => item.id === selectedDifficulty
-      ) || DIFFICULTIES[0]
-    );
-  }, [selectedDifficulty]);
+  const getDifficultyConfig = useCallback(
+    (difficulty?: DifficultyLevel | null) => {
+      const id =
+        difficulty ??
+        selectedDifficultyRef.current ??
+        selectedDifficulty ??
+        'easy';
+
+      return (
+        DIFFICULTIES.find(
+          item => item.id === id
+        ) || DIFFICULTIES[0]
+      );
+    },
+    [selectedDifficulty]
+  );
 
   /* ================================================================
      GENERATE DOTS
@@ -573,6 +570,9 @@ export default function VisualFlowScreen() {
       height: number,
       config: DifficultyConfig
     ) => {
+      const safeWidth = Math.max(width, 20);
+      const safeHeight = Math.max(height, 20);
+
       const newDots: Dot[] = [];
 
       for (let i = 0; i < config.dots; i++) {
@@ -584,16 +584,25 @@ export default function VisualFlowScreen() {
         );
 
         newDots.push({
-          x: random(8, Math.max(8, width - 8)),
-          y: random(8, Math.max(8, height - 8)),
+          x: random(
+            8,
+            Math.max(8, safeWidth - 8)
+          ),
+
+          y: random(
+            8,
+            Math.max(8, safeHeight - 8)
+          ),
 
           vx: Math.cos(angle) * speed,
+
           vy: Math.sin(angle) * speed,
 
           color:
             dotColors[
               Math.floor(
-                Math.random() * dotColors.length
+                Math.random() *
+                  dotColors.length
               )
             ],
 
@@ -603,13 +612,13 @@ export default function VisualFlowScreen() {
 
       dotsRef.current = newDots;
 
-      setDots([...newDots]);
+      setDots(newDots);
     },
     []
   );
 
   /* ================================================================
-     CLEANUP
+     STOP GAME
   ================================================================ */
 
   const stopGame = useCallback(() => {
@@ -623,12 +632,10 @@ export default function VisualFlowScreen() {
 
     if (timeoutRef.current !== null) {
       clearTimeout(timeoutRef.current);
-
       timeoutRef.current = null;
     }
 
     trialActiveRef.current = false;
-
     setTrialActive(false);
   }, []);
 
@@ -637,108 +644,120 @@ export default function VisualFlowScreen() {
   ================================================================ */
 
   const goBack = useCallback(() => {
-    /*
-     * اگر داخل بازی هستیم:
-     * بازی متوقف شود و به انتخاب سطح برگردیم.
-     */
-
     if (screen === 'game') {
       stopGame();
 
-      setScreen('difficulty');
+      gameEndedRef.current = true;
 
+      setScreen('difficulty');
       setTrialCount(0);
       setScore(0);
       setResults([]);
       setDots([]);
 
-      gameEndedRef.current = false;
+      trialCountRef.current = 0;
+      scoreRef.current = 0;
 
       return;
     }
-
-    /*
-     * اگر نتایج نمایش داده شده:
-     * به انتخاب سطح برگرد
-     */
 
     if (screen === 'finished') {
       setScreen('difficulty');
-
       return;
     }
-
-    /*
-     * اگر در صفحه انتخاب سطح هستیم:
-     * به صفحه قبلی اپ برگرد
-     */
 
     if (router.canGoBack()) {
       router.back();
     } else {
       router.replace('/(tabs)/psycho');
     }
-  }, [screen, stopGame, router]);
+  }, [
+    screen,
+    stopGame,
+    router,
+  ]);
 
   /* ================================================================
      START TRIAL
+     
+     نکته مهم:
+     difficulty مستقیماً به تابع داده می‌شود.
+     بنابراین دیگر مشکل stale selectedDifficulty نداریم.
   ================================================================ */
 
-  const startTrial = useCallback(() => {
-    if (trialCount >= TOTAL_TRIALS) {
-      return;
-    }
+  const startTrial = useCallback(
+    (difficulty: DifficultyLevel) => {
+      if (gameEndedRef.current) {
+        return;
+      }
 
-    const config =
-      DIFFICULTIES.find(
-        item => item.id === selectedDifficulty
-      ) || DIFFICULTIES[0];
+      if (
+        trialCountRef.current >=
+        TOTAL_TRIALS
+      ) {
+        return;
+      }
 
-    const direction =
-      DIRECTIONS[
-        Math.floor(
-          Math.random() * DIRECTIONS.length
-        )
-      ];
+      const config =
+        getDifficultyConfig(difficulty);
 
-    const coh = random(
-      config.minCoherence,
-      config.maxCoherence
-    );
+      const direction =
+        DIRECTIONS[
+          Math.floor(
+            Math.random() *
+              DIRECTIONS.length
+          )
+        ];
 
-    directionRef.current = direction;
+      const coh = random(
+        config.minCoherence,
+        config.maxCoherence
+      );
 
-    coherenceRef.current = coh;
+      directionRef.current =
+        direction;
 
-    setCurrentDirection(direction);
+      coherenceRef.current = coh;
 
-    setCoherence(coh);
+      setCurrentDirection(direction);
 
-    setTrialCount(prev => prev + 1);
+      setCoherence(coh);
 
-    setTrialActive(true);
+      trialCountRef.current += 1;
 
-    trialActiveRef.current = true;
+      setTrialCount(
+        trialCountRef.current
+      );
 
-    gameEndedRef.current = false;
+      trialActiveRef.current = true;
 
-    startTimeRef.current = Date.now();
+      setTrialActive(true);
 
-    setInfo(t.findDirection);
+      gameEndedRef.current = false;
 
-    setInfoType('normal');
-  }, [
-    trialCount,
-    selectedDifficulty,
-    t.findDirection,
-  ]);
+      startTimeRef.current =
+        Date.now();
+
+      setInfo(t.findDirection);
+
+      setInfoType('normal');
+    },
+    [
+      getDifficultyConfig,
+      t.findDirection,
+    ]
+  );
 
   /* ================================================================
      ANIMATION
   ================================================================ */
 
   const animate = useCallback(
-    (width: number, height: number) => {
+    (
+      width: number,
+      height: number,
+      difficulty: DifficultyLevel
+    ) => {
       if (
         !trialActiveRef.current ||
         gameEndedRef.current
@@ -757,13 +776,14 @@ export default function VisualFlowScreen() {
       }
 
       const config =
-        DIFFICULTIES.find(
-          item => item.id === selectedDifficulty
-        ) || DIFFICULTIES[0];
+        getDifficultyConfig(
+          difficulty
+        );
 
-      const vectors: {
-        [key in Direction]: [number, number];
-      } = {
+      const vectors: Record<
+        Direction,
+        [number, number]
+      > = {
         Up: [0, -config.maxSpeed],
         Down: [0, config.maxSpeed],
         Left: [-config.maxSpeed, 0],
@@ -778,25 +798,18 @@ export default function VisualFlowScreen() {
           let nextVx = dot.vx;
           let nextVy = dot.vy;
 
-          /*
-           * coherent dots
-           */
-
           if (Math.random() < coh) {
             nextVx =
               vx + random(-0.3, 0.3);
 
             nextVy =
               vy + random(-0.3, 0.3);
-          }
-
-          /*
-           * random dots
-           */
-
-          else {
+          } else {
             const angle =
-              random(0, Math.PI * 2);
+              random(
+                0,
+                Math.PI * 2
+              );
 
             const speed =
               random(
@@ -805,10 +818,12 @@ export default function VisualFlowScreen() {
               );
 
             nextVx =
-              Math.cos(angle) * speed;
+              Math.cos(angle) *
+              speed;
 
             nextVy =
-              Math.sin(angle) * speed;
+              Math.sin(angle) *
+              speed;
           }
 
           let x =
@@ -844,33 +859,38 @@ export default function VisualFlowScreen() {
 
       dotsRef.current = updated;
 
-      setDots([...updated]);
+      setDots(updated);
 
       animationRef.current =
         requestAnimationFrame(() =>
-          animate(width, height)
+          animate(
+            width,
+            height,
+            difficulty
+          )
         );
     },
-    [selectedDifficulty]
+    [getDifficultyConfig]
   );
 
   /* ================================================================
-     END TEST
+     FINISH TEST
   ================================================================ */
 
   const finishTest = useCallback(
-    (finalResults: TrialResult[]) => {
+    (
+      finalResults: TrialResult[],
+      finalScore: number,
+      difficulty: DifficultyLevel
+    ) => {
       stopGame();
 
       gameEndedRef.current = true;
 
       const session: TestSession = {
-        difficulty:
-          selectedDifficulty || 'easy',
-
+        difficulty,
         results: finalResults,
-
-        score,
+        score: finalScore,
       };
 
       setCompletedTests(prev => {
@@ -879,36 +899,22 @@ export default function VisualFlowScreen() {
           session,
         ];
 
-        /*
-         * اگر به ۵ آزمون رسیده‌ایم
-         * نتایج نهایی قابل نمایش است.
-         */
-
-        if (
+        const hasEnoughTests =
           newTests.length >=
-          MIN_COMPLETED_TESTS
-        ) {
-          setTimeout(() => {
-            setScreen('finished');
-          }, 500);
-        } else {
-          /*
-           * هنوز ۵ آزمون کامل نشده
-           */
+          MIN_COMPLETED_TESTS;
 
-          setTimeout(() => {
+        setTimeout(() => {
+          if (hasEnoughTests) {
+            setScreen('finished');
+          } else {
             setScreen('difficulty');
-          }, 500);
-        }
+          }
+        }, 350);
 
         return newTests;
       });
     },
-    [
-      selectedDifficulty,
-      score,
-      stopGame,
-    ]
+    [stopGame]
   );
 
   /* ================================================================
@@ -924,6 +930,10 @@ export default function VisualFlowScreen() {
         return;
       }
 
+      /*
+       * بلافاصله Trial را غیرفعال می‌کنیم
+       * تا چند بار لمس / swipe ثبت نشود.
+       */
       trialActiveRef.current = false;
 
       setTrialActive(false);
@@ -953,74 +963,86 @@ export default function VisualFlowScreen() {
           coherenceRef.current,
       };
 
-      /*
-       * ذخیره نتیجه Trial
-       */
+      const updatedResults = [
+        ...results,
+        newResult,
+      ];
 
-      setResults(prev => {
-        const updated = [
-          ...prev,
-          newResult,
-        ];
+      const nextScore = correct
+        ? scoreRef.current + 10
+        : scoreRef.current;
 
-        /*
-         * آخرین Trial
-         */
+      scoreRef.current = nextScore;
 
-        if (
-          updated.length >=
-          TOTAL_TRIALS
-        ) {
-          setTimeout(() => {
-            finishTest(updated);
-          }, 850);
-        }
+      setScore(nextScore);
 
-        return updated;
-      });
+      setResults(
+        updatedResults
+      );
 
       if (correct) {
-        setScore(prev => prev + 10);
-
         setInfo(t.correct);
-
         setInfoType('correct');
       } else {
         const actual =
-          directionRef.current!;
+          directionRef.current;
 
-        setInfo(
-          `${t.wrong} ${
+        if (actual) {
+          setInfo(
             language === 'fa'
-              ? `جهت اصلی ${directionTranslation[actual]} بود`
-              : `The main direction was ${directionTranslationEn[actual]}`
-          }`
-        );
+              ? `${t.wrong} جهت اصلی ${directionTranslation[actual]} بود`
+              : `${t.wrong} The main direction was ${directionTranslationEn[actual]}`
+          );
+        } else {
+          setInfo(t.wrong);
+        }
 
         setInfoType('wrong');
       }
 
       /*
-       * Trial بعدی
+       * آیا آخرین Trial بود؟
        */
-
       if (
-        trialCount < TOTAL_TRIALS
+        updatedResults.length >=
+        TOTAL_TRIALS
       ) {
         timeoutRef.current =
           setTimeout(() => {
-            if (
-              !gameEndedRef.current
-            ) {
-              startTrial();
-            }
-
             timeoutRef.current = null;
-          }, 800);
+
+            finishTest(
+              updatedResults,
+              nextScore,
+              selectedDifficultyRef.current ??
+                'easy'
+            );
+          }, 700);
+
+        return;
       }
+
+      /*
+       * Trial بعدی
+       */
+      timeoutRef.current =
+        setTimeout(() => {
+          timeoutRef.current = null;
+
+          if (
+            gameEndedRef.current
+          ) {
+            return;
+          }
+
+          startTrial(
+            selectedDifficultyRef.current ??
+              'easy'
+          );
+        }, 700);
     },
     [
-      trialCount,
+      results,
       language,
       t.correct,
       t.wrong,
@@ -1037,69 +1059,80 @@ export default function VisualFlowScreen() {
     (difficulty: DifficultyLevel) => {
       stopGame();
 
+      /*
+       * State + Ref همزمان
+       */
+      selectedDifficultyRef.current =
+        difficulty;
+
       setSelectedDifficulty(
         difficulty
       );
 
+      trialCountRef.current = 0;
+      scoreRef.current = 0;
+
       setScreen('game');
-
       setTrialCount(0);
-
       setScore(0);
-
       setResults([]);
-
       setDots([]);
+      setCurrentDirection(null);
+      setCoherence(0);
 
       setInfo(t.identifyDirection);
-
       setInfoType('normal');
 
       gameEndedRef.current = false;
-
       trialActiveRef.current = false;
 
       const config =
-        DIFFICULTIES.find(
-          item =>
-            item.id === difficulty
-        )!;
+        getDifficultyConfig(
+          difficulty
+        );
 
+      const width =
+        Dimensions.get('window').width -
+        Spacing.lg * 2;
+
+      const height = Math.min(
+        (width * 2) / 3,
+        280
+      );
+
+      /*
+       * اول نقاط را ایجاد می‌کنیم.
+       */
+      generateDots(
+        width,
+        height,
+        config
+      );
+
+      /*
+       * سپس اولین Trial
+       */
       timeoutRef.current =
         setTimeout(() => {
-          const width =
-            Dimensions.get('window')
-              .width -
-            Spacing.lg * 2 -
-            28;
-
-          const height = Math.min(
-            (width * 2) / 3,
-            280
-          );
-
-          generateDots(
-            width,
-            height,
-            config
-          );
-
-          /*
-           * اولین Trial
-           */
-
-          setTimeout(() => {
-            startTrial();
-          }, 100);
-
           timeoutRef.current = null;
-        }, 250);
+
+          if (
+            gameEndedRef.current
+          ) {
+            return;
+          }
+
+          startTrial(
+            difficulty
+          );
+        }, 350);
     },
     [
-      t.identifyDirection,
       stopGame,
+      getDifficultyConfig,
       generateDots,
       startTrial,
+      t.identifyDirection,
     ]
   );
 
@@ -1109,26 +1142,34 @@ export default function VisualFlowScreen() {
 
   useEffect(() => {
     if (
-      screen === 'game' &&
-      trialActive &&
-      dots.length > 0
+      screen !== 'game' ||
+      !trialActive ||
+      dots.length === 0
     ) {
-      const width =
-        Dimensions.get('window')
-          .width -
-        Spacing.lg * 2 -
-        28;
-
-      const height = Math.min(
-        (width * 2) / 3,
-        280
-      );
-
-      animate(
-        width,
-        height
-      );
+      return;
     }
+
+    const difficulty =
+      selectedDifficultyRef.current;
+
+    if (!difficulty) {
+      return;
+    }
+
+    const width =
+      Dimensions.get('window').width -
+      Spacing.lg * 2;
+
+    const height = Math.min(
+      (width * 2) / 3,
+      280
+    );
+
+    animate(
+      width,
+      height,
+      difficulty
+    );
 
     return () => {
       if (
@@ -1149,26 +1190,32 @@ export default function VisualFlowScreen() {
   ]);
 
   /* ================================================================
-     RESTART / NEXT TEST
+     RESTART
   ================================================================ */
 
-  const restartGame = () => {
+  const restartGame = useCallback(() => {
+    stopGame();
+
     setScreen('difficulty');
 
     setTrialCount(0);
-
     setScore(0);
-
     setResults([]);
-
     setDots([]);
-
+    setCurrentDirection(null);
+    setCoherence(0);
     setInfoType('normal');
 
     setSelectedDifficulty(null);
 
+    selectedDifficultyRef.current =
+      null;
+
+    trialCountRef.current = 0;
+    scoreRef.current = 0;
+
     gameEndedRef.current = false;
-  };
+  }, [stopGame]);
 
   /* ================================================================
      SWIPE
@@ -1183,37 +1230,37 @@ export default function VisualFlowScreen() {
         onMoveShouldSetPanResponder:
           () => true,
 
-        onPanResponderRelease:
-          (_, gesture) => {
-            const {
-              dx,
-              dy,
-            } = gesture;
+        onPanResponderRelease: (
+          _,
+          gesture
+        ) => {
+          const { dx, dy } =
+            gesture;
 
-            if (
-              Math.abs(dx) < 15 &&
-              Math.abs(dy) < 15
-            ) {
-              return;
-            }
+          if (
+            Math.abs(dx) < 15 &&
+            Math.abs(dy) < 15
+          ) {
+            return;
+          }
 
-            if (
-              Math.abs(dx) >
-              Math.abs(dy)
-            ) {
-              submitAnswer(
-                dx > 0
-                  ? 'Right'
-                  : 'Left'
-              );
-            } else {
-              submitAnswer(
-                dy > 0
-                  ? 'Down'
-                  : 'Up'
-              );
-            }
-          },
+          if (
+            Math.abs(dx) >
+            Math.abs(dy)
+          ) {
+            submitAnswer(
+              dx > 0
+                ? 'Right'
+                : 'Left'
+            );
+          } else {
+            submitAnswer(
+              dy > 0
+                ? 'Down'
+                : 'Up'
+            );
+          }
+        },
       })
     ).current;
 
@@ -1234,7 +1281,6 @@ export default function VisualFlowScreen() {
         {
           backgroundColor:
             colors.surface,
-
           borderColor:
             colors.border,
         },
@@ -1243,6 +1289,7 @@ export default function VisualFlowScreen() {
         submitAnswer(direction)
       }
       activeOpacity={0.75}
+      disabled={!trialActive}
     >
       {icon}
     </TouchableOpacity>
@@ -1252,7 +1299,7 @@ export default function VisualFlowScreen() {
      FINAL REPORT
   ================================================================ */
 
-  const getFinalReport = () => {
+  const getFinalReport = useCallback(() => {
     const allResults =
       completedTests.flatMap(
         test => test.results
@@ -1263,8 +1310,7 @@ export default function VisualFlowScreen() {
 
     const correct =
       allResults.filter(
-        result =>
-          result.correct
+        result => result.correct
       ).length;
 
     const accuracy =
@@ -1275,19 +1321,16 @@ export default function VisualFlowScreen() {
     const reactionTimes =
       allResults
         .filter(
-          result =>
-            result.correct
+          result => result.correct
         )
         .map(
-          result =>
-            result.rt
+          result => result.rt
         );
 
     const avgRT =
       reactionTimes.length > 0
         ? reactionTimes.reduce(
-            (a, b) =>
-              a + b,
+            (a, b) => a + b,
             0
           ) /
           reactionTimes.length
@@ -1307,21 +1350,18 @@ export default function VisualFlowScreen() {
       avgRT,
       totalScore,
     };
-  };
+  }, [completedTests]);
 
   /* ================================================================
      PAGE 1 — DIFFICULTY SELECTION
   ================================================================ */
 
-  if (
-    screen === 'difficulty'
-  ) {
-    const remaining =
-      Math.max(
-        0,
-        MIN_COMPLETED_TESTS -
-          completedTests.length
-      );
+  if (screen === 'difficulty') {
+    const remaining = Math.max(
+      0,
+      MIN_COMPLETED_TESTS -
+        completedTests.length
+    );
 
     return (
       <View
@@ -1353,8 +1393,7 @@ export default function VisualFlowScreen() {
             opacity: fadeAnim,
             transform: [
               {
-                scale:
-                  scaleAnim,
+                scale: scaleAnim,
               },
             ],
           }}
@@ -1453,7 +1492,10 @@ export default function VisualFlowScreen() {
                     completedTests.length,
                     MIN_COMPLETED_TESTS
                   )}
-                  /{MIN_COMPLETED_TESTS}
+                  /
+                  {
+                    MIN_COMPLETED_TESTS
+                  }
                 </Text>
 
                 <Text
@@ -1511,9 +1553,7 @@ export default function VisualFlowScreen() {
                     key={
                       difficulty.id
                     }
-                    activeOpacity={
-                      0.8
-                    }
+                    activeOpacity={0.8}
                     onPress={() =>
                       startGame(
                         difficulty.id
@@ -1541,7 +1581,9 @@ export default function VisualFlowScreen() {
                         },
                       ]}
                     >
-                      {difficulty.icon}
+                      {
+                        difficulty.icon
+                      }
                     </View>
 
                     {/* TEXT */}
@@ -1583,7 +1625,9 @@ export default function VisualFlowScreen() {
                             ]}
                           >
                             <Star
-                              size={11}
+                              size={
+                                11
+                              }
                               color={
                                 colors.primary
                               }
@@ -1621,8 +1665,6 @@ export default function VisualFlowScreen() {
                           ? difficulty.descriptionFa
                           : difficulty.descriptionEn}
                       </Text>
-
-                      {/* DIFFICULTY DOTS */}
 
                       <View
                         style={
@@ -1723,9 +1765,7 @@ export default function VisualFlowScreen() {
      PAGE 2 — FINAL RESULTS
   ================================================================ */
 
-  if (
-    screen === 'finished'
-  ) {
+  if (screen === 'finished') {
     const report =
       getFinalReport();
 
@@ -1763,8 +1803,7 @@ export default function VisualFlowScreen() {
               opacity: fadeAnim,
               transform: [
                 {
-                  scale:
-                    scaleAnim,
+                  scale: scaleAnim,
                 },
               ],
             },
@@ -1828,7 +1867,9 @@ export default function VisualFlowScreen() {
             ]}
           >
             <View
-              style={styles.resultItemLeft}
+              style={
+                styles.resultItemLeft
+              }
             >
               <TrendingUp
                 size={18}
@@ -1836,6 +1877,7 @@ export default function VisualFlowScreen() {
                   colors.primary
                 }
               />
+
               <Text
                 style={[
                   styles.resultLabel,
@@ -1879,12 +1921,15 @@ export default function VisualFlowScreen() {
             ]}
           >
             <View
-              style={styles.resultItemLeft}
+              style={
+                styles.resultItemLeft
+              }
             >
               <CheckCircle
                 size={18}
                 color="#34D399"
               />
+
               <Text
                 style={[
                   styles.resultLabel,
@@ -1926,7 +1971,9 @@ export default function VisualFlowScreen() {
             ]}
           >
             <View
-              style={styles.resultItemLeft}
+              style={
+                styles.resultItemLeft
+              }
             >
               <Gauge
                 size={18}
@@ -1934,6 +1981,7 @@ export default function VisualFlowScreen() {
                   colors.textSecondary
                 }
               />
+
               <Text
                 style={[
                   styles.resultLabel,
@@ -1977,7 +2025,9 @@ export default function VisualFlowScreen() {
             ]}
           >
             <View
-              style={styles.resultItemLeft}
+              style={
+                styles.resultItemLeft
+              }
             >
               <Sparkles
                 size={18}
@@ -1985,6 +2035,7 @@ export default function VisualFlowScreen() {
                   colors.primary
                 }
               />
+
               <Text
                 style={[
                   styles.resultLabel,
@@ -2049,7 +2100,9 @@ export default function VisualFlowScreen() {
   ================================================================ */
 
   const currentDifficulty =
-    getDifficultyConfig();
+    getDifficultyConfig(
+      selectedDifficultyRef.current
+    );
 
   return (
     <View
@@ -2084,7 +2137,6 @@ export default function VisualFlowScreen() {
           {
             backgroundColor:
               colors.surface,
-
             borderColor:
               infoType === 'correct'
                 ? '#34D39955'
@@ -2104,10 +2156,8 @@ export default function VisualFlowScreen() {
                 {
                   left: dot.x,
                   top: dot.y,
-                  width:
-                    dot.size,
-                  height:
-                    dot.size,
+                  width: dot.size,
+                  height: dot.size,
                   borderRadius:
                     dot.size / 2,
                   backgroundColor:
@@ -2122,14 +2172,18 @@ export default function VisualFlowScreen() {
       {/* INFO */}
 
       <View style={styles.infoArea}>
-        <View style={styles.infoRow}>
-          {infoType === 'correct' ? (
+        <View
+          style={styles.infoRow}
+        >
+          {infoType ===
+          'correct' ? (
             <CheckCircle
               size={22}
               color="#34D399"
               strokeWidth={2.5}
             />
-          ) : infoType === 'wrong' ? (
+          ) : infoType ===
+            'wrong' ? (
             <XCircle
               size={22}
               color="#FF6B81"
@@ -2138,7 +2192,9 @@ export default function VisualFlowScreen() {
           ) : (
             <MousePointer2
               size={22}
-              color={colors.primary}
+              color={
+                colors.primary
+              }
               strokeWidth={2.5}
             />
           )}
@@ -2148,9 +2204,11 @@ export default function VisualFlowScreen() {
               styles.infoText,
               {
                 color:
-                  infoType === 'correct'
+                  infoType ===
+                  'correct'
                     ? '#34D399'
-                    : infoType === 'wrong'
+                    : infoType ===
+                      'wrong'
                     ? '#FF6B81'
                     : colors.textSecondary,
               },
@@ -2507,6 +2565,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexWrap: 'wrap',
   },
 
   difficultyTitle: {
@@ -2575,7 +2634,6 @@ const styles = StyleSheet.create({
 
   canvasWrapper: {
     width: '100%',
-
     height: Math.min(
       ((Dimensions.get('window').width -
         Spacing.lg * 2) *
@@ -2583,7 +2641,6 @@ const styles = StyleSheet.create({
         3,
       280
     ),
-
     borderRadius: 20,
     borderWidth: 1,
     overflow: 'hidden',
@@ -2636,6 +2693,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  /* ================================================================
+     STATUS
+  ================================================================ */
 
   statusBar: {
     minHeight: 58,
