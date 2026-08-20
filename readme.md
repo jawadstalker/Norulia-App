@@ -1,4 +1,4 @@
-# NeuroLia
+# NeuroLia App
 
 A modern cross-platform mobile application built with React Native and Expo.
 
