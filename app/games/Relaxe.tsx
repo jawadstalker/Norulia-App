@@ -8,7 +8,6 @@ import {
   Easing,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-
 import {
   ArrowLeft,
   RotateCcw,
@@ -20,7 +19,6 @@ import {
   Activity,
   Timer,
 } from 'lucide-react-native';
-
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Spacing, BorderRadius } from '../../constants/theme';
@@ -36,7 +34,6 @@ export default function CalmBreathingScreen() {
 
   const [isStarted, setIsStarted] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
   const [phase, setPhase] = useState<Phase>('inhale');
   const [seconds, setSeconds] = useState(4);
   const [round, setRound] = useState(1);
@@ -145,10 +142,6 @@ export default function CalmBreathingScreen() {
 
   /* ============================================================
      BACK BUTTON
-     
-     همان معماری صفحات قبلی:
-     Back همیشه سمت چپ است.
-     RTL فقط روی بخش متن تأثیر می‌گذارد.
   ============================================================ */
 
   const goBack = () => {
@@ -176,6 +169,9 @@ export default function CalmBreathingScreen() {
     setRound(1);
     setPhase('inhale');
     setSeconds(4);
+
+    scale.setValue(0.65);
+    opacity.setValue(0.7);
   };
 
   /* ============================================================
@@ -285,7 +281,7 @@ export default function CalmBreathingScreen() {
       duration,
       useNativeDriver: true,
     }).start();
-  }, [phase, isRunning]);
+  }, [phase, isRunning, scale, opacity]);
 
   /* ============================================================
      PHASE DATA
@@ -413,40 +409,6 @@ export default function CalmBreathingScreen() {
             {t.subtitle}
           </Text>
         </View>
-
-        {/* SOUND
-
-        <TouchableOpacity
-          onPress={() => setIsMuted(v => !v)}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel={
-            isMuted
-              ? 'Enable sound'
-              : 'Mute sound'
-          }
-          style={[
-            styles.soundButton,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          {isMuted ? (
-            <VolumeX
-              size={19}
-              color={colors.text}
-              strokeWidth={2.2}
-            />
-          ) : (
-            <Volume2
-              size={19}
-              color={colors.text}
-              strokeWidth={2.2}
-            />
-          )}
-        </TouchableOpacity> */}
       </View>
 
       {/* ======================================================
@@ -455,7 +417,6 @@ export default function CalmBreathingScreen() {
 
       {!isStarted ? (
         <View style={styles.startScreen}>
-
           {/* HERO ICON */}
 
           <View
@@ -480,7 +441,7 @@ export default function CalmBreathingScreen() {
             >
               <Wind
                 size={48}
-                color={colors.primary}
+                color={colors.text}
                 strokeWidth={1.8}
               />
             </View>
@@ -540,13 +501,14 @@ export default function CalmBreathingScreen() {
                   styles.infoIcon,
                   {
                     backgroundColor:
-                      colors.primary + '15',
+                      colors.background,
                   },
                 ]}
               >
                 <Activity
                   size={19}
-                  color={colors.primary}
+                  color={colors.text}
+                  strokeWidth={2}
                 />
               </View>
 
@@ -592,7 +554,8 @@ export default function CalmBreathingScreen() {
                 icon={
                   <Wind
                     size={18}
-                    color={colors.primary}
+                    color={colors.text}
+                    strokeWidth={2}
                   />
                 }
                 value="4s"
@@ -614,7 +577,8 @@ export default function CalmBreathingScreen() {
                 icon={
                   <PauseCircle
                     size={18}
-                    color={colors.primary}
+                    color={colors.text}
+                    strokeWidth={2}
                   />
                 }
                 value="4s"
@@ -636,7 +600,8 @@ export default function CalmBreathingScreen() {
                 icon={
                   <Waves
                     size={18}
-                    color={colors.primary}
+                    color={colors.text}
+                    strokeWidth={2}
                   />
                 }
                 value="6s"
@@ -671,6 +636,8 @@ export default function CalmBreathingScreen() {
             </Text>
           </TouchableOpacity>
 
+          {/* HINT */}
+
           <View
             style={[
               styles.startHint,
@@ -684,6 +651,7 @@ export default function CalmBreathingScreen() {
             <Timer
               size={14}
               color={colors.textSecondary}
+              strokeWidth={2}
             />
 
             <Text
@@ -707,7 +675,6 @@ export default function CalmBreathingScreen() {
         ====================================================== */
 
         <View style={styles.gameArea}>
-
           {/* PROGRESS */}
 
           <View
@@ -742,6 +709,7 @@ export default function CalmBreathingScreen() {
                   ]}
                 >
                   {round}
+
                   <Text
                     style={{
                       color:
@@ -754,17 +722,26 @@ export default function CalmBreathingScreen() {
                 </Text>
               </View>
 
-              <View style={styles.timerBadge}>
+              <View
+                style={[
+                  styles.timerBadge,
+                  {
+                    backgroundColor:
+                      colors.background,
+                  },
+                ]}
+              >
                 <Timer
                   size={15}
-                  color={colors.primary}
+                  color={colors.text}
+                  strokeWidth={2}
                 />
 
                 <Text
                   style={[
                     styles.timerText,
                     {
-                      color: colors.primary,
+                      color: colors.text,
                     },
                   ]}
                 >
@@ -798,9 +775,7 @@ export default function CalmBreathingScreen() {
           {/* BREATHING AREA */}
 
           <View style={styles.breathingArea}>
-
             <View style={styles.breathingVisual}>
-
               {/* OUTER */}
 
               <Animated.View
@@ -819,7 +794,6 @@ export default function CalmBreathingScreen() {
                   },
                 ]}
               >
-
                 {/* MIDDLE */}
 
                 <View
@@ -831,7 +805,6 @@ export default function CalmBreathingScreen() {
                     },
                   ]}
                 >
-
                   {/* INNER */}
 
                   <Animated.View
@@ -877,7 +850,7 @@ export default function CalmBreathingScreen() {
                 style={[
                   styles.secondsText,
                   {
-                    color: colors.primary,
+                    color: colors.text,
                   },
                 ]}
               >
@@ -920,13 +893,13 @@ export default function CalmBreathingScreen() {
                   styles.resultIcon,
                   {
                     backgroundColor:
-                      colors.primary + '15',
+                      colors.background,
                   },
                 ]}
               >
                 <CheckCircle2
                   size={34}
-                  color={colors.primary}
+                  color={colors.text}
                   strokeWidth={2}
                 />
               </View>
@@ -982,9 +955,7 @@ export default function CalmBreathingScreen() {
             /* PAUSE */
 
             <TouchableOpacity
-              onPress={() =>
-                setIsRunning(false)
-              }
+              onPress={() => setIsRunning(false)}
               activeOpacity={0.8}
               style={[
                 styles.pauseButton,
@@ -999,6 +970,7 @@ export default function CalmBreathingScreen() {
               <PauseCircle
                 size={19}
                 color={colors.text}
+                strokeWidth={2}
               />
 
               <Text
@@ -1041,7 +1013,7 @@ function PatternItem({
           styles.patternIcon,
           {
             backgroundColor:
-              colors.primary + '12',
+              colors.background,
           },
         ]}
       >
@@ -1063,7 +1035,8 @@ function PatternItem({
         style={[
           styles.patternLabel,
           {
-            color: colors.textSecondary,
+            color:
+              colors.textSecondary,
           },
         ]}
       >
@@ -1091,13 +1064,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: 58,
     paddingBottom: 15,
-
     flexDirection: 'row',
     alignItems: 'center',
-
     borderBottomWidth:
       StyleSheet.hairlineWidth,
-
     gap: 12,
   },
 
@@ -1105,12 +1075,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-
     borderWidth: 1,
-
     alignItems: 'center',
     justifyContent: 'center',
-
     flexShrink: 0,
   },
 
@@ -1131,54 +1098,32 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  soundButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-
-    borderWidth: 1,
-
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    flexShrink: 0,
-  },
-
   /* ============================================================
      START
   ============================================================ */
 
   startScreen: {
     flex: 1,
-
     paddingHorizontal: Spacing.lg,
-
     alignItems: 'center',
     justifyContent: 'center',
-
     paddingBottom: 20,
   },
 
   heroCircle: {
     width: 142,
     height: 142,
-
     borderRadius: 71,
-
     alignItems: 'center',
     justifyContent: 'center',
-
     borderWidth: 1,
-
     marginBottom: 22,
   },
 
   heroInner: {
     width: 106,
     height: 106,
-
     borderRadius: 53,
-
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1193,11 +1138,8 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 15,
     lineHeight: 24,
-
     textAlign: 'center',
-
     marginTop: 10,
-
     maxWidth: 350,
   },
 
@@ -1207,13 +1149,9 @@ const styles = StyleSheet.create({
 
   infoCard: {
     width: '100%',
-
     borderRadius: 22,
-
     borderWidth: 1,
-
     padding: 18,
-
     marginTop: 24,
   },
 
@@ -1225,9 +1163,7 @@ const styles = StyleSheet.create({
   infoIcon: {
     width: 38,
     height: 38,
-
     borderRadius: 12,
-
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1240,7 +1176,6 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 13.5,
     lineHeight: 22,
-
     marginTop: 14,
   },
 
@@ -1250,16 +1185,13 @@ const styles = StyleSheet.create({
 
   patternRow: {
     width: '100%',
-
     alignItems: 'center',
     justifyContent: 'space-between',
-
     marginTop: 18,
   },
 
   patternItem: {
     flex: 1,
-
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1267,12 +1199,9 @@ const styles = StyleSheet.create({
   patternIcon: {
     width: 34,
     height: 34,
-
     borderRadius: 10,
-
     alignItems: 'center',
     justifyContent: 'center',
-
     marginBottom: 5,
   },
 
@@ -1298,38 +1227,28 @@ const styles = StyleSheet.create({
 
   startButton: {
     width: '100%',
-
     minHeight: 54,
-
     borderRadius: BorderRadius.full,
-
     flexDirection: 'row',
-
     alignItems: 'center',
     justifyContent: 'center',
-
     gap: 9,
-
     marginTop: 18,
-
     elevation: 2,
   },
 
   buttonIcon: {
     width: 27,
     height: 27,
-
     borderRadius: 14,
-
     alignItems: 'center',
     justifyContent: 'center',
-
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor:
+      'rgba(255,255,255,0.15)',
   },
 
   startButtonText: {
     color: '#fff',
-
     fontSize: 16,
     fontWeight: '800',
   },
@@ -1337,9 +1256,7 @@ const styles = StyleSheet.create({
   startHint: {
     alignItems: 'center',
     justifyContent: 'center',
-
     gap: 6,
-
     marginTop: 12,
   },
 
@@ -1353,7 +1270,6 @@ const styles = StyleSheet.create({
 
   gameArea: {
     flex: 1,
-
     paddingHorizontal: Spacing.lg,
   },
 
@@ -1363,17 +1279,13 @@ const styles = StyleSheet.create({
 
   progressCard: {
     borderRadius: 20,
-
     borderWidth: 1,
-
     padding: 15,
-
     marginTop: 16,
   },
 
   progressTop: {
     flexDirection: 'row',
-
     justifyContent: 'space-between',
     alignItems: 'center',
   },
@@ -1391,14 +1303,10 @@ const styles = StyleSheet.create({
 
   timerBadge: {
     flexDirection: 'row',
-
     alignItems: 'center',
-
     gap: 6,
-
     paddingHorizontal: 11,
     paddingVertical: 7,
-
     borderRadius: 12,
   },
 
@@ -1409,17 +1317,13 @@ const styles = StyleSheet.create({
 
   progressTrack: {
     height: 7,
-
     borderRadius: 10,
-
     overflow: 'hidden',
-
     marginTop: 12,
   },
 
   progressFill: {
     height: '100%',
-
     borderRadius: 10,
   },
 
@@ -1429,7 +1333,6 @@ const styles = StyleSheet.create({
 
   breathingArea: {
     flex: 1,
-
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1442,21 +1345,16 @@ const styles = StyleSheet.create({
   outerCircle: {
     width: 255,
     height: 255,
-
     borderRadius: 128,
-
     alignItems: 'center',
     justifyContent: 'center',
-
     borderWidth: 1,
   },
 
   middleCircle: {
     width: 208,
     height: 208,
-
     borderRadius: 104,
-
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1464,42 +1362,30 @@ const styles = StyleSheet.create({
   innerCircle: {
     width: 154,
     height: 154,
-
     borderRadius: 77,
-
     alignItems: 'center',
     justifyContent: 'center',
-
     elevation: 4,
   },
 
   phaseText: {
     fontSize: 29,
-
     fontWeight: '800',
-
     marginTop: 26,
   },
 
   secondsText: {
     fontSize: 56,
-
     lineHeight: 64,
-
     fontWeight: '800',
-
     marginTop: 1,
   },
 
   phaseDescription: {
     fontSize: 13.5,
-
     lineHeight: 21,
-
     textAlign: 'center',
-
     marginTop: 3,
-
     maxWidth: 320,
   },
 
@@ -1509,24 +1395,17 @@ const styles = StyleSheet.create({
 
   pauseButton: {
     height: 50,
-
     borderRadius: BorderRadius.full,
-
     borderWidth: 1,
-
     flexDirection: 'row',
-
     alignItems: 'center',
     justifyContent: 'center',
-
     gap: 8,
-
     marginBottom: Spacing.lg,
   },
 
   pauseText: {
     fontSize: 15,
-
     fontWeight: '700',
   },
 
@@ -1536,62 +1415,43 @@ const styles = StyleSheet.create({
 
   resultCard: {
     width: '100%',
-
     borderRadius: 22,
-
     borderWidth: 1,
-
     padding: 20,
-
     alignItems: 'center',
-
     marginBottom: Spacing.lg,
   },
 
   resultIcon: {
     width: 62,
     height: 62,
-
     borderRadius: 31,
-
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   resultTitle: {
     fontSize: 24,
-
     fontWeight: '800',
-
     marginTop: 12,
   },
 
   resultText: {
     fontSize: 13.5,
-
     lineHeight: 21,
-
     textAlign: 'center',
-
     marginTop: 7,
-
     maxWidth: 320,
   },
 
   restartButton: {
     marginTop: 16,
-
     width: '100%',
-
     height: 50,
-
     borderRadius: BorderRadius.full,
-
     flexDirection: 'row',
-
     alignItems: 'center',
     justifyContent: 'center',
-
     gap: 8,
   },
 });
