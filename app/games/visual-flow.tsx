@@ -11,1364 +11,1562 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  ScrollView,
   Animated,
-  Dimensions,
-  PanResponder,
 } from 'react-native';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 
 import {
   ArrowLeft,
   RotateCcw,
-  ChevronUp,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Target,
   Zap,
-  BarChart3,
-  Star,
-  Lock,
+  Trophy,
   CheckCircle,
   XCircle,
-  MousePointer2,
-  Brain,
-  Gauge,
-  Award,
-  Flame,
-  Leaf,
-  Crown,
-  Sparkles,
+  Clock,
   TrendingUp,
+  Sparkles,
+  Brain,
 } from 'lucide-react-native';
 
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { Spacing } from '../../constants/theme';
+import { Spacing, BorderRadius } from '../../constants/theme';
 
-/* ================================================================
-   GAME CONFIG
-================================================================ */
+const TOTAL_TRIALS = 20;
+const MIN_LEVEL = 1;
+const MAX_LEVEL = 5;
 
-const TOTAL_TRIALS = 30;
+const STORAGE_KEY = 'neurolia_visual_flow_adaptive_v3';
 
-/**
- * حداقل تعداد آزمون‌های کامل قبل از نمایش نتایج
- */
-const MIN_COMPLETED_TESTS = 5;
+type Direction = 'up' | 'down' | 'left' | 'right';
 
-const DIRECTIONS = ['Up', 'Down', 'Left', 'Right'] as const;
+type Phase = 'intro' | 'playing' | 'result';
 
-type Direction = (typeof DIRECTIONS)[number];
+type Feedback =
+  | 'idle'
+  | 'correct'
+  | 'wrong'
+  | 'timeout';
 
 type Dot = {
   x: number;
   y: number;
   vx: number;
   vy: number;
-  color: string;
   size: number;
 };
 
-/* ================================================================
-   DIFFICULTY
-================================================================ */
-
-type DifficultyLevel =
-  | 'easy'
-  | 'medium'
-  | 'hard'
-  | 'expert';
-
-interface DifficultyConfig {
-  id: DifficultyLevel;
-  titleFa: string;
-  titleEn: string;
-  descriptionFa: string;
-  descriptionEn: string;
+type DifficultyConfig = {
+  level: number;
+  nameFa: string;
+  nameEn: string;
   minCoherence: number;
   maxCoherence: number;
   minSpeed: number;
   maxSpeed: number;
   dots: number;
-}
+  duration: number;
+};
 
-// حذف آیکون از اینجا - فقط داده‌های خام
 const DIFFICULTIES: DifficultyConfig[] = [
   {
-    id: 'easy',
-    titleFa: 'آسان',
-    titleEn: 'Easy',
-    descriptionFa: 'حرکت نقاط واضح و قابل تشخیص',
-    descriptionEn: 'Clear and easy-to-detect movement',
-    minCoherence: 0.7,
-    maxCoherence: 0.9,
-    minSpeed: 1.5,
-    maxSpeed: 2.2,
-    dots: 60,
+    level: 1,
+    nameFa: 'آسان',
+    nameEn: 'Easy',
+    minCoherence: 0.72,
+    maxCoherence: 0.88,
+    minSpeed: 1.1,
+    maxSpeed: 1.8,
+    dots: 42,
+    duration: 2600,
   },
   {
-    id: 'medium',
-    titleFa: 'متوسط',
-    titleEn: 'Medium',
-    descriptionFa: 'حرکت نقاط با کمی آشفتگی',
-    descriptionEn: 'Movement with moderate noise',
-    minCoherence: 0.5,
-    maxCoherence: 0.7,
-    minSpeed: 1.8,
-    maxSpeed: 2.6,
-    dots: 80,
+    level: 2,
+    nameFa: 'متوسط',
+    nameEn: 'Medium',
+    minCoherence: 0.58,
+    maxCoherence: 0.72,
+    minSpeed: 1.4,
+    maxSpeed: 2.1,
+    dots: 55,
+    duration: 2500,
   },
   {
-    id: 'hard',
-    titleFa: 'سخت',
-    titleEn: 'Hard',
-    descriptionFa: 'تشخیص جهت حرکت دشوارتر است',
-    descriptionEn: 'Direction is harder to detect',
-    minCoherence: 0.35,
-    maxCoherence: 0.55,
+    level: 3,
+    nameFa: 'دقیق',
+    nameEn: 'Precise',
+    minCoherence: 0.45,
+    maxCoherence: 0.58,
+    minSpeed: 1.7,
+    maxSpeed: 2.5,
+    dots: 68,
+    duration: 2400,
+  },
+  {
+    level: 4,
+    nameFa: 'سخت',
+    nameEn: 'Hard',
+    minCoherence: 0.32,
+    maxCoherence: 0.46,
     minSpeed: 2.0,
-    maxSpeed: 3.0,
-    dots: 90,
+    maxSpeed: 2.9,
+    dots: 82,
+    duration: 2300,
   },
   {
-    id: 'expert',
-    titleFa: 'خیلی سخت',
-    titleEn: 'Expert',
-    descriptionFa: 'حرکت بسیار پراکنده و سریع',
-    descriptionEn: 'Fast and highly scattered movement',
+    level: 5,
+    nameFa: 'حرفه‌ای',
+    nameEn: 'Expert',
     minCoherence: 0.2,
-    maxCoherence: 0.4,
+    maxCoherence: 0.34,
     minSpeed: 2.3,
-    maxSpeed: 3.5,
-    dots: 100,
+    maxSpeed: 3.3,
+    dots: 96,
+    duration: 2200,
   },
 ];
 
-/* ================================================================
-   TRANSLATIONS
-================================================================ */
+const randomBetween = (
+  min: number,
+  max: number
+) => Math.random() * (max - min) + min;
 
-const directionTranslation: Record<Direction, string> = {
-  Up: 'بالا',
-  Down: 'پایین',
-  Left: 'چپ',
-  Right: 'راست',
-};
-
-const directionTranslationEn: Record<Direction, string> = {
-  Up: 'Up',
-  Down: 'Down',
-  Left: 'Left',
-  Right: 'Right',
-};
-
-const dotColors = [
-  '#FFD700',
-  '#FF4444',
-  '#00E5D0',
-  '#FFC107',
-  '#8B5CF6',
-  '#FF1493',
-  '#00D4FF',
-  '#FF6B35',
-];
-
-const random = (min: number, max: number) =>
-  Math.random() * (max - min) + min;
-
-/* ================================================================
-   RESULT TYPES
-================================================================ */
-
-interface TrialResult {
-  correct: boolean;
-  rt: number;
-  coherence: number;
-}
-
-interface TestSession {
-  difficulty: DifficultyLevel;
-  results: TrialResult[];
-  score: number;
-}
-
-/* ================================================================
-   PAGE HEADER
-================================================================ */
-
-interface PageHeaderProps {
-  title: string;
-  subtitle?: string;
-  onBack: () => void;
-  colors: any;
-  isRTL: boolean;
-  backLabel?: string;
-}
-
-function PageHeader({
-  title,
-  subtitle,
-  onBack,
-  colors,
-  isRTL,
-  backLabel = 'Back',
-}: PageHeaderProps) {
-  return (
-    <View
-      style={[
-        styles.pageHeader,
-        {
-          borderBottomColor: colors.border,
-        },
-      ]}
-    >
-      {/* Back button همیشه سمت چپ */}
-      <TouchableOpacity
-        onPress={onBack}
-        activeOpacity={0.75}
-        accessibilityRole="button"
-        accessibilityLabel={backLabel}
-        style={[
-          styles.unifiedBackButton,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-          },
-        ]}
-      >
-        <ArrowLeft
-          size={21}
-          color={colors.text}
-          strokeWidth={2.5}
-        />
-      </TouchableOpacity>
-
-      {/* Header text */}
-      <View
-        style={[
-          styles.pageHeaderText,
-          {
-            alignItems: isRTL ? 'flex-end' : 'flex-start',
-          },
-        ]}
-      >
-        <Text
-          style={[
-            styles.pageHeaderTitle,
-            {
-              color: colors.text,
-              textAlign: isRTL ? 'right' : 'left',
-            },
-          ]}
-          numberOfLines={2}
-        >
-          {title}
-        </Text>
-
-        {subtitle ? (
-          <Text
-            style={[
-              styles.pageHeaderSubtitle,
-              {
-                color: colors.textSecondary,
-                textAlign: isRTL ? 'right' : 'left',
-              },
-            ]}
-          >
-            {subtitle}
-          </Text>
-        ) : null}
-      </View>
-    </View>
-  );
-}
-
-/* ================================================================
-   MAIN SCREEN
-================================================================ */
+const getConfig = (
+  level: number
+): DifficultyConfig =>
+  DIFFICULTIES[
+    Math.max(
+      0,
+      Math.min(
+        DIFFICULTIES.length - 1,
+        level - 1
+      )
+    )
+  ];
 
 export default function VisualFlowScreen() {
   const router = useRouter();
+
   const { colors } = useTheme();
   const { language, isRTL } = useLanguage();
 
-  /* ================================================================
-     ICON MAP - آیکون‌ها با رنگ dynamic
-  ================================================================ */
+  const text = useMemo(
+    () =>
+      language === 'fa'
+        ? {
+            title: 'جریان بصری',
+            subtitle: 'جهت حرکت نقاط را تشخیص بده',
 
-  const difficultyIcons = useMemo(
-    () => ({
-      easy: Leaf,
-      medium: Brain,
-      hard: Flame,
-      expert: Crown,
-    }),
-    []
-  );
+            instruction:
+              'جهت اصلی حرکت نقاط کدام است؟',
 
-  /* ================================================================
-     SCREEN STATE
-  ================================================================ */
+            description:
+              'به حرکت کلی نقاط نگاه کن و جهتی را انتخاب کن که بیشتر نقاط در آن حرکت می‌کنند.',
 
-  const [screen, setScreen] = useState<
-    'difficulty' | 'game' | 'finished'
-  >('difficulty');
+            start: 'شروع بازی',
+            back: 'بازگشت',
 
-  const [selectedDifficulty, setSelectedDifficulty] =
-    useState<DifficultyLevel | null>(null);
+            up: 'بالا',
+            down: 'پایین',
+            left: 'چپ',
+            right: 'راست',
 
-  const [trialCount, setTrialCount] = useState(0);
-  const [score, setScore] = useState(0);
+            round: 'مرحله',
+            score: 'امتیاز',
 
-  const [currentDirection, setCurrentDirection] =
-    useState<Direction | null>(null);
+            correct: 'درست',
+            wrong: 'اشتباه',
+            timeout: 'زمان تمام شد',
 
-  const [coherence, setCoherence] = useState(0);
+            completed: 'بازی تمام شد',
 
-  const [trialActive, setTrialActive] = useState(false);
+            accuracy: 'دقت',
+            averageTime: 'میانگین زمان پاسخ',
+            milliseconds: 'میلی‌ثانیه',
 
-  const [dots, setDots] = useState<Dot[]>([]);
+            correctAnswers:
+              'پاسخ‌های درست',
 
-  const [results, setResults] = useState<TrialResult[]>([]);
+            currentLevel: 'سطح فعلی',
+            nextLevel: 'سطح بعدی',
 
-  const [completedTests, setCompletedTests] =
-    useState<TestSession[]>([]);
+            adaptive: 'سختی تطبیقی',
 
-  const [info, setInfo] = useState(
-    language === 'fa'
-      ? 'سطح مورد نظر خود را انتخاب کن'
-      : 'Select your difficulty level'
-  );
+            adaptiveDescription:
+              'سطح بازی بر اساس عملکرد واقعی شما به‌صورت خودکار تغییر می‌کند.',
 
-  const [infoType, setInfoType] = useState<
-    'normal' | 'correct' | 'wrong'
-  >('normal');
+            levelUp:
+              'عملکرد شما عالی بود. مرحله بعد دشوارتر خواهد شد.',
 
-  /* ================================================================
-     REFS
-  ================================================================ */
+            levelDown:
+              'این مرحله دشوار بود. مرحله بعد کمی آسان‌تر خواهد شد.',
 
-  const startTimeRef = useRef(0);
+            levelSame:
+              'سطح فعلی برای عملکرد شما مناسب است.',
 
-  const animationRef = useRef<number | null>(null);
+            playAgain: 'بازی مجدد',
 
-  const timeoutRef =
-    useRef<ReturnType<typeof setTimeout> | null>(null);
+            noLevel:
+              'سطح بازی توسط شما انتخاب نمی‌شود.',
 
-  const dotsRef = useRef<Dot[]>([]);
+            excellent: 'عملکرد عالی',
+            good: 'عملکرد خوب',
+            improve: 'نیاز به تمرین بیشتر',
 
-  const directionRef =
-    useRef<Direction | null>(null);
+            direction: 'جهت',
+            find: 'جهت حرکت را پیدا کن',
 
-  const coherenceRef = useRef(0);
+            previous: 'عملکرد قبلی',
+          }
+        : {
+            title: 'Visual Flow',
+            subtitle:
+              'Detect the direction of moving dots',
 
-  const trialActiveRef = useRef(false);
+            instruction:
+              'What is the main direction?',
 
-  const gameEndedRef = useRef(false);
+            description:
+              'Watch the overall movement and choose the direction in which most dots are moving.',
 
-  /**
-   * تعداد Trialها را در ref نگه می‌داریم
-   * تا مشکل stale state نداشته باشیم.
-   */
-  const trialCountRef = useRef(0);
+            start: 'Start Game',
+            back: 'Back',
 
-  /**
-   * امتیاز را هم در ref نگه می‌داریم.
-   */
-  const scoreRef = useRef(0);
+            up: 'Up',
+            down: 'Down',
+            left: 'Left',
+            right: 'Right',
 
-  /**
-   * سطح انتخاب‌شده در ref
-   */
-  const selectedDifficultyRef =
-    useRef<DifficultyLevel | null>(null);
+            round: 'Round',
+            score: 'Score',
 
-  /* ================================================================
-     ANIMATION
-  ================================================================ */
+            correct: 'Correct',
+            wrong: 'Wrong',
+            timeout: 'Time is up',
 
-  const fadeAnim =
-    useRef(new Animated.Value(0)).current;
+            completed: 'Game Complete',
 
-  const scaleAnim =
-    useRef(new Animated.Value(0.94)).current;
+            accuracy: 'Accuracy',
+            averageTime: 'Average Response',
+            milliseconds: 'ms',
 
-  /* ================================================================
-     TEXT
-  ================================================================ */
+            correctAnswers:
+              'Correct Answers',
 
-  const t = useMemo(
-    () => ({
-      title:
-        language === 'fa'
-          ? 'جریان بصری'
-          : 'Visual Flow',
+            currentLevel: 'Current Level',
+            nextLevel: 'Next Level',
 
-      subtitle:
-        language === 'fa'
-          ? 'جهت حرکت دسته‌ی نقاط را پیدا کن!'
-          : 'Find the main direction of the moving dots!',
+            adaptive: 'Adaptive Difficulty',
 
-      back:
-        language === 'fa'
-          ? 'بازگشت'
-          : 'Back',
+            adaptiveDescription:
+              'Game difficulty automatically changes based on your actual performance.',
 
-      selectDifficulty:
-        language === 'fa'
-          ? 'سطح بازی را انتخاب کن'
-          : 'Choose your difficulty',
+            levelUp:
+              'Excellent performance. The next session will be harder.',
 
-      selectDescription:
-        language === 'fa'
-          ? 'از آسان شروع کن یا سطح چالش‌برانگیزتری انتخاب کن'
-          : 'Start easy or choose a more challenging level',
+            levelDown:
+              'This session was challenging. The next session will be easier.',
 
-      start:
-        language === 'fa'
-          ? 'شروع آزمون'
-          : 'Start Test',
+            levelSame:
+              'The current difficulty is appropriate for your performance.',
 
-      round:
-        language === 'fa'
-          ? 'دور'
-          : 'Round',
+            playAgain: 'Play Again',
 
-      score:
-        language === 'fa'
-          ? 'امتیاز'
-          : 'Score',
+            noLevel:
+              'You do not choose the game level.',
 
-      difficulty:
-        language === 'fa'
-          ? 'انسجام'
-          : 'Coherence',
+            excellent: 'Excellent Performance',
+            good: 'Good Performance',
+            improve: 'More Practice Needed',
 
-      correct:
-        language === 'fa'
-          ? 'درسته!'
-          : 'Correct!',
+            direction: 'Direction',
+            find: 'Find the direction',
 
-      wrong:
-        language === 'fa'
-          ? 'اشتباه!'
-          : 'Wrong!',
-
-      correctAnswers:
-        language === 'fa'
-          ? 'پاسخ صحیح'
-          : 'Correct answers',
-
-      accuracy:
-        language === 'fa'
-          ? 'دقت'
-          : 'Accuracy',
-
-      reaction:
-        language === 'fa'
-          ? 'میانگین زمان واکنش'
-          : 'Average reaction time',
-
-      finalScore:
-        language === 'fa'
-          ? 'امتیاز'
-          : 'Score',
-
-      testProgress:
-        language === 'fa'
-          ? 'آزمون'
-          : 'Test',
-
-      finalResults:
-        language === 'fa'
-          ? 'نتایج نهایی'
-          : 'Final Results',
-
-      testsRemaining:
-        language === 'fa'
-          ? 'آزمون دیگر تا نمایش نتایج'
-          : 'more tests until results',
-
-      minimumTests:
-        language === 'fa'
-          ? 'برای نمایش نتایج حداقل ۵ آزمون کامل انجام بده'
-          : 'Complete at least 5 tests to see your results',
-
-      findDirection:
-        language === 'fa'
-          ? 'جهت حرکت را پیدا کن و پاسخ بده!'
-          : 'Find the direction and answer!',
-
-      identifyDirection:
-        language === 'fa'
-          ? 'جهت حرکت دسته‌ی نقاط را تشخیص بده!'
-          : 'Identify the direction of the moving dots!',
-    }),
+            previous: 'Previous Performance',
+          },
     [language]
   );
 
-  /* ================================================================
-     INITIAL ANIMATION
-  ================================================================ */
+  const [phase, setPhase] =
+    useState<Phase>('intro');
+
+  const [level, setLevel] = useState(1);
+
+  const [previousAccuracy, setPreviousAccuracy] =
+    useState<number | null>(null);
+
+  const [trialIndex, setTrialIndex] =
+    useState(0);
+
+  const [score, setScore] = useState(0);
+
+  const [feedback, setFeedback] =
+    useState<Feedback>('idle');
+
+  const [dots, setDots] =
+    useState<Dot[]>([]);
+
+  const [areaWidth, setAreaWidth] =
+    useState(0);
+
+  const [areaHeight, setAreaHeight] =
+    useState(0);
+
+  const [responseTime, setResponseTime] =
+    useState<number | null>(null);
+
+  const [results, setResults] = useState<
+    {
+      correct: boolean;
+      rt: number;
+    }[]
+  >([]);
+
+  const [adaptiveResult, setAdaptiveResult] =
+    useState<
+      'up' | 'down' | 'same' | null
+    >(null);
+
+  const [ready, setReady] =
+    useState(false);
+
+  /*
+   * Refs
+   */
+
+  const mounted = useRef(true);
+
+  const animationFrame =
+    useRef<number | null>(null);
+
+  const timeoutRef =
+    useRef<
+      ReturnType<typeof setTimeout> | null
+    >(null);
+
+  const trialTimerRef =
+    useRef<
+      ReturnType<typeof setTimeout> | null
+    >(null);
+
+  const startTimeRef = useRef(0);
+
+  const correctDirectionRef =
+    useRef<Direction>('up');
+
+  const dotsRef =
+    useRef<Dot[]>([]);
+
+  const levelRef =
+    useRef(level);
+
+  const trialRef =
+    useRef(0);
+
+  const resultsRef = useRef<
+    {
+      correct: boolean;
+      rt: number;
+    }[]
+  >([]);
+
+  const scoreRef = useRef(0);
+
+  const answeredRef =
+    useRef(false);
+
+  const phaseRef =
+    useRef<Phase>('intro');
+
+  const readyRef =
+    useRef(false);
+
+  const finishingRef =
+    useRef(false);
+
+  const handleAnswerRef =
+    useRef<
+      (selected: Direction | null) => void
+    >(() => {});
+
+  const pulse =
+    useRef(new Animated.Value(0.92))
+      .current;
+
+  const timerAnimation =
+    useRef(new Animated.Value(1))
+      .current;
+
+  const config = getConfig(level);
+
+  const levelName =
+    language === 'fa'
+      ? config.nameFa
+      : config.nameEn;
+
+  /*
+   * Keep refs synchronized with state
+   */
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 450,
-        useNativeDriver: true,
-      }),
-
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [fadeAnim, scaleAnim]);
-
-  /* ================================================================
-     CLEANUP ON UNMOUNT
-  ================================================================ */
+    phaseRef.current = phase;
+  }, [phase]);
 
   useEffect(() => {
+    readyRef.current = ready;
+  }, [ready]);
+
+  /*
+   * Load previous adaptive progress
+   */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadProgress = async () => {
+      try {
+        const stored =
+          await AsyncStorage.getItem(
+            STORAGE_KEY
+          );
+
+        if (!stored || cancelled) return;
+
+        const parsed =
+          JSON.parse(stored);
+
+        if (
+          typeof parsed.level ===
+          'number'
+        ) {
+          const savedLevel = Math.max(
+            MIN_LEVEL,
+            Math.min(
+              MAX_LEVEL,
+              parsed.level
+            )
+          );
+
+          levelRef.current =
+            savedLevel;
+
+          setLevel(savedLevel);
+        }
+
+        if (
+          typeof parsed.accuracy ===
+          'number'
+        ) {
+          setPreviousAccuracy(
+            parsed.accuracy
+          );
+        }
+      } catch (error) {
+        console.warn(
+          '[VisualFlow] Failed to load progress:',
+          error
+        );
+      }
+    };
+
+    loadProgress();
+
     return () => {
-      if (animationRef.current !== null) {
-        cancelAnimationFrame(animationRef.current);
-        animationRef.current = null;
-      }
-
-      if (timeoutRef.current !== null) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-
-      trialActiveRef.current = false;
-      gameEndedRef.current = true;
+      cancelled = true;
     };
   }, []);
 
-  /* ================================================================
-     GET DIFFICULTY CONFIG
-  ================================================================ */
+  /*
+   * Save adaptive progress
+   */
 
-  const getDifficultyConfig = useCallback(
-    (difficulty?: DifficultyLevel | null) => {
-      const id =
-        difficulty ??
-        selectedDifficultyRef.current ??
-        selectedDifficulty ??
-        'easy';
+  const saveProgress =
+    useCallback(
+      async (
+        nextLevel: number,
+        accuracy: number
+      ) => {
+        try {
+          await AsyncStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({
+              level: nextLevel,
+              accuracy: Math.round(
+                accuracy
+              ),
+              updatedAt: Date.now(),
+            })
+          );
+        } catch (error) {
+          console.warn(
+            '[VisualFlow] Save failed:',
+            error
+          );
+        }
+      },
+      []
+    );
 
-      return (
-        DIFFICULTIES.find(
-          item => item.id === id
-        ) || DIFFICULTIES[0]
-      );
-    },
-    [selectedDifficulty]
-  );
+  /*
+   * Clear every active timer / animation
+   */
 
-  /* ================================================================
-     GENERATE DOTS
-  ================================================================ */
-
-  const generateDots = useCallback(
-    (
-      width: number,
-      height: number,
-      config: DifficultyConfig
-    ) => {
-      const safeWidth = Math.max(width, 20);
-      const safeHeight = Math.max(height, 20);
-
-      const newDots: Dot[] = [];
-
-      for (let i = 0; i < config.dots; i++) {
-        const angle = random(0, Math.PI * 2);
-
-        const speed = random(
-          config.minSpeed,
-          config.maxSpeed
+  const clearTimers =
+    useCallback(() => {
+      if (
+        animationFrame.current !==
+        null
+      ) {
+        cancelAnimationFrame(
+          animationFrame.current
         );
 
-        newDots.push({
-          x: random(
-            8,
-            Math.max(8, safeWidth - 8)
-          ),
-
-          y: random(
-            8,
-            Math.max(8, safeHeight - 8)
-          ),
-
-          vx: Math.cos(angle) * speed,
-
-          vy: Math.sin(angle) * speed,
-
-          color:
-            dotColors[
-              Math.floor(
-                Math.random() *
-                  dotColors.length
-              )
-            ],
-
-          size: random(3, 5),
-        });
+        animationFrame.current = null;
       }
 
-      dotsRef.current = newDots;
+      if (timeoutRef.current) {
+        clearTimeout(
+          timeoutRef.current
+        );
 
-      setDots(newDots);
-    },
-    []
-  );
+        timeoutRef.current = null;
+      }
 
-  /* ================================================================
-     STOP GAME
-  ================================================================ */
+      if (
+        trialTimerRef.current
+      ) {
+        clearTimeout(
+          trialTimerRef.current
+        );
 
-  const stopGame = useCallback(() => {
-    if (animationRef.current !== null) {
-      cancelAnimationFrame(
-        animationRef.current
-      );
+        trialTimerRef.current = null;
+      }
 
-      animationRef.current = null;
-    }
+      timerAnimation.stopAnimation();
+    }, [timerAnimation]);
 
-    if (timeoutRef.current !== null) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
+  /*
+   * Cleanup
+   */
 
-    trialActiveRef.current = false;
-    setTrialActive(false);
-  }, []);
+  useEffect(() => {
+    mounted.current = true;
 
-  /* ================================================================
-     BACK HANDLER
-  ================================================================ */
+    return () => {
+      mounted.current = false;
 
-  const goBack = useCallback(() => {
-    if (screen === 'game') {
-      stopGame();
+      clearTimers();
 
-      gameEndedRef.current = true;
+      dotsRef.current = [];
 
-      setScreen('difficulty');
-      setTrialCount(0);
-      setScore(0);
-      setResults([]);
       setDots([]);
+    };
+  }, [clearTimers]);
 
-      trialCountRef.current = 0;
-      scoreRef.current = 0;
+  /*
+   * Create dots
+   */
 
-      return;
-    }
+  const createDots =
+    useCallback(
+      (
+        width: number,
+        height: number,
+        direction: Direction,
+        cfg: DifficultyConfig
+      ) => {
+        const safeWidth =
+          Math.max(width, 100);
 
-    if (screen === 'finished') {
-      setScreen('difficulty');
-      return;
-    }
+        const safeHeight =
+          Math.max(height, 100);
 
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(tabs)/psycho');
-    }
-  }, [
-    screen,
-    stopGame,
-    router,
-  ]);
+        const directionVectors: Record<
+          Direction,
+          [number, number]
+        > = {
+          up: [0, -1],
+          down: [0, 1],
+          left: [-1, 0],
+          right: [1, 0],
+        };
 
-  /* ================================================================
-     START TRIAL
-     
-     نکته مهم:
-     difficulty مستقیماً به تابع داده می‌شود.
-     بنابراین دیگر مشکل stale selectedDifficulty نداریم.
-  ================================================================ */
+        const [
+          directionX,
+          directionY,
+        ] =
+          directionVectors[
+            direction
+          ];
 
-  const startTrial = useCallback(
-    (difficulty: DifficultyLevel) => {
-      if (gameEndedRef.current) {
-        return;
-      }
+        const nextDots: Dot[] = [];
 
-      if (
-        trialCountRef.current >=
-        TOTAL_TRIALS
-      ) {
-        return;
-      }
+        const minDistance = 8;
 
-      const config =
-        getDifficultyConfig(difficulty);
+        for (
+          let i = 0;
+          i < cfg.dots;
+          i++
+        ) {
+          const coherent =
+            Math.random() <
+            randomBetween(
+              cfg.minCoherence,
+              cfg.maxCoherence
+            );
 
-      const direction =
-        DIRECTIONS[
-          Math.floor(
-            Math.random() *
-              DIRECTIONS.length
-          )
-        ];
+          let vx: number;
+          let vy: number;
 
-      const coh = random(
-        config.minCoherence,
-        config.maxCoherence
-      );
+          if (coherent) {
+            const speed =
+              randomBetween(
+                cfg.minSpeed,
+                cfg.maxSpeed
+              );
 
-      directionRef.current =
-        direction;
+            vx =
+              directionX * speed +
+              randomBetween(
+                -0.25,
+                0.25
+              );
 
-      coherenceRef.current = coh;
-
-      setCurrentDirection(direction);
-
-      setCoherence(coh);
-
-      trialCountRef.current += 1;
-
-      setTrialCount(
-        trialCountRef.current
-      );
-
-      trialActiveRef.current = true;
-
-      setTrialActive(true);
-
-      gameEndedRef.current = false;
-
-      startTimeRef.current =
-        Date.now();
-
-      setInfo(t.findDirection);
-
-      setInfoType('normal');
-    },
-    [
-      getDifficultyConfig,
-      t.findDirection,
-    ]
-  );
-
-  /* ================================================================
-     ANIMATION
-  ================================================================ */
-
-  const animate = useCallback(
-    (
-      width: number,
-      height: number,
-      difficulty: DifficultyLevel
-    ) => {
-      if (
-        !trialActiveRef.current ||
-        gameEndedRef.current
-      ) {
-        return;
-      }
-
-      const direction =
-        directionRef.current;
-
-      const coh =
-        coherenceRef.current;
-
-      if (!direction) {
-        return;
-      }
-
-      const config =
-        getDifficultyConfig(
-          difficulty
-        );
-
-      const vectors: Record<
-        Direction,
-        [number, number]
-      > = {
-        Up: [0, -config.maxSpeed],
-        Down: [0, config.maxSpeed],
-        Left: [-config.maxSpeed, 0],
-        Right: [config.maxSpeed, 0],
-      };
-
-      const [vx, vy] =
-        vectors[direction];
-
-      const updated =
-        dotsRef.current.map(dot => {
-          let nextVx = dot.vx;
-          let nextVy = dot.vy;
-
-          if (Math.random() < coh) {
-            nextVx =
-              vx + random(-0.3, 0.3);
-
-            nextVy =
-              vy + random(-0.3, 0.3);
+            vy =
+              directionY * speed +
+              randomBetween(
+                -0.25,
+                0.25
+              );
           } else {
             const angle =
-              random(
+              randomBetween(
                 0,
                 Math.PI * 2
               );
 
             const speed =
-              random(
-                config.minSpeed,
-                config.maxSpeed
+              randomBetween(
+                cfg.minSpeed,
+                cfg.maxSpeed
               );
 
-            nextVx =
-              Math.cos(angle) *
-              speed;
+            vx =
+              Math.cos(angle) * speed;
 
-            nextVy =
-              Math.sin(angle) *
-              speed;
+            vy =
+              Math.sin(angle) * speed;
           }
 
-          let x =
-            dot.x + nextVx;
+          let attempts = 0;
 
-          let y =
-            dot.y + nextVy;
+          let x = randomBetween(
+            8,
+            safeWidth - 8
+          );
 
-          if (x < 0) {
-            x = width;
+          let y = randomBetween(
+            8,
+            safeHeight - 8
+          );
+
+          let validPosition = false;
+
+          while (
+            !validPosition &&
+            attempts < 50
+          ) {
+            x = randomBetween(
+              8,
+              safeWidth - 8
+            );
+
+            y = randomBetween(
+              8,
+              safeHeight - 8
+            );
+
+            let tooClose = false;
+
+            for (const existing of nextDots) {
+              const dx =
+                x - existing.x;
+
+              const dy =
+                y - existing.y;
+
+              if (
+                Math.sqrt(
+                  dx * dx +
+                    dy * dy
+                ) < minDistance
+              ) {
+                tooClose = true;
+                break;
+              }
+            }
+
+            if (!tooClose) {
+              validPosition = true;
+            }
+
+            attempts++;
           }
 
-          if (x > width) {
-            x = 0;
-          }
-
-          if (y < 0) {
-            y = height;
-          }
-
-          if (y > height) {
-            y = 0;
-          }
-
-          return {
-            ...dot,
+          nextDots.push({
             x,
             y,
-            vx: nextVx,
-            vy: nextVy,
-          };
-        });
+            vx,
+            vy,
+            size: randomBetween(
+              3,
+              5
+            ),
+          });
+        }
 
-      dotsRef.current = updated;
+        dotsRef.current =
+          nextDots;
+
+        setDots(nextDots);
+      },
+      []
+    );
+
+  /*
+   * Animate dots
+   */
+
+  const animateDots =
+    useCallback(() => {
+      if (
+        !mounted.current ||
+        phaseRef.current !==
+          'playing' ||
+        !readyRef.current
+      ) {
+        return;
+      }
+
+      if (
+        areaWidth <= 0 ||
+        areaHeight <= 0
+      ) {
+        animationFrame.current =
+          requestAnimationFrame(
+            animateDots
+          );
+
+        return;
+      }
+
+      const cfg = getConfig(
+        levelRef.current
+      );
+
+      const updated =
+        dotsRef.current.map(
+          dot => {
+            let x =
+              dot.x + dot.vx;
+
+            let y =
+              dot.y + dot.vy;
+
+            if (x < -10) {
+              x =
+                areaWidth + 10;
+            }
+
+            if (
+              x >
+              areaWidth + 10
+            ) {
+              x = -10;
+            }
+
+            if (y < -10) {
+              y =
+                areaHeight + 10;
+            }
+
+            if (
+              y >
+              areaHeight + 10
+            ) {
+              y = -10;
+            }
+
+            let vx =
+              dot.vx +
+              randomBetween(
+                -0.04,
+                0.04
+              );
+
+            let vy =
+              dot.vy +
+              randomBetween(
+                -0.04,
+                0.04
+              );
+
+            const maxSpeed =
+              cfg.maxSpeed * 1.2;
+
+            const speed = Math.sqrt(
+              vx * vx +
+                vy * vy
+            );
+
+            if (
+              speed > maxSpeed
+            ) {
+              vx =
+                (vx / speed) *
+                maxSpeed;
+
+              vy =
+                (vy / speed) *
+                maxSpeed;
+            }
+
+            return {
+              ...dot,
+              x,
+              y,
+              vx,
+              vy,
+            };
+          }
+        );
+
+      dotsRef.current =
+        updated;
 
       setDots(updated);
 
-      animationRef.current =
-        requestAnimationFrame(() =>
-          animate(
-            width,
-            height,
-            difficulty
-          )
+      animationFrame.current =
+        requestAnimationFrame(
+          animateDots
         );
-    },
-    [getDifficultyConfig]
-  );
+    }, [
+      areaHeight,
+      areaWidth,
+    ]);
 
-  /* ================================================================
-     FINISH TEST
-  ================================================================ */
-
-  const finishTest = useCallback(
-    (
-      finalResults: TrialResult[],
-      finalScore: number,
-      difficulty: DifficultyLevel
-    ) => {
-      stopGame();
-
-      gameEndedRef.current = true;
-
-      const session: TestSession = {
-        difficulty,
-        results: finalResults,
-        score: finalScore,
-      };
-
-      setCompletedTests(prev => {
-        const newTests = [
-          ...prev,
-          session,
-        ];
-
-        const hasEnoughTests =
-          newTests.length >=
-          MIN_COMPLETED_TESTS;
-
-        setTimeout(() => {
-          if (hasEnoughTests) {
-            setScreen('finished');
-          } else {
-            setScreen('difficulty');
-          }
-        }, 350);
-
-        return newTests;
-      });
-    },
-    [stopGame]
-  );
-
-  /* ================================================================
-     SUBMIT ANSWER
-  ================================================================ */
-
-  const submitAnswer = useCallback(
-    (direction: Direction) => {
-      if (
-        !trialActiveRef.current ||
-        gameEndedRef.current
-      ) {
-        return;
-      }
-
-      trialActiveRef.current = false;
-
-      setTrialActive(false);
-
-      if (
-        animationRef.current !== null
-      ) {
-        cancelAnimationFrame(
-          animationRef.current
-        );
-
-        animationRef.current = null;
-      }
-
-      const reactionTime =
-        Date.now() -
-        startTimeRef.current;
-
-      const correct =
-        direction ===
-        directionRef.current;
-
-      const newResult: TrialResult = {
-        correct,
-        rt: reactionTime,
-        coherence:
-          coherenceRef.current,
-      };
-
-      const updatedResults = [
-        ...results,
-        newResult,
-      ];
-
-      const nextScore = correct
-        ? scoreRef.current + 10
-        : scoreRef.current;
-
-      scoreRef.current = nextScore;
-
-      setScore(nextScore);
-
-      setResults(
-        updatedResults
-      );
-
-      if (correct) {
-        setInfo(t.correct);
-        setInfoType('correct');
-      } else {
-        const actual =
-          directionRef.current;
-
-        if (actual) {
-          setInfo(
-            language === 'fa'
-              ? `${t.wrong} جهت اصلی ${directionTranslation[actual]} بود`
-              : `${t.wrong} The main direction was ${directionTranslationEn[actual]}`
-          );
-        } else {
-          setInfo(t.wrong);
-        }
-
-        setInfoType('wrong');
-      }
-
-      /*
-       * آیا آخرین Trial بود؟
-       */
-      if (
-        updatedResults.length >=
-        TOTAL_TRIALS
-      ) {
-        timeoutRef.current =
-          setTimeout(() => {
-            timeoutRef.current = null;
-
-            finishTest(
-              updatedResults,
-              nextScore,
-              selectedDifficultyRef.current ??
-                'easy'
-            );
-          }, 700);
-
-        return;
-      }
-
-      /*
-       * Trial بعدی
-       */
-      timeoutRef.current =
-        setTimeout(() => {
-          timeoutRef.current = null;
-
-          if (
-            gameEndedRef.current
-          ) {
-            return;
-          }
-
-          startTrial(
-            selectedDifficultyRef.current ??
-              'easy'
-          );
-        }, 700);
-    },
-    [
-      results,
-      language,
-      t.correct,
-      t.wrong,
-      startTrial,
-      finishTest,
-    ]
-  );
-
-  /* ================================================================
-     START GAME
-  ================================================================ */
-
-  const startGame = useCallback(
-    (difficulty: DifficultyLevel) => {
-      stopGame();
-
-      /*
-       * State + Ref همزمان
-       */
-      selectedDifficultyRef.current =
-        difficulty;
-
-      setSelectedDifficulty(
-        difficulty
-      );
-
-      trialCountRef.current = 0;
-      scoreRef.current = 0;
-
-      setScreen('game');
-      setTrialCount(0);
-      setScore(0);
-      setResults([]);
-      setDots([]);
-      setCurrentDirection(null);
-      setCoherence(0);
-
-      setInfo(t.identifyDirection);
-      setInfoType('normal');
-
-      gameEndedRef.current = false;
-      trialActiveRef.current = false;
-
-      const config =
-        getDifficultyConfig(
-          difficulty
-        );
-
-      const width =
-        Dimensions.get('window').width -
-        Spacing.lg * 2;
-
-      const height = Math.min(
-        (width * 2) / 3,
-        280
-      );
-
-      /*
-       * اول نقاط را ایجاد می‌کنیم.
-       */
-      generateDots(
-        width,
-        height,
-        config
-      );
-
-      /*
-       * سپس اولین Trial
-       */
-      timeoutRef.current =
-        setTimeout(() => {
-          timeoutRef.current = null;
-
-          if (
-            gameEndedRef.current
-          ) {
-            return;
-          }
-
-          startTrial(
-            difficulty
-          );
-        }, 350);
-    },
-    [
-      stopGame,
-      getDifficultyConfig,
-      generateDots,
-      startTrial,
-      t.identifyDirection,
-    ]
-  );
-
-  /* ================================================================
-     ANIMATION EFFECT
-  ================================================================ */
+  /*
+   * Start / stop animation
+   */
 
   useEffect(() => {
     if (
-      screen !== 'game' ||
-      !trialActive ||
-      dots.length === 0
+      phase !== 'playing' ||
+      !ready
     ) {
       return;
     }
 
-    const difficulty =
-      selectedDifficultyRef.current;
-
-    if (!difficulty) {
-      return;
+    if (
+      animationFrame.current !==
+      null
+    ) {
+      cancelAnimationFrame(
+        animationFrame.current
+      );
     }
 
-    const width =
-      Dimensions.get('window').width -
-      Spacing.lg * 2;
-
-    const height = Math.min(
-      (width * 2) / 3,
-      280
-    );
-
-    animate(
-      width,
-      height,
-      difficulty
-    );
+    animationFrame.current =
+      requestAnimationFrame(
+        animateDots
+      );
 
     return () => {
       if (
-        animationRef.current !== null
+        animationFrame.current !==
+        null
       ) {
         cancelAnimationFrame(
-          animationRef.current
+          animationFrame.current
         );
 
-        animationRef.current = null;
+        animationFrame.current =
+          null;
       }
     };
   }, [
-    screen,
-    trialActive,
-    dots.length,
-    animate,
+    animateDots,
+    phase,
+    ready,
   ]);
 
-  /* ================================================================
-     RESTART
-  ================================================================ */
+  /*
+   * Finish game
+   *
+   * IMPORTANT:
+   * This function changes phase BEFORE
+   * AsyncStorage so the result screen
+   * can never get blocked by storage.
+   */
 
-  const restartGame = useCallback(() => {
-    stopGame();
+  const finishGame =
+    useCallback(
+      (
+        finalResults: {
+          correct: boolean;
+          rt: number;
+        }[]
+      ) => {
+        if (
+          finishingRef.current
+        ) {
+          return;
+        }
 
-    setScreen('difficulty');
+        finishingRef.current =
+          true;
 
-    setTrialCount(0);
-    setScore(0);
-    setResults([]);
-    setDots([]);
-    setCurrentDirection(null);
-    setCoherence(0);
-    setInfoType('normal');
+        clearTimers();
 
-    setSelectedDifficulty(null);
+        answeredRef.current =
+          true;
 
-    selectedDifficultyRef.current =
-      null;
+        readyRef.current =
+          false;
 
-    trialCountRef.current = 0;
-    scoreRef.current = 0;
+        setReady(false);
 
-    gameEndedRef.current = false;
-  }, [stopGame]);
+        const correct =
+          finalResults.filter(
+            item => item.correct
+          ).length;
 
-  /* ================================================================
-     SWIPE
-  ================================================================ */
+        const accuracy =
+          finalResults.length > 0
+            ? (correct /
+                finalResults.length) *
+              100
+            : 0;
 
-  const panResponder =
-    useRef(
-      PanResponder.create({
-        onStartShouldSetPanResponder:
-          () => true,
+        let nextLevel =
+          levelRef.current;
 
-        onMoveShouldSetPanResponder:
-          () => true,
+        let adaptive:
+          | 'up'
+          | 'down'
+          | 'same' =
+          'same';
 
-        onPanResponderRelease: (
-          _,
-          gesture
-        ) => {
-          const { dx, dy } =
-            gesture;
+        /*
+         * Adaptive difficulty
+         */
 
-          if (
-            Math.abs(dx) < 15 &&
-            Math.abs(dy) < 15
-          ) {
-            return;
-          }
+        if (
+          accuracy >= 85 &&
+          levelRef.current <
+            MAX_LEVEL
+        ) {
+          nextLevel =
+            levelRef.current + 1;
 
-          if (
-            Math.abs(dx) >
-            Math.abs(dy)
-          ) {
-            submitAnswer(
-              dx > 0
-                ? 'Right'
-                : 'Left'
-            );
-          } else {
-            submitAnswer(
-              dy > 0
-                ? 'Down'
-                : 'Up'
-            );
-          }
-        },
-      })
-    ).current;
+          adaptive = 'up';
+        } else if (
+          accuracy < 50 &&
+          levelRef.current >
+            MIN_LEVEL
+        ) {
+          nextLevel =
+            levelRef.current - 1;
 
-  /* ================================================================
-     DIRECTION BUTTON
-  ================================================================ */
+          adaptive = 'down';
+        }
 
-  const DirectionButton = ({
-    direction,
-    icon,
-  }: {
-    direction: Direction;
-    icon: React.ReactNode;
-  }) => (
-    <TouchableOpacity
-      style={[
-        styles.dirButton,
-        {
-          backgroundColor:
-            colors.surface,
-          borderColor:
-            colors.border,
-        },
-      ]}
-      onPress={() =>
-        submitAnswer(direction)
-      }
-      activeOpacity={0.75}
-      disabled={!trialActive}
-    >
-      {icon}
-    </TouchableOpacity>
-  );
+        levelRef.current =
+          nextLevel;
 
-  /* ================================================================
-     FINAL REPORT
-  ================================================================ */
+        setLevel(nextLevel);
 
-  const getFinalReport = useCallback(() => {
-    const allResults =
-      completedTests.flatMap(
-        test => test.results
-      );
-
-    const total =
-      allResults.length;
-
-    const correct =
-      allResults.filter(
-        result => result.correct
-      ).length;
-
-    const accuracy =
-      total > 0
-        ? (correct / total) * 100
-        : 0;
-
-    const reactionTimes =
-      allResults
-        .filter(
-          result => result.correct
-        )
-        .map(
-          result => result.rt
+        setPreviousAccuracy(
+          Math.round(accuracy)
         );
 
-    const avgRT =
-      reactionTimes.length > 0
-        ? reactionTimes.reduce(
-            (a, b) => a + b,
-            0
-          ) /
-          reactionTimes.length
-        : 0;
+        setAdaptiveResult(
+          adaptive
+        );
 
-    const totalScore =
-      completedTests.reduce(
-        (sum, test) =>
-          sum + test.score,
-        0
-      );
+        /*
+         * Clear visual state
+         */
 
-    return {
-      total,
-      correct,
-      accuracy,
-      avgRT,
-      totalScore,
-    };
-  }, [completedTests]);
+        dotsRef.current = [];
 
-  /* ================================================================
-     PAGE 1 — DIFFICULTY SELECTION
-  ================================================================ */
+        setDots([]);
 
-  if (screen === 'difficulty') {
-    const remaining = Math.max(
-      0,
-      MIN_COMPLETED_TESTS -
-        completedTests.length
+        /*
+         * SHOW RESULT IMMEDIATELY
+         */
+
+        phaseRef.current =
+          'result';
+
+        setPhase('result');
+
+        /*
+         * Save in background
+         */
+
+        saveProgress(
+          nextLevel,
+          accuracy
+        ).catch(error => {
+          console.warn(
+            '[VisualFlow] Failed to save final progress:',
+            error
+          );
+        });
+      },
+      [
+        clearTimers,
+        saveProgress,
+      ]
     );
 
+  /*
+   * Start next trial
+   */
+
+  const startTrial =
+    useCallback(() => {
+      if (
+        !mounted.current ||
+        phaseRef.current !==
+          'playing'
+      ) {
+        return;
+      }
+
+      if (
+        trialRef.current >
+        TOTAL_TRIALS
+      ) {
+        return;
+      }
+
+      clearTimers();
+
+      answeredRef.current =
+        false;
+
+      readyRef.current =
+        false;
+
+      setReady(false);
+
+      setFeedback('idle');
+
+      setResponseTime(null);
+
+      const directions: Direction[] =
+        [
+          'up',
+          'down',
+          'left',
+          'right',
+        ];
+
+      const direction =
+        directions[
+          Math.floor(
+            Math.random() *
+              directions.length
+          )
+        ];
+
+      correctDirectionRef.current =
+        direction;
+
+      const cfg = getConfig(
+        levelRef.current
+      );
+
+      createDots(
+        areaWidth,
+        areaHeight,
+        direction,
+        cfg
+      );
+
+      setReady(true);
+
+      readyRef.current =
+        true;
+
+      startTimeRef.current =
+        Date.now();
+
+      pulse.setValue(0.88);
+
+      Animated.spring(pulse, {
+        toValue: 1,
+        friction: 7,
+        tension: 70,
+        useNativeDriver: true,
+      }).start();
+
+      timerAnimation.stopAnimation();
+
+      timerAnimation.setValue(
+        1
+      );
+
+      Animated.timing(
+        timerAnimation,
+        {
+          toValue: 0,
+          duration:
+            cfg.duration,
+          useNativeDriver: false,
+        }
+      ).start();
+
+      /*
+       * Timeout
+       *
+       * Use ref so the timeout
+       * always reaches the latest
+       * handleAnswer.
+       */
+
+      timeoutRef.current =
+        setTimeout(() => {
+          if (
+            mounted.current &&
+            phaseRef.current ===
+              'playing' &&
+            readyRef.current &&
+            !answeredRef.current
+          ) {
+            handleAnswerRef.current(
+              null
+            );
+          }
+        }, cfg.duration);
+    }, [
+      areaWidth,
+      areaHeight,
+      clearTimers,
+      createDots,
+      pulse,
+      timerAnimation,
+    ]);
+
+  /*
+   * Answer handler
+   */
+
+  const handleAnswer =
+    useCallback(
+      (
+        selected:
+          | Direction
+          | null
+      ) => {
+        if (
+          !mounted.current ||
+          phaseRef.current !==
+            'playing' ||
+          !readyRef.current ||
+          answeredRef.current ||
+          finishingRef.current
+        ) {
+          return;
+        }
+
+        answeredRef.current =
+          true;
+
+        readyRef.current =
+          false;
+
+        setReady(false);
+
+        if (
+          timeoutRef.current
+        ) {
+          clearTimeout(
+            timeoutRef.current
+          );
+
+          timeoutRef.current =
+            null;
+        }
+
+        timerAnimation.stopAnimation();
+
+        const rt =
+          Date.now() -
+          startTimeRef.current;
+
+        const correct =
+          selected !== null &&
+          selected ===
+            correctDirectionRef.current;
+
+        const result = {
+          correct,
+          rt:
+            selected === null
+              ? 0
+              : rt,
+        };
+
+        setResponseTime(
+          selected === null
+            ? null
+            : rt
+        );
+
+        setFeedback(
+          selected === null
+            ? 'timeout'
+            : correct
+            ? 'correct'
+            : 'wrong'
+        );
+
+        const updatedResults =
+          [
+            ...resultsRef.current,
+            result,
+          ];
+
+        resultsRef.current =
+          updatedResults;
+
+        setResults(
+          updatedResults
+        );
+
+        /*
+         * Score
+         */
+
+        if (correct) {
+          const cfg = getConfig(
+            levelRef.current
+          );
+
+          const speedBonus =
+            Math.max(
+              0,
+              Math.round(
+                ((cfg.duration -
+                  rt) /
+                  cfg.duration) *
+                  10
+              )
+            );
+
+          const points =
+            10 + speedBonus;
+
+          scoreRef.current +=
+            points;
+
+          setScore(
+            scoreRef.current
+          );
+        }
+
+        /*
+         * FINAL TRIAL
+         *
+         * Do NOT increment trial.
+         * Finish using the complete results.
+         */
+
+        if (
+          trialRef.current >=
+          TOTAL_TRIALS
+        ) {
+          trialTimerRef.current =
+            setTimeout(() => {
+              if (
+                mounted.current
+              ) {
+                finishGame(
+                  updatedResults
+                );
+              }
+            }, 500);
+
+          return;
+        }
+
+        /*
+         * Move to next trial
+         */
+
+        trialRef.current += 1;
+
+        setTrialIndex(
+          trialRef.current
+        );
+
+        trialTimerRef.current =
+          setTimeout(() => {
+            if (
+              mounted.current &&
+              phaseRef.current ===
+                'playing' &&
+              !finishingRef.current
+            ) {
+              startTrial();
+            }
+          }, 500);
+      },
+      [
+        finishGame,
+        startTrial,
+        timerAnimation,
+      ]
+    );
+
+  /*
+   * Keep the latest answer handler
+   * available to timeout callbacks.
+   */
+
+  useEffect(() => {
+    handleAnswerRef.current =
+      handleAnswer;
+
+    return () => {
+      handleAnswerRef.current =
+        () => {};
+    };
+  }, [handleAnswer]);
+
+  /*
+   * Start complete game
+   */
+
+  const startGame =
+    useCallback(() => {
+      clearTimers();
+
+      finishingRef.current =
+        false;
+
+      phaseRef.current =
+        'playing';
+
+      readyRef.current =
+        false;
+
+      answeredRef.current =
+        false;
+
+      trialRef.current = 1;
+
+      scoreRef.current = 0;
+
+      resultsRef.current = [];
+
+      setTrialIndex(1);
+
+      setResults([]);
+
+      setScore(0);
+
+      setFeedback('idle');
+
+      setResponseTime(null);
+
+      setAdaptiveResult(null);
+
+      setDots([]);
+
+      setReady(false);
+
+      setPhase('playing');
+
+      /*
+       * Give the layout one render
+       * before creating the first trial.
+       */
+
+      trialTimerRef.current =
+        setTimeout(() => {
+          if (
+            mounted.current &&
+            phaseRef.current ===
+              'playing'
+          ) {
+            startTrial();
+          }
+        }, 250);
+    }, [
+      clearTimers,
+      startTrial,
+    ]);
+
+  /*
+   * Back button
+   */
+
+  const handleBack =
+    useCallback(() => {
+      clearTimers();
+
+      finishingRef.current =
+        false;
+
+      readyRef.current =
+        false;
+
+      answeredRef.current =
+        true;
+
+      setReady(false);
+
+      dotsRef.current = [];
+
+      setDots([]);
+
+      if (
+        phaseRef.current ===
+        'playing'
+      ) {
+        phaseRef.current =
+          'intro';
+
+        setPhase('intro');
+
+        trialRef.current =
+          0;
+
+        resultsRef.current =
+          [];
+
+        scoreRef.current =
+          0;
+
+        setResults([]);
+
+        setScore(0);
+
+        setFeedback('idle');
+
+        return;
+      }
+
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace(
+          '/(tabs)/psycho'
+        );
+      }
+    }, [
+      clearTimers,
+      router,
+    ]);
+
+  /*
+   * Statistics
+   */
+
+  const correctCount =
+    results.filter(
+      item => item.correct
+    ).length;
+
+  const wrongCount =
+    results.length -
+    correctCount;
+
+  const accuracy =
+    results.length
+      ? Math.round(
+          (correctCount /
+            results.length) *
+            100
+        )
+      : 0;
+
+  const validTimes =
+    results
+      .filter(
+        item =>
+          item.correct &&
+          item.rt > 0
+      )
+      .map(item => item.rt);
+
+  const averageTime =
+    validTimes.length
+      ? Math.round(
+          validTimes.reduce(
+            (total, value) =>
+              total + value,
+            0
+          ) /
+            validTimes.length
+        )
+      : 0;
+
+  const resultTitle =
+    accuracy >= 85
+      ? text.excellent
+      : accuracy >= 60
+      ? text.good
+      : text.improve;
+
+  const nextConfig =
+    getConfig(level);
+
+  const nextLevelName =
+    language === 'fa'
+      ? nextConfig.nameFa
+      : nextConfig.nameEn;
+
+  /*
+   * Direction labels
+   */
+
+  const getDirectionLabel =
+    (direction: Direction) => {
+      if (
+        direction === 'up'
+      ) {
+        return text.up;
+      }
+
+      if (
+        direction === 'down'
+      ) {
+        return text.down;
+      }
+
+      if (
+        direction === 'left'
+      ) {
+        return text.left;
+      }
+
+      return text.right;
+    };
+
+  /*
+   * INTRO
+   */
+
+  if (phase === 'intro') {
     return (
       <View
         style={[
@@ -1379,36 +1577,117 @@ export default function VisualFlowScreen() {
           },
         ]}
       >
-        <PageHeader
-          title={t.title}
-          subtitle={t.subtitle}
-          onBack={goBack}
+        <Header
+          title={text.title}
+          subtitle={text.subtitle}
+          onBack={handleBack}
           colors={colors}
           isRTL={isRTL}
-          backLabel={t.back}
         />
 
-        <Animated.ScrollView
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={
+            styles.introContent
+          }
           showsVerticalScrollIndicator={
             false
           }
-          contentContainerStyle={
-            styles.difficultyScroll
-          }
-          style={{
-            opacity: fadeAnim,
-            transform: [
-              {
-                scale: scaleAnim,
-              },
-            ],
-          }}
         >
-          {/* INTRO */}
+          <View
+            style={[
+              styles.heroIcon,
+              {
+                backgroundColor:
+                  colors.primary +
+                  '15',
+              },
+            ]}
+          >
+            <Brain
+              size={43}
+              color={colors.primary}
+            />
+          </View>
+
+          <Text
+            style={[
+              styles.heroTitle,
+              {
+                color:
+                  colors.text,
+              },
+            ]}
+          >
+            {text.title}
+          </Text>
+
+          <Text
+            style={[
+              styles.heroDescription,
+              {
+                color:
+                  colors.textSecondary,
+              },
+            ]}
+          >
+            {text.description}
+          </Text>
 
           <View
             style={[
-              styles.selectionHeader,
+              styles.previewCard,
+              {
+                backgroundColor:
+                  colors.surface,
+                borderColor:
+                  colors.border,
+              },
+            ]}
+          >
+            <View
+              style={
+                styles.previewArea
+              }
+            >
+              {Array.from({
+                length: 28,
+              }).map(
+                (_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.previewDot,
+                      {
+                        backgroundColor:
+                          colors.primary,
+                        opacity:
+                          0.45 +
+                          (index % 4) *
+                            0.12,
+                      },
+                    ]}
+                  />
+                )
+              )}
+            </View>
+
+            <Text
+              style={[
+                styles.previewInstruction,
+                {
+                  color:
+                    colors.text,
+                },
+              ]}
+            >
+              {text.instruction}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.infoCard,
               {
                 backgroundColor:
                   colors.surface,
@@ -1419,366 +1698,197 @@ export default function VisualFlowScreen() {
           >
             <View
               style={[
-                styles.logo,
+                styles.infoIcon,
                 {
                   backgroundColor:
                     colors.primary +
-                    '18',
+                    '15',
                 },
               ]}
             >
-              <Target
-                size={38}
-                color={
-                  colors.primary
-                }
+              <Sparkles
+                size={22}
+                color={colors.primary}
               />
             </View>
 
-            <Text
-              style={[
-                styles.selectionTitle,
-                {
-                  color:
-                    colors.text,
-                },
-              ]}
+            <View
+              style={
+                styles.infoText
+              }
             >
-              {t.selectDifficulty}
-            </Text>
+              <Text
+                style={[
+                  styles.infoTitle,
+                  {
+                    color:
+                      colors.text,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {text.adaptive}
+              </Text>
 
-            <Text
-              style={[
-                styles.selectionDescription,
+              <Text
+                style={[
+                  styles.infoDescription,
+                  {
+                    color:
+                      colors.textSecondary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
                 {
-                  color:
-                    colors.textSecondary,
-                },
-              ]}
-            >
-              {t.selectDescription}
-            </Text>
+                  text.adaptiveDescription
+                }
+              </Text>
+            </View>
+          </View>
 
-            {/* TEST PROGRESS */}
+          <View
+            style={[
+              styles.levelCard,
+              {
+                backgroundColor:
+                  colors.primary +
+                  '0D',
+                borderColor:
+                  colors.primary +
+                  '25',
+              },
+            ]}
+          >
+            <View>
+              <Text
+                style={[
+                  styles.levelLabel,
+                  {
+                    color:
+                      colors.textSecondary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {text.currentLevel}
+              </Text>
 
+              <Text
+                style={[
+                  styles.levelValue,
+                  {
+                    color:
+                      colors.primary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {levelName}
+              </Text>
+            </View>
+
+            <TrendingUp
+              size={24}
+              color={colors.primary}
+            />
+          </View>
+
+          {previousAccuracy !==
+            null && (
             <View
               style={[
-                styles.testProgressBox,
+                styles.previousCard,
                 {
                   backgroundColor:
-                    colors.background,
+                    colors.surface,
                   borderColor:
                     colors.border,
                 },
               ]}
             >
-              <BarChart3
-                size={20}
-                color={
-                  colors.primary
-                }
+              <Trophy
+                size={21}
+                color={colors.primary}
               />
 
-              <View
-                style={{
-                  flex: 1,
-                }}
-              >
-                <Text
-                  style={[
-                    styles.progressTitle,
-                    {
-                      color:
-                        colors.text,
-                    },
-                  ]}
-                >
-                  {t.testProgress}{' '}
-                  {Math.min(
-                    completedTests.length,
-                    MIN_COMPLETED_TESTS
-                  )}
-                  /
+              <Text
+                style={[
+                  styles.previousText,
                   {
-                    MIN_COMPLETED_TESTS
-                  }
-                </Text>
-
-                <Text
-                  style={[
-                    styles.progressSubtitle,
-                    {
-                      color:
-                        colors.textSecondary,
-                    },
-                  ]}
-                >
-                  {remaining > 0
-                    ? `${remaining} ${t.testsRemaining}`
-                    : language ===
-                      'fa'
-                    ? 'نتایج شما آماده است'
-                    : 'Your results are ready'}
-                </Text>
-              </View>
-
-              {completedTests.length >=
-              MIN_COMPLETED_TESTS ? (
-                <CheckCircle
-                  size={22}
-                  color="#34D399"
-                />
-              ) : (
-                <Lock
-                  size={19}
-                  color={
-                    colors.textSecondary
-                  }
-                />
-              )}
+                    color:
+                      colors.textSecondary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {text.previous} •{' '}
+                {previousAccuracy}%
+              </Text>
             </View>
-          </View>
+          )}
 
-          {/* DIFFICULTY OPTIONS */}
-
-          <View
-            style={
-              styles.difficultyList
-            }
-          >
-            {DIFFICULTIES.map(
-              (
-                difficulty,
-                index
-              ) => {
-                const isRecommended =
-                  index === 0;
-                
-                // دریافت کامپوننت آیکون متناسب با سطح
-                const IconComponent = difficultyIcons[difficulty.id];
-
-                return (
-                  <TouchableOpacity
-                    key={
-                      difficulty.id
-                    }
-                    activeOpacity={0.8}
-                    onPress={() =>
-                      startGame(
-                        difficulty.id
-                      )
-                    }
-                    style={[
-                      styles.difficultyCard,
-                      {
-                        backgroundColor:
-                          colors.surface,
-                        borderColor:
-                          colors.border,
-                      },
-                    ]}
-                  >
-                    {/* ICON - با رنگ primary از Theme */}
-
-                    <View
-                      style={[
-                        styles.difficultyIcon,
-                        {
-                          backgroundColor:
-                            colors.primary +
-                            '18',
-                        },
-                      ]}
-                    >
-                      <IconComponent
-                        size={28}
-                        color={colors.primary}
-                      />
-                    </View>
-
-                    {/* TEXT */}
-
-                    <View
-                      style={
-                        styles.difficultyContent
-                      }
-                    >
-                      <View
-                        style={
-                          styles.difficultyTitleRow
-                        }
-                      >
-                        <Text
-                          style={[
-                            styles.difficultyTitle,
-                            {
-                              color:
-                                colors.text,
-                            },
-                          ]}
-                        >
-                          {language ===
-                          'fa'
-                            ? difficulty.titleFa
-                            : difficulty.titleEn}
-                        </Text>
-
-                        {isRecommended && (
-                          <View
-                            style={[
-                              styles.recommendedBadge,
-                              {
-                                backgroundColor:
-                                  colors.primary +
-                                  '20',
-                              },
-                            ]}
-                          >
-                            <Star
-                              size={
-                                11
-                              }
-                              color={
-                                colors.primary
-                              }
-                            />
-
-                            <Text
-                              style={[
-                                styles.recommendedText,
-                                {
-                                  color:
-                                    colors.primary,
-                                },
-                              ]}
-                            >
-                              {language ===
-                              'fa'
-                                ? 'شروع پیشنهادی'
-                                : 'Recommended'}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-
-                      <Text
-                        style={[
-                          styles.difficultyDescription,
-                          {
-                            color:
-                              colors.textSecondary,
-                          },
-                        ]}
-                      >
-                        {language ===
-                        'fa'
-                          ? difficulty.descriptionFa
-                          : difficulty.descriptionEn}
-                      </Text>
-
-                      <View
-                        style={
-                          styles.difficultyIndicator
-                        }
-                      >
-                        {[0, 1, 2, 3].map(
-                          item => (
-                            <View
-                              key={
-                                item
-                              }
-                              style={[
-                                styles.difficultyDot,
-                                {
-                                  backgroundColor:
-                                    item <=
-                                    index
-                                      ? colors.primary
-                                      : colors.border,
-                                },
-                              ]}
-                            />
-                          )
-                        )}
-                      </View>
-                    </View>
-
-                    {/* ARROW */}
-
-                    <View
-                      style={
-                        styles.difficultyArrow
-                      }
-                    >
-                      {isRTL ? (
-                        <ChevronLeft
-                          size={22}
-                          color={
-                            colors.textSecondary
-                          }
-                        />
-                      ) : (
-                        <ChevronRight
-                          size={22}
-                          color={
-                            colors.textSecondary
-                          }
-                        />
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                );
-              }
-            )}
-          </View>
-
-          {/* INFO */}
-
-          <View
+          <Text
             style={[
-              styles.minimumInfo,
+              styles.noLevel,
+              {
+                color:
+                  colors.textSecondary,
+              },
+            ]}
+          >
+            {text.noLevel}
+          </Text>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={startGame}
+            style={[
+              styles.primaryButton,
               {
                 backgroundColor:
-                  colors.primary +
-                  '10',
-                borderColor:
-                  colors.primary +
-                  '30',
+                  colors.primary,
               },
             ]}
           >
             <Zap
-              size={19}
-              color={
-                colors.primary
-              }
+              size={20}
+              color="#FFFFFF"
             />
 
             <Text
-              style={[
-                styles.minimumInfoText,
-                {
-                  color:
-                    colors.text,
-                },
-              ]}
+              style={
+                styles.primaryButtonText
+              }
             >
-              {t.minimumTests}
+              {text.start}
             </Text>
-          </View>
-        </Animated.ScrollView>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
     );
   }
 
-  /* ================================================================
-     PAGE 2 — FINAL RESULTS
-  ================================================================ */
+  /*
+   * RESULT SCREEN
+   */
 
-  if (screen === 'finished') {
-    const report =
-      getFinalReport();
-
+  if (phase === 'result') {
     return (
       <View
         style={[
@@ -1789,35 +1899,22 @@ export default function VisualFlowScreen() {
           },
         ]}
       >
-        <PageHeader
-          title={t.finalResults}
-          subtitle={
-            language === 'fa'
-              ? `${MIN_COMPLETED_TESTS} آزمون کامل شد`
-              : `${MIN_COMPLETED_TESTS} tests completed`
-          }
-          onBack={goBack}
+        <Header
+          title={text.completed}
+          subtitle={text.title}
+          onBack={handleBack}
           colors={colors}
           isRTL={isRTL}
-          backLabel={t.back}
         />
 
-        <Animated.View
-          style={[
-            styles.resultCard,
-            {
-              backgroundColor:
-                colors.surface,
-              borderColor:
-                colors.border,
-              opacity: fadeAnim,
-              transform: [
-                {
-                  scale: scaleAnim,
-                },
-              ],
-            },
-          ]}
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={
+            styles.resultContent
+          }
+          showsVerticalScrollIndicator={
+            false
+          }
         >
           <View
             style={[
@@ -1825,15 +1922,13 @@ export default function VisualFlowScreen() {
               {
                 backgroundColor:
                   colors.primary +
-                  '18',
+                  '15',
               },
             ]}
           >
-            <Award
-              size={42}
-              color={
-                colors.primary
-              }
+            <Trophy
+              size={46}
+              color={colors.primary}
             />
           </View>
 
@@ -1846,239 +1941,357 @@ export default function VisualFlowScreen() {
               },
             ]}
           >
-            {t.finalResults}
+            {resultTitle}
           </Text>
-
-          <Text
-            style={[
-              styles.resultSubtitle,
-              {
-                color:
-                  colors.textSecondary,
-              },
-            ]}
-          >
-            {language === 'fa'
-              ? 'نتایج بر اساس تمام آزمون‌های انجام‌شده محاسبه شده است.'
-              : 'Results are calculated from all completed tests.'}
-          </Text>
-
-          {/* ACCURACY */}
 
           <View
             style={[
-              styles.resultItem,
+              styles.scoreCard,
               {
                 backgroundColor:
-                  colors.background,
+                  colors.surface,
                 borderColor:
                   colors.border,
               },
             ]}
           >
-            <View
-              style={
-                styles.resultItemLeft
-              }
-            >
-              <TrendingUp
-                size={18}
-                color={
-                  colors.primary
-                }
-              />
-
-              <Text
-                style={[
-                  styles.resultLabel,
-                  {
-                    color:
-                      colors.textSecondary,
-                  },
-                ]}
-              >
-                {t.accuracy}
-              </Text>
-            </View>
-
             <Text
               style={[
-                styles.resultValue,
+                styles.scoreValue,
                 {
                   color:
                     colors.primary,
                 },
               ]}
             >
-              {report.accuracy.toFixed(
-                1
-              )}
-              %
+              {score}
+            </Text>
+
+            <Text
+              style={[
+                styles.scoreLabel,
+                {
+                  color:
+                    colors.textSecondary,
+                },
+              ]}
+            >
+              {text.score}
             </Text>
           </View>
 
-          {/* CORRECT */}
-
           <View
-            style={[
-              styles.resultItem,
-              {
-                backgroundColor:
-                  colors.background,
-                borderColor:
-                  colors.border,
-              },
-            ]}
+            style={
+              styles.statsRow
+            }
           >
             <View
-              style={
-                styles.resultItemLeft
-              }
+              style={[
+                styles.statCard,
+                {
+                  backgroundColor:
+                    colors.surface,
+                  borderColor:
+                    colors.border,
+                },
+              ]}
             >
               <CheckCircle
-                size={18}
-                color="#34D399"
+                size={22}
+                color="#22C55E"
               />
 
               <Text
                 style={[
-                  styles.resultLabel,
+                  styles.statValue,
+                  {
+                    color:
+                      colors.text,
+                  },
+                ]}
+              >
+                {correctCount}
+              </Text>
+
+              <Text
+                style={[
+                  styles.statLabel,
                   {
                     color:
                       colors.textSecondary,
                   },
                 ]}
               >
-                {t.correctAnswers}
+                {
+                  text.correctAnswers
+                }
               </Text>
             </View>
 
-            <Text
+            <View
               style={[
-                styles.resultValue,
+                styles.statCard,
                 {
-                  color:
-                    colors.text,
+                  backgroundColor:
+                    colors.surface,
+                  borderColor:
+                    colors.border,
                 },
               ]}
             >
-              {report.correct}/
-              {report.total}
-            </Text>
-          </View>
+              <XCircle
+                size={22}
+                color="#EF4444"
+              />
 
-          {/* REACTION */}
+              <Text
+                style={[
+                  styles.statValue,
+                  {
+                    color:
+                      colors.text,
+                  },
+                ]}
+              >
+                {wrongCount}
+              </Text>
+
+              <Text
+                style={[
+                  styles.statLabel,
+                  {
+                    color:
+                      colors.textSecondary,
+                  },
+                ]}
+              >
+                {text.wrong}
+              </Text>
+            </View>
+          </View>
 
           <View
             style={[
-              styles.resultItem,
+              styles.metricCard,
               {
                 backgroundColor:
-                  colors.background,
+                  colors.surface,
                 borderColor:
                   colors.border,
               },
             ]}
           >
+            <Target
+              size={22}
+              color={colors.primary}
+            />
+
             <View
               style={
-                styles.resultItemLeft
+                styles.metricText
               }
             >
-              <Gauge
-                size={18}
-                color={
-                  colors.textSecondary
-                }
-              />
-
               <Text
                 style={[
-                  styles.resultLabel,
+                  styles.metricLabel,
                   {
                     color:
                       colors.textSecondary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
                   },
                 ]}
               >
-                {t.reaction}
+                {text.accuracy}
+              </Text>
+
+              <Text
+                style={[
+                  styles.metricValue,
+                  {
+                    color:
+                      colors.text,
+                  },
+                ]}
+              >
+                {accuracy}%
               </Text>
             </View>
-
-            <Text
-              style={[
-                styles.resultValue,
-                {
-                  color:
-                    colors.text,
-                },
-              ]}
-            >
-              {report.avgRT.toFixed(
-                0
-              )}
-              ms
-            </Text>
           </View>
-
-          {/* SCORE */}
 
           <View
             style={[
-              styles.resultItem,
+              styles.metricCard,
               {
                 backgroundColor:
-                  colors.background,
+                  colors.surface,
                 borderColor:
                   colors.border,
               },
             ]}
           >
+            <Clock
+              size={22}
+              color={colors.primary}
+            />
+
             <View
               style={
-                styles.resultItemLeft
+                styles.metricText
               }
             >
-              <Sparkles
-                size={18}
-                color={
-                  colors.primary
-                }
-              />
-
               <Text
                 style={[
-                  styles.resultLabel,
+                  styles.metricLabel,
                   {
                     color:
                       colors.textSecondary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
                   },
                 ]}
               >
-                {t.finalScore}
+                {text.averageTime}
+              </Text>
+
+              <Text
+                style={[
+                  styles.metricValue,
+                  {
+                    color:
+                      colors.text,
+                  },
+                ]}
+              >
+                {averageTime}{' '}
+                {text.milliseconds}
+              </Text>
+            </View>
+          </View>
+
+          <View
+            style={[
+              styles.adaptiveResult,
+              {
+                backgroundColor:
+                  colors.surface,
+                borderColor:
+                  colors.border,
+              },
+            ]}
+          >
+            <Sparkles
+              size={23}
+              color={colors.primary}
+            />
+
+            <View
+              style={
+                styles.adaptiveResultText
+              }
+            >
+              <Text
+                style={[
+                  styles.adaptiveResultTitle,
+                  {
+                    color:
+                      colors.text,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {text.adaptive}
+              </Text>
+
+              <Text
+                style={[
+                  styles.adaptiveResultDescription,
+                  {
+                    color:
+                      colors.textSecondary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {adaptiveResult ===
+                'up'
+                  ? text.levelUp
+                  : adaptiveResult ===
+                    'down'
+                  ? text.levelDown
+                  : text.levelSame}
+              </Text>
+            </View>
+          </View>
+
+          <View
+            style={[
+              styles.levelCard,
+              {
+                backgroundColor:
+                  colors.primary +
+                  '0D',
+                borderColor:
+                  colors.primary +
+                  '25',
+              },
+            ]}
+          >
+            <View>
+              <Text
+                style={[
+                  styles.levelLabel,
+                  {
+                    color:
+                      colors.textSecondary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {text.nextLevel}
+              </Text>
+
+              <Text
+                style={[
+                  styles.levelValue,
+                  {
+                    color:
+                      colors.primary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {nextLevelName}
               </Text>
             </View>
 
-            <Text
-              style={[
-                styles.resultValue,
-                {
-                  color:
-                    colors.primary,
-                },
-              ]}
-            >
-              {report.totalScore}
-            </Text>
+            <TrendingUp
+              size={24}
+              color={colors.primary}
+            />
           </View>
 
           <TouchableOpacity
-            onPress={
-              restartGame
-            }
             activeOpacity={0.85}
+            onPress={startGame}
             style={[
-              styles.restartButton,
+              styles.primaryButton,
               {
                 backgroundColor:
                   colors.primary,
@@ -2086,210 +2299,58 @@ export default function VisualFlowScreen() {
             ]}
           >
             <RotateCcw
-              size={18}
-              color="#fff"
+              size={20}
+              color="#FFFFFF"
             />
 
             <Text
               style={
-                styles.restartText
+                styles.primaryButtonText
               }
             >
-              {language === 'fa'
-                ? 'آزمون جدید'
-                : 'New Test'}
+              {text.playAgain}
             </Text>
           </TouchableOpacity>
-        </Animated.View>
+
+          <View
+            style={styles.bottomSpace}
+          />
+        </ScrollView>
       </View>
     );
   }
 
-  /* ================================================================
-     PAGE 3 — GAME PLAY
-  ================================================================ */
+  /*
+   * GAME
+   */
 
-  const currentDifficulty =
-    getDifficultyConfig(
-      selectedDifficultyRef.current
-    );
+  const timerWidth =
+    timerAnimation.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0%', '100%'],
+    });
 
   return (
     <View
       style={[
-        styles.container,
+        styles.gameContainer,
         {
           backgroundColor:
             colors.background,
         },
       ]}
     >
-      <PageHeader
-        title={t.title}
-        subtitle={`${t.testProgress} ${
-          completedTests.length + 1
-        }/${MIN_COMPLETED_TESTS} • ${
-          t.round
-        } ${trialCount}/${TOTAL_TRIALS} • ${
-          t.score
-        }: ${score}`}
-        onBack={goBack}
+      <Header
+        title={text.title}
+        subtitle={`${levelName} • ${text.round} ${trialIndex}/${TOTAL_TRIALS}`}
+        onBack={handleBack}
         colors={colors}
         isRTL={isRTL}
-        backLabel={t.back}
       />
 
-      {/* GAME CANVAS */}
-
       <View
         style={[
-          styles.canvasWrapper,
-          {
-            backgroundColor:
-              colors.surface,
-            borderColor:
-              infoType === 'correct'
-                ? '#34D39955'
-                : infoType === 'wrong'
-                ? '#FF6B8155'
-                : colors.border,
-          },
-        ]}
-        {...panResponder.panHandlers}
-      >
-        {dots.map(
-          (dot, index) => (
-            <View
-              key={index}
-              style={[
-                styles.dot,
-                {
-                  left: dot.x,
-                  top: dot.y,
-                  width: dot.size,
-                  height: dot.size,
-                  borderRadius:
-                    dot.size / 2,
-                  backgroundColor:
-                    dot.color,
-                },
-              ]}
-            />
-          )
-        )}
-      </View>
-
-      {/* INFO */}
-
-      <View style={styles.infoArea}>
-        <View
-          style={styles.infoRow}
-        >
-          {infoType ===
-          'correct' ? (
-            <CheckCircle
-              size={22}
-              color="#34D399"
-              strokeWidth={2.5}
-            />
-          ) : infoType ===
-            'wrong' ? (
-            <XCircle
-              size={22}
-              color="#FF6B81"
-              strokeWidth={2.5}
-            />
-          ) : (
-            <MousePointer2
-              size={22}
-              color={
-                colors.primary
-              }
-              strokeWidth={2.5}
-            />
-          )}
-
-          <Text
-            style={[
-              styles.infoText,
-              {
-                color:
-                  infoType ===
-                  'correct'
-                    ? '#34D399'
-                    : infoType ===
-                      'wrong'
-                    ? '#FF6B81'
-                    : colors.textSecondary,
-              },
-            ]}
-          >
-            {info}
-          </Text>
-        </View>
-      </View>
-
-      {/* BUTTONS */}
-
-      <View
-        style={
-          styles.directionButtons
-        }
-      >
-        <DirectionButton
-          direction="Up"
-          icon={
-            <ChevronUp
-              size={25}
-              color={
-                colors.text
-              }
-            />
-          }
-        />
-
-        <DirectionButton
-          direction="Down"
-          icon={
-            <ChevronDown
-              size={25}
-              color={
-                colors.text
-              }
-            />
-          }
-        />
-
-        <DirectionButton
-          direction="Left"
-          icon={
-            <ChevronLeft
-              size={25}
-              color={
-                colors.text
-              }
-            />
-          }
-        />
-
-        <DirectionButton
-          direction="Right"
-          icon={
-            <ChevronRight
-              size={25}
-              color={
-                colors.text
-              }
-            />
-          }
-        />
-      </View>
-
-      {/* STATUS */}
-
-      <View
-        style={[
-          styles.statusBar,
+          styles.hud,
           {
             backgroundColor:
               colors.surface,
@@ -2299,515 +2360,1045 @@ export default function VisualFlowScreen() {
         ]}
       >
         <View
-          style={
-            styles.statusItem
-          }
+          style={styles.hudItem}
         >
-          <Text
-            style={[
-              styles.statusLabel,
-              {
-                color:
-                  colors.textSecondary,
-              },
-            ]}
-          >
-            {t.round}
-          </Text>
+          <Zap
+            size={17}
+            color={colors.primary}
+          />
+
+          <View>
+            <Text
+              style={[
+                styles.hudLabel,
+                {
+                  color:
+                    colors.textSecondary,
+                },
+              ]}
+            >
+              {text.score}
+            </Text>
+
+            <Text
+              style={[
+                styles.hudValue,
+                {
+                  color:
+                    colors.text,
+                },
+              ]}
+            >
+              {score}
+            </Text>
+          </View>
+        </View>
+
+        <Text
+          style={[
+            styles.roundText,
+            {
+              color:
+                colors.textSecondary,
+            },
+          ]}
+        >
+          {trialIndex}/
+          {TOTAL_TRIALS}
+        </Text>
+
+        <View
+          style={styles.hudItem}
+        >
+          <Brain
+            size={17}
+            color={colors.primary}
+          />
 
           <Text
             style={[
-              styles.statusValue,
+              styles.hudValue,
               {
                 color:
                   colors.text,
               },
             ]}
           >
-            {trialCount}/
-            {TOTAL_TRIALS}
+            {level}
           </Text>
         </View>
+      </View>
 
-        <View
-          style={
-            styles.statusItem
-          }
+      <View
+        style={[
+          styles.instructionCard,
+          {
+            backgroundColor:
+              colors.surface,
+            borderColor:
+              colors.border,
+          },
+        ]}
+      >
+        <Target
+          size={20}
+          color={colors.primary}
+        />
+
+        <Text
+          style={[
+            styles.instructionText,
+            {
+              color:
+                colors.text,
+              textAlign:
+                isRTL
+                  ? 'right'
+                  : 'left',
+            },
+          ]}
         >
-          <Text
-            style={[
-              styles.statusLabel,
-              {
-                color:
-                  colors.textSecondary,
-              },
-            ]}
-          >
-            {t.score}
-          </Text>
+          {text.instruction}
+        </Text>
+      </View>
 
-          <Text
-            style={[
-              styles.statusValue,
-              {
-                color:
-                  colors.primary,
-              },
-            ]}
-          >
-            {score}
-          </Text>
-        </View>
+      <View
+        style={[
+          styles.timerTrack,
+          {
+            backgroundColor:
+              colors.border,
+          },
+        ]}
+      >
+        <Animated.View
+          style={[
+            styles.timerProgress,
+            {
+              width: timerWidth,
+              backgroundColor:
+                colors.primary,
+            },
+          ]}
+        />
+      </View>
 
+      <View
+        style={
+          styles.visualFieldWrapper
+        }
+      >
         <View
-          style={
-            styles.statusItem
-          }
-        >
-          <Text
-            style={[
-              styles.statusLabel,
-              {
-                color:
-                  colors.textSecondary,
-              },
-            ]}
-          >
-            {t.difficulty}
-          </Text>
+          style={[
+            styles.visualField,
+            {
+              backgroundColor:
+                colors.surface,
+              borderColor:
+                colors.border,
+            },
+          ]}
+          onLayout={event => {
+            const {
+              width,
+              height,
+            } =
+              event.nativeEvent
+                .layout;
 
-          <Text
+            if (
+              width !==
+                areaWidth ||
+              height !==
+                areaHeight
+            ) {
+              setAreaWidth(width);
+              setAreaHeight(
+                height
+              );
+            }
+          }}
+        >
+          <Animated.View
             style={[
-              styles.statusValue,
+              styles.dotsLayer,
               {
-                color:
-                  colors.text,
+                transform: [
+                  {
+                    scale: pulse,
+                  },
+                ],
               },
             ]}
           >
-            {Math.round(
-              coherence * 100
+            {dots.map(
+              (dot, index) => (
+                <View
+                  key={`${index}-${dot.x}-${dot.y}`}
+                  pointerEvents="none"
+                  style={[
+                    styles.dot,
+                    {
+                      width:
+                        dot.size,
+                      height:
+                        dot.size,
+                      borderRadius:
+                        dot.size /
+                        2,
+                      left:
+                        dot.x -
+                        dot.size /
+                          2,
+                      top:
+                        dot.y -
+                        dot.size /
+                          2,
+                      backgroundColor:
+                        colors.primary,
+                    },
+                  ]}
+                />
+              )
             )}
-            %
-          </Text>
+          </Animated.View>
+        </View>
+      </View>
+
+      <View
+        style={
+          styles.feedbackArea
+        }
+      >
+        {feedback !== 'idle' && (
+          <View
+            style={[
+              styles.feedback,
+              {
+                backgroundColor:
+                  feedback ===
+                  'correct'
+                    ? '#22C55E15'
+                    : '#EF444415',
+
+                borderColor:
+                  feedback ===
+                  'correct'
+                    ? '#22C55E35'
+                    : '#EF444435',
+              },
+            ]}
+          >
+            {feedback ===
+            'correct' ? (
+              <CheckCircle
+                size={20}
+                color="#22C55E"
+              />
+            ) : (
+              <XCircle
+                size={20}
+                color="#EF4444"
+              />
+            )}
+
+            <Text
+              style={[
+                styles.feedbackText,
+                {
+                  color:
+                    feedback ===
+                    'correct'
+                      ? '#16A34A'
+                      : '#DC2626',
+                },
+              ]}
+            >
+              {feedback ===
+              'correct'
+                ? text.correct
+                : feedback ===
+                  'timeout'
+                ? text.timeout
+                : text.wrong}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      <View
+        style={
+          styles.directionArea
+        }
+      >
+        <View
+          style={
+            styles.directionRow
+          }
+        >
+          <DirectionButton
+            label={text.up}
+            icon="up"
+            onPress={() =>
+              handleAnswer('up')
+            }
+            colors={colors}
+            disabled={!ready}
+          />
         </View>
 
         <View
           style={
-            styles.statusItem
+            styles.directionRow
           }
         >
-          <Text
-            style={[
-              styles.statusLabel,
-              {
-                color:
-                  colors.textSecondary,
-              },
-            ]}
-          >
-            {language === 'fa'
-              ? 'سطح'
-              : 'Level'}
-          </Text>
+          <DirectionButton
+            label={text.left}
+            icon="left"
+            onPress={() =>
+              handleAnswer('left')
+            }
+            colors={colors}
+            disabled={!ready}
+          />
 
-          <Text
-            style={[
-              styles.statusValue,
-              {
-                color:
-                  colors.primary,
-              },
-            ]}
+          <View
+            style={
+              styles.centerTarget
+            }
           >
-            {language === 'fa'
-              ? currentDifficulty.titleFa
-              : currentDifficulty.titleEn}
-          </Text>
+            <Target
+              size={17}
+              color={
+                colors.textSecondary
+              }
+            />
+          </View>
+
+          <DirectionButton
+            label={text.right}
+            icon="right"
+            onPress={() =>
+              handleAnswer('right')
+            }
+            colors={colors}
+            disabled={!ready}
+          />
+        </View>
+
+        <View
+          style={
+            styles.directionRow
+          }
+        >
+          <DirectionButton
+            label={text.down}
+            icon="down"
+            onPress={() =>
+              handleAnswer('down')
+            }
+            colors={colors}
+            disabled={!ready}
+          />
         </View>
       </View>
     </View>
   );
 }
 
-/* ================================================================
-   STYLES
-================================================================ */
+/*
+ * Header
+ */
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal:
-      Spacing.lg,
-  },
+function Header({
+  title,
+  subtitle,
+  onBack,
+  colors,
+  isRTL,
+}: {
+  title: string;
+  subtitle: string;
+  onBack: () => void;
+  colors: any;
+  isRTL: boolean;
+}) {
+  return (
+    <View
+      style={[
+        styles.header,
+        {
+          borderBottomColor:
+            colors.border,
+        },
+      ]}
+    >
+      <TouchableOpacity
+        activeOpacity={0.75}
+        onPress={onBack}
+        style={[
+          styles.backButton,
+          {
+            backgroundColor:
+              colors.surface,
+            borderColor:
+              colors.border,
+          },
+        ]}
+      >
+        <ArrowLeft
+          size={21}
+          color={colors.text}
+          strokeWidth={2.5}
+        />
+      </TouchableOpacity>
 
-  /* ================================================================
-     HEADER
-  ================================================================ */
+      <View
+        style={
+          styles.headerText
+        }
+      >
+        <Text
+          style={[
+            styles.headerTitle,
+            {
+              color:
+                colors.text,
+              textAlign:
+                isRTL
+                  ? 'right'
+                  : 'left',
+            },
+          ]}
+          numberOfLines={1}
+        >
+          {title}
+        </Text>
 
-  pageHeader: {
-    width: '100%',
-    paddingHorizontal: 0,
-    paddingTop: 60,
-    paddingBottom: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth:
-      StyleSheet.hairlineWidth,
-  },
+        <Text
+          style={[
+            styles.headerSubtitle,
+            {
+              color:
+                colors.textSecondary,
+              textAlign:
+                isRTL
+                  ? 'right'
+                  : 'left',
+            },
+          ]}
+          numberOfLines={1}
+        >
+          {subtitle}
+        </Text>
+      </View>
+    </View>
+  );
+}
 
-  unifiedBackButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-    marginRight: 12,
-  },
+/*
+ * Direction Button
+ */
 
-  pageHeaderText: {
-    flex: 1,
-    minWidth: 0,
-  },
+function DirectionButton({
+  label,
+  icon,
+  onPress,
+  colors,
+  disabled,
+}: {
+  label: string;
+  icon:
+    | 'up'
+    | 'down'
+    | 'left'
+    | 'right';
+  onPress: () => void;
+  colors: any;
+  disabled: boolean;
+}) {
+  const Icon =
+    icon === 'up'
+      ? require('lucide-react-native')
+          .ChevronUp
+      : icon === 'down'
+      ? require('lucide-react-native')
+          .ChevronDown
+      : icon === 'left'
+      ? require('lucide-react-native')
+          .ChevronLeft
+      : require('lucide-react-native')
+          .ChevronRight;
 
-  pageHeaderTitle: {
-    fontSize: 21,
-    fontWeight: '800',
-    lineHeight: 27,
-  },
+  return (
+    <TouchableOpacity
+      activeOpacity={0.78}
+      disabled={disabled}
+      onPress={onPress}
+      style={[
+        styles.directionButton,
+        {
+          backgroundColor:
+            colors.surface,
+          borderColor:
+            colors.border,
+          opacity: disabled
+            ? 0.45
+            : 1,
+        },
+      ]}
+    >
+      <Icon
+        size={24}
+        color={colors.text}
+        strokeWidth={2.5}
+      />
 
-  pageHeaderSubtitle: {
-    fontSize: 12,
-    marginTop: 3,
-    lineHeight: 18,
-  },
+      <Text
+        style={[
+          styles.directionLabel,
+          {
+            color:
+              colors.text,
+          },
+        ]}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
 
-  /* ================================================================
-     DIFFICULTY PAGE
-  ================================================================ */
+/*
+ * Styles
+ */
 
-  difficultyScroll: {
-    paddingTop: Spacing.md,
-    paddingBottom: 30,
-  },
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
 
-  selectionHeader: {
-    borderRadius: 26,
-    borderWidth: 1,
-    padding: Spacing.lg,
-    alignItems: 'center',
-  },
+    gameContainer: {
+      flex: 1,
+      overflow: 'hidden',
+    },
 
-  logo: {
-    width: 78,
-    height: 78,
-    borderRadius: 39,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
+    scroll: {
+      flex: 1,
+    },
 
-  selectionTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
+    header: {
+      width: '100%',
+      paddingHorizontal:
+        Spacing.lg,
+      paddingTop: 56,
+      paddingBottom: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderBottomWidth:
+        StyleSheet.hairlineWidth,
+    },
 
-  selectionDescription: {
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: 'center',
-    marginTop: 7,
-  },
+    backButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      borderWidth: 1,
+      alignItems: 'center',
+      justifyContent:
+        'center',
+      marginRight: 12,
+    },
 
-  testProgressBox: {
-    width: '100%',
-    minHeight: 66,
-    borderRadius: 17,
-    borderWidth: 1,
-    marginTop: 18,
-    paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
+    headerText: {
+      flex: 1,
+      minWidth: 0,
+    },
 
-  progressTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: '800',
+    },
 
-  progressSubtitle: {
-    fontSize: 11,
-    marginTop: 3,
-  },
+    headerSubtitle: {
+      fontSize: 11,
+      marginTop: 3,
+    },
 
-  difficultyList: {
-    marginTop: 14,
-    gap: 10,
-  },
+    introContent: {
+      flexGrow: 1,
+      paddingHorizontal:
+        Spacing.lg,
+      alignItems: 'center',
+      paddingTop: 28,
+      paddingBottom: 50,
+    },
 
-  difficultyCard: {
-    minHeight: 92,
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+    heroIcon: {
+      width: 82,
+      height: 82,
+      borderRadius: 27,
+      alignItems: 'center',
+      justifyContent:
+        'center',
+      marginBottom: 14,
+    },
 
-  difficultyIcon: {
-    width: 58,
-    height: 58,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    heroTitle: {
+      fontSize: 27,
+      fontWeight: '900',
+      textAlign: 'center',
+    },
 
-  difficultyContent: {
-    flex: 1,
-    marginLeft: 13,
-  },
+    heroDescription: {
+      maxWidth: 370,
+      fontSize: 13,
+      lineHeight: 22,
+      textAlign: 'center',
+      marginTop: 8,
+    },
 
-  difficultyTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
+    previewCard: {
+      width: '100%',
+      marginTop: 22,
+      borderRadius:
+        BorderRadius.lg,
+      borderWidth: 1,
+      padding: 16,
+    },
 
-  difficultyTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
+    previewArea: {
+      height: 125,
+      width: '100%',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignContent:
+        'center',
+      justifyContent:
+        'center',
+      gap: 8,
+      overflow: 'hidden',
+    },
 
-  recommendedBadge: {
-    borderRadius: 10,
-    paddingHorizontal: 7,
-    paddingVertical: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
+    previewDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+    },
 
-  recommendedText: {
-    fontSize: 8,
-    fontWeight: '800',
-  },
+    previewInstruction: {
+      fontSize: 13,
+      fontWeight: '700',
+      textAlign: 'center',
+      marginTop: 9,
+    },
 
-  difficultyDescription: {
-    fontSize: 11,
-    marginTop: 5,
-    lineHeight: 17,
-  },
+    infoCard: {
+      width: '100%',
+      marginTop: 12,
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius.lg,
+      padding: Spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
 
-  difficultyIndicator: {
-    flexDirection: 'row',
-    gap: 4,
-    marginTop: 8,
-  },
+    infoIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent:
+        'center',
+    },
 
-  difficultyDot: {
-    width: 17,
-    height: 4,
-    borderRadius: 2,
-  },
+    infoText: {
+      flex: 1,
+    },
 
-  difficultyArrow: {
-    width: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    infoTitle: {
+      fontSize: 14,
+      fontWeight: '800',
+    },
 
-  minimumInfo: {
-    minHeight: 55,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginTop: 14,
-    paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
+    infoDescription: {
+      fontSize: 11,
+      lineHeight: 18,
+      marginTop: 3,
+    },
 
-  minimumInfoText: {
-    flex: 1,
-    fontSize: 11,
-    lineHeight: 17,
-  },
+    levelCard: {
+      width: '100%',
+      marginTop: 12,
+      paddingHorizontal:
+        Spacing.md,
+      paddingVertical: 14,
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius.lg,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent:
+        'space-between',
+    },
 
-  /* ================================================================
-     GAME
-  ================================================================ */
+    levelLabel: {
+      fontSize: 10,
+    },
 
-  canvasWrapper: {
-    width: '100%',
-    height: Math.min(
-      ((Dimensions.get('window').width -
-        Spacing.lg * 2) *
-        2) /
-        3,
-      280
-    ),
-    borderRadius: 20,
-    borderWidth: 1,
-    overflow: 'hidden',
-    position: 'relative',
-    marginTop: Spacing.md,
-  },
+    levelValue: {
+      fontSize: 18,
+      fontWeight: '900',
+      marginTop: 2,
+    },
 
-  dot: {
-    position: 'absolute',
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    elevation: 5,
-  },
+    previousCard: {
+      width: '100%',
+      marginTop: 10,
+      minHeight: 50,
+      paddingHorizontal:
+        Spacing.md,
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius.lg,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
 
-  infoArea: {
-    minHeight: 58,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    marginTop: Spacing.sm,
-  },
+    previousText: {
+      flex: 1,
+      fontSize: 11,
+    },
 
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
+    noLevel: {
+      fontSize: 10,
+      textAlign: 'center',
+      marginTop: 12,
+    },
 
-  infoText: {
-    fontSize: 15,
-    fontWeight: '600',
-    textAlign: 'center',
-    flexShrink: 1,
-  },
+    primaryButton: {
+      width: '100%',
+      minHeight: 54,
+      marginTop: 18,
+      borderRadius:
+        BorderRadius.full,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent:
+        'center',
+      gap: 8,
+    },
 
-  directionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 9,
-    flexWrap: 'wrap',
-    marginBottom: 12,
-  },
+    primaryButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '800',
+    },
 
-  dirButton: {
-    width: 58,
-    height: 48,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    hud: {
+      marginHorizontal: 12,
+      marginTop: 11,
+      height: 56,
+      paddingHorizontal: 14,
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius.lg,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent:
+        'space-between',
+    },
 
-  /* ================================================================
-     STATUS
-  ================================================================ */
+    hudItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 7,
+      minWidth: 55,
+    },
 
-  statusBar: {
-    minHeight: 58,
-    borderRadius: 16,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-  },
+    hudLabel: {
+      fontSize: 8,
+    },
 
-  statusItem: {
-    alignItems: 'center',
-    minWidth: 65,
-  },
+    hudValue: {
+      fontSize: 16,
+      fontWeight: '900',
+    },
 
-  statusLabel: {
-    fontSize: 9,
-  },
+    roundText: {
+      fontSize: 10,
+      fontWeight: '700',
+    },
 
-  statusValue: {
-    fontSize: 12,
-    fontWeight: '800',
-    marginTop: 2,
-  },
+    instructionCard: {
+      marginHorizontal: 16,
+      marginTop: 9,
+      minHeight: 45,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius.lg,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent:
+        'center',
+      gap: 8,
+    },
 
-  /* ================================================================
-     FINAL RESULTS
-  ================================================================ */
+    instructionText: {
+      fontSize: 12,
+      fontWeight: '700',
+      flexShrink: 1,
+    },
 
-  resultCard: {
-    flex: 1,
-    borderRadius: 28,
-    borderWidth: 1,
-    padding: Spacing.lg,
-    marginTop: Spacing.md,
-    alignItems: 'center',
-  },
+    timerTrack: {
+      height: 4,
+      marginHorizontal: 18,
+      marginTop: 9,
+      borderRadius: 3,
+      overflow: 'hidden',
+    },
 
-  resultIcon: {
-    width: 82,
-    height: 82,
-    borderRadius: 41,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    timerProgress: {
+      height: '100%',
+      borderRadius: 3,
+    },
 
-  resultTitle: {
-    fontSize: 24,
-    fontWeight: '900',
-    marginTop: 15,
-  },
+    visualFieldWrapper: {
+      flex: 1,
+      minHeight: 200,
+      marginHorizontal: 12,
+      marginTop: 9,
+      marginBottom: 5,
+      overflow: 'hidden',
+    },
 
-  resultSubtitle: {
-    fontSize: 12,
-    lineHeight: 19,
-    textAlign: 'center',
-    marginTop: 7,
-    marginBottom: 18,
-  },
+    visualField: {
+      flex: 1,
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius.lg,
+      overflow: 'hidden',
+      position: 'relative',
+    },
 
-  resultItem: {
-    width: '100%',
-    minHeight: 58,
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 9,
-  },
+    dotsLayer: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      right: 0,
+      bottom: 0,
+    },
 
-  resultItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
+    dot: {
+      position: 'absolute',
+    },
 
-  resultLabel: {
-    fontSize: 12,
-  },
+    feedbackArea: {
+      height: 48,
+      alignItems: 'center',
+      justifyContent:
+        'center',
+    },
 
-  resultValue: {
-    fontSize: 17,
-    fontWeight: '900',
-  },
+    feedback: {
+      minWidth: 125,
+      minHeight: 37,
+      paddingHorizontal: 13,
+      borderRadius:
+        BorderRadius.full,
+      borderWidth: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent:
+        'center',
+      gap: 7,
+    },
 
-  restartButton: {
-    width: '100%',
-    height: 50,
-    borderRadius: 25,
-    marginTop: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
+    feedbackText: {
+      fontSize: 12,
+      fontWeight: '800',
+    },
 
-  restartText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-});
+    directionArea: {
+      alignItems: 'center',
+      justifyContent:
+        'center',
+      paddingBottom: 10,
+      gap: 5,
+    },
+
+    directionRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent:
+        'center',
+      gap: 5,
+    },
+
+    directionButton: {
+      width: 88,
+      height: 43,
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius.lg,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent:
+        'center',
+      gap: 4,
+    },
+
+    directionLabel: {
+      fontSize: 10,
+      fontWeight: '800',
+    },
+
+    centerTarget: {
+      width: 43,
+      height: 43,
+      alignItems: 'center',
+      justifyContent:
+        'center',
+    },
+
+    resultContent: {
+      flexGrow: 1,
+      paddingHorizontal:
+        Spacing.lg,
+      alignItems: 'center',
+      paddingTop: 28,
+      paddingBottom: 55,
+    },
+
+    resultIcon: {
+      width: 82,
+      height: 82,
+      borderRadius: 28,
+      alignItems: 'center',
+      justifyContent:
+        'center',
+      marginBottom: 13,
+    },
+
+    resultTitle: {
+      fontSize: 24,
+      fontWeight: '900',
+      textAlign: 'center',
+    },
+
+    scoreCard: {
+      width: '100%',
+      marginTop: 18,
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius.lg,
+      alignItems: 'center',
+      paddingVertical: 17,
+    },
+
+    scoreValue: {
+      fontSize: 44,
+      fontWeight: '900',
+    },
+
+    scoreLabel: {
+      fontSize: 11,
+      marginTop: -2,
+    },
+
+    statsRow: {
+      width: '100%',
+      flexDirection: 'row',
+      gap: 10,
+      marginTop: 10,
+    },
+
+    statCard: {
+      flex: 1,
+      minHeight: 100,
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius.lg,
+      alignItems: 'center',
+      justifyContent:
+        'center',
+    },
+
+    statValue: {
+      fontSize: 22,
+      fontWeight: '900',
+      marginTop: 5,
+    },
+
+    statLabel: {
+      fontSize: 9,
+      marginTop: 2,
+      textAlign: 'center',
+      paddingHorizontal: 4,
+    },
+
+    metricCard: {
+      width: '100%',
+      minHeight: 64,
+      marginTop: 10,
+      paddingHorizontal:
+        Spacing.md,
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius.lg,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+
+    metricText: {
+      flex: 1,
+    },
+
+    metricLabel: {
+      fontSize: 10,
+    },
+
+    metricValue: {
+      fontSize: 18,
+      fontWeight: '900',
+      marginTop: 1,
+    },
+
+    adaptiveResult: {
+      width: '100%',
+      marginTop: 10,
+      padding: Spacing.md,
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius.lg,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 11,
+    },
+
+    adaptiveResultText: {
+      flex: 1,
+    },
+
+    adaptiveResultTitle: {
+      fontSize: 13,
+      fontWeight: '800',
+    },
+
+    adaptiveResultDescription: {
+      fontSize: 10,
+      lineHeight: 17,
+      marginTop: 3,
+    },
+
+    bottomSpace: {
+      height: 15,
+    },
+  });

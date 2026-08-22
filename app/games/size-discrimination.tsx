@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
 import {
   View,
   Text,
@@ -6,10 +13,11 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
-  useWindowDimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+
 import {
   ArrowLeft,
   Target,
@@ -19,608 +27,1179 @@ import {
   XCircle,
   RotateCcw,
   Sparkles,
+  TrendingUp,
+  Zap,
 } from 'lucide-react-native';
 
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { Spacing, BorderRadius } from '../../constants/theme';
+
+import {
+  Spacing,
+  BorderRadius,
+} from '../../constants/theme';
+
+/* ================================================================
+   TYPES
+================================================================ */
 
 type Side = 'left' | 'right';
+
+type Phase =
+  | 'intro'
+  | 'playing'
+  | 'result';
 
 type TrialResult = {
   correct: boolean;
   rt: number;
-  diff: number;
+  difference: number;
 };
 
-type FeedbackType = 'idle' | 'correct' | 'wrong' | 'timeout';
+type DifficultyConfig = {
+  level: number;
+
+  nameFa: string;
+
+  nameEn: string;
+
+  minDifference: number;
+
+  maxDifference: number;
+
+  timeLimit: number;
+
+  baseSize: number;
+};
+
+/* ================================================================
+   CONSTANTS
+================================================================ */
 
 const TOTAL_TRIALS = 20;
-const TIMER_DURATION = 8000;
-const DESIGN_WIDTH = 780;
 
-const random = (min: number, max: number) =>
-  Math.random() * (max - min) + min;
+const MIN_LEVEL = 1;
 
-const randomInt = (min: number, max: number) =>
-  Math.floor(random(min, max + 1));
+const MAX_LEVEL = 5;
+
+const INITIAL_LEVEL = 1;
+
+const STORAGE_KEY =
+  'neurolia_size_discrimination_adaptive_v2';
+
+const CONFIGS: DifficultyConfig[] = [
+  {
+    level: 1,
+
+    nameFa: 'آسان',
+
+    nameEn: 'Easy',
+
+    minDifference: 0.25,
+
+    maxDifference: 0.40,
+
+    timeLimit: 7000,
+
+    baseSize: 78,
+  },
+
+  {
+    level: 2,
+
+    nameFa: 'متوسط',
+
+    nameEn: 'Medium',
+
+    minDifference: 0.18,
+
+    maxDifference: 0.28,
+
+    timeLimit: 6500,
+
+    baseSize: 78,
+  },
+
+  {
+    level: 3,
+
+    nameFa: 'دقیق',
+
+    nameEn: 'Precise',
+
+    minDifference: 0.12,
+
+    maxDifference: 0.20,
+
+    timeLimit: 6000,
+
+    baseSize: 78,
+  },
+
+  {
+    level: 4,
+
+    nameFa: 'سخت',
+
+    nameEn: 'Hard',
+
+    minDifference: 0.075,
+
+    maxDifference: 0.14,
+
+    timeLimit: 5500,
+
+    baseSize: 78,
+  },
+
+  {
+    level: 5,
+
+    nameFa: 'حرفه‌ای',
+
+    nameEn: 'Expert',
+
+    minDifference: 0.045,
+
+    maxDifference: 0.09,
+
+    timeLimit: 5000,
+
+    baseSize: 78,
+  },
+];
+
+/* ================================================================
+   HELPERS
+================================================================ */
+
+const randomBetween = (
+  min: number,
+  max: number
+) =>
+  Math.random() *
+    (max - min) +
+  min;
+
+const getConfig = (
+  level: number
+) =>
+  CONFIGS[
+    Math.max(
+      0,
+      Math.min(
+        CONFIGS.length - 1,
+        level - 1
+      )
+    )
+  ];
+
+/* ================================================================
+   SCREEN
+================================================================ */
 
 export default function SizeDiscriminationScreen() {
-  const { colors, isDark } = useTheme();
-  const { language, isRTL } = useLanguage();
   const router = useRouter();
-  const { width } = useWindowDimensions();
 
-  const textAlignStyle = isRTL ? 'right' : 'left';
+  const { colors } =
+    useTheme();
 
-  const [phase, setPhase] = useState<'intro' | 'playing' | 'result'>(
-    'intro'
+  const { language, isRTL } =
+    useLanguage();
+
+  /* ================================================================
+     TEXT
+  ================================================================= */
+
+  const text = useMemo(
+    () =>
+      language === 'fa'
+        ? {
+            title: 'حدس اندازه',
+
+            subtitle:
+              'تفاوت ظریف اندازه‌ها را تشخیص بده',
+
+            instruction:
+              'کدام دایره بزرگ‌تر است؟',
+
+            left:
+              'سمت چپ',
+
+            right:
+              'سمت راست',
+
+            start:
+              'شروع بازی',
+
+            back:
+              'بازگشت',
+
+            score:
+              'امتیاز',
+
+            question:
+              'مرحله',
+
+            time:
+              'زمان',
+
+            correct:
+              'درست',
+
+            wrong:
+              'اشتباه',
+
+            accuracy:
+              'دقت',
+
+            averageTime:
+              'میانگین زمان',
+
+            milliseconds:
+              'میلی‌ثانیه',
+
+            completed:
+              'بازی تمام شد',
+
+            excellent:
+              'عملکرد عالی',
+
+            good:
+              'عملکرد خوب',
+
+            improve:
+              'ادامه بده تا بهتر شوی',
+
+            adaptive:
+              'سختی تطبیقی',
+
+            adaptiveDescription:
+              'سطح بازی بر اساس عملکرد واقعی شما به‌صورت خودکار تغییر می‌کند.',
+
+            currentLevel:
+              'سطح بازی',
+
+            nextLevel:
+              'سطح بعدی',
+
+            playAgain:
+              'بازی مجدد',
+
+            difference:
+              'اختلاف اندازه',
+
+            noSelection:
+              'سطح بازی توسط شما انتخاب نمی‌شود',
+
+            levelUp:
+              'دقت شما بالا بود؛ مرحله بعد دشوارتر خواهد شد.',
+
+            levelDown:
+              'این مرحله دشوار بود؛ مرحله بعد کمی آسان‌تر خواهد شد.',
+
+            levelSame:
+              'سطح فعلی برای عملکرد شما مناسب است.',
+
+            timeout:
+              'زمان تمام شد',
+
+            correctAnswer:
+              'پاسخ درست',
+
+            choose:
+              'یکی را انتخاب کن',
+
+            performance:
+              'عملکرد',
+
+            startDescription:
+              'دو دایره با اندازه‌های نزدیک نمایش داده می‌شوند. دایره بزرگ‌تر را سریع و دقیق انتخاب کن.',
+          }
+        : {
+            title: 'Size Guess',
+
+            subtitle:
+              'Detect subtle differences in size',
+
+            instruction:
+              'Which circle is bigger?',
+
+            left:
+              'Left',
+
+            right:
+              'Right',
+
+            start:
+              'Start Game',
+
+            back:
+              'Back',
+
+            score:
+              'Score',
+
+            question:
+              'Round',
+
+            time:
+              'Time',
+
+            correct:
+              'Correct',
+
+            wrong:
+              'Wrong',
+
+            accuracy:
+              'Accuracy',
+
+            averageTime:
+              'Average Time',
+
+            milliseconds:
+              'ms',
+
+            completed:
+              'Game Complete',
+
+            excellent:
+              'Excellent Performance',
+
+            good:
+              'Good Performance',
+
+            improve:
+              'Keep practicing to improve',
+
+            adaptive:
+              'Adaptive Difficulty',
+
+            adaptiveDescription:
+              'Game difficulty automatically changes based on your actual performance.',
+
+            currentLevel:
+              'Game Level',
+
+            nextLevel:
+              'Next Level',
+
+            playAgain:
+              'Play Again',
+
+            difference:
+              'Size Difference',
+
+            noSelection:
+              'You do not select the game level',
+
+            levelUp:
+              'Your accuracy was high. The next session will be harder.',
+
+            levelDown:
+              'This session was challenging. The next session will be easier.',
+
+            levelSame:
+              'The current difficulty is appropriate for your performance.',
+
+            timeout:
+              'Time is up',
+
+            correctAnswer:
+              'Correct Answer',
+
+            choose:
+              'Choose one',
+
+            performance:
+              'Performance',
+
+            startDescription:
+              'Two circles with similar sizes will appear. Choose the bigger one as quickly and accurately as possible.',
+          },
+    [language]
   );
 
-  const [trialIndex, setTrialIndex] = useState(0);
-  const [score, setScore] = useState(0);
-  const [responses, setResponses] = useState<TrialResult[]>([]);
+  /* ================================================================
+     STATE
+  ================================================================= */
 
-  const [leftSize, setLeftSize] = useState(80);
-  const [rightSize, setRightSize] = useState(80);
-  const [correctSide, setCorrectSide] = useState<Side>('left');
+  const [
+    phase,
+    setPhase,
+  ] = useState<Phase>('intro');
 
-  const [isReady, setIsReady] = useState(false);
+  const [
+    level,
+    setLevel,
+  ] = useState(INITIAL_LEVEL);
 
-  const [feedback, setFeedback] = useState<{
-    text: string;
-    type: FeedbackType;
-  }>({
-    text: '',
-    type: 'idle',
-  });
+  const [
+    previousAccuracy,
+    setPreviousAccuracy,
+  ] = useState<
+    number | null
+  >(null);
 
-  const [detailText, setDetailText] = useState('');
-  const [lastRt, setLastRt] = useState<number | null>(null);
+  const [
+    trialIndex,
+    setTrialIndex,
+  ] = useState(0);
 
-  const startTimeRef = useRef(0);
-  const roundIdRef = useRef(0);
-  const answeredRef = useRef(false);
+  const [
+    score,
+    setScore,
+  ] = useState(0);
 
-  const timeoutRef =
-    useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [
+    responses,
+    setResponses,
+  ] = useState<TrialResult[]>(
+    []
+  );
 
-  const nextTrialRef =
-    useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [
+    leftSize,
+    setLeftSize,
+  ] = useState(90);
 
-  const currentDiffRef = useRef(0.1);
+  const [
+    rightSize,
+    setRightSize,
+  ] = useState(70);
 
-  const timerAnim = useRef(new Animated.Value(1)).current;
+  const [
+    correctSide,
+    setCorrectSide,
+  ] = useState<Side>('left');
 
-  const timerRunRef =
-    useRef<Animated.CompositeAnimation | null>(null);
+  const [
+    ready,
+    setReady,
+  ] = useState(false);
 
-  const circlePulse = useRef(new Animated.Value(0)).current;
+  const [
+    feedback,
+    setFeedback,
+  ] = useState<
+    'idle' |
+    'correct' |
+    'wrong' |
+    'timeout'
+  >('idle');
 
-  /*
-   * ---------------------------------------------------------
-   * CLEANUP
-   * ---------------------------------------------------------
-   */
+  const [
+    lastResponseTime,
+    setLastResponseTime,
+  ] = useState<
+    number | null
+  >(null);
+
+  const [
+    playAreaWidth,
+    setPlayAreaWidth,
+  ] = useState(0);
+
+  const [
+    playAreaHeight,
+    setPlayAreaHeight,
+  ] = useState(0);
+
+  const [
+    adaptiveResult,
+    setAdaptiveResult,
+  ] = useState<
+    'up' |
+    'down' |
+    'same' |
+    null
+  >(null);
+
+  /* ================================================================
+     REFS
+  ================================================================= */
+
+  const mounted =
+    useRef(true);
+
+  const answered =
+    useRef(false);
+
+  const startTime =
+    useRef(0);
+
+  const timerRef =
+    useRef<
+      ReturnType<typeof setTimeout> | null
+    >(null);
+
+  const nextTrialTimer =
+    useRef<
+      ReturnType<typeof setTimeout> | null
+    >(null);
+
+  const currentDifference =
+    useRef(0);
+
+  const pulse =
+    useRef(
+      new Animated.Value(0)
+    ).current;
+
+  const timerAnimation =
+    useRef(
+      new Animated.Value(1)
+    ).current;
+
+  /* ================================================================
+     CONFIG
+  ================================================================= */
+
+  const config =
+    getConfig(level);
+
+  const levelName =
+    language === 'fa'
+      ? config.nameFa
+      : config.nameEn;
+
+  /* ================================================================
+     CLEANUP
+  ================================================================= */
+
+  const clearTimers =
+    useCallback(() => {
+      if (
+        timerRef.current
+      ) {
+        clearTimeout(
+          timerRef.current
+        );
+
+        timerRef.current =
+          null;
+      }
+
+      if (
+        nextTrialTimer.current
+      ) {
+        clearTimeout(
+          nextTrialTimer.current
+        );
+
+        nextTrialTimer.current =
+          null;
+      }
+    }, []);
 
   useEffect(() => {
+    mounted.current = true;
+
     return () => {
-      timerRunRef.current?.stop();
+      mounted.current = false;
 
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-
-      if (nextTrialRef.current) {
-        clearTimeout(nextTrialRef.current);
-      }
+      clearTimers();
     };
+  }, [clearTimers]);
+
+  /* ================================================================
+     LOAD ADAPTIVE STATE
+  ================================================================= */
+
+  useEffect(() => {
+    const load =
+      async () => {
+        try {
+          const stored =
+            await AsyncStorage.getItem(
+              STORAGE_KEY
+            );
+
+          if (!stored) {
+            return;
+          }
+
+          const parsed =
+            JSON.parse(stored);
+
+          if (
+            typeof parsed.level ===
+            'number'
+          ) {
+            setLevel(
+              Math.max(
+                MIN_LEVEL,
+                Math.min(
+                  MAX_LEVEL,
+                  parsed.level
+                )
+              )
+            );
+          }
+
+          if (
+            typeof parsed.accuracy ===
+            'number'
+          ) {
+            setPreviousAccuracy(
+              parsed.accuracy
+            );
+          }
+        } catch (error) {
+          console.log(
+            '[SizeDiscrimination] load error',
+            error
+          );
+        }
+      };
+
+    load();
   }, []);
 
-  /*
-   * ---------------------------------------------------------
-   * DIMENSIONS
-   * ---------------------------------------------------------
-   */
+  /* ================================================================
+     SAVE ADAPTIVE STATE
+  ================================================================= */
 
-  const playAreaWidth = Math.min(
-    width - Spacing.lg * 2,
-    460
-  );
+  const saveAdaptiveState =
+    useCallback(
+      async (
+        nextLevel: number,
+        accuracy: number
+      ) => {
+        try {
+          await AsyncStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({
+              level: nextLevel,
 
-  const playAreaHeight = playAreaWidth * (4 / 7);
+              accuracy,
 
-  const scale = playAreaWidth / DESIGN_WIDTH;
+              updatedAt:
+                Date.now(),
+            })
+          );
+        } catch (error) {
+          console.log(
+            '[SizeDiscrimination] save error',
+            error
+          );
+        }
+      },
+      []
+    );
 
-  const spacing = playAreaWidth * 0.24;
+  /* ================================================================
+     GENERATE TRIAL
+  ================================================================= */
 
-  /*
-   * ---------------------------------------------------------
-   * BACK HANDLERS
-   * ---------------------------------------------------------
-   */
+  const generateTrial =
+    useCallback(() => {
+      answered.current = false;
 
-  const handleIntroBack = useCallback(() => {
-    router.back();
-  }, [router]);
+      setReady(true);
 
-  const backToIntro = useCallback(() => {
-    timerRunRef.current?.stop();
+      setFeedback('idle');
 
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
+      setLastResponseTime(
+        null
+      );
 
-    if (nextTrialRef.current) {
-      clearTimeout(nextTrialRef.current);
-      nextTrialRef.current = null;
-    }
-
-    answeredRef.current = true;
-    setIsReady(false);
-
-    setPhase('intro');
-  }, []);
-
-  /*
-   * ---------------------------------------------------------
-   * START TRIAL
-   * ---------------------------------------------------------
-   */
-
-  const beginTrial = useCallback(
-    (index: number) => {
-      roundIdRef.current += 1;
-
-      const roundId = roundIdRef.current;
-
-      answeredRef.current = false;
-
-      setIsReady(true);
-
-      setFeedback({
-        text: '',
-        type: 'idle',
-      });
-
-      setDetailText('');
-      setLastRt(null);
-
-      const diffPercent = random(0.05, 0.3);
-
-      const baseSize = randomInt(60, 120);
-
-      const biggerOnRight = Math.random() < 0.5;
-
-      if (biggerOnRight) {
-        setLeftSize(baseSize);
-
-        setRightSize(
-          Math.round(baseSize * (1 + diffPercent))
+      const difference =
+        randomBetween(
+          config.minDifference,
+          config.maxDifference
         );
 
-        setCorrectSide('right');
-      } else {
-        setLeftSize(
-          Math.round(baseSize * (1 + diffPercent))
-        );
+      const base =
+        config.baseSize;
 
-        setRightSize(baseSize);
+      const larger =
+        base *
+        (1 + difference);
+
+      const largerOnLeft =
+        Math.random() <
+        0.5;
+
+      if (largerOnLeft) {
+        setLeftSize(larger);
+
+        setRightSize(base);
 
         setCorrectSide('left');
+      } else {
+        setLeftSize(base);
+
+        setRightSize(larger);
+
+        setCorrectSide('right');
       }
 
-      currentDiffRef.current = diffPercent;
+      currentDifference.current =
+        difference;
 
-      /*
-       * Circle animation
-       */
+      pulse.setValue(0);
 
-      circlePulse.setValue(0);
-
-      Animated.spring(circlePulse, {
+      Animated.spring(pulse, {
         toValue: 1,
-        friction: 6,
-        tension: 60,
+
+        friction: 7,
+
+        tension: 65,
+
         useNativeDriver: true,
       }).start();
 
-      /*
-       * Timer animation
-       */
+      timerAnimation.setValue(1);
 
-      timerAnim.setValue(1);
+      Animated.timing(
+        timerAnimation,
+        {
+          toValue: 0,
 
-      timerRunRef.current = Animated.timing(timerAnim, {
-        toValue: 0,
-        duration: TIMER_DURATION,
-        useNativeDriver: false,
-      });
+          duration:
+            config.timeLimit,
 
-      timerRunRef.current.start();
+          useNativeDriver: false,
+        }
+      ).start();
 
-      startTimeRef.current = Date.now();
+      startTime.current =
+        Date.now();
 
-      /*
-       * Timeout
-       */
+      clearTimers();
 
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      timerRef.current =
+        setTimeout(() => {
+          if (
+            !answered.current &&
+            mounted.current
+          ) {
+            handleTimeout();
+          }
+        }, config.timeLimit);
+    }, [
+      clearTimers,
+      config,
+      pulse,
+      timerAnimation,
+    ]);
 
-      timeoutRef.current = setTimeout(() => {
+  /* ================================================================
+     START
+  ================================================================= */
+
+  const startGame =
+    useCallback(() => {
+      clearTimers();
+
+      setPhase('playing');
+
+      setTrialIndex(0);
+
+      setScore(0);
+
+      setResponses([]);
+
+      setFeedback('idle');
+
+      setLastResponseTime(
+        null
+      );
+
+      setAdaptiveResult(
+        null
+      );
+
+      nextTrialTimer.current =
+        setTimeout(() => {
+          generateTrial();
+        }, 300);
+    }, [
+      clearTimers,
+      generateTrial,
+    ]);
+
+  /* ================================================================
+     FINISH
+  ================================================================= */
+
+  const finishGame =
+    useCallback(
+      async (
+        results: TrialResult[]
+      ) => {
+        clearTimers();
+
+        setReady(false);
+
+        const total =
+          results.length;
+
+        const correct =
+          results.filter(
+            item =>
+              item.correct
+          ).length;
+
+        const accuracy =
+          total === 0
+            ? 0
+            : (correct /
+                total) *
+              100;
+
+        let nextLevel =
+          level;
+
+        let result:
+          | 'up'
+          | 'down'
+          | 'same' =
+          'same';
+
         if (
-          roundId !== roundIdRef.current ||
-          answeredRef.current
+          accuracy >= 85 &&
+          level < MAX_LEVEL
+        ) {
+          nextLevel =
+            level + 1;
+
+          result = 'up';
+        } else if (
+          accuracy < 50 &&
+          level > MIN_LEVEL
+        ) {
+          nextLevel =
+            level - 1;
+
+          result = 'down';
+        }
+
+        setLevel(
+          nextLevel
+        );
+
+        setPreviousAccuracy(
+          Math.round(
+            accuracy
+          )
+        );
+
+        setAdaptiveResult(
+          result
+        );
+
+        await saveAdaptiveState(
+          nextLevel,
+          Math.round(
+            accuracy
+          )
+        );
+
+        setPhase('result');
+      },
+      [
+        clearTimers,
+        level,
+        saveAdaptiveState,
+      ]
+    );
+
+  /* ================================================================
+     NEXT TRIAL
+  ================================================================= */
+
+  const nextTrial =
+    useCallback(
+      (
+        results: TrialResult[]
+      ) => {
+        const next =
+          trialIndex + 1;
+
+        if (
+          next >=
+          TOTAL_TRIALS
+        ) {
+          finishGame(
+            results
+          );
+
+          return;
+        }
+
+        setTrialIndex(
+          next
+        );
+
+        nextTrialTimer.current =
+          setTimeout(() => {
+            generateTrial();
+          }, 650);
+      },
+      [
+        finishGame,
+        generateTrial,
+        trialIndex,
+      ]
+    );
+
+  /* ================================================================
+     ANSWER
+  ================================================================= */
+
+  const answer =
+    useCallback(
+      (side: Side) => {
+        if (
+          !ready ||
+          answered.current
         ) {
           return;
         }
 
-        handleTimeout(index, diffPercent);
-      }, TIMER_DURATION);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+        answered.current =
+          true;
 
-  /*
-   * ---------------------------------------------------------
-   * NEXT TRIAL
-   * ---------------------------------------------------------
-   */
+        setReady(false);
 
-  const endGame = useCallback(() => {
-    timerRunRef.current?.stop();
+        if (
+          timerRef.current
+        ) {
+          clearTimeout(
+            timerRef.current
+          );
 
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
+          timerRef.current =
+            null;
+        }
 
-    setIsReady(false);
-    setPhase('result');
-  }, []);
+        const rt =
+          Date.now() -
+          startTime.current;
 
-  const goToNextTrial = useCallback(
-    (index: number) => {
-      const next = index + 1;
+        const isCorrect =
+          side ===
+          correctSide;
 
-      if (next >= TOTAL_TRIALS) {
-        endGame();
+        const result: TrialResult =
+          {
+            correct:
+              isCorrect,
+
+            rt,
+
+            difference:
+              currentDifference.current,
+          };
+
+        setLastResponseTime(
+          rt
+        );
+
+        setFeedback(
+          isCorrect
+            ? 'correct'
+            : 'wrong'
+        );
+
+        setResponses(
+          previous => {
+            const updated = [
+              ...previous,
+              result,
+            ];
+
+            return updated;
+          }
+        );
+
+        if (isCorrect) {
+          const speedBonus =
+            Math.max(
+              0,
+              Math.round(
+                ((config.timeLimit -
+                  rt) /
+                  config.timeLimit) *
+                  10
+              )
+            );
+
+          const points =
+            10 +
+            speedBonus;
+
+          setScore(
+            previous =>
+              previous +
+              points
+          );
+        }
+
+        const currentResults = [
+          ...responses,
+          result,
+        ];
+
+        nextTrial(
+          currentResults
+        );
+      },
+      [
+        config.timeLimit,
+        correctSide,
+        nextTrial,
+        ready,
+        responses,
+      ]
+    );
+
+  /* ================================================================
+     TIMEOUT
+  ================================================================= */
+
+  const handleTimeout =
+    useCallback(() => {
+      if (
+        answered.current
+      ) {
         return;
       }
 
-      setTrialIndex(next);
+      answered.current =
+        true;
 
-      beginTrial(next);
-    },
-    [beginTrial, endGame]
-  );
+      setReady(false);
 
-  /*
-   * ---------------------------------------------------------
-   * ANSWER
-   * ---------------------------------------------------------
-   */
-
-  const respond = useCallback(
-    (side: Side) => {
-      if (!isReady || answeredRef.current) {
-        return;
-      }
-
-      answeredRef.current = true;
-
-      setIsReady(false);
-
-      timerRunRef.current?.stop();
-
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-
-      const rt = Date.now() - startTimeRef.current;
-
-      const correct = side === correctSide;
-
-      const diff = currentDiffRef.current;
-
-      setResponses((prev) => [
-        ...prev,
-        {
-          correct,
-          rt,
-          diff,
-        },
-      ]);
-
-      setLastRt(rt);
-
-      if (correct) {
-        setScore((prev) => prev + 10);
-
-        setFeedback({
-          text:
-            language === 'fa'
-              ? 'درست بود'
-              : 'Correct',
-          type: 'correct',
-        });
-      } else {
-        setFeedback({
-          text:
-            language === 'fa'
-              ? 'پاسخ اشتباه بود'
-              : 'Wrong answer',
-          type: 'wrong',
-        });
-      }
-
-      setDetailText(
-        language === 'fa'
-          ? `تفاوت اندازه: ${Math.round(
-              diff * 100
-            )}٪  ·  زمان پاسخ: ${rt}ms`
-          : `Size difference: ${Math.round(
-              diff * 100
-            )}%  ·  RT: ${rt}ms`
-      );
-
-      nextTrialRef.current = setTimeout(() => {
-        goToNextTrial(trialIndex);
-      }, 800);
-    },
-    [
-      correctSide,
-      goToNextTrial,
-      isReady,
-      language,
-      trialIndex,
-    ]
-  );
-
-  /*
-   * ---------------------------------------------------------
-   * TIMEOUT
-   * ---------------------------------------------------------
-   */
-
-  const handleTimeout = useCallback(
-    (index: number, diff: number) => {
-      if (answeredRef.current) {
-        return;
-      }
-
-      answeredRef.current = true;
-
-      setIsReady(false);
-
-      timerRunRef.current?.stop();
-
-      setResponses((prev) => [
-        ...prev,
+      const result: TrialResult =
         {
           correct: false,
+
           rt: 0,
-          diff,
-        },
-      ]);
 
-      setFeedback({
-        text:
-          language === 'fa'
-            ? 'زمان تمام شد'
-            : 'Time is up',
-        type: 'timeout',
-      });
+          difference:
+            currentDifference.current,
+        };
 
-      setDetailText(
-        language === 'fa'
-          ? `تفاوت اندازه: ${Math.round(
-              diff * 100
-            )}٪`
-          : `Size difference: ${Math.round(
-              diff * 100
-            )}%`
+      setFeedback(
+        'timeout'
       );
 
-      nextTrialRef.current = setTimeout(() => {
-        goToNextTrial(index);
-      }, 1000);
-    },
-    [goToNextTrial, language]
-  );
+      setResponses(
+        previous => [
+          ...previous,
+          result,
+        ]
+      );
 
-  /*
-   * ---------------------------------------------------------
-   * START / RESTART
-   * ---------------------------------------------------------
-   */
+      const currentResults = [
+        ...responses,
+        result,
+      ];
 
-  const startGame = useCallback(() => {
-    if (nextTrialRef.current) {
-      clearTimeout(nextTrialRef.current);
-    }
+      nextTrial(
+        currentResults
+      );
+    }, [
+      nextTrial,
+      responses,
+    ]);
 
-    setPhase('playing');
-    setTrialIndex(0);
-    setScore(0);
-    setResponses([]);
+  /* ================================================================
+     BACK
+  ================================================================= */
 
-    setFeedback({
-      text: '',
-      type: 'idle',
-    });
+  const handleBack =
+    useCallback(() => {
+      clearTimers();
 
-    setDetailText('');
+      if (
+        router.canGoBack()
+      ) {
+        router.back();
+      } else {
+        router.replace('/');
+      }
+    }, [
+      clearTimers,
+      router,
+    ]);
 
-    nextTrialRef.current = setTimeout(() => {
-      beginTrial(0);
-    }, 400);
-  }, [beginTrial]);
+  /* ================================================================
+     RESULTS
+  ================================================================= */
 
-  const restartGame = useCallback(() => {
-    timerRunRef.current?.stop();
+  const correctCount =
+    responses.filter(
+      item =>
+        item.correct
+    ).length;
 
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    if (nextTrialRef.current) {
-      clearTimeout(nextTrialRef.current);
-    }
-
-    setPhase('playing');
-    setTrialIndex(0);
-    setScore(0);
-    setResponses([]);
-
-    setFeedback({
-      text: '',
-      type: 'idle',
-    });
-
-    setDetailText('');
-
-    setLastRt(null);
-
-    nextTrialRef.current = setTimeout(() => {
-      beginTrial(0);
-    }, 400);
-  }, [beginTrial]);
-
-  /*
-   * ---------------------------------------------------------
-   * RESULTS
-   * ---------------------------------------------------------
-   */
-
-  const total = responses.length;
-
-  const corrects = responses.filter(
-    (r) => r.correct
-  ).length;
+  const wrongCount =
+    responses.length -
+    correctCount;
 
   const accuracy =
-    total > 0
-      ? (corrects / total) * 100
+    responses.length
+      ? Math.round(
+          (correctCount /
+            responses.length) *
+            100
+        )
       : 0;
 
-  const validRts = responses
-    .filter((r) => r.correct && r.rt > 0)
-    .map((r) => r.rt);
+  const validTimes =
+    responses
+      .filter(
+        item =>
+          item.correct &&
+          item.rt > 0
+      )
+      .map(
+        item =>
+          item.rt
+      );
 
-  const avgRt =
-    validRts.length > 0
-      ? validRts.reduce(
-          (a, b) => a + b,
-          0
-        ) / validRts.length
+  const averageTime =
+    validTimes.length
+      ? Math.round(
+          validTimes.reduce(
+            (
+              sum,
+              value
+            ) =>
+              sum + value,
+            0
+          ) /
+            validTimes.length
+        )
       : 0;
 
-  const getThresholdLabel = () => {
-    const buckets: Record<
-      string,
-      {
-        correct: number;
-        total: number;
-      }
-    > = {};
+  const resultTitle =
+    accuracy >= 85
+      ? text.excellent
+      : accuracy >= 60
+        ? text.good
+        : text.improve;
 
-    responses.forEach((r) => {
-      const bucketStart =
-        Math.floor(
-          (r.diff * 100) / 5
-        ) * 5;
+  const nextConfig =
+    getConfig(level);
 
-      const key = `${bucketStart}`;
+  const nextLevelName =
+    language === 'fa'
+      ? nextConfig.nameFa
+      : nextConfig.nameEn;
 
-      if (!buckets[key]) {
-        buckets[key] = {
-          correct: 0,
-          total: 0,
-        };
-      }
+  /* ================================================================
+     INTRO SCREEN
+  ================================================================= */
 
-      buckets[key].total += 1;
-
-      if (r.correct) {
-        buckets[key].correct += 1;
-      }
-    });
-
-    const sortedKeys = Object.keys(buckets)
-      .map(Number)
-      .sort((a, b) => a - b);
-
-    for (const key of sortedKeys) {
-      const bucket = buckets[String(key)];
-
-      const acc =
-        (bucket.correct /
-          bucket.total) *
-        100;
-
-      if (acc >= 75) {
-        return `${key}–${key + 5}%`;
-      }
-    }
-
-    return language === 'fa'
-      ? 'داده کافی نیست'
-      : 'Not enough data';
-  };
-
-  /*
-   * ---------------------------------------------------------
-   * TIMER
-   * ---------------------------------------------------------
-   */
-
-  const timerWidth =
-    timerAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: ['0%', '100%'],
-    });
-
-  const timerColor =
-    timerAnim.interpolate({
-      inputRange: [
-        0,
-        0.3,
-        0.301,
-        1,
-      ],
-      outputRange: [
-        colors.error,
-        colors.error,
-        colors.primary,
-        colors.primary,
-      ],
-    });
-
-  /*
-   * ---------------------------------------------------------
-   * CIRCLE SIZE
-   * ---------------------------------------------------------
-   */
-
-  const leftDiameter =
-    leftSize * 2 * scale;
-
-  const rightDiameter =
-    rightSize * 2 * scale;
-
-  /*
-   * =========================================================
-   * INTRO
-   * =========================================================
-   */
-
-  if (phase === 'intro') {
+  if (
+    phase === 'intro'
+  ) {
     return (
       <View
         style={[
@@ -631,336 +1210,446 @@ export default function SizeDiscriminationScreen() {
           },
         ]}
       >
-        {/* FIXED HEADER */}
-
         <View
           style={[
-            styles.fixedHeader,
+            styles.header,
             {
-              backgroundColor:
-                colors.background,
               borderBottomColor:
                 colors.border,
             },
           ]}
         >
           <TouchableOpacity
-            onPress={handleIntroBack}
-            activeOpacity={0.7}
+            onPress={
+              handleBack
+            }
+            activeOpacity={
+              0.75
+            }
             style={[
-              styles.fixedBackButton,
+              styles.backButton,
               {
                 backgroundColor:
                   colors.surface,
+
+                borderColor:
+                  colors.border,
               },
             ]}
           >
             <ArrowLeft
-              size={22}
-              color={colors.text}
-              strokeWidth={2.2}
+              size={21}
+              color={
+                colors.text
+              }
+              strokeWidth={
+                2.5
+              }
             />
           </TouchableOpacity>
 
           <View
-            style={styles.fixedHeaderTitle}
+            style={
+              styles.headerText
+            }
           >
-            {/* <Target
-              size={20}
-              color={colors.primary}
-            />
-
             <Text
-              allowFontScaling={false}
               style={[
-                styles.fixedHeaderTitleText,
+                styles.headerTitle,
                 {
-                  color: colors.text,
+                  color:
+                    colors.text,
+
+                  textAlign:
+                    isRTL
+                      ? 'right'
+                      : 'left',
                 },
               ]}
             >
-              {language === 'fa'
-                ? 'تشخیص اندازه'
-                : 'Size Discrimination'}
-            </Text> */}
-          </View>
+              {text.title}
+            </Text>
 
-          <View
-            style={
-              styles.fixedHeaderSpacer
-            }
-          />
+            <Text
+              style={[
+                styles.headerSubtitle,
+                {
+                  color:
+                    colors.textSecondary,
+
+                  textAlign:
+                    isRTL
+                      ? 'right'
+                      : 'left',
+                },
+              ]}
+            >
+              {
+                text.subtitle
+              }
+            </Text>
+          </View>
         </View>
 
         <ScrollView
-          style={styles.container}
+          style={
+            styles.scroll
+          }
           contentContainerStyle={
-            styles.scrollContent
+            styles.introContent
           }
           showsVerticalScrollIndicator={
             false
           }
         >
           <View
-            style={styles.introHeader}
+            style={[
+              styles.heroIcon,
+              {
+                backgroundColor:
+                  colors.primary +
+                  '15',
+              },
+            ]}
+          >
+            <Target
+              size={44}
+              color={
+                colors.primary
+              }
+            />
+          </View>
+
+          <Text
+            style={[
+              styles.heroTitle,
+              {
+                color:
+                  colors.text,
+              },
+            ]}
+          >
+            {text.title}
+          </Text>
+
+          <Text
+            style={[
+              styles.heroDescription,
+              {
+                color:
+                  colors.textSecondary,
+              },
+            ]}
+          >
+            {
+              text.startDescription
+            }
+          </Text>
+
+          {/* Preview */}
+
+          <View
+            style={[
+              styles.previewCard,
+              {
+                backgroundColor:
+                  colors.surface,
+
+                borderColor:
+                  colors.border,
+              },
+            ]}
           >
             <View
-              style={[
-                styles.iconCircle,
-                {
-                  backgroundColor:
-                    colors.primary +
-                    '20',
-                },
-              ]}
+              style={
+                styles.previewArea
+              }
             >
-              <Target
-                size={32}
-                color={colors.primary}
+              <View
+                style={[
+                  styles.previewCircle,
+                  {
+                    width: 76,
+                    height: 76,
+
+                    backgroundColor:
+                      colors.primary,
+                  },
+                ]}
+              />
+
+              <View
+                style={[
+                  styles.previewCircle,
+                  {
+                    width: 55,
+                    height: 55,
+
+                    backgroundColor:
+                      colors.primary +
+                      '55',
+                  },
+                ]}
               />
             </View>
 
             <Text
-              allowFontScaling={false}
               style={[
-                styles.title,
-                {
-                  color: colors.text,
-                },
-              ]}
-            >
-              {language === 'fa'
-                ? 'تشخیص اندازه'
-                : 'Size Discrimination'}
-            </Text>
-
-            <Text
-              allowFontScaling={false}
-              style={[
-                styles.subtitle,
+                styles.previewText,
                 {
                   color:
                     colors.textSecondary,
                 },
               ]}
             >
-              {language === 'fa'
-                ? 'کدام دایره بزرگ‌تر است؟'
-                : 'Which circle is bigger?'}
+              {
+                text.instruction
+              }
             </Text>
           </View>
 
+          {/* Adaptive */}
+
           <View
             style={[
-              styles.instructionCard,
+              styles.adaptiveCard,
               {
                 backgroundColor:
                   colors.surface,
+
                 borderColor:
                   colors.border,
               },
             ]}
           >
-            <Text
-              allowFontScaling={false}
+            <View
               style={[
-                styles.instructionTitle,
+                styles.adaptiveIcon,
                 {
-                  color: colors.text,
-                  textAlign:
-                    textAlignStyle,
+                  backgroundColor:
+                    colors.primary +
+                    '15',
                 },
               ]}
             >
-              {language === 'fa'
-                ? 'راهنما'
-                : 'How to play'}
-            </Text>
+              <Sparkles
+                size={23}
+                color={
+                  colors.primary
+                }
+              />
+            </View>
 
-            {(language === 'fa'
-              ? [
-                  'دو دایره قرمز و آبی روی صفحه نمایش داده می‌شود.',
-                  'روی دایره‌ای که بزرگ‌تر است ضربه بزن.',
-                  'برای هر مرحله فقط ۸ ثانیه فرصت داری.',
-                  '۲۰ مرحله پشت‌سرهم اجرا می‌شود و در پایان آستانه تشخیص تو محاسبه می‌شود.',
-                ]
-              : [
-                  'Two circles, red and blue, appear on screen.',
-                  'Tap the circle that looks bigger.',
-                  'You have 8 seconds for each trial.',
-                  '20 trials in a row, then we estimate your discrimination threshold.',
-                ]
-            ).map((line, index) => (
-              <View
-                key={index}
+            <View
+              style={
+                styles.adaptiveText
+              }
+            >
+              <Text
                 style={[
-                  styles.instructionRow,
+                  styles.adaptiveTitle,
                   {
-                    flexDirection:
+                    color:
+                      colors.text,
+
+                    textAlign:
                       isRTL
-                        ? 'row-reverse'
-                        : 'row',
+                        ? 'right'
+                        : 'left',
                   },
                 ]}
               >
-                <View
-                  style={[
-                    styles.instructionDot,
-                    {
-                      backgroundColor:
-                        colors.primary,
-                    },
-                  ]}
-                />
+                {
+                  text.adaptive
+                }
+              </Text>
 
-                <Text
-                  allowFontScaling={false}
-                  style={[
-                    styles.instructionText,
-                    {
-                      color:
-                        colors.textSecondary,
-                      textAlign:
-                        textAlignStyle,
-                    },
-                  ]}
-                >
-                  {line}
-                </Text>
-              </View>
-            ))}
+              <Text
+                style={[
+                  styles.adaptiveDescription,
+                  {
+                    color:
+                      colors.textSecondary,
+
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {
+                  text.adaptiveDescription
+                }
+              </Text>
+            </View>
           </View>
+
+          {/* Current Level */}
 
           <View
             style={[
-              styles.statsPreview,
+              styles.levelCard,
               {
-                flexDirection:
-                  isRTL
-                    ? 'row-reverse'
-                    : 'row',
+                backgroundColor:
+                  colors.primary +
+                  '0D',
+
+                borderColor:
+                  colors.primary +
+                  '25',
               },
             ]}
           >
-            <View
-              style={[
-                styles.statPreviewItem,
-                {
-                  backgroundColor:
-                    colors.surface,
-                  borderColor:
-                    colors.border,
-                },
-              ]}
-            >
-              <Target
-                size={18}
-                color={colors.primary}
-              />
-
+            <View>
               <Text
-                allowFontScaling={false}
                 style={[
-                  styles.statPreviewText,
+                  styles.levelLabel,
                   {
-                    color: colors.text,
+                    color:
+                      colors.textSecondary,
+
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
                   },
                 ]}
               >
-                {TOTAL_TRIALS}{' '}
-                {language === 'fa'
-                  ? 'مرحله'
-                  : 'trials'}
-              </Text>
-            </View>
-
-            <View
-              style={[
-                styles.statPreviewItem,
                 {
-                  backgroundColor:
-                    colors.surface,
-                  borderColor:
-                    colors.border,
-                },
-              ]}
-            >
-              <Clock
-                size={18}
-                color={colors.primary}
-              />
+                  text.currentLevel
+                }
+              </Text>
 
               <Text
-                allowFontScaling={false}
                 style={[
-                  styles.statPreviewText,
+                  styles.levelValue,
                   {
-                    color: colors.text,
+                    color:
+                      colors.primary,
+
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
                   },
                 ]}
               >
-                {language === 'fa'
-                  ? '۸ ثانیه'
-                  : '8 seconds'}
+                {levelName}
               </Text>
             </View>
 
+            <TrendingUp
+              size={25}
+              color={
+                colors.primary
+              }
+            />
+          </View>
+
+          {previousAccuracy !==
+            null && (
             <View
               style={[
-                styles.statPreviewItem,
+                styles.previousCard,
                 {
                   backgroundColor:
                     colors.surface,
+
                   borderColor:
                     colors.border,
                 },
               ]}
             >
               <Trophy
-                size={18}
-                color={colors.warning}
+                size={23}
+                color={
+                  colors.primary
+                }
               />
 
-              <Text
-                allowFontScaling={false}
-                style={[
-                  styles.statPreviewText,
-                  {
-                    color: colors.text,
-                  },
-                ]}
+              <View
+                style={
+                  styles.previousText
+                }
               >
-                +10{' '}
-                {language === 'fa'
-                  ? 'به ازای هر پاسخ درست'
-                  : 'per correct'}
-              </Text>
+                <Text
+                  style={[
+                    styles.previousLabel,
+                    {
+                      color:
+                        colors.textSecondary,
+
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
+                  ]}
+                >
+                  {
+                    text.accuracy
+                  }
+                </Text>
+
+                <Text
+                  style={[
+                    styles.previousValue,
+                    {
+                      color:
+                        colors.text,
+                    },
+                  ]}
+                >
+                  {
+                    previousAccuracy
+                  }
+                  %
+                </Text>
+              </View>
             </View>
-          </View>
+          )}
+
+          <Text
+            style={[
+              styles.noSelection,
+              {
+                color:
+                  colors.textSecondary,
+              },
+            ]}
+          >
+            {
+              text.noSelection
+            }
+          </Text>
 
           <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={startGame}
+            activeOpacity={
+              0.85
+            }
+            onPress={
+              startGame
+            }
             style={[
-              styles.startButton,
+              styles.primaryButton,
               {
                 backgroundColor:
                   colors.primary,
               },
             ]}
           >
-            <Sparkles
-              size={18}
-              color="#fff"
+            <Zap
+              size={20}
+              color="#FFFFFF"
             />
 
             <Text
-              allowFontScaling={false}
-              style={styles.startButtonText}
+              style={
+                styles.primaryButtonText
+              }
             >
-              {language === 'fa'
-                ? 'شروع تست'
-                : 'Start Test'}
+              {text.start}
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -968,13 +1657,13 @@ export default function SizeDiscriminationScreen() {
     );
   }
 
-  /*
-   * =========================================================
-   * RESULT
-   * =========================================================
-   */
+  /* ================================================================
+     RESULT SCREEN
+  ================================================================= */
 
-  if (phase === 'result') {
+  if (
+    phase === 'result'
+  ) {
     return (
       <View
         style={[
@@ -985,353 +1674,617 @@ export default function SizeDiscriminationScreen() {
           },
         ]}
       >
-        {/* FIXED HEADER */}
-
         <View
           style={[
-            styles.fixedHeader,
+            styles.header,
             {
-              backgroundColor:
-                colors.background,
               borderBottomColor:
                 colors.border,
             },
           ]}
         >
           <TouchableOpacity
-            onPress={backToIntro}
-            activeOpacity={0.7}
+            onPress={
+              handleBack
+            }
+            activeOpacity={
+              0.75
+            }
             style={[
-              styles.fixedBackButton,
+              styles.backButton,
               {
                 backgroundColor:
                   colors.surface,
+
+                borderColor:
+                  colors.border,
               },
             ]}
           >
             <ArrowLeft
-              size={22}
-              color={colors.text}
-              strokeWidth={2.2}
+              size={21}
+              color={
+                colors.text
+              }
+              strokeWidth={
+                2.5
+              }
             />
           </TouchableOpacity>
 
           <View
-            style={styles.fixedHeaderTitle}
+            style={
+              styles.headerText
+            }
           >
-            <Trophy
-              size={20}
-              color={colors.primary}
-            />
-
             <Text
-              allowFontScaling={false}
               style={[
-                styles.fixedHeaderTitleText,
+                styles.headerTitle,
                 {
-                  color: colors.text,
+                  color:
+                    colors.text,
+
+                  textAlign:
+                    isRTL
+                      ? 'right'
+                      : 'left',
                 },
               ]}
             >
-              {language === 'fa'
-                ? 'نتیجه آزمون'
-                : 'Test Result'}
+              {
+                text.completed
+              }
+            </Text>
+
+            <Text
+              style={[
+                styles.headerSubtitle,
+                {
+                  color:
+                    colors.textSecondary,
+
+                  textAlign:
+                    isRTL
+                      ? 'right'
+                      : 'left',
+                },
+              ]}
+            >
+              {text.title}
             </Text>
           </View>
-
-          <View
-            style={
-              styles.fixedHeaderSpacer
-            }
-          />
         </View>
 
         <ScrollView
-          style={styles.container}
+          style={
+            styles.scroll
+          }
           contentContainerStyle={
-            styles.resultScrollContent
+            styles.resultContent
           }
           showsVerticalScrollIndicator={
             false
           }
         >
           <View
-            style={styles.resultOverlay}
+            style={[
+              styles.resultIcon,
+              {
+                backgroundColor:
+                  colors.primary +
+                  '15',
+              },
+            ]}
           >
-            <View
+            <Trophy
+              size={48}
+              color={
+                colors.primary
+              }
+            />
+          </View>
+
+          <Text
+            style={[
+              styles.resultTitle,
+              {
+                color:
+                  colors.text,
+              },
+            ]}
+          >
+            {resultTitle}
+          </Text>
+
+          <Text
+            style={[
+              styles.resultSubtitle,
+              {
+                color:
+                  colors.textSecondary,
+              },
+            ]}
+          >
+            {
+              text.completed
+            }
+          </Text>
+
+          {/* SCORE */}
+
+          <View
+            style={[
+              styles.scoreCard,
+              {
+                backgroundColor:
+                  colors.surface,
+
+                borderColor:
+                  colors.border,
+              },
+            ]}
+          >
+            <Text
               style={[
-                styles.resultCard,
+                styles.scoreValue,
                 {
-                  backgroundColor:
-                    colors.surface,
+                  color:
+                    colors.primary,
                 },
               ]}
             >
-              <Trophy
-                size={42}
-                color={colors.primary}
+              {score}
+            </Text>
+
+            <Text
+              style={[
+                styles.scoreLabel,
+                {
+                  color:
+                    colors.textSecondary,
+                },
+              ]}
+            >
+              {text.score}
+            </Text>
+          </View>
+
+          {/* STATS */}
+
+          <View
+            style={
+              styles.statsRow
+            }
+          >
+            <View
+              style={[
+                styles.statCard,
+                {
+                  backgroundColor:
+                    colors.surface,
+
+                  borderColor:
+                    colors.border,
+                },
+              ]}
+            >
+              <CheckCircle
+                size={23}
+                color={
+                  colors.primary
+                }
               />
 
               <Text
-                allowFontScaling={false}
                 style={[
-                  styles.resultTitle,
+                  styles.statValue,
                   {
-                    color: colors.text,
+                    color:
+                      colors.text,
                   },
                 ]}
               >
-                {language === 'fa'
-                  ? 'آزمون کامل شد!'
-                  : 'Test complete!'}
-              </Text>
-
-              <View
-                style={
-                  styles.resultStatsGrid
+                {
+                  correctCount
                 }
-              >
-                <View
-                  style={[
-                    styles.resultStatBox,
-                    {
-                      backgroundColor:
-                        colors.background,
-                      borderColor:
-                        colors.border,
-                    },
-                  ]}
-                >
-                  <Text
-                    allowFontScaling={false}
-                    style={[
-                      styles.resultStatValue,
-                      {
-                        color:
-                          colors.primary,
-                      },
-                    ]}
-                  >
-                    {corrects}/{total}
-                  </Text>
-
-                  <Text
-                    allowFontScaling={false}
-                    style={[
-                      styles.resultStatLabel,
-                      {
-                        color:
-                          colors.textSecondary,
-                      },
-                    ]}
-                  >
-                    {language === 'fa'
-                      ? 'پاسخ درست'
-                      : 'Correct'}
-                  </Text>
-                </View>
-
-                <View
-                  style={[
-                    styles.resultStatBox,
-                    {
-                      backgroundColor:
-                        colors.background,
-                      borderColor:
-                        colors.border,
-                    },
-                  ]}
-                >
-                  <Text
-                    allowFontScaling={false}
-                    style={[
-                      styles.resultStatValue,
-                      {
-                        color:
-                          colors.primary,
-                      },
-                    ]}
-                  >
-                    {accuracy.toFixed(0)}٪
-                  </Text>
-
-                  <Text
-                    allowFontScaling={false}
-                    style={[
-                      styles.resultStatLabel,
-                      {
-                        color:
-                          colors.textSecondary,
-                      },
-                    ]}
-                  >
-                    {language === 'fa'
-                      ? 'دقت'
-                      : 'Accuracy'}
-                  </Text>
-                </View>
-
-                <View
-                  style={[
-                    styles.resultStatBox,
-                    {
-                      backgroundColor:
-                        colors.background,
-                      borderColor:
-                        colors.border,
-                    },
-                  ]}
-                >
-                  <Text
-                    allowFontScaling={false}
-                    style={[
-                      styles.resultStatValue,
-                      {
-                        color:
-                          colors.primary,
-                      },
-                    ]}
-                  >
-                    {avgRt.toFixed(0)}
-                  </Text>
-
-                  <Text
-                    allowFontScaling={false}
-                    style={[
-                      styles.resultStatLabel,
-                      {
-                        color:
-                          colors.textSecondary,
-                      },
-                    ]}
-                  >
-                    {language === 'fa'
-                      ? 'میانگین زمان (ms)'
-                      : 'Avg RT (ms)'}
-                  </Text>
-                </View>
-
-                <View
-                  style={[
-                    styles.resultStatBox,
-                    {
-                      backgroundColor:
-                        colors.background,
-                      borderColor:
-                        colors.border,
-                    },
-                  ]}
-                >
-                  <Text
-                    allowFontScaling={false}
-                    style={[
-                      styles.resultStatValue,
-                      {
-                        color:
-                          colors.primary,
-                      },
-                    ]}
-                  >
-                    {getThresholdLabel()}
-                  </Text>
-
-                  <Text
-                    allowFontScaling={false}
-                    style={[
-                      styles.resultStatLabel,
-                      {
-                        color:
-                          colors.textSecondary,
-                      },
-                    ]}
-                  >
-                    {language === 'fa'
-                      ? 'آستانه تشخیص'
-                      : 'Threshold'}
-                  </Text>
-                </View>
-              </View>
+              </Text>
 
               <Text
-                allowFontScaling={false}
                 style={[
-                  styles.finalScore,
+                  styles.statLabel,
                   {
-                    color: colors.primary,
+                    color:
+                      colors.textSecondary,
                   },
                 ]}
               >
-                {score}{' '}
-                {language === 'fa'
-                  ? 'امتیاز'
-                  : 'Points'}
+                {
+                  text.correct
+                }
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.statCard,
+                {
+                  backgroundColor:
+                    colors.surface,
+
+                  borderColor:
+                    colors.border,
+                },
+              ]}
+            >
+              <XCircle
+                size={23}
+                color="#EF4444"
+              />
+
+              <Text
+                style={[
+                  styles.statValue,
+                  {
+                    color:
+                      colors.text,
+                  },
+                ]}
+              >
+                {
+                  wrongCount
+                }
               </Text>
 
-              <TouchableOpacity
-                onPress={restartGame}
-                activeOpacity={0.85}
+              <Text
                 style={[
-                  styles.resultButton,
+                  styles.statLabel,
                   {
-                    backgroundColor:
-                      colors.primary,
+                    color:
+                      colors.textSecondary,
                   },
                 ]}
               >
-                <RotateCcw
-                  size={16}
-                  color="#fff"
-                />
-
-                <Text
-                  allowFontScaling={false}
-                  style={
-                    styles.resultButtonText
-                  }
-                >
-                  {language === 'fa'
-                    ? 'دوباره تلاش کن'
-                    : 'Try Again'}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={backToIntro}
-                activeOpacity={0.85}
-                style={[
-                  styles.secondaryButton,
-                  {
-                    borderColor:
-                      colors.border,
-                  },
-                ]}
-              >
-                <Text
-                  allowFontScaling={false}
-                  style={[
-                    styles.secondaryButtonText,
-                    {
-                      color: colors.text,
-                    },
-                  ]}
-                >
-                  {language === 'fa'
-                    ? 'بازگشت به راهنما'
-                    : 'Back to Instructions'}
-                </Text>
-              </TouchableOpacity>
+                {
+                  text.wrong
+                }
+              </Text>
             </View>
           </View>
+
+          {/* ACCURACY */}
+
+          <View
+            style={[
+              styles.metricCard,
+              {
+                backgroundColor:
+                  colors.surface,
+
+                borderColor:
+                  colors.border,
+              },
+            ]}
+          >
+            <Target
+              size={23}
+              color={
+                colors.primary
+              }
+            />
+
+            <View
+              style={
+                styles.metricText
+              }
+            >
+              <Text
+                style={[
+                  styles.metricLabel,
+                  {
+                    color:
+                      colors.textSecondary,
+
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {
+                  text.accuracy
+                }
+              </Text>
+
+              <Text
+                style={[
+                  styles.metricValue,
+                  {
+                    color:
+                      colors.text,
+                  },
+                ]}
+              >
+                {accuracy}%
+              </Text>
+            </View>
+          </View>
+
+          {/* RESPONSE TIME */}
+
+          <View
+            style={[
+              styles.metricCard,
+              {
+                backgroundColor:
+                  colors.surface,
+
+                borderColor:
+                  colors.border,
+              },
+            ]}
+          >
+            <Clock
+              size={23}
+              color={
+                colors.primary
+              }
+            />
+
+            <View
+              style={
+                styles.metricText
+              }
+            >
+              <Text
+                style={[
+                  styles.metricLabel,
+                  {
+                    color:
+                      colors.textSecondary,
+
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {
+                  text.averageTime
+                }
+              </Text>
+
+              <Text
+                style={[
+                  styles.metricValue,
+                  {
+                    color:
+                      colors.text,
+                  },
+                ]}
+              >
+                {averageTime}{' '}
+                {
+                  text.milliseconds
+                }
+              </Text>
+            </View>
+          </View>
+
+          {/* ADAPTIVE */}
+
+          <View
+            style={[
+              styles.adaptiveResult,
+              {
+                backgroundColor:
+                  colors.surface,
+
+                borderColor:
+                  colors.border,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.adaptiveResultIcon,
+                {
+                  backgroundColor:
+                    colors.primary +
+                    '15',
+                },
+              ]}
+            >
+              <Sparkles
+                size={22}
+                color={
+                  colors.primary
+                }
+              />
+            </View>
+
+            <View
+              style={
+                styles.adaptiveResultText
+              }
+            >
+              <Text
+                style={[
+                  styles.adaptiveResultTitle,
+                  {
+                    color:
+                      colors.text,
+
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {
+                  text.adaptive
+                }
+              </Text>
+
+              <Text
+                style={[
+                  styles.adaptiveResultDescription,
+                  {
+                    color:
+                      colors.textSecondary,
+
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {adaptiveResult ===
+                'up'
+                  ? text.levelUp
+                  : adaptiveResult ===
+                      'down'
+                    ? text.levelDown
+                    : text.levelSame}
+              </Text>
+            </View>
+          </View>
+
+          {/* NEXT LEVEL */}
+
+          <View
+            style={[
+              styles.nextLevel,
+              {
+                backgroundColor:
+                  colors.primary +
+                  '0D',
+
+                borderColor:
+                  colors.primary +
+                  '25',
+              },
+            ]}
+          >
+            <View>
+              <Text
+                style={[
+                  styles.nextLevelLabel,
+                  {
+                    color:
+                      colors.textSecondary,
+
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {
+                  text.nextLevel
+                }
+              </Text>
+
+              <Text
+                style={[
+                  styles.nextLevelValue,
+                  {
+                    color:
+                      colors.primary,
+
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {
+                  nextLevelName
+                }
+              </Text>
+            </View>
+
+            <TrendingUp
+              size={25}
+              color={
+                colors.primary
+              }
+            />
+          </View>
+
+          <TouchableOpacity
+            activeOpacity={
+              0.85
+            }
+            onPress={
+              startGame
+            }
+            style={[
+              styles.primaryButton,
+              {
+                backgroundColor:
+                  colors.primary,
+              },
+            ]}
+          >
+            <RotateCcw
+              size={20}
+              color="#FFFFFF"
+            />
+
+            <Text
+              style={
+                styles.primaryButtonText
+              }
+            >
+              {
+                text.playAgain
+              }
+            </Text>
+          </TouchableOpacity>
+
+          <View
+            style={
+              styles.bottomSpace
+            }
+          />
         </ScrollView>
       </View>
     );
   }
 
-  /*
-   * =========================================================
-   * PLAYING
-   * =========================================================
-   */
+  /* ================================================================
+     GAME SCREEN
+  ================================================================= */
+
+  const leftDiameter =
+    Math.min(
+      leftSize,
+      150
+    );
+
+  const rightDiameter =
+    Math.min(
+      rightSize,
+      150
+    );
+
+  const timerWidth =
+    timerAnimation.interpolate(
+      {
+        inputRange: [0, 1],
+
+        outputRange: [
+          '0%',
+          '100%',
+        ],
+      }
+    );
 
   return (
     <View
@@ -1343,120 +2296,225 @@ export default function SizeDiscriminationScreen() {
         },
       ]}
     >
-      {/* FIXED GAME HEADER */}
+      {/* HEADER */}
 
       <View
         style={[
-          styles.fixedHeader,
+          styles.header,
           {
-            backgroundColor:
-              colors.background,
             borderBottomColor:
               colors.border,
           },
         ]}
       >
-        {/* ALWAYS LEFT */}
-
         <TouchableOpacity
-          onPress={backToIntro}
-          activeOpacity={0.7}
+          onPress={
+            handleBack
+          }
+          activeOpacity={
+            0.75
+          }
           style={[
-            styles.fixedBackButton,
+            styles.backButton,
             {
               backgroundColor:
                 colors.surface,
+
+              borderColor:
+                colors.border,
             },
           ]}
         >
           <ArrowLeft
-            size={22}
-            color={colors.text}
-            strokeWidth={2.2}
+            size={21}
+            color={
+              colors.text
+            }
+            strokeWidth={
+              2.5
+            }
           />
         </TouchableOpacity>
 
-        {/* CENTER TITLE */}
-
         <View
-          style={styles.fixedHeaderTitle}
+          style={
+            styles.headerText
+          }
         >
-          <Target
-            size={20}
-            color={colors.primary}
-          />
-
           <Text
-            allowFontScaling={false}
             style={[
-              styles.fixedHeaderTitleText,
+              styles.headerTitle,
               {
-                color: colors.text,
+                color:
+                  colors.text,
+
+                textAlign:
+                  isRTL
+                    ? 'right'
+                    : 'left',
               },
             ]}
           >
-            {language === 'fa'
-              ? 'تشخیص اندازه'
-              : 'Size Discrimination'}
+            {text.title}
+          </Text>
+
+          <Text
+            style={[
+              styles.headerSubtitle,
+              {
+                color:
+                  colors.textSecondary,
+
+                textAlign:
+                  isRTL
+                    ? 'right'
+                    : 'left',
+              },
+            ]}
+          >
+            {levelName}
           </Text>
         </View>
-
-        <View
-          style={styles.fixedHeaderSpacer}
-        />
       </View>
 
-      {/* GAME STATS */}
+      {/* HUD */}
 
       <View
         style={[
-          styles.gameStatsBar,
+          styles.gameHud,
           {
-            flexDirection:
-              isRTL
-                ? 'row-reverse'
-                : 'row',
+            backgroundColor:
+              colors.surface,
+
+            borderColor:
+              colors.border,
           },
         ]}
       >
-        <View style={styles.stat}>
-          <Target
+        <View
+          style={
+            styles.hudItem
+          }
+        >
+          <Zap
             size={18}
-            color={colors.primary}
+            color={
+              colors.primary
+            }
           />
 
+          <View>
+            <Text
+              style={[
+                styles.hudLabel,
+                {
+                  color:
+                    colors.textSecondary,
+                },
+              ]}
+            >
+              {text.score}
+            </Text>
+
+            <Text
+              style={[
+                styles.hudValue,
+                {
+                  color:
+                    colors.text,
+                },
+              ]}
+            >
+              {score}
+            </Text>
+          </View>
+        </View>
+
+        <View
+          style={
+            styles.progressContainer
+          }
+        >
           <Text
-            allowFontScaling={false}
             style={[
-              styles.statText,
+              styles.progressText,
               {
-                color: colors.text,
+                color:
+                  colors.textSecondary,
               },
             ]}
           >
+            {text.question}{' '}
             {trialIndex + 1}/
             {TOTAL_TRIALS}
           </Text>
         </View>
 
-        <View style={styles.stat}>
-          <Trophy
+        <View
+          style={
+            styles.hudItem
+          }
+        >
+          <Clock
             size={18}
-            color={colors.warning}
+            color={
+              colors.primary
+            }
           />
 
           <Text
-            allowFontScaling={false}
             style={[
-              styles.statText,
+              styles.levelHud,
               {
-                color: colors.text,
+                color:
+                  colors.text,
               },
             ]}
           >
-            {score}
+            {level}
           </Text>
         </View>
+      </View>
+
+      {/* INSTRUCTION */}
+
+      <View
+        style={[
+          styles.instructionCard,
+          {
+            backgroundColor:
+              colors.surface,
+
+            borderColor:
+              colors.border,
+          },
+        ]}
+      >
+        <Target
+          size={20}
+          color={
+            colors.primary
+          }
+        />
+
+        <Text
+          style={[
+            styles.instructionText,
+            {
+              color:
+                colors.text,
+
+              textAlign:
+                isRTL
+                  ? 'right'
+                  : 'left',
+            },
+          ]}
+        >
+          {
+            text.instruction
+          }
+        </Text>
       </View>
 
       {/* TIMER */}
@@ -1472,717 +2530,1146 @@ export default function SizeDiscriminationScreen() {
       >
         <Animated.View
           style={[
-            styles.timerFill,
+            styles.timerProgress,
             {
-              width: timerWidth,
+              width:
+                timerWidth,
+
               backgroundColor:
-                timerColor,
+                colors.primary,
             },
           ]}
         />
       </View>
 
-      <Text
-        allowFontScaling={false}
-        style={[
-          styles.infoText,
-          {
-            color: colors.text,
-          },
-        ]}
-      >
-        {language === 'fa'
-          ? 'کدام دایره بزرگ‌تر است؟'
-          : 'Which circle is bigger?'}
-      </Text>
-
       {/* PLAY AREA */}
 
       <View
-        style={[
-          styles.playArea,
-          {
-            width: playAreaWidth,
-            height: playAreaHeight,
-            backgroundColor: isDark
-              ? 'rgba(255,255,255,0.03)'
-              : 'rgba(15,23,42,0.02)',
-            borderColor:
-              colors.border,
-          },
-        ]}
+        style={
+          styles.playAreaWrapper
+        }
+        onLayout={event => {
+          const {
+            width: areaWidth,
+            height: areaHeight,
+          } =
+            event.nativeEvent.layout;
+
+          setPlayAreaWidth(
+            areaWidth
+          );
+
+          setPlayAreaHeight(
+            areaHeight
+          );
+        }}
       >
-        {/* LEFT CIRCLE */}
-
-        <View
+        <Animated.View
           style={[
-            styles.circleColumn,
+            styles.circleRow,
             {
-              marginRight:
-                spacing / 2,
+              transform: [
+                {
+                  scale:
+                    pulse.interpolate(
+                      {
+                        inputRange: [
+                          0,
+                          1,
+                        ],
+
+                        outputRange: [
+                          0.85,
+                          1,
+                        ],
+                      }
+                    ),
+                },
+              ],
             },
           ]}
         >
-          <Animated.View
-            style={{
-              transform: [
-                {
-                  scale: circlePulse,
-                },
-              ],
-            }}
-          >
-            <TouchableOpacity
-              activeOpacity={0.85}
-              disabled={!isReady}
-              hitSlop={{
-                top: 14,
-                bottom: 14,
-                left: 14,
-                right: 14,
-              }}
-              onPress={() =>
-                respond('left')
-              }
-            >
-              <LinearGradient
-                colors={[
-                  '#FF8A8A',
-                  '#E53935',
-                  '#B71C1C',
-                ]}
-                style={[
-                  styles.circle,
-                  {
-                    width:
-                      leftDiameter,
-                    height:
-                      leftDiameter,
-                    borderRadius:
-                      leftDiameter / 2,
-                  },
-                ]}
-              />
-            </TouchableOpacity>
-          </Animated.View>
-
-          <Text
-            allowFontScaling={false}
+          <TouchableOpacity
+            activeOpacity={
+              0.78
+            }
+            disabled={!ready}
+            onPress={() =>
+              answer('left')
+            }
             style={[
-              styles.circleLabel,
+              styles.choiceArea,
               {
-                color:
-                  colors.textSecondary,
+                width:
+                  Math.max(
+                    leftDiameter +
+                      70,
+                    130
+                  ),
+
+                height:
+                  Math.max(
+                    leftDiameter +
+                      70,
+                    180
+                  ),
               },
             ]}
           >
-            {language === 'fa'
-              ? 'چپ'
-              : 'Left'}
-          </Text>
-        </View>
-
-        {/* RIGHT CIRCLE */}
-
-        <View
-          style={[
-            styles.circleColumn,
-            {
-              marginLeft:
-                spacing / 2,
-            },
-          ]}
-        >
-          <Animated.View
-            style={{
-              transform: [
+            <View
+              style={[
+                styles.circle,
                 {
-                  scale: circlePulse,
-                },
-              ],
-            }}
-          >
-            <TouchableOpacity
-              activeOpacity={0.85}
-              disabled={!isReady}
-              hitSlop={{
-                top: 14,
-                bottom: 14,
-                left: 14,
-                right: 14,
-              }}
-              onPress={() =>
-                respond('right')
-              }
-            >
-              <LinearGradient
-                colors={[
-                  '#7FD8FF',
-                  '#1E88E5',
-                  '#0D47A1',
-                ]}
-                style={[
-                  styles.circle,
-                  {
-                    width:
-                      rightDiameter,
-                    height:
-                      rightDiameter,
-                    borderRadius:
-                      rightDiameter / 2,
-                  },
-                ]}
-              />
-            </TouchableOpacity>
-          </Animated.View>
+                  width:
+                    leftDiameter,
 
-          <Text
-            allowFontScaling={false}
-            style={[
-              styles.circleLabel,
+                  height:
+                    leftDiameter,
+
+                  borderRadius:
+                    leftDiameter /
+                    2,
+
+                  backgroundColor:
+                    colors.primary,
+                },
+              ]}
+            />
+
+            <Text
+              style={[
+                styles.choiceLabel,
+                {
+                  color:
+                    colors.textSecondary,
+                },
+              ]}
+            >
               {
-                color:
-                  colors.textSecondary,
+                text.left
+              }
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={
+              0.78
+            }
+            disabled={!ready}
+            onPress={() =>
+              answer('right')
+            }
+            style={[
+              styles.choiceArea,
+              {
+                width:
+                  Math.max(
+                    rightDiameter +
+                      70,
+                    130
+                  ),
+
+                height:
+                  Math.max(
+                    rightDiameter +
+                      70,
+                    180
+                  ),
               },
             ]}
           >
-            {language === 'fa'
-              ? 'راست'
-              : 'Right'}
-          </Text>
-        </View>
+            <View
+              style={[
+                styles.circle,
+                {
+                  width:
+                    rightDiameter,
+
+                  height:
+                    rightDiameter,
+
+                  borderRadius:
+                    rightDiameter /
+                    2,
+
+                  backgroundColor:
+                    colors.primary,
+                },
+              ]}
+            />
+
+            <Text
+              style={[
+                styles.choiceLabel,
+                {
+                  color:
+                    colors.textSecondary,
+                },
+              ]}
+            >
+              {
+                text.right
+              }
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
 
       {/* FEEDBACK */}
 
       <View
-        style={styles.feedbackArea}
+        style={
+          styles.feedbackContainer
+        }
       >
-        {feedback.type !== 'idle' && (
+        {feedback !==
+          'idle' && (
           <View
             style={[
-              styles.feedbackRow,
+              styles.feedbackCard,
               {
-                flexDirection:
-                  isRTL
-                    ? 'row-reverse'
-                    : 'row',
-
                 backgroundColor:
-                  feedback.type ===
+                  feedback ===
                   'correct'
-                    ? colors.success +
-                      '18'
-                    : feedback.type ===
-                      'wrong'
-                    ? colors.error +
-                      '18'
-                    : colors.warning +
-                      '18',
+                    ? '#22C55E' +
+                      '15'
+                    : '#EF4444' +
+                      '15',
+
+                borderColor:
+                  feedback ===
+                  'correct'
+                    ? '#22C55E' +
+                      '35'
+                    : '#EF4444' +
+                      '35',
               },
             ]}
           >
-            {feedback.type ===
+            {feedback ===
             'correct' ? (
               <CheckCircle
-                size={18}
-                color={colors.success}
-              />
-            ) : feedback.type ===
-              'wrong' ? (
-              <XCircle
-                size={18}
-                color={colors.error}
+                size={21}
+                color="#22C55E"
               />
             ) : (
-              <Clock
-                size={18}
-                color={colors.warning}
+              <XCircle
+                size={21}
+                color="#EF4444"
               />
             )}
 
             <Text
-              allowFontScaling={false}
               style={[
                 styles.feedbackText,
                 {
                   color:
-                    feedback.type ===
+                    feedback ===
                     'correct'
-                      ? colors.success
-                      : feedback.type ===
-                        'wrong'
-                      ? colors.error
-                      : colors.warning,
+                      ? '#16A34A'
+                      : '#DC2626',
                 },
               ]}
             >
-              {feedback.text}
+              {feedback ===
+              'correct'
+                ? text.correct
+                : feedback ===
+                    'timeout'
+                  ? text.timeout
+                  : text.wrong}
             </Text>
           </View>
         )}
 
-        {!!detailText && (
+        {lastResponseTime !==
+          null && (
           <Text
-            allowFontScaling={false}
             style={[
-              styles.detailText,
+              styles.responseTime,
               {
                 color:
                   colors.textSecondary,
               },
             ]}
           >
-            {detailText}
+            {
+              lastResponseTime
+            }{' '}
+            {
+              text.milliseconds
+            }
           </Text>
         )}
+      </View>
+
+      {/* BOTTOM HINT */}
+
+      <View
+        style={
+          styles.bottomHint
+        }
+      >
+        <Text
+          style={[
+            styles.bottomHintText,
+            {
+              color:
+                colors.textSecondary,
+            },
+          ]}
+        >
+          {
+            text.choose
+          }
+        </Text>
       </View>
     </View>
   );
 }
 
-/*
- * ============================================================
- * STYLES
- * ============================================================
- */
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  /*
-   * FIXED HEADER
-   */
-
-  fixedHeader: {
-    height: 72,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: 60,
-    paddingBottom: 10,
-
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-
-  
-
-    zIndex: 100,
-    elevation: 5,
-  },
-
-  fixedBackButton: {
-    width: 42,
-    height: 42,
-
-    borderRadius: 21,
-
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    /*
-     * IMPORTANT:
-     * No RTL-dependent direction here.
-     * This button is ALWAYS on the LEFT.
-     */
-  },
-
-  fixedHeaderTitle: {
-    position: 'absolute',
-
-    left: 0,
-    right: 0,
-
-    height: 72,
-
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    gap: 8,
-
-    pointerEvents: 'none',
-  },
-
-  fixedHeaderTitleText: {
-    fontSize: 17,
-    fontWeight: '800',
-  },
-
-  fixedHeaderSpacer: {
-    width: 42,
-    height: 42,
-  },
-
-  /*
-   * INTRO
-   */
-
-  scrollContent: {
-    padding: Spacing.lg,
-    paddingBottom: Spacing.xl * 2,
-  },
-
-  introHeader: {
-    alignItems: 'center',
-    marginTop: 28,
-    marginBottom: Spacing.lg,
-  },
-
-  iconCircle: {
-    width: 70,
-    height: 70,
-
-    borderRadius: 35,
-
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    marginBottom: Spacing.md,
-  },
-
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-  },
-
-  subtitle: {
-    fontSize: 14,
-    marginTop: 6,
-  },
-
-  instructionCard: {
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-
-    padding: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-
-  instructionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 10,
-  },
-
-  instructionRow: {
-    alignItems: 'flex-start',
-    marginBottom: 6,
-    gap: 8,
-  },
-
-  instructionDot: {
-    width: 6,
-    height: 6,
-
-    borderRadius: 3,
-
-    marginTop: 7,
-  },
-
-  instructionText: {
-    flex: 1,
-
-    fontSize: 13,
-    lineHeight: 20,
-  },
-
-  statsPreview: {
-    gap: 10,
-    marginBottom: Spacing.lg,
-  },
-
-  statPreviewItem: {
-    flex: 1,
-
-    borderWidth: 1,
-    borderRadius: BorderRadius.md,
-
-    paddingVertical: 12,
-
-    alignItems: 'center',
-    gap: 6,
-  },
-
-  statPreviewText: {
-    fontSize: 11,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-
-  startButton: {
-    flexDirection: 'row',
-
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    gap: 8,
-
-    paddingVertical: 16,
-
-    borderRadius: BorderRadius.full,
-  },
-
-  startButtonText: {
-    color: '#fff',
-
-    fontSize: 16,
-    fontWeight: '800',
-  },
-
-  /*
-   * GAME
-   */
-
-  gameContainer: {
-    flex: 1,
-  },
-
-  gameStatsBar: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: 12,
-    paddingBottom: 6,
-
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  stat: {
-    flexDirection: 'row',
-
-    alignItems: 'center',
-
-    gap: 6,
-  },
-
-  statText: {
-    fontSize: 15,
-    fontWeight: '800',
-  },
-
-  timerTrack: {
-    height: 5,
-
-    marginHorizontal:
-      Spacing.lg,
-
-    borderRadius: 3,
-
-    overflow: 'hidden',
-  },
-
-  timerFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-
-  infoText: {
-    fontSize: 16,
-    fontWeight: '700',
-
-    textAlign: 'center',
-
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.md,
-  },
-
-  playArea: {
-    borderWidth: 1,
-
-    borderRadius: BorderRadius.lg,
-
-    flexDirection: 'row',
-
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    alignSelf: 'center',
-  },
-
-  circleColumn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  circle: {
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-
-    shadowOffset: {
-      width: 0,
-      height: 4,
+/* ================================================================
+   STYLES
+================================================================ */
+
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
     },
 
-    elevation: 6,
-  },
+    gameContainer: {
+      flex: 1,
 
-  circleLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+      overflow: 'hidden',
+    },
 
-    marginTop: 10,
-  },
+    scroll: {
+      flex: 1,
+    },
 
-  /*
-   * FEEDBACK
-   */
+    /* ============================================================
+       HEADER
+    ============================================================ */
 
-  feedbackArea: {
-    marginTop: Spacing.lg,
+    header: {
+      width: '100%',
 
-    paddingHorizontal:
-      Spacing.lg,
+      paddingHorizontal:
+        Spacing.lg,
 
-    alignItems: 'center',
+      paddingTop: 56,
 
-    minHeight: 70,
-  },
+      paddingBottom: 14,
 
-  feedbackRow: {
-    alignItems: 'center',
+      flexDirection: 'row',
 
-    gap: 8,
+      alignItems: 'center',
 
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+      borderBottomWidth:
+        StyleSheet.hairlineWidth,
 
-    borderRadius:
-      BorderRadius.full,
-  },
+      zIndex: 50,
+    },
 
-  feedbackText: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
+    backButton: {
+      width: 44,
 
-  detailText: {
-    fontSize: 12,
+      height: 44,
 
-    marginTop: 8,
+      borderRadius: 22,
 
-    textAlign: 'center',
-  },
+      borderWidth: 1,
 
-  /*
-   * RESULT
-   */
+      alignItems:
+        'center',
 
-  resultScrollContent: {
-    flexGrow: 1,
+      justifyContent:
+        'center',
 
-    paddingVertical: Spacing.xl,
-    paddingHorizontal: Spacing.lg,
-  },
+      marginRight: 12,
 
-  resultOverlay: {
-    flex: 1,
+      flexShrink: 0,
+    },
 
-    alignItems: 'center',
-    justifyContent: 'center',
+    headerText: {
+      flex: 1,
 
-    paddingVertical: Spacing.lg,
-  },
+      minWidth: 0,
+    },
 
-  resultCard: {
-    width: '100%',
+    headerTitle: {
+      fontSize: 21,
 
-    padding: Spacing.xl,
+      fontWeight: '800',
 
-    borderRadius:
-      BorderRadius.xl,
+      lineHeight: 27,
+    },
 
-    alignItems: 'center',
-  },
+    headerSubtitle: {
+      fontSize: 12,
 
-  resultTitle: {
-    fontSize: 22,
-    fontWeight: '800',
+      lineHeight: 18,
 
-    marginTop: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
+      marginTop: 2,
+    },
 
-  resultStatsGrid: {
-    flexDirection: 'row',
+    /* ============================================================
+       INTRO
+    ============================================================ */
 
-    flexWrap: 'wrap',
+    introContent: {
+      flexGrow: 1,
 
-    gap: 10,
+      paddingHorizontal:
+        Spacing.lg,
 
-    width: '100%',
+      alignItems:
+        'center',
 
-    marginBottom: Spacing.lg,
-  },
+      paddingTop: 28,
 
-  resultStatBox: {
-    width: '47%',
+      paddingBottom: 45,
+    },
 
-    borderWidth: 1,
+    heroIcon: {
+      width: 84,
 
-    borderRadius:
-      BorderRadius.md,
+      height: 84,
 
-    paddingVertical: 14,
+      borderRadius: 28,
 
-    alignItems: 'center',
-  },
+      alignItems:
+        'center',
 
-  resultStatValue: {
-    fontSize: 18,
-    fontWeight: '900',
-  },
+      justifyContent:
+        'center',
 
-  resultStatLabel: {
-    fontSize: 11,
+      marginBottom: 14,
+    },
 
-    marginTop: 4,
+    heroTitle: {
+      fontSize: 27,
 
-    textAlign: 'center',
-  },
+      fontWeight: '900',
 
-  finalScore: {
-    fontSize: 24,
-    fontWeight: '900',
+      textAlign: 'center',
+    },
 
-    marginBottom: Spacing.lg,
-  },
+    heroDescription: {
+      maxWidth: 360,
 
-  resultButton: {
-    width: '100%',
+      fontSize: 14,
 
-    flexDirection: 'row',
+      lineHeight: 23,
 
-    alignItems: 'center',
-    justifyContent: 'center',
+      textAlign: 'center',
 
-    gap: 8,
+      marginTop: 9,
+    },
 
-    paddingVertical: 14,
+    previewCard: {
+      width: '100%',
 
-    borderRadius:
-      BorderRadius.full,
-  },
+      marginTop: 22,
 
-  resultButtonText: {
-    color: '#fff',
+      borderWidth: 1,
 
-    fontSize: 15,
-    fontWeight: '800',
-  },
+      borderRadius:
+        BorderRadius.lg,
 
-  secondaryButton: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius:
-      BorderRadius.full,
-    borderWidth: 1,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  secondaryButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-});
+      padding: 18,
+
+      alignItems:
+        'center',
+    },
+
+    previewArea: {
+      height: 135,
+
+      width: '100%',
+
+      flexDirection: 'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'space-evenly',
+    },
+
+    previewCircle: {
+      borderRadius: 100,
+    },
+
+    previewText: {
+      fontSize: 12,
+
+      lineHeight: 18,
+
+      marginTop: 8,
+
+      textAlign: 'center',
+    },
+
+    adaptiveCard: {
+      width: '100%',
+
+      marginTop: 12,
+
+      padding: Spacing.md,
+
+      borderWidth: 1,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      gap: 12,
+    },
+
+    adaptiveIcon: {
+      width: 44,
+
+      height: 44,
+
+      borderRadius: 14,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    adaptiveText: {
+      flex: 1,
+    },
+
+    adaptiveTitle: {
+      fontSize: 14,
+
+      fontWeight: '800',
+    },
+
+    adaptiveDescription: {
+      fontSize: 11,
+
+      lineHeight: 18,
+
+      marginTop: 3,
+    },
+
+    levelCard: {
+      width: '100%',
+
+      marginTop: 12,
+
+      paddingHorizontal:
+        Spacing.md,
+
+      paddingVertical: 14,
+
+      borderWidth: 1,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      justifyContent:
+        'space-between',
+    },
+
+    levelLabel: {
+      fontSize: 10,
+    },
+
+    levelValue: {
+      fontSize: 18,
+
+      fontWeight: '900',
+
+      marginTop: 2,
+    },
+
+    previousCard: {
+      width: '100%',
+
+      marginTop: 12,
+
+      padding: Spacing.md,
+
+      borderWidth: 1,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      gap: 12,
+    },
+
+    previousText: {
+      flex: 1,
+    },
+
+    previousLabel: {
+      fontSize: 10,
+    },
+
+    previousValue: {
+      fontSize: 19,
+
+      fontWeight: '900',
+
+      marginTop: 2,
+    },
+
+    noSelection: {
+      fontSize: 10,
+
+      textAlign: 'center',
+
+      marginTop: 12,
+    },
+
+    primaryButton: {
+      width: '100%',
+
+      minHeight: 54,
+
+      marginTop: 18,
+
+      borderRadius:
+        BorderRadius.full,
+
+      flexDirection: 'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      gap: 8,
+
+      paddingHorizontal: 18,
+    },
+
+    primaryButtonText: {
+      color: '#FFFFFF',
+
+      fontSize: 16,
+
+      fontWeight: '800',
+    },
+
+    /* ============================================================
+       RESULT
+    ============================================================ */
+
+    resultContent: {
+      flexGrow: 1,
+
+      paddingHorizontal:
+        Spacing.lg,
+
+      alignItems:
+        'center',
+
+      paddingTop: 28,
+
+      paddingBottom: 55,
+    },
+
+    resultIcon: {
+      width: 82,
+
+      height: 82,
+
+      borderRadius: 28,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      marginBottom: 13,
+    },
+
+    resultTitle: {
+      fontSize: 24,
+
+      fontWeight: '900',
+
+      textAlign: 'center',
+    },
+
+    resultSubtitle: {
+      fontSize: 12,
+
+      marginTop: 5,
+
+      textAlign: 'center',
+    },
+
+    scoreCard: {
+      width: '100%',
+
+      marginTop: 18,
+
+      borderWidth: 1,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      alignItems:
+        'center',
+
+      paddingVertical: 17,
+    },
+
+    scoreValue: {
+      fontSize: 45,
+
+      fontWeight: '900',
+    },
+
+    scoreLabel: {
+      fontSize: 11,
+
+      marginTop: -2,
+    },
+
+    statsRow: {
+      width: '100%',
+
+      flexDirection: 'row',
+
+      gap: 10,
+
+      marginTop: 10,
+    },
+
+    statCard: {
+      flex: 1,
+
+      minHeight: 105,
+
+      borderWidth: 1,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    statValue: {
+      fontSize: 22,
+
+      fontWeight: '900',
+
+      marginTop: 5,
+    },
+
+    statLabel: {
+      fontSize: 10,
+
+      marginTop: 2,
+    },
+
+    metricCard: {
+      width: '100%',
+
+      marginTop: 10,
+
+      minHeight: 64,
+
+      paddingHorizontal:
+        Spacing.md,
+
+      borderWidth: 1,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      gap: 12,
+    },
+
+    metricText: {
+      flex: 1,
+    },
+
+    metricLabel: {
+      fontSize: 10,
+    },
+
+    metricValue: {
+      fontSize: 18,
+
+      fontWeight: '900',
+
+      marginTop: 1,
+    },
+
+    adaptiveResult: {
+      width: '100%',
+
+      marginTop: 10,
+
+      padding: Spacing.md,
+
+      borderWidth: 1,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      gap: 10,
+    },
+
+    adaptiveResultIcon: {
+      width: 43,
+
+      height: 43,
+
+      borderRadius: 14,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    adaptiveResultText: {
+      flex: 1,
+    },
+
+    adaptiveResultTitle: {
+      fontSize: 13,
+
+      fontWeight: '800',
+    },
+
+    adaptiveResultDescription: {
+      fontSize: 10,
+
+      lineHeight: 17,
+
+      marginTop: 3,
+    },
+
+    nextLevel: {
+      width: '100%',
+
+      marginTop: 10,
+
+      paddingHorizontal:
+        Spacing.md,
+
+      paddingVertical: 14,
+
+      borderWidth: 1,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      justifyContent:
+        'space-between',
+    },
+
+    nextLevelLabel: {
+      fontSize: 10,
+    },
+
+    nextLevelValue: {
+      fontSize: 18,
+
+      fontWeight: '900',
+
+      marginTop: 2,
+    },
+
+    bottomSpace: {
+      height: 15,
+    },
+
+    /* ============================================================
+       GAME HUD
+    ============================================================ */
+
+    gameHud: {
+      marginHorizontal: 12,
+
+      marginTop: 12,
+
+      height: 58,
+
+      borderWidth: 1,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      paddingHorizontal: 14,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      justifyContent:
+        'space-between',
+    },
+
+    hudItem: {
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      gap: 7,
+
+      minWidth: 55,
+    },
+
+    hudLabel: {
+      fontSize: 8,
+    },
+
+    hudValue: {
+      fontSize: 16,
+
+      fontWeight: '900',
+
+      marginTop: 1,
+    },
+
+    progressContainer: {
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    progressText: {
+      fontSize: 10,
+
+      fontWeight: '700',
+    },
+
+    levelHud: {
+      fontSize: 15,
+
+      fontWeight: '900',
+    },
+
+    /* ============================================================
+       GAME
+    ============================================================ */
+
+    instructionCard: {
+      marginHorizontal: 18,
+
+      marginTop: 10,
+
+      minHeight: 46,
+
+      paddingHorizontal: 12,
+
+      paddingVertical: 8,
+
+      borderWidth: 1,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      justifyContent:
+        'center',
+
+      gap: 8,
+    },
+
+    instructionText: {
+      fontSize: 13,
+
+      lineHeight: 19,
+
+      fontWeight: '700',
+
+      flexShrink: 1,
+    },
+
+    timerTrack: {
+      height: 4,
+
+      marginHorizontal: 18,
+
+      marginTop: 10,
+
+      borderRadius: 2,
+
+      overflow: 'hidden',
+    },
+
+    timerProgress: {
+      height: '100%',
+
+      borderRadius: 2,
+    },
+
+    playAreaWrapper: {
+      flex: 1,
+
+      marginHorizontal: 8,
+
+      marginTop: 8,
+
+      marginBottom: 8,
+
+      minHeight: 250,
+
+      overflow: 'hidden',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    circleRow: {
+      width: '100%',
+
+      flexDirection: 'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'space-evenly',
+
+      paddingHorizontal: 4,
+    },
+
+    choiceArea: {
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      overflow: 'hidden',
+    },
+
+    circle: {
+      shadowOpacity: 0.08,
+
+      shadowRadius: 10,
+
+      shadowOffset: {
+        width: 0,
+
+        height: 4,
+      },
+
+      elevation: 2,
+    },
+
+    choiceLabel: {
+      fontSize: 10,
+
+      fontWeight: '700',
+
+      marginTop: 9,
+    },
+
+    feedbackContainer: {
+      minHeight: 72,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      paddingHorizontal: 18,
+    },
+
+    feedbackCard: {
+      minWidth: 145,
+
+      minHeight: 42,
+
+      paddingHorizontal: 14,
+
+      borderWidth: 1,
+
+      borderRadius:
+        BorderRadius.full,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      justifyContent:
+        'center',
+
+      gap: 7,
+    },
+
+    feedbackText: {
+      fontSize: 13,
+
+      fontWeight: '800',
+    },
+
+    responseTime: {
+      fontSize: 9,
+
+      marginTop: 4,
+    },
+
+    bottomHint: {
+      minHeight: 40,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      paddingBottom: 8,
+    },
+
+    bottomHintText: {
+      fontSize: 10,
+    },
+  });

@@ -34,6 +34,8 @@ export default function CalmBreathingScreen() {
 
   const [isStarted, setIsStarted] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+
   const [phase, setPhase] = useState<Phase>('inhale');
   const [seconds, setSeconds] = useState(4);
   const [round, setRound] = useState(1);
@@ -44,9 +46,7 @@ export default function CalmBreathingScreen() {
   const timerRef =
     useRef<ReturnType<typeof setInterval> | null>(null);
 
-  /* ============================================================
-     TRANSLATIONS
-  ============================================================ */
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
 
   const t = {
     title:
@@ -78,6 +78,11 @@ export default function CalmBreathingScreen() {
       language === 'fa'
         ? 'توقف تمرین'
         : 'Pause',
+
+    resume:
+      language === 'fa'
+        ? 'ادامه تمرین'
+        : 'Resume',
 
     round:
       language === 'fa'
@@ -141,16 +146,37 @@ export default function CalmBreathingScreen() {
   };
 
   /* ============================================================
-     BACK BUTTON
+     CLEAR TIMER
   ============================================================ */
 
-  const goBack = () => {
+  const clearTimer = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+  };
+
+  /* ============================================================
+     STOP ANIMATION
+  ============================================================ */
+
+  const stopAnimation = () => {
+    if (animationRef.current) {
+      animationRef.current.stop();
+      animationRef.current = null;
+    }
+  };
+
+  /* ============================================================
+     BACK
+  ============================================================ */
+
+  const goBack = () => {
+    clearTimer();
+    stopAnimation();
 
     setIsRunning(false);
+    setIsPaused(false);
 
     if (router.canGoBack()) {
       router.back();
@@ -164,8 +190,13 @@ export default function CalmBreathingScreen() {
   ============================================================ */
 
   const startGame = () => {
+    clearTimer();
+    stopAnimation();
+
     setIsStarted(true);
     setIsRunning(true);
+    setIsPaused(false);
+
     setRound(1);
     setPhase('inhale');
     setSeconds(4);
@@ -179,19 +210,46 @@ export default function CalmBreathingScreen() {
   ============================================================ */
 
   const restartGame = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
+    clearTimer();
+    stopAnimation();
 
     setRound(1);
     setPhase('inhale');
     setSeconds(4);
+
     setIsStarted(true);
     setIsRunning(true);
+    setIsPaused(false);
 
     scale.setValue(0.65);
     opacity.setValue(0.7);
+  };
+
+  /* ============================================================
+     PAUSE
+     فقط متوقف می‌کند؛ وضعیت فعلی حفظ می‌شود.
+  ============================================================ */
+
+  const pauseGame = () => {
+    clearTimer();
+    stopAnimation();
+
+    setIsRunning(false);
+    setIsPaused(true);
+  };
+
+  /* ============================================================
+     RESUME
+     از همان phase / seconds / round ادامه می‌دهد.
+  ============================================================ */
+
+  const resumeGame = () => {
+    if (round >= TOTAL_ROUNDS && phase === 'exhale' && seconds === 0) {
+      return;
+    }
+
+    setIsPaused(false);
+    setIsRunning(true);
   };
 
   /* ============================================================
@@ -200,22 +258,16 @@ export default function CalmBreathingScreen() {
 
   useEffect(() => {
     if (!isRunning) {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-
+      clearTimer();
       return;
     }
 
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
+    clearTimer();
 
     timerRef.current = setInterval(() => {
-      setSeconds(prev => {
-        if (prev > 1) {
-          return prev - 1;
+      setSeconds(prevSeconds => {
+        if (prevSeconds > 1) {
+          return prevSeconds - 1;
         }
 
         if (phase === 'inhale') {
@@ -229,7 +281,10 @@ export default function CalmBreathingScreen() {
         }
 
         if (round >= TOTAL_ROUNDS) {
+          clearTimer();
           setIsRunning(false);
+          setIsPaused(false);
+
           return 0;
         }
 
@@ -241,10 +296,7 @@ export default function CalmBreathingScreen() {
     }, 1000);
 
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
+      clearTimer();
     };
   }, [isRunning, phase, round]);
 
@@ -253,7 +305,12 @@ export default function CalmBreathingScreen() {
   ============================================================ */
 
   useEffect(() => {
-    if (!isRunning) return;
+    if (!isRunning) {
+      stopAnimation();
+      return;
+    }
+
+    stopAnimation();
 
     const target =
       phase === 'inhale'
@@ -269,19 +326,38 @@ export default function CalmBreathingScreen() {
           ? 4000
           : 6000;
 
-    Animated.timing(scale, {
-      toValue: target,
-      duration,
-      easing: Easing.inOut(Easing.ease),
-      useNativeDriver: true,
-    }).start();
+    animationRef.current = Animated.parallel([
+      Animated.timing(scale, {
+        toValue: target,
+        duration,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }),
 
-    Animated.timing(opacity, {
-      toValue: phase === 'hold' ? 1 : 0.75,
-      duration,
-      useNativeDriver: true,
-    }).start();
-  }, [phase, isRunning, scale, opacity]);
+      Animated.timing(opacity, {
+        toValue: phase === 'hold' ? 1 : 0.75,
+        duration,
+        useNativeDriver: true,
+      }),
+    ]);
+
+    animationRef.current.start();
+
+    return () => {
+      stopAnimation();
+    };
+  }, [phase, isRunning]);
+
+  /* ============================================================
+     CLEANUP
+  ============================================================ */
+
+  useEffect(() => {
+    return () => {
+      clearTimer();
+      stopAnimation();
+    };
+  }, []);
 
   /* ============================================================
      PHASE DATA
@@ -320,6 +396,13 @@ export default function CalmBreathingScreen() {
     100,
   );
 
+  const isCompleted =
+    !isRunning &&
+    !isPaused &&
+    round >= TOTAL_ROUNDS &&
+    phase === 'exhale' &&
+    seconds === 0;
+
   /* ============================================================
      RENDER
   ============================================================ */
@@ -345,8 +428,6 @@ export default function CalmBreathingScreen() {
           },
         ]}
       >
-        {/* BACK */}
-
         <TouchableOpacity
           onPress={goBack}
           activeOpacity={0.75}
@@ -366,8 +447,6 @@ export default function CalmBreathingScreen() {
             strokeWidth={2.5}
           />
         </TouchableOpacity>
-
-        {/* TITLE */}
 
         <View
           style={[
@@ -417,8 +496,6 @@ export default function CalmBreathingScreen() {
 
       {!isStarted ? (
         <View style={styles.startScreen}>
-          {/* HERO ICON */}
-
           <View
             style={[
               styles.heroCircle,
@@ -447,8 +524,6 @@ export default function CalmBreathingScreen() {
             </View>
           </View>
 
-          {/* TITLE */}
-
           <Text
             style={[
               styles.title,
@@ -462,8 +537,6 @@ export default function CalmBreathingScreen() {
               : 'Breathe & Relax'}
           </Text>
 
-          {/* DESCRIPTION */}
-
           <Text
             style={[
               styles.description,
@@ -474,8 +547,6 @@ export default function CalmBreathingScreen() {
           >
             {t.description}
           </Text>
-
-          {/* INFO CARD */}
 
           <View
             style={[
@@ -537,8 +608,6 @@ export default function CalmBreathingScreen() {
             >
               {t.instruction}
             </Text>
-
-            {/* BREATH PATTERN */}
 
             <View
               style={[
@@ -611,8 +680,6 @@ export default function CalmBreathingScreen() {
             </View>
           </View>
 
-          {/* START BUTTON */}
-
           <TouchableOpacity
             onPress={startGame}
             activeOpacity={0.85}
@@ -635,8 +702,6 @@ export default function CalmBreathingScreen() {
               {t.start}
             </Text>
           </TouchableOpacity>
-
-          {/* HINT */}
 
           <View
             style={[
@@ -776,8 +841,6 @@ export default function CalmBreathingScreen() {
 
           <View style={styles.breathingArea}>
             <View style={styles.breathingVisual}>
-              {/* OUTER */}
-
               <Animated.View
                 style={[
                   styles.outerCircle,
@@ -794,8 +857,6 @@ export default function CalmBreathingScreen() {
                   },
                 ]}
               >
-                {/* MIDDLE */}
-
                 <View
                   style={[
                     styles.middleCircle,
@@ -805,8 +866,6 @@ export default function CalmBreathingScreen() {
                     },
                   ]}
                 >
-                  {/* INNER */}
-
                   <Animated.View
                     style={[
                       styles.innerCircle,
@@ -831,8 +890,6 @@ export default function CalmBreathingScreen() {
                 </View>
               </Animated.View>
 
-              {/* PHASE */}
-
               <Text
                 style={[
                   styles.phaseText,
@@ -844,8 +901,6 @@ export default function CalmBreathingScreen() {
                 {phaseData.title}
               </Text>
 
-              {/* SECONDS */}
-
               <Text
                 style={[
                   styles.secondsText,
@@ -856,8 +911,6 @@ export default function CalmBreathingScreen() {
               >
                 {seconds}
               </Text>
-
-              {/* DESCRIPTION */}
 
               <Text
                 style={[
@@ -873,10 +926,11 @@ export default function CalmBreathingScreen() {
             </View>
           </View>
 
-          {/* COMPLETE */}
+          {/* ==================================================
+              COMPLETED
+          ================================================== */}
 
-          {!isRunning &&
-          round >= TOTAL_ROUNDS ? (
+          {isCompleted ? (
             <View
               style={[
                 styles.resultCard,
@@ -952,10 +1006,16 @@ export default function CalmBreathingScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            /* PAUSE */
+            /* ==================================================
+               PAUSE / RESUME
+            ================================================== */
 
             <TouchableOpacity
-              onPress={() => setIsRunning(false)}
+              onPress={
+                isPaused
+                  ? resumeGame
+                  : pauseGame
+              }
               activeOpacity={0.8}
               style={[
                 styles.pauseButton,
@@ -967,11 +1027,20 @@ export default function CalmBreathingScreen() {
                 },
               ]}
             >
-              <PauseCircle
-                size={19}
-                color={colors.text}
-                strokeWidth={2}
-              />
+              {isPaused ? (
+                <Play
+                  size={19}
+                  color={colors.text}
+                  fill={colors.text}
+                  strokeWidth={2}
+                />
+              ) : (
+                <PauseCircle
+                  size={19}
+                  color={colors.text}
+                  strokeWidth={2}
+                />
+              )}
 
               <Text
                 style={[
@@ -981,7 +1050,9 @@ export default function CalmBreathingScreen() {
                   },
                 ]}
               >
-                {t.pause}
+                {isPaused
+                  ? t.resume
+                  : t.pause}
               </Text>
             </TouchableOpacity>
           )}
@@ -1054,10 +1125,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-
-  /* ============================================================
-     HEADER
-  ============================================================ */
 
   header: {
     width: '100%',
@@ -1273,10 +1340,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
 
-  /* ============================================================
-     PROGRESS
-  ============================================================ */
-
   progressCard: {
     borderRadius: 20,
     borderWidth: 1,
@@ -1390,7 +1453,7 @@ const styles = StyleSheet.create({
   },
 
   /* ============================================================
-     PAUSE
+     PAUSE / RESUME
   ============================================================ */
 
   pauseButton: {
