@@ -1,207 +1,566 @@
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  useWindowDimensions,
+  Image,
   Animated,
+  ScrollView,
+  useWindowDimensions,
 } from 'react-native';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { useRouter } from 'expo-router';
+
 import {
   ArrowLeft,
   Trophy,
   Zap,
   Heart,
+  Target,
+  TrendingUp,
+  RotateCcw,
+  CheckCircle,
+  XCircle,
+  Sparkles,
+  Shield,
 } from 'lucide-react-native';
 
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+
 import {
   Spacing,
   BorderRadius,
 } from '../../constants/theme';
 
 /* ================================================================
+   IMAGES
+================================================================ */
+
+const GAME_IMAGES = {
+  safe: require('../../assets/avatars/blue.png'),
+  danger: require('../../assets/avatars/red.png'),
+};
+
+/* ================================================================
    CONSTANTS
 ================================================================ */
 
-const PLAY_TOP_MARGIN = 110;
-const PLAY_BOTTOM_MARGIN = 40;
-const PLAY_SIDE_MARGIN = 8;
+const TOTAL_LIVES = 3;
+
+const MIN_DIFFICULTY = 1;
+
+const MAX_DIFFICULTY = 4;
+
+const INITIAL_DIFFICULTY = 1;
+
+const STORAGE_KEY =
+  'neurolia_last_survival_adaptive_v4';
+
+const PLAY_SIDE_MARGIN = 14;
+
+/* ================================================================
+   DIFFICULTY
+================================================================ */
+
+type DifficultyConfig = {
+  level: number;
+
+  nameFa: string;
+
+  nameEn: string;
+
+  spawnInterval: number;
+
+  lifeTime: number;
+
+  maxObjects: number;
+
+  objectSize: number;
+
+  duration: number;
+
+  dangerProbability: number;
+};
+
+const DIFFICULTIES: DifficultyConfig[] = [
+  {
+    level: 1,
+
+    nameFa: 'آسان',
+
+    nameEn: 'Easy',
+
+    spawnInterval: 1050,
+
+    lifeTime: 2400,
+
+    maxObjects: 3,
+
+    objectSize: 76,
+
+    duration: 30000,
+
+    dangerProbability: 0.25,
+  },
+
+  {
+    level: 2,
+
+    nameFa: 'متوسط',
+
+    nameEn: 'Medium',
+
+    spawnInterval: 800,
+
+    lifeTime: 1900,
+
+    maxObjects: 4,
+
+    objectSize: 70,
+
+    duration: 35000,
+
+    dangerProbability: 0.35,
+  },
+
+  {
+    level: 3,
+
+    nameFa: 'سخت',
+
+    nameEn: 'Hard',
+
+    spawnInterval: 620,
+
+    lifeTime: 1500,
+
+    maxObjects: 5,
+
+    objectSize: 64,
+
+    duration: 40000,
+
+    dangerProbability: 0.45,
+  },
+
+  {
+    level: 4,
+
+    nameFa: 'حرفه‌ای',
+
+    nameEn: 'Expert',
+
+    spawnInterval: 470,
+
+    lifeTime: 1150,
+
+    maxObjects: 6,
+
+    objectSize: 58,
+
+    duration: 45000,
+
+    dangerProbability: 0.55,
+  },
+];
 
 /* ================================================================
    TYPES
 ================================================================ */
 
-type Level = {
-  name: string;
-  nameFa: string;
-  lifeTime: number;
-  spawnInterval: number;
-  maxObjects: number;
-  objectSize: number;
-  duration: number;
-};
-
 type GameObject = {
   id: number;
-  color: 'green' | 'red';
+
+  isDanger: boolean;
+
   x: number;
+
   y: number;
+
   scale: Animated.Value;
+
   opacity: Animated.Value;
 };
 
 type ScorePopup = {
   id: number;
+
   x: number;
+
   y: number;
+
   value: number;
+
   opacity: Animated.Value;
+
   translateY: Animated.Value;
 };
 
 /* ================================================================
-   LEVELS
+   HEADER
 ================================================================ */
 
-const LEVELS: Level[] = [
-  {
-    name: 'Easy',
-    nameFa: 'آسان',
-    lifeTime: 1800,
-    spawnInterval: 900,
-    maxObjects: 3,
-    objectSize: 68,
-    duration: 30000,
-  },
-  {
-    name: 'Medium',
-    nameFa: 'متوسط',
-    lifeTime: 1400,
-    spawnInterval: 700,
-    maxObjects: 4,
-    objectSize: 62,
-    duration: 35000,
-  },
-  {
-    name: 'Hard',
-    nameFa: 'سخت',
-    lifeTime: 1100,
-    spawnInterval: 550,
-    maxObjects: 5,
-    objectSize: 56,
-    duration: 40000,
-  },
-  {
-    name: 'Extreme',
-    nameFa: 'حرفه‌ای',
-    lifeTime: 850,
-    spawnInterval: 400,
-    maxObjects: 6,
-    objectSize: 50,
-    duration: 45000,
-  },
-];
+interface PageHeaderProps {
+  title: string;
 
+  subtitle?: string;
 
-interface BackButtonProps {
-  onPress: () => void;
+  onBack: () => void;
+
   colors: any;
-  label?: string;
-  showLabel?: boolean;
-  compact?: boolean;
+
+  isRTL: boolean;
+
+  backLabel: string;
 }
 
-function BackButton({
-  onPress,
+function PageHeader({
+  title,
+  subtitle,
+  onBack,
   colors,
-  label,
-  showLabel = true,
-  compact = false,
-}: BackButtonProps) {
+  isRTL,
+  backLabel,
+}: PageHeaderProps) {
   return (
-    <TouchableOpacity
-      activeOpacity={0.75}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label || 'Back'}
+    <View
       style={[
-        styles.unifiedBackButton,
-        compact && styles.compactBackButton,
+        styles.pageHeader,
         {
-          backgroundColor: colors.surface,
-          borderColor: colors.border,
+          borderBottomColor:
+            colors.border,
         },
       ]}
     >
-      <ArrowLeft
-        size={compact ? 20 : 20}
-        color={colors.text}
-        strokeWidth={2.5}
-      />
+      <TouchableOpacity
+        activeOpacity={0.75}
+        onPress={onBack}
+        accessibilityRole="button"
+        accessibilityLabel={backLabel}
+        style={[
+          styles.backButton,
+          {
+            backgroundColor:
+              colors.surface,
 
+            borderColor:
+              colors.border,
+          },
+        ]}
+      >
+        <ArrowLeft
+          size={21}
+          color={colors.text}
+          strokeWidth={2.5}
+        />
+      </TouchableOpacity>
 
-    </TouchableOpacity>
+      <View
+        style={styles.headerTextContainer}
+      >
+        <Text
+          numberOfLines={2}
+          style={[
+            styles.headerTitle,
+            {
+              color: colors.text,
+
+              textAlign: isRTL
+                ? 'right'
+                : 'left',
+            },
+          ]}
+        >
+          {title}
+        </Text>
+
+        {subtitle ? (
+          <Text
+            style={[
+              styles.headerSubtitle,
+              {
+                color:
+                  colors.textSecondary,
+
+                textAlign: isRTL
+                  ? 'right'
+                  : 'left',
+              },
+            ]}
+          >
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+    </View>
   );
 }
 
 /* ================================================================
-   MAIN SCREEN
+   SCREEN
 ================================================================ */
 
 export default function LastSurvivalScreen() {
-  const { colors } = useTheme();
-
-  const {
-    t,
-    language,
-    isRTL,
-  } = useLanguage();
-
   const router = useRouter();
 
-  const {
-    width,
-    height,
-  } = useWindowDimensions();
+  const { colors } =
+    useTheme();
 
-  const [selectedLevel, setSelectedLevel] =
-    useState<number | null>(null);
+  const { language, isRTL } =
+    useLanguage();
 
-  const [playing, setPlaying] =
-    useState(false);
+  const { width } =
+    useWindowDimensions();
 
-  const [score, setScore] =
-    useState(0);
+  /* ================================================================
+     TEXT
+  ================================================================= */
 
-  const [lives, setLives] =
-    useState(3);
+  const text = useMemo(
+    () =>
+      language === 'fa'
+        ? {
+            title: 'آخرین بازمانده',
 
-  const [objects, setObjects] =
-    useState<GameObject[]>([]);
+            subtitle:
+              'از تصاویر امن محافظت کن',
 
-  const [popups, setPopups] =
-    useState<ScorePopup[]>([]);
+            instruction:
+              'تصویر آبی را لمس کن و از تصویر قرمز دوری کن',
 
-  const [gameOver, setGameOver] =
-    useState(false);
+            score: 'امتیاز',
 
-  const [completed, setCompleted] =
-    useState(false);
+            lives: 'جان',
+
+            level: 'سطح',
+
+            start: 'شروع بازی',
+
+            playAgain: 'بازی مجدد',
+
+            back: 'بازگشت',
+
+            completed:
+              'مرحله با موفقیت تمام شد',
+
+            gameOver:
+              'بازی تمام شد',
+
+            adaptive:
+              'سختی تطبیقی',
+
+            adaptiveInfo:
+              'سطح بازی بر اساس عملکرد واقعی شما به‌صورت خودکار تغییر می‌کند.',
+
+            difficulty:
+              'سطح فعلی',
+
+            accuracy:
+              'دقت',
+
+            correct:
+              'درست',
+
+            wrong:
+              'اشتباه',
+
+            adaptiveUp:
+              'عملکرد عالی بود؛ بازی در دفعه بعد سخت‌تر می‌شود.',
+
+            adaptiveDown:
+              'این مرحله دشوار بود؛ بازی در دفعه بعد کمی آسان‌تر می‌شود.',
+
+            adaptiveSame:
+              'عملکرد مناسب بود؛ سختی بازی حفظ می‌شود.',
+
+            noLevelSelection:
+              'سطح بازی به‌صورت خودکار تعیین می‌شود',
+          }
+        : {
+            title: 'Last Survivor',
+
+            subtitle:
+              'Protect the safe images',
+
+            instruction:
+              'Tap the blue image and avoid the red image',
+
+            score: 'Score',
+
+            lives: 'Lives',
+
+            level: 'Level',
+
+            start: 'Start Game',
+
+            playAgain:
+              'Play Again',
+
+            back: 'Back',
+
+            completed:
+              'Stage Completed',
+
+            gameOver:
+              'Game Over',
+
+            adaptive:
+              'Adaptive Difficulty',
+
+            adaptiveInfo:
+              'Game difficulty automatically changes based on your actual performance.',
+
+            difficulty:
+              'Current Level',
+
+            accuracy:
+              'Accuracy',
+
+            correct:
+              'Correct',
+
+            wrong:
+              'Mistakes',
+
+            adaptiveUp:
+              'Excellent performance. The game will become harder next time.',
+
+            adaptiveDown:
+              'This session was challenging. The game will become easier next time.',
+
+            adaptiveSame:
+              'Good performance. The difficulty will remain stable.',
+
+            noLevelSelection:
+              'Difficulty is selected automatically',
+          },
+    [language]
+  );
+
+  /* ================================================================
+     STATE
+  ================================================================= */
+
+  const [
+    difficulty,
+    setDifficulty,
+  ] = useState(
+    INITIAL_DIFFICULTY
+  );
+
+  const [
+    previousAccuracy,
+    setPreviousAccuracy,
+  ] = useState<
+    number | null
+  >(null);
+
+  const [
+    playing,
+    setPlaying,
+  ] = useState(false);
+
+  const [
+    score,
+    setScore,
+  ] = useState(0);
+
+  const [
+    lives,
+    setLives,
+  ] = useState(TOTAL_LIVES);
+
+  const [
+    objects,
+    setObjects,
+  ] = useState<GameObject[]>(
+    []
+  );
+
+  const [
+    popups,
+    setPopups,
+  ] = useState<ScorePopup[]>(
+    []
+  );
+
+  const [
+    completed,
+    setCompleted,
+  ] = useState(false);
+
+  const [
+    gameOver,
+    setGameOver,
+  ] = useState(false);
+
+  const [
+    correctCount,
+    setCorrectCount,
+  ] = useState(0);
+
+  const [
+    wrongCount,
+    setWrongCount,
+  ] = useState(0);
+
+  const [
+    adaptiveResult,
+    setAdaptiveResult,
+  ] = useState<
+    'up' | 'down' | 'same' | null
+  >(null);
+
+  const [
+    playFieldWidth,
+    setPlayFieldWidth,
+  ] = useState(0);
+
+  const [
+    playFieldHeight,
+    setPlayFieldHeight,
+  ] = useState(0);
 
   /* ================================================================
      REFS
   ================================================================= */
 
-  const objectId = useRef(0);
+  const mounted =
+    useRef(true);
 
-  const popupId = useRef(0);
+  const objectId =
+    useRef(0);
+
+  const popupId =
+    useRef(0);
+
+  const livesRef =
+    useRef(TOTAL_LIVES);
+
+  const scoreRef =
+    useRef(0);
+
+  const correctRef =
+    useRef(0);
+
+  const wrongRef =
+    useRef(0);
 
   const removingIds =
-    useRef<Set<number>>(new Set());
+    useRef<Set<number>>(
+      new Set()
+    );
 
   const objectTimers =
     useRef<
@@ -221,44 +580,91 @@ export default function LastSurvivalScreen() {
       ReturnType<typeof setTimeout> | null
     >(null);
 
-  const hitFlash =
-    useRef(new Animated.Value(0)).current;
-
-  const isMounted =
-    useRef(true);
-
-  const livesRef =
-    useRef(3);
-
-  const level =
-    selectedLevel !== null
-      ? LEVELS[selectedLevel]
-      : LEVELS[0];
+  const flashAnimation =
+    useRef(
+      new Animated.Value(0)
+    ).current;
 
   /* ================================================================
-     BACK NAVIGATION
-
-     مسیر برگشت در تمام حالت‌ها یکسان است.
+     CONFIG
   ================================================================= */
 
-  const handleBack = useCallback(() => {
-    clearAllTimers();
+  const currentConfig =
+    DIFFICULTIES[
+      Math.max(
+        0,
+        Math.min(
+          difficulty - 1,
+          DIFFICULTIES.length - 1
+        )
+      )
+    ];
 
-    setPlaying(false);
-    setSelectedLevel(null);
-    setGameOver(false);
-    setCompleted(false);
-    setObjects([]);
-    setPopups([]);
+  const difficultyName =
+    language === 'fa'
+      ? currentConfig.nameFa
+      : currentConfig.nameEn;
 
-    isMounted.current = true;
+  /* ================================================================
+     LOAD
+  ================================================================= */
 
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/');
-    }
-  }, [router]);
+  useEffect(() => {
+    mounted.current = true;
+
+    const loadState =
+      async () => {
+        try {
+          const raw =
+            await AsyncStorage.getItem(
+              STORAGE_KEY
+            );
+
+          if (!raw) {
+            return;
+          }
+
+          const saved =
+            JSON.parse(raw);
+
+          if (
+            typeof saved.difficulty ===
+            'number'
+          ) {
+            setDifficulty(
+              Math.max(
+                MIN_DIFFICULTY,
+
+                Math.min(
+                  MAX_DIFFICULTY,
+                  saved.difficulty
+                )
+              )
+            );
+          }
+
+          if (
+            typeof saved.accuracy ===
+            'number'
+          ) {
+            setPreviousAccuracy(
+              saved.accuracy
+            );
+          }
+        } catch (error) {
+          console.log(
+            '[LastSurvival] Load error:',
+            error
+          );
+        }
+      };
+
+    loadState();
+
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   /* ================================================================
      CLEAR TIMERS
@@ -266,72 +672,116 @@ export default function LastSurvivalScreen() {
 
   const clearAllTimers =
     useCallback(() => {
-      if (spawnTimer.current) {
-        clearInterval(spawnTimer.current);
-        spawnTimer.current = null;
+      if (
+        spawnTimer.current
+      ) {
+        clearInterval(
+          spawnTimer.current
+        );
+
+        spawnTimer.current =
+          null;
       }
 
-      if (gameTimer.current) {
-        clearTimeout(gameTimer.current);
-        gameTimer.current = null;
+      if (
+        gameTimer.current
+      ) {
+        clearTimeout(
+          gameTimer.current
+        );
+
+        gameTimer.current =
+          null;
       }
 
       objectTimers.current.forEach(
-        (timer) => clearTimeout(timer)
+        timer => {
+          clearTimeout(timer);
+        }
       );
 
       objectTimers.current.clear();
     }, []);
 
   /* ================================================================
+     SAVE
+  ================================================================= */
+
+  const saveAdaptiveState =
+    useCallback(
+      async (
+        nextDifficulty: number,
+        accuracy: number
+      ) => {
+        try {
+          await AsyncStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({
+              difficulty:
+                nextDifficulty,
+
+              accuracy,
+
+              correct:
+                correctRef.current,
+
+              wrong:
+                wrongRef.current,
+
+              updatedAt:
+                Date.now(),
+            })
+          );
+        } catch (error) {
+          console.log(
+            '[LastSurvival] Save error:',
+            error
+          );
+        }
+      },
+      []
+    );
+
+  /* ================================================================
      REMOVE OBJECT
   ================================================================= */
 
   const removeObject =
-    useCallback((id: number) => {
-      const timer =
-        objectTimers.current.get(id);
-
-      if (timer) {
-        clearTimeout(timer);
-        objectTimers.current.delete(id);
-      }
-
-      removingIds.current.delete(id);
-
-      setObjects((prev) =>
-        prev.filter(
-          (o) => o.id !== id
-        )
-      );
-    }, []);
-
-  /* ================================================================
-     END GAME
-  ================================================================= */
-
-  const endGame =
     useCallback(
-      (success: boolean) => {
-        clearAllTimers();
+      (id: number) => {
+        const timer =
+          objectTimers.current.get(
+            id
+          );
 
-        setPlaying(false);
-        setObjects([]);
+        if (timer) {
+          clearTimeout(timer);
 
-        if (success) {
-          setCompleted(true);
-        } else {
-          setGameOver(true);
+          objectTimers.current.delete(
+            id
+          );
         }
+
+        removingIds.current.delete(
+          id
+        );
+
+        setObjects(
+          previous =>
+            previous.filter(
+              item =>
+                item.id !== id
+            )
+        );
       },
-      [clearAllTimers]
+      []
     );
 
   /* ================================================================
-     SCORE POPUP
+     POPUP
   ================================================================= */
 
-  const spawnPopup =
+  const showPopup =
     useCallback(
       (
         x: number,
@@ -347,30 +797,46 @@ export default function LastSurvivalScreen() {
         const id =
           popupId.current++;
 
-        setPopups((prev) => [
-          ...prev,
-          {
-            id,
-            x,
-            y,
-            value,
-            opacity,
-            translateY,
-          },
-        ]);
+        const popup: ScorePopup = {
+          id,
+
+          x,
+
+          y,
+
+          value,
+
+          opacity,
+
+          translateY,
+        };
+
+        setPopups(
+          previous => [
+            ...previous,
+            popup,
+          ]
+        );
 
         Animated.parallel([
-          Animated.timing(opacity, {
-            toValue: 1,
-            duration: 100,
-            useNativeDriver: true,
-          }),
+          Animated.timing(
+            opacity,
+            {
+              toValue: 1,
+
+              duration: 100,
+
+              useNativeDriver: true,
+            }
+          ),
 
           Animated.timing(
             translateY,
             {
-              toValue: -50,
-              duration: 650,
+              toValue: -45,
+
+              duration: 600,
+
               useNativeDriver: true,
             }
           ),
@@ -379,15 +845,21 @@ export default function LastSurvivalScreen() {
             opacity,
             {
               toValue: 0,
-              duration: 250,
+
+              duration: 220,
+
               useNativeDriver: true,
             }
           ).start(() => {
-            if (isMounted.current) {
-              setPopups((prev) =>
-                prev.filter(
-                  (p) => p.id !== id
-                )
+            if (
+              mounted.current
+            ) {
+              setPopups(
+                previous =>
+                  previous.filter(
+                    item =>
+                      item.id !== id
+                  )
               );
             }
           });
@@ -397,125 +869,154 @@ export default function LastSurvivalScreen() {
     );
 
   /* ================================================================
-     SPAWN OBJECT
+     SPAWN
   ================================================================= */
 
   const spawnObject =
-    useCallback(
-      (currentLevel: Level) => {
-        const size =
-          currentLevel.objectSize;
+    useCallback(() => {
+      if (
+        playFieldWidth <= 0 ||
+        playFieldHeight <= 0
+      ) {
+        return;
+      }
 
-        const maxX =
-          width -
-          PLAY_SIDE_MARGIN * 2 -
-          size;
+      const size =
+        currentConfig.objectSize;
 
-        const maxY =
-          height -
-          PLAY_TOP_MARGIN -
-          PLAY_BOTTOM_MARGIN -
-          size;
-
-        const x =
-          PLAY_SIDE_MARGIN +
-          Math.random() *
-            Math.max(maxX, 0);
-
-        const y =
-          PLAY_TOP_MARGIN +
-          Math.random() *
-            Math.max(maxY, 0);
-
-        const id =
-          objectId.current++;
-
-        const isGreen =
-          Math.random() > 0.35;
-
-        const scale =
-          new Animated.Value(0);
-
-        const opacity =
-          new Animated.Value(1);
-
-        const newObject: GameObject = {
-          id,
-          color: isGreen
-            ? 'green'
-            : 'red',
-          x,
-          y,
-          scale,
-          opacity,
-        };
-
-        setObjects((prev) => [
-          ...prev,
-          newObject,
-        ]);
-
-        Animated.spring(scale, {
-          toValue: 1,
-          friction: 5,
-          tension: 60,
-          useNativeDriver: true,
-        }).start();
-
-        const timer =
-          setTimeout(() => {
-            if (
-              !isMounted.current ||
-              removingIds.current.has(id)
-            ) {
-              return;
-            }
-
-            removingIds.current.add(id);
-
-            Animated.parallel([
-              Animated.timing(
-                scale,
-                {
-                  toValue: 0,
-                  duration: 200,
-                  useNativeDriver: true,
-                }
-              ),
-
-              Animated.timing(
-                opacity,
-                {
-                  toValue: 0,
-                  duration: 200,
-                  useNativeDriver: true,
-                }
-              ),
-            ]).start(() => {
-              removeObject(id);
-            });
-          }, currentLevel.lifeTime);
-
-        objectTimers.current.set(
-          id,
-          timer
+      const maxX =
+        Math.max(
+          0,
+          playFieldWidth -
+            size -
+            PLAY_SIDE_MARGIN * 2
         );
-      },
-      [
-        removeObject,
-        width,
-        height,
-      ]
-    );
+
+      const maxY =
+        Math.max(
+          0,
+          playFieldHeight -
+            size -
+            PLAY_SIDE_MARGIN * 2
+        );
+
+      const x =
+        PLAY_SIDE_MARGIN +
+        Math.random() * maxX;
+
+      const y =
+        PLAY_SIDE_MARGIN +
+        Math.random() * maxY;
+
+      const id =
+        objectId.current++;
+
+      const isDanger =
+        Math.random() <
+        currentConfig.dangerProbability;
+
+      const scale =
+        new Animated.Value(0);
+
+      const opacity =
+        new Animated.Value(1);
+
+      const object: GameObject = {
+        id,
+
+        isDanger,
+
+        x,
+
+        y,
+
+        scale,
+
+        opacity,
+      };
+
+      setObjects(
+        previous => [
+          ...previous,
+          object,
+        ]
+      );
+
+      Animated.spring(scale, {
+        toValue: 1,
+
+        friction: 6,
+
+        tension: 70,
+
+        useNativeDriver: true,
+      }).start();
+
+      const timer =
+        setTimeout(() => {
+          if (
+            !mounted.current ||
+            removingIds.current.has(
+              id
+            )
+          ) {
+            return;
+          }
+
+          removingIds.current.add(
+            id
+          );
+
+          Animated.parallel([
+            Animated.timing(
+              scale,
+              {
+                toValue: 0,
+
+                duration: 180,
+
+                useNativeDriver: true,
+              }
+            ),
+
+            Animated.timing(
+              opacity,
+              {
+                toValue: 0,
+
+                duration: 180,
+
+                useNativeDriver: true,
+              }
+            ),
+          ]).start(() => {
+            removeObject(id);
+          });
+        }, currentConfig.lifeTime);
+
+      objectTimers.current.set(
+        id,
+        timer
+      );
+    }, [
+      playFieldWidth,
+      playFieldHeight,
+      currentConfig,
+      removeObject,
+    ]);
 
   /* ================================================================
-     OBJECT PRESS
+     PRESS
   ================================================================= */
 
   const handleObjectPress =
     useCallback(
-      (object: GameObject) => {
-        if (!playing) return;
+      (
+        object: GameObject
+      ) => {
+        if (!playing) {
+          return;
+        }
 
         if (
           removingIds.current.has(
@@ -529,87 +1030,40 @@ export default function LastSurvivalScreen() {
           object.id
         );
 
-        const isGreen =
-          object.color === 'green';
-
         const delta =
-          isGreen ? 10 : -10;
+          object.isDanger
+            ? -10
+            : 10;
 
-        const centerX =
+        showPopup(
           object.x +
-          level.objectSize / 2 -
-          20;
+            currentConfig.objectSize /
+              2 -
+            15,
 
-        const centerY =
-          object.y - 10;
+          object.y,
 
-        spawnPopup(
-          centerX,
-          centerY,
           delta
         );
 
-        Animated.sequence([
-          Animated.timing(
-            object.scale,
-            {
-              toValue: 1.3,
-              duration: 70,
-              useNativeDriver: true,
-            }
-          ),
+        if (
+          object.isDanger
+        ) {
+          wrongRef.current += 1;
 
-          Animated.parallel([
-            Animated.timing(
-              object.scale,
-              {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-              }
-            ),
-
-            Animated.timing(
-              object.opacity,
-              {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-              }
-            ),
-          ]),
-        ]).start(() => {
-          removeObject(object.id);
-        });
-
-        if (isGreen) {
-          setScore(
-            (prev) => prev + 10
-          );
-        } else {
-          setScore(
-            (prev) => prev - 10
+          setWrongCount(
+            wrongRef.current
           );
 
-          Animated.sequence([
-            Animated.timing(
-              hitFlash,
-              {
-                toValue: 1,
-                duration: 70,
-                useNativeDriver: true,
-              }
-            ),
+          scoreRef.current =
+            Math.max(
+              0,
+              scoreRef.current - 10
+            );
 
-            Animated.timing(
-              hitFlash,
-              {
-                toValue: 0,
-                duration: 260,
-                useNativeDriver: true,
-              }
-            ),
-          ]).start();
+          setScore(
+            scoreRef.current
+          );
 
           livesRef.current -= 1;
 
@@ -617,183 +1071,412 @@ export default function LastSurvivalScreen() {
             livesRef.current
           );
 
-          if (
-            livesRef.current <= 0
-          ) {
-            setTimeout(
-              () => endGame(false),
-              120
-            );
-          }
+          Animated.sequence([
+            Animated.timing(
+              flashAnimation,
+              {
+                toValue: 1,
+
+                duration: 70,
+
+                useNativeDriver: true,
+              }
+            ),
+
+            Animated.timing(
+              flashAnimation,
+              {
+                toValue: 0,
+
+                duration: 260,
+
+                useNativeDriver: true,
+              }
+            ),
+          ]).start();
+        } else {
+          correctRef.current += 1;
+
+          setCorrectCount(
+            correctRef.current
+          );
+
+          scoreRef.current += 10;
+
+          setScore(
+            scoreRef.current
+          );
         }
+
+        Animated.parallel([
+          Animated.timing(
+            object.scale,
+            {
+              toValue:
+                object.isDanger
+                  ? 1.25
+                  : 1.15,
+
+              duration: 80,
+
+              useNativeDriver: true,
+            }
+          ),
+
+          Animated.timing(
+            object.opacity,
+            {
+              toValue: 0,
+
+              duration: 220,
+
+              useNativeDriver: true,
+            }
+          ),
+        ]).start(() => {
+          removeObject(
+            object.id
+          );
+        });
       },
       [
         playing,
-        level.objectSize,
-        spawnPopup,
+
+        showPopup,
+
+        currentConfig.objectSize,
+
+        flashAnimation,
+
         removeObject,
-        endGame,
-        hitFlash,
       ]
     );
 
   /* ================================================================
-     START GAME
+     FINISH
   ================================================================= */
 
-  const startGame =
+  const finishGame =
     useCallback(
-      (levelIndex: number) => {
+      async (
+        successful: boolean
+      ) => {
         clearAllTimers();
 
-        isMounted.current = true;
-
-        removingIds.current.clear();
-
-        livesRef.current = 3;
-
-        setSelectedLevel(
-          levelIndex
-        );
-
-        setPlaying(true);
-
-        setGameOver(false);
-
-        setCompleted(false);
-
-        setScore(0);
-
-        setLives(3);
+        setPlaying(false);
 
         setObjects([]);
 
         setPopups([]);
+
+        if (!successful) {
+          setGameOver(true);
+
+          setCompleted(false);
+
+          return;
+        }
+
+        const total =
+          correctRef.current +
+          wrongRef.current;
+
+        const accuracy =
+          total === 0
+            ? 0
+            : Math.round(
+                (correctRef.current /
+                  total) *
+                  100
+              );
+
+        let nextDifficulty =
+          difficulty;
+
+        let result:
+          | 'up'
+          | 'down'
+          | 'same' =
+          'same';
+
+        if (
+          accuracy >= 80 &&
+          difficulty <
+            MAX_DIFFICULTY
+        ) {
+          nextDifficulty =
+            difficulty + 1;
+
+          result = 'up';
+        } else if (
+          accuracy < 40 &&
+          difficulty >
+            MIN_DIFFICULTY
+        ) {
+          nextDifficulty =
+            difficulty - 1;
+
+          result = 'down';
+        }
+
+        setPreviousAccuracy(
+          accuracy
+        );
+
+        setDifficulty(
+          nextDifficulty
+        );
+
+        setAdaptiveResult(
+          result
+        );
+
+        setCompleted(true);
+
+        await saveAdaptiveState(
+          nextDifficulty,
+
+          accuracy
+        );
       },
-      [clearAllTimers]
+      [
+        clearAllTimers,
+
+        difficulty,
+
+        saveAdaptiveState,
+      ]
     );
 
   /* ================================================================
-     MOUNT / UNMOUNT
+     START
   ================================================================= */
 
-  useEffect(() => {
-    isMounted.current = true;
-
-    return () => {
-      isMounted.current = false;
+  const startGame =
+    useCallback(() => {
       clearAllTimers();
-    };
-  }, [clearAllTimers]);
+
+      removingIds.current.clear();
+
+      objectId.current = 0;
+
+      popupId.current = 0;
+
+      livesRef.current =
+        TOTAL_LIVES;
+
+      scoreRef.current = 0;
+
+      correctRef.current = 0;
+
+      wrongRef.current = 0;
+
+      setLives(
+        TOTAL_LIVES
+      );
+
+      setScore(0);
+
+      setCorrectCount(0);
+
+      setWrongCount(0);
+
+      setObjects([]);
+
+      setPopups([]);
+
+      setCompleted(false);
+
+      setGameOver(false);
+
+      setAdaptiveResult(
+        null
+      );
+
+      setPlaying(true);
+    }, [clearAllTimers]);
 
   /* ================================================================
-     GAME TIMER / SPAWN TIMER
+     GAME TIMER
   ================================================================= */
 
   useEffect(() => {
+    if (!playing) {
+      return;
+    }
+
     if (
-      !playing ||
-      selectedLevel === null
+      playFieldWidth <= 0 ||
+      playFieldHeight <= 0
     ) {
       return;
     }
 
-    const currentLevel =
-      LEVELS[selectedLevel];
-
     gameTimer.current =
       setTimeout(() => {
-        endGame(true);
-      }, currentLevel.duration);
-
-    spawnTimer.current =
-      setInterval(() => {
-        if (!isMounted.current) {
-          return;
-        }
-
-        setObjects((prev) => {
-          if (
-            prev.length >=
-            currentLevel.maxObjects
-          ) {
-            return prev;
-          }
-
-          spawnObject(currentLevel);
-
-          return prev;
-        });
-      }, currentLevel.spawnInterval);
+        finishGame(true);
+      }, currentConfig.duration);
 
     return () => {
-      if (spawnTimer.current) {
-        clearInterval(
-          spawnTimer.current
-        );
-
-        spawnTimer.current = null;
-      }
-
-      if (gameTimer.current) {
+      if (
+        gameTimer.current
+      ) {
         clearTimeout(
           gameTimer.current
         );
 
-        gameTimer.current = null;
+        gameTimer.current =
+          null;
       }
     };
   }, [
     playing,
-    selectedLevel,
-    endGame,
+
+    playFieldWidth,
+
+    playFieldHeight,
+
+    currentConfig.duration,
+
+    finishGame,
+  ]);
+
+  /* ================================================================
+     SPAWN TIMER
+  ================================================================= */
+
+  useEffect(() => {
+    if (!playing) {
+      return;
+    }
+
+    if (
+      playFieldWidth <= 0 ||
+      playFieldHeight <= 0
+    ) {
+      return;
+    }
+
+    const initialTimer =
+      setTimeout(() => {
+        spawnObject();
+      }, 100);
+
+    spawnTimer.current =
+      setInterval(() => {
+        if (
+          !mounted.current
+        ) {
+          return;
+        }
+
+        setObjects(
+          previous => {
+            if (
+              previous.length >=
+              currentConfig.maxObjects
+            ) {
+              return previous;
+            }
+
+            spawnObject();
+
+            return previous;
+          }
+        );
+      }, currentConfig.spawnInterval);
+
+    return () => {
+      clearTimeout(
+        initialTimer
+      );
+
+      if (
+        spawnTimer.current
+      ) {
+        clearInterval(
+          spawnTimer.current
+        );
+
+        spawnTimer.current =
+          null;
+      }
+    };
+  }, [
+    playing,
+
+    playFieldWidth,
+
+    playFieldHeight,
+
+    currentConfig.spawnInterval,
+
+    currentConfig.maxObjects,
+
     spawnObject,
   ]);
 
   /* ================================================================
-     LEVEL DESCRIPTION
+     LIVES
   ================================================================= */
 
-  const getLevelDescription =
-    useCallback(
-      (index: number) => {
-        if (language === 'fa') {
-          const descriptions = [
-            'اشکال آهسته ظاهر می‌شوند',
-            'اشکال بیشتر و سریع‌تر ناپدید می‌شوند',
-            'اشکال بیشتر با زمان کمتر',
-            'اشکال زیاد و زمان خیلی کم',
-          ];
+  useEffect(() => {
+    if (
+      playing &&
+      lives <= 0
+    ) {
+      const timer =
+        setTimeout(() => {
+          finishGame(false);
+        }, 100);
 
-          return (
-            descriptions[index] || ''
-          );
-        }
+      return () =>
+        clearTimeout(timer);
+    }
 
-        const descriptions = [
-          'Shapes appear slowly',
-          'More shapes, less time',
-          'Even more shapes, faster pace',
-          'Maximum shapes, minimum time',
-        ];
+    return undefined;
+  }, [
+    lives,
 
-        return (
-          descriptions[index] || ''
-        );
-      },
-      [language]
-    );
+    playing,
 
-  const textAlignStyle =
-    isRTL ? 'right' : 'left';
+    finishGame,
+  ]);
 
   /* ================================================================
-     PAGE 1 — LEVEL SELECTION
+     BACK
+  ================================================================= */
+
+  const handleBack =
+    useCallback(() => {
+      clearAllTimers();
+
+      setPlaying(false);
+
+      setObjects([]);
+
+      setPopups([]);
+
+      if (
+        router.canGoBack()
+      ) {
+        router.back();
+      } else {
+        router.replace('/');
+      }
+    }, [
+      clearAllTimers,
+      router,
+    ]);
+
+  /* ================================================================
+     START SCREEN
   ================================================================= */
 
   if (
     !playing &&
-    selectedLevel === null
+    !completed &&
+    !gameOver
   ) {
     return (
       <View
@@ -805,172 +1488,964 @@ export default function LastSurvivalScreen() {
           },
         ]}
       >
-        {/* ========================================================
-            BACK BUTTON
-            همیشه سمت چپ
-        ======================================================== */}
-
-        <BackButton
-          onPress={handleBack}
+        <PageHeader
+          title={text.title}
+          subtitle={
+            text.noLevelSelection
+          }
+          onBack={
+            handleBack
+          }
           colors={colors}
-          label={t.back}
-          showLabel={true}
+          isRTL={isRTL}
+          backLabel={
+            text.back
+          }
         />
 
-        {/* ========================================================
-            HEADER
-        ======================================================== */}
-
-        <View style={styles.levelHeader}>
+        <ScrollView
+          style={
+            styles.startScroll
+          }
+          contentContainerStyle={
+            styles.startScrollContent
+          }
+          showsVerticalScrollIndicator={
+            false
+          }
+        >
           <View
-            style={[
-              styles.iconCircle,
-              {
-                backgroundColor:
-                  colors.primary + '20',
-              },
-            ]}
+            style={
+              styles.startContent
+            }
           >
-            <Zap
-              size={32}
-              color={colors.primary}
-            />
-          </View>
-
-          <Text
-            style={[
-              styles.title,
-              {
-                color: colors.text,
-                textAlign: 'center',
-              },
-            ]}
-          >
-            Last Survival
-          </Text>
-
-          <Text
-            style={[
-              styles.subtitle,
-              {
-                color:
-                  colors.textSecondary,
-                textAlign: 'center',
-              },
-            ]}
-          >
-            {language === 'fa'
-              ? 'روی اشکال سبز کلیک کنید. از قرمزها دوری کنید.'
-              : 'Click the green shapes. Avoid the red ones.'}
-          </Text>
-        </View>
-
-        {/* ========================================================
-            LEVELS
-        ======================================================== */}
-
-        <View style={styles.levels}>
-          {LEVELS.map(
-            (item, index) => (
-              <TouchableOpacity
-                key={item.name}
-                onPress={() =>
-                  startGame(index)
+            <View
+              style={[
+                styles.heroIcon,
+                {
+                  backgroundColor:
+                    colors.primary +
+                    '15',
+                },
+              ]}
+            >
+              <Shield
+                size={44}
+                color={
+                  colors.primary
                 }
-                activeOpacity={0.8}
+              />
+            </View>
+
+            <Text
+              style={[
+                styles.heroTitle,
+                {
+                  color:
+                    colors.text,
+                },
+              ]}
+            >
+              {text.title}
+            </Text>
+
+            <Text
+              style={[
+                styles.heroDescription,
+                {
+                  color:
+                    colors.textSecondary,
+                },
+              ]}
+            >
+              {
+                text.instruction
+              }
+            </Text>
+
+            <View
+              style={[
+                styles.adaptiveCard,
+                {
+                  backgroundColor:
+                    colors.surface,
+
+                  borderColor:
+                    colors.border,
+                },
+              ]}
+            >
+              <View
                 style={[
-                  styles.levelCard,
+                  styles.adaptiveIcon,
                   {
                     backgroundColor:
-                      colors.surface,
-                    borderColor:
-                      colors.border,
-
-                    flexDirection:
-                      isRTL
-                        ? 'row-reverse'
-                        : 'row',
+                      colors.primary +
+                      '15',
                   },
                 ]}
               >
-                <View
+                <Sparkles
+                  size={23}
+                  color={
+                    colors.primary
+                  }
+                />
+              </View>
+
+              <View
+                style={
+                  styles.adaptiveText
+                }
+              >
+                <Text
                   style={[
-                    styles.levelNumber,
+                    styles.adaptiveTitle,
                     {
-                      backgroundColor:
-                        colors.primary,
+                      color:
+                        colors.text,
+
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
                     },
                   ]}
                 >
-                  <Text
-                    style={
-                      styles.levelNumberText
-                    }
-                  >
-                    {index + 1}
-                  </Text>
-                </View>
+                  {
+                    text.adaptive
+                  }
+                </Text>
+
+                <Text
+                  style={[
+                    styles.adaptiveDescription,
+                    {
+                      color:
+                        colors.textSecondary,
+
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
+                  ]}
+                >
+                  {
+                    text.adaptiveInfo
+                  }
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={[
+                styles.currentLevelCard,
+                {
+                  backgroundColor:
+                    colors.primary +
+                    '0D',
+
+                  borderColor:
+                    colors.primary +
+                    '25',
+                },
+              ]}
+            >
+              <View>
+                <Text
+                  style={[
+                    styles.levelLabel,
+                    {
+                      color:
+                        colors.textSecondary,
+
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
+                  ]}
+                >
+                  {
+                    text.difficulty
+                  }
+                </Text>
+
+                <Text
+                  style={[
+                    styles.levelValue,
+                    {
+                      color:
+                        colors.primary,
+
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
+                  ]}
+                >
+                  {
+                    difficultyName
+                  }
+                </Text>
+              </View>
+
+              <Target
+                size={27}
+                color={
+                  colors.primary
+                }
+              />
+            </View>
+
+            {previousAccuracy !==
+              null && (
+              <View
+                style={[
+                  styles.previousCard,
+                  {
+                    backgroundColor:
+                      colors.surface,
+
+                    borderColor:
+                      colors.border,
+                  },
+                ]}
+              >
+                <TrendingUp
+                  size={24}
+                  color={
+                    colors.primary
+                  }
+                />
 
                 <View
                   style={
-                    isRTL
-                      ? styles.levelInfoRTL
-                      : styles.levelInfo
+                    styles.previousText
                   }
                 >
                   <Text
                     style={[
-                      styles.levelTitle,
+                      styles.previousLabel,
                       {
                         color:
-                          colors.text,
+                          colors.textSecondary,
+
                         textAlign:
-                          textAlignStyle,
+                          isRTL
+                            ? 'right'
+                            : 'left',
                       },
                     ]}
                   >
-                    {language === 'fa'
-                      ? item.nameFa
-                      : item.name}
+                    {
+                      text.accuracy
+                    }
                   </Text>
 
                   <Text
                     style={[
-                      styles.levelDescription,
+                      styles.previousValue,
                       {
                         color:
-                          colors.textSecondary,
+                          colors.text,
+
                         textAlign:
-                          textAlignStyle,
+                          isRTL
+                            ? 'right'
+                            : 'left',
                       },
                     ]}
                   >
-                    {getLevelDescription(
-                      index
-                    )}
+                    {
+                      previousAccuracy
+                    }
+                    %
                   </Text>
                 </View>
+              </View>
+            )}
 
-                <Zap
-                  size={20}
-                  color={
-                    index === 0
-                      ? colors.success
-                      : index === 1
-                      ? colors.warning
-                      : colors.error
-                  }
-                />
-              </TouchableOpacity>
-            )
-          )}
-        </View>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={
+                startGame
+              }
+              style={[
+                styles.startButton,
+                {
+                  backgroundColor:
+                    colors.primary,
+                },
+              ]}
+            >
+              <Zap
+                size={21}
+                color="#FFFFFF"
+              />
+
+              <Text
+                style={
+                  styles.startButtonText
+                }
+              >
+                {text.start}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </View>
     );
   }
 
   /* ================================================================
-     PAGE 2 — GAME
+     GAME OVER
+  ================================================================= */
+
+  if (gameOver) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {
+            backgroundColor:
+              colors.background,
+          },
+        ]}
+      >
+        <PageHeader
+          title={
+            text.gameOver
+          }
+          subtitle={
+            text.title
+          }
+          onBack={
+            handleBack
+          }
+          colors={colors}
+          isRTL={isRTL}
+          backLabel={
+            text.back
+          }
+        />
+
+        <ScrollView
+          style={
+            styles.resultScroll
+          }
+          contentContainerStyle={
+            styles.resultScrollContent
+          }
+          showsVerticalScrollIndicator={
+            false
+          }
+        >
+          <View
+            style={
+              styles.resultContent
+            }
+          >
+            <View
+              style={[
+                styles.resultIcon,
+                {
+                  backgroundColor:
+                    '#EF4444' +
+                    '15',
+                },
+              ]}
+            >
+              <XCircle
+                size={48}
+                color="#EF4444"
+              />
+            </View>
+
+            <Text
+              style={[
+                styles.resultTitle,
+                {
+                  color:
+                    colors.text,
+                },
+              ]}
+            >
+              {
+                text.gameOver
+              }
+            </Text>
+
+            <Text
+              style={[
+                styles.resultScore,
+                {
+                  color:
+                    colors.primary,
+                },
+              ]}
+            >
+              {score}
+            </Text>
+
+            <Text
+              style={[
+                styles.resultLabel,
+                {
+                  color:
+                    colors.textSecondary,
+                },
+              ]}
+            >
+              {text.score}
+            </Text>
+
+            <View
+              style={[
+                styles.statsCard,
+                {
+                  backgroundColor:
+                    colors.surface,
+
+                  borderColor:
+                    colors.border,
+                },
+              ]}
+            >
+              <View
+                style={
+                  styles.statItem
+                }
+              >
+                <CheckCircle
+                  size={22}
+                  color={
+                    colors.primary
+                  }
+                />
+
+                <Text
+                  style={[
+                    styles.statValue,
+                    {
+                      color:
+                        colors.text,
+                    },
+                  ]}
+                >
+                  {
+                    correctCount
+                  }
+                </Text>
+
+                <Text
+                  style={[
+                    styles.statLabel,
+                    {
+                      color:
+                        colors.textSecondary,
+                    },
+                  ]}
+                >
+                  {
+                    text.correct
+                  }
+                </Text>
+              </View>
+
+              <View
+                style={
+                  styles.statItem
+                }
+              >
+                <XCircle
+                  size={22}
+                  color="#EF4444"
+                />
+
+                <Text
+                  style={[
+                    styles.statValue,
+                    {
+                      color:
+                        colors.text,
+                    },
+                  ]}
+                >
+                  {
+                    wrongCount
+                  }
+                </Text>
+
+                <Text
+                  style={[
+                    styles.statLabel,
+                    {
+                      color:
+                        colors.textSecondary,
+                    },
+                  ]}
+                >
+                  {
+                    text.wrong
+                  }
+                </Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={
+                startGame
+              }
+              style={[
+                styles.startButton,
+                {
+                  backgroundColor:
+                    colors.primary,
+                },
+              ]}
+            >
+              <RotateCcw
+                size={20}
+                color="#FFFFFF"
+              />
+
+              <Text
+                style={
+                  styles.startButtonText
+                }
+              >
+                {
+                  text.playAgain
+                }
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  /* ================================================================
+     COMPLETED
+  ================================================================= */
+
+  if (completed) {
+    const total =
+      correctCount +
+      wrongCount;
+
+    const accuracy =
+      total > 0
+        ? Math.round(
+            (correctCount /
+              total) *
+              100
+          )
+        : 0;
+
+    const nextConfig =
+      DIFFICULTIES[
+        Math.max(
+          0,
+          Math.min(
+            difficulty - 1,
+            DIFFICULTIES.length - 1
+          )
+        )
+      ];
+
+    return (
+      <View
+        style={[
+          styles.container,
+          {
+            backgroundColor:
+              colors.background,
+          },
+        ]}
+      >
+        <PageHeader
+          title={
+            text.completed
+          }
+          subtitle={
+            text.title
+          }
+          onBack={
+            handleBack
+          }
+          colors={colors}
+          isRTL={isRTL}
+          backLabel={
+            text.back
+          }
+        />
+
+        <ScrollView
+          style={
+            styles.resultScroll
+          }
+          contentContainerStyle={
+            styles.resultScrollContent
+          }
+          showsVerticalScrollIndicator={
+            false
+          }
+        >
+          <View
+            style={
+              styles.resultContent
+            }
+          >
+            <View
+              style={[
+                styles.resultIcon,
+                {
+                  backgroundColor:
+                    colors.primary +
+                    '15',
+                },
+              ]}
+            >
+              <Trophy
+                size={48}
+                color={
+                  colors.primary
+                }
+              />
+            </View>
+
+            <Text
+              style={[
+                styles.resultTitle,
+                {
+                  color:
+                    colors.text,
+                },
+              ]}
+            >
+              {
+                text.completed
+              }
+            </Text>
+
+            <Text
+              style={[
+                styles.resultScore,
+                {
+                  color:
+                    colors.primary,
+                },
+              ]}
+            >
+              {score}
+            </Text>
+
+            <Text
+              style={[
+                styles.resultLabel,
+                {
+                  color:
+                    colors.textSecondary,
+                },
+              ]}
+            >
+              {text.score}
+            </Text>
+
+            <View
+              style={[
+                styles.accuracyCard,
+                {
+                  backgroundColor:
+                    colors.surface,
+
+                  borderColor:
+                    colors.border,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.accuracyValue,
+                  {
+                    color:
+                      colors.primary,
+                  },
+                ]}
+              >
+                {accuracy}%
+              </Text>
+
+              <Text
+                style={[
+                  styles.accuracyLabel,
+                  {
+                    color:
+                      colors.textSecondary,
+                  },
+                ]}
+              >
+                {
+                  text.accuracy
+                }
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.statsCard,
+                {
+                  backgroundColor:
+                    colors.surface,
+
+                  borderColor:
+                    colors.border,
+                },
+              ]}
+            >
+              <View
+                style={
+                  styles.statItem
+                }
+              >
+                <CheckCircle
+                  size={22}
+                  color={
+                    colors.primary
+                  }
+                />
+
+                <Text
+                  style={[
+                    styles.statValue,
+                    {
+                      color:
+                        colors.text,
+                    },
+                  ]}
+                >
+                  {
+                    correctCount
+                  }
+                </Text>
+
+                <Text
+                  style={[
+                    styles.statLabel,
+                    {
+                      color:
+                        colors.textSecondary,
+                    },
+                  ]}
+                >
+                  {
+                    text.correct
+                  }
+                </Text>
+              </View>
+
+              <View
+                style={
+                  styles.statItem
+                }
+              >
+                <XCircle
+                  size={22}
+                  color="#EF4444"
+                />
+
+                <Text
+                  style={[
+                    styles.statValue,
+                    {
+                      color:
+                        colors.text,
+                    },
+                  ]}
+                >
+                  {
+                    wrongCount
+                  }
+                </Text>
+
+                <Text
+                  style={[
+                    styles.statLabel,
+                    {
+                      color:
+                        colors.textSecondary,
+                    },
+                  ]}
+                >
+                  {
+                    text.wrong
+                  }
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={[
+                styles.adaptiveResultCard,
+                {
+                  backgroundColor:
+                    colors.surface,
+
+                  borderColor:
+                    colors.border,
+                },
+              ]}
+            >
+              <Sparkles
+                size={23}
+                color={
+                  colors.primary
+                }
+              />
+
+              <View
+                style={
+                  styles.adaptiveResultText
+                }
+              >
+                <Text
+                  style={[
+                    styles.adaptiveResultTitle,
+                    {
+                      color:
+                        colors.text,
+
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
+                  ]}
+                >
+                  {
+                    text.adaptive
+                  }
+                </Text>
+
+                <Text
+                  style={[
+                    styles.adaptiveResultDescription,
+                    {
+                      color:
+                        colors.textSecondary,
+
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
+                  ]}
+                >
+                  {adaptiveResult ===
+                  'up'
+                    ? text.adaptiveUp
+                    : adaptiveResult ===
+                        'down'
+                      ? text.adaptiveDown
+                      : text.adaptiveSame}
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={[
+                styles.nextLevelCard,
+                {
+                  backgroundColor:
+                    colors.primary +
+                    '0D',
+
+                  borderColor:
+                    colors.primary +
+                    '25',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.nextLevelLabel,
+                  {
+                    color:
+                      colors.textSecondary,
+
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {
+                  text.difficulty
+                }
+              </Text>
+
+              <Text
+                style={[
+                  styles.nextLevelValue,
+                  {
+                    color:
+                      colors.primary,
+
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {language === 'fa'
+                  ? nextConfig.nameFa
+                  : nextConfig.nameEn}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={
+                startGame
+              }
+              style={[
+                styles.startButton,
+                {
+                  backgroundColor:
+                    colors.primary,
+                },
+              ]}
+            >
+              <RotateCcw
+                size={20}
+                color="#FFFFFF"
+              />
+
+              <Text
+                style={
+                  styles.startButtonText
+                }
+              >
+                {
+                  text.playAgain
+                }
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  /* ================================================================
+     ACTIVE GAME
   ================================================================= */
 
   return (
@@ -983,59 +2458,64 @@ export default function LastSurvivalScreen() {
         },
       ]}
     >
-      {/* ==========================================================
-          GAME HEADER
+      <PageHeader
+        title={text.title}
+        subtitle={`${text.level} ${difficultyName}`}
+        onBack={
+          handleBack
+        }
+        colors={colors}
+        isRTL={isRTL}
+        backLabel={
+          text.back
+        }
+      />
 
-          Back همیشه در سمت چپ ثابت است.
-          HUD مستقل از BackButton است.
-      ========================================================== */}
+      {/* HUD */}
 
-      <View style={styles.gameHeader}>
-        {/* BACK BUTTON */}
+      <View
+        style={[
+          styles.hud,
+          {
+            backgroundColor:
+              colors.surface,
 
-        <BackButton
-          onPress={handleBack}
-          colors={colors}
-          label={t.back}
-          showLabel={false}
-          compact={true}
-        />
+            borderColor:
+              colors.border,
+          },
+        ]}
+      >
+        <View
+          style={
+            styles.hudItem
+          }
+        >
+          <Zap
+            size={19}
+            color={
+              colors.primary
+            }
+          />
 
-        {/* GAME STATS */}
-
-        <View style={styles.gameStats}>
-          <View style={styles.stat}>
-            <Heart
-              size={19}
-              color={colors.error}
-              strokeWidth={2.4}
-              fill={colors.error}
-            />
-
+          <View>
             <Text
               style={[
-                styles.statText,
+                styles.hudLabel,
                 {
-                  color: colors.text,
+                  color:
+                    colors.textSecondary,
                 },
               ]}
             >
-              {lives}
+              {text.score}
             </Text>
-          </View>
-
-          <View style={styles.stat}>
-            <Trophy
-              size={20}
-              color={colors.warning}
-              strokeWidth={2.3}
-            />
 
             <Text
               style={[
-                styles.statText,
+                styles.hudValue,
                 {
-                  color: colors.text,
+                  color:
+                    colors.text,
                 },
               ]}
             >
@@ -1044,344 +2524,240 @@ export default function LastSurvivalScreen() {
           </View>
         </View>
 
-        {/* LEVEL */}
-
-        <Text
-          style={[
-            styles.levelLabel,
-            {
-              color: colors.primary,
-            },
-          ]}
-        >
-          {language === 'fa'
-            ? level.nameFa
-            : level.name}
-        </Text>
-      </View>
-
-      {/* ==========================================================
-          PLAY AREA
-      ========================================================== */}
-
-      <View style={styles.playArea}>
-        {objects.map((object) => (
-          <Animated.View
-            key={object.id}
-            style={[
-              styles.movingObject,
-              {
-                left: object.x,
-                top: object.y,
-                width:
-                  level.objectSize,
-                height:
-                  level.objectSize,
-
-                backgroundColor:
-                  object.color ===
-                  'green'
-                    ? '#22C55E'
-                    : '#EF4444',
-
-                opacity:
-                  object.opacity,
-
-                transform: [
-                  {
-                    scale:
-                      object.scale,
-                  },
-                ],
-              },
-            ]}
-          >
-            <TouchableOpacity
-              style={
-                styles.pressableObject
-              }
-              activeOpacity={0.7}
-              onPress={() =>
-                handleObjectPress(
-                  object
-                )
-              }
-              hitSlop={{
-                top: 12,
-                bottom: 12,
-                left: 12,
-                right: 12,
-              }}
-            >
-              <View
-                style={styles.eyes}
-              >
-                <View
-                  style={styles.eye}
-                />
-
-                <View
-                  style={styles.eye}
-                />
-              </View>
-
-              {object.color ===
-              'green' ? (
-                <View
-                  style={
-                    styles.happyMouth
-                  }
-                />
-              ) : (
-                <View
-                  style={
-                    styles.angryMouth
-                  }
-                />
-              )}
-            </TouchableOpacity>
-          </Animated.View>
-        ))}
-
-        {/* SCORE POPUPS */}
-
-        {popups.map((p) => (
-          <Animated.View
-            key={p.id}
-            pointerEvents="none"
-            style={[
-              styles.popup,
-              {
-                left: p.x,
-                top: p.y,
-                opacity: p.opacity,
-                transform: [
-                  {
-                    translateY:
-                      p.translateY,
-                  },
-                ],
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.popupText,
-                {
-                  color:
-                    p.value > 0
-                      ? '#22C55E'
-                      : '#EF4444',
-                },
-              ]}
-            >
-              {p.value > 0
-                ? `+${p.value}`
-                : `${p.value}`}
-            </Text>
-          </Animated.View>
-        ))}
-
-        {/* HIT FLASH */}
-
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            StyleSheet.absoluteFillObject,
-            {
-              backgroundColor:
-                '#EF4444',
-              opacity: hitFlash,
-            },
-          ]}
-        />
-
-        {/* INSTRUCTION */}
-
         <View
-          style={styles.instruction}
-          pointerEvents="none"
+          style={
+            styles.livesContainer
+          }
         >
-          <Text
-            style={[
-              styles.instructionText,
-              {
-                color:
-                  colors.textSecondary,
-                textAlign: 'center',
-              },
-            ]}
-          >
-            {language === 'fa'
-              ? 'ضربه به سبز'
-              : 'Tap GREEN'}
-          </Text>
-
-          <Text
-            style={[
-              styles.instructionDanger,
-              {
-                color:
-                  colors.error,
-                textAlign: 'center',
-              },
-            ]}
-          >
-            {language === 'fa'
-              ? 'دوری از قرمز'
-              : 'Avoid RED'}
-          </Text>
+          {Array.from({
+            length:
+              TOTAL_LIVES,
+          }).map(
+            (_, index) => (
+              <Heart
+                key={index}
+                size={20}
+                color={
+                  index <
+                  lives
+                    ? '#EF4444'
+                    : colors.border
+                }
+                fill={
+                  index <
+                  lives
+                    ? '#EF4444'
+                    : 'transparent'
+                }
+              />
+            )
+          )}
         </View>
       </View>
 
-      {/* ==========================================================
-          RESULT
-      ========================================================== */}
+      {/* INSTRUCTION */}
 
-      {(gameOver || completed) && (
-        <View
+      <View
+        style={[
+          styles.instructionCard,
+          {
+            backgroundColor:
+              colors.surface,
+
+            borderColor:
+              colors.border,
+          },
+        ]}
+      >
+        <Target
+          size={19}
+          color={
+            colors.primary
+          }
+        />
+
+        <Text
           style={[
-            styles.resultOverlay,
+            styles.instructionText,
             {
-              backgroundColor:
-                colors.background +
-                'F5',
+              color:
+                colors.text,
+
+              textAlign:
+                isRTL
+                  ? 'right'
+                  : 'left',
             },
           ]}
         >
-          <View
-            style={[
-              styles.resultCard,
-              {
-                backgroundColor:
-                  colors.surface,
-              },
-            ]}
-          >
-            <Trophy
-              size={42}
-              color={
-                completed
-                  ? colors.success
-                  : colors.error
-              }
-            />
+          {
+            text.instruction
+          }
+        </Text>
+      </View>
 
-            <Text
-              style={[
-                styles.resultTitle,
-                {
-                  color:
-                    colors.text,
-                  textAlign:
-                    'center',
-                },
-              ]}
-            >
-              {completed
-                ? language === 'fa'
-                  ? 'مرحله کامل شد!'
-                  : 'Level Complete!'
-                : language === 'fa'
-                ? 'بازی تمام شد'
-                : 'Game Over'}
-            </Text>
+      {/* GAME AREA */}
 
-            <Text
-              style={[
-                styles.finalScore,
-                {
-                  color:
-                    colors.primary,
-                  textAlign:
-                    'center',
-                },
-              ]}
-            >
-              {score}{' '}
-              {language === 'fa'
-                ? 'امتیاز'
-                : 'Points'}
-            </Text>
+      <View
+        style={
+          styles.playField
+        }
+        onLayout={event => {
+          const {
+            width: fieldWidth,
 
-            {/* PLAY AGAIN */}
+            height: fieldHeight,
+          } =
+            event.nativeEvent.layout;
 
-            <TouchableOpacity
-              onPress={() =>
-                selectedLevel !==
-                  null &&
-                startGame(
-                  selectedLevel
-                )
+          setPlayFieldWidth(
+            fieldWidth
+          );
+
+          setPlayFieldHeight(
+            fieldHeight
+          );
+        }}
+      >
+        {objects.map(
+          object => (
+            <Animated.View
+              key={
+                object.id
               }
               style={[
-                styles.resultButton,
+                styles.objectWrapper,
+
                 {
-                  backgroundColor:
-                    colors.primary,
+                  left:
+                    object.x,
+
+                  top:
+                    object.y,
+
+                  width:
+                    currentConfig.objectSize,
+
+                  height:
+                    currentConfig.objectSize,
+
+                  opacity:
+                    object.opacity,
+
+                  transform: [
+                    {
+                      scale:
+                        object.scale,
+                    },
+                  ],
                 },
               ]}
             >
-              <Text
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() =>
+                  handleObjectPress(
+                    object
+                  )
+                }
                 style={
-                  styles.resultButtonText
+                  styles.imageButton
                 }
               >
-                {language === 'fa'
-                  ? 'دوباره بازی'
-                  : 'Play Again'}
-              </Text>
-            </TouchableOpacity>
+                <Image
+                  source={
+                    object.isDanger
+                      ? GAME_IMAGES.danger
+                      : GAME_IMAGES.safe
+                  }
+                  resizeMode="contain"
+                  style={
+                    styles.gameImage
+                  }
+                />
+              </TouchableOpacity>
+            </Animated.View>
+          )
+        )}
 
-            {/* CHOOSE LEVEL */}
-
-            <TouchableOpacity
-              onPress={() => {
-                clearAllTimers();
-
-                setPlaying(false);
-
-                setSelectedLevel(
-                  null
-                );
-
-                setGameOver(false);
-
-                setCompleted(false);
-
-                setObjects([]);
-
-                setPopups([]);
-
-                isMounted.current = true;
-              }}
+        {popups.map(
+          popup => (
+            <Animated.View
+              key={
+                popup.id
+              }
+              pointerEvents="none"
               style={[
-                styles.secondaryButton,
+                styles.popup,
+
                 {
-                  borderColor:
-                    colors.border,
+                  left:
+                    popup.x,
+
+                  top:
+                    popup.y,
+
+                  opacity:
+                    popup.opacity,
+
+                  transform: [
+                    {
+                      translateY:
+                        popup.translateY,
+                    },
+                  ],
                 },
               ]}
             >
               <Text
                 style={[
-                  styles.secondaryButtonText,
+                  styles.popupText,
                   {
                     color:
-                      colors.text,
-                    textAlign:
-                      'center',
+                      popup.value >
+                      0
+                        ? '#22C55E'
+                        : '#EF4444',
                   },
                 ]}
               >
-                {language === 'fa'
-                  ? 'انتخاب سطح'
-                  : 'Choose Level'}
+                {popup.value >
+                0
+                  ? '+'
+                  : ''}
+                {
+                  popup.value
+                }
               </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+            </Animated.View>
+          )
+        )}
+      </View>
+
+      {/* ERROR FLASH */}
+
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.flashOverlay,
+          {
+            opacity:
+              flashAnimation.interpolate(
+                {
+                  inputRange: [
+                    0,
+                    1,
+                  ],
+
+                  outputRange: [
+                    0,
+                    0.12,
+                  ],
+                }
+              ),
+          },
+        ]}
+      />
     </View>
   );
 }
@@ -1390,330 +2766,696 @@ export default function LastSurvivalScreen() {
    STYLES
 ================================================================ */
 
-const styles = StyleSheet.create({
-  /* ================================================================
-     PAGE 1
-  ================================================================= */
-
-  container: {
-    flex: 1,
-    padding: Spacing.lg,
-  },
-
-  /* ================================================================
-     UNIFIED BACK BUTTON
-
-     همیشه:
-     LEFT
-
-     [ ← Back ]
-
-     مستقل از RTL
-  ================================================================= */
-
-  unifiedBackButton: {
-    alignSelf: 'flex-start',
-    minHeight: 44,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: Spacing.md,
-  },
-
-  compactBackButton: {
-    minHeight: 42,
-    width: 42,
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-    gap: 0,
-  },
-
-  backText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-
-  levelHeader: {
-    alignItems: 'center',
-    marginTop: 45,
-    marginBottom: Spacing.xl,
-  },
-
-  iconCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.md,
-  },
-
-  title: {
-    fontSize: 30,
-    fontWeight: '800',
-  },
-
-  subtitle: {
-    fontSize: 15,
-    marginTop: 8,
-    maxWidth: 300,
-  },
-
-  /* ================================================================
-     LEVELS
-  ================================================================= */
-
-  levels: {
-    gap: 12,
-  },
-
-  levelCard: {
-    alignItems: 'center',
-    padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-  },
-
-  levelNumber: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  levelNumberText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '800',
-  },
-
-  levelInfo: {
-    flex: 1,
-    marginLeft: Spacing.md,
-  },
-
-  levelInfoRTL: {
-    flex: 1,
-    marginRight: Spacing.md,
-  },
-
-  levelTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-
-  levelDescription: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-
-  /* ================================================================
-     GAME
-  ================================================================= */
-
-  gameContainer: {
-    flex: 1,
-  },
-
-  gameHeader: {
-    height: 90,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: 40,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexDirection: 'row',
-  },
-
-  gameStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 18,
-    flex: 1,
-  },
-
-  stat: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-
-  statText: {
-    fontSize: 17,
-    fontWeight: '800',
-  },
-
-  levelLabel: {
-    fontSize: 16,
-    fontWeight: '800',
-    minWidth: 60,
-    textAlign: 'right',
-  },
-
-  /* ================================================================
-     PLAY AREA
-  ================================================================= */
-
-  playArea: {
-    flex: 1,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-
-  movingObject: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 14,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 7,
-    shadowOffset: {
-      width: 0,
-      height: 4,
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
     },
-  },
 
-  pressableObject: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 14,
-  },
+    gameContainer: {
+      flex: 1,
 
-  eyes: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '48%',
-    marginBottom: 7,
-  },
-
-  eye: {
-    width: 7,
-    height: 11,
-    borderRadius: 5,
-    backgroundColor: '#111827',
-  },
-
-  happyMouth: {
-    width: 24,
-    height: 11,
-    borderBottomWidth: 4,
-    borderBottomColor: '#111827',
-    borderRadius: 12,
-  },
-
-  angryMouth: {
-    width: 24,
-    height: 10,
-    borderTopWidth: 4,
-    borderTopColor: '#111827',
-    borderRadius: 12,
-  },
-
-  /* ================================================================
-     POPUP
-  ================================================================= */
-
-  popup: {
-    position: 'absolute',
-  },
-
-  popupText: {
-    fontSize: 20,
-    fontWeight: '900',
-    textShadowColor:
-      'rgba(0,0,0,0.25)',
-    textShadowOffset: {
-      width: 0,
-      height: 1,
+      overflow: 'hidden',
     },
-    textShadowRadius: 3,
-  },
 
-  /* ================================================================
-     INSTRUCTION
-  ================================================================= */
+    /* ============================================================
+       HEADER
+    ============================================================ */
 
-  instruction: {
-    position: 'absolute',
-    top: 25,
-    width: '100%',
-    alignItems: 'center',
-  },
+    pageHeader: {
+      width: '100%',
 
-  instructionText: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
+      paddingHorizontal:
+        Spacing.lg,
 
-  instructionDanger: {
-    fontSize: 12,
-    marginTop: 3,
-  },
+      paddingTop: 58,
 
-  /* ================================================================
-     RESULT
-  ================================================================= */
+      paddingBottom: 14,
 
-  resultOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+      flexDirection: 'row',
 
-  resultCard: {
-    width: '82%',
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.xl,
-    alignItems: 'center',
-  },
+      alignItems: 'center',
 
-  resultTitle: {
-    fontSize: 25,
-    fontWeight: '800',
-    marginTop: Spacing.md,
-  },
+      borderBottomWidth:
+        StyleSheet.hairlineWidth,
 
-  finalScore: {
-    fontSize: 28,
-    fontWeight: '900',
-    marginVertical: Spacing.lg,
-  },
+      zIndex: 50,
+    },
 
-  resultButton: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: BorderRadius.full,
-    alignItems: 'center',
-  },
+    backButton: {
+      width: 44,
 
-  resultButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '800',
-  },
+      height: 44,
 
-  secondaryButton: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    alignItems: 'center',
-    marginTop: 10,
-  },
+      borderRadius: 22,
 
-  secondaryButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-});
+      borderWidth: 1,
 
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      marginRight: 12,
+
+      flexShrink: 0,
+    },
+
+    headerTextContainer: {
+      flex: 1,
+
+      minWidth: 0,
+    },
+
+    headerTitle: {
+      fontSize: 21,
+
+      fontWeight: '800',
+
+      lineHeight: 27,
+    },
+
+    headerSubtitle: {
+      fontSize: 12,
+
+      marginTop: 3,
+
+      lineHeight: 18,
+    },
+
+    /* ============================================================
+       START
+    ============================================================ */
+
+    startScroll: {
+      flex: 1,
+    },
+
+    startScrollContent: {
+      flexGrow: 1,
+
+      paddingBottom: 40,
+    },
+
+    startContent: {
+      paddingHorizontal:
+        Spacing.lg,
+
+      alignItems: 'center',
+
+      paddingTop: 30,
+
+      paddingBottom: 30,
+    },
+
+    heroIcon: {
+      width: 86,
+
+      height: 86,
+
+      borderRadius: 28,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      marginBottom: 14,
+    },
+
+    heroTitle: {
+      fontSize: 27,
+
+      fontWeight: '900',
+
+      textAlign: 'center',
+    },
+
+    heroDescription: {
+      fontSize: 14,
+
+      lineHeight: 22,
+
+      textAlign: 'center',
+
+      marginTop: 9,
+
+      maxWidth: 340,
+    },
+
+    adaptiveCard: {
+      width: '100%',
+
+      marginTop: 22,
+
+      padding: Spacing.md,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      borderWidth: 1,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      gap: 12,
+    },
+
+    adaptiveIcon: {
+      width: 44,
+
+      height: 44,
+
+      borderRadius: 14,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    adaptiveText: {
+      flex: 1,
+    },
+
+    adaptiveTitle: {
+      fontSize: 14,
+
+      fontWeight: '800',
+    },
+
+    adaptiveDescription: {
+      fontSize: 11,
+
+      lineHeight: 18,
+
+      marginTop: 3,
+    },
+
+    currentLevelCard: {
+      width: '100%',
+
+      marginTop: 12,
+
+      paddingHorizontal:
+        Spacing.md,
+
+      paddingVertical: 13,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      borderWidth: 1,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      justifyContent:
+        'space-between',
+    },
+
+    levelLabel: {
+      fontSize: 11,
+    },
+
+    levelValue: {
+      fontSize: 18,
+
+      fontWeight: '900',
+
+      marginTop: 2,
+    },
+
+    previousCard: {
+      width: '100%',
+
+      marginTop: 12,
+
+      padding: Spacing.md,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      borderWidth: 1,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      gap: 12,
+    },
+
+    previousText: {
+      flex: 1,
+    },
+
+    previousLabel: {
+      fontSize: 11,
+    },
+
+    previousValue: {
+      fontSize: 20,
+
+      fontWeight: '900',
+
+      marginTop: 2,
+    },
+
+    startButton: {
+      width: '100%',
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      justifyContent: 'center',
+
+      gap: 8,
+
+      paddingVertical: 16,
+
+      borderRadius:
+        BorderRadius.full,
+
+      marginTop: 18,
+    },
+
+    startButtonText: {
+      color: '#FFFFFF',
+
+      fontSize: 16,
+
+      fontWeight: '800',
+    },
+
+    /* ============================================================
+       HUD
+    ============================================================ */
+
+    hud: {
+      position: 'absolute',
+
+      top: 112,
+
+      left: 12,
+
+      right: 12,
+
+      zIndex: 30,
+
+      height: 58,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      borderWidth: 1,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      justifyContent:
+        'space-between',
+
+      paddingHorizontal: 14,
+    },
+
+    hudItem: {
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      gap: 8,
+    },
+
+    hudLabel: {
+      fontSize: 9,
+    },
+
+    hudValue: {
+      fontSize: 17,
+
+      fontWeight: '900',
+
+      marginTop: 1,
+    },
+
+    livesContainer: {
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      gap: 5,
+    },
+
+    /* ============================================================
+       INSTRUCTION
+    ============================================================ */
+
+    instructionCard: {
+      position: 'absolute',
+
+      top: 177,
+
+      left: 18,
+
+      right: 18,
+
+      zIndex: 30,
+
+      minHeight: 42,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      borderWidth: 1,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      justifyContent: 'center',
+
+      gap: 8,
+
+      paddingHorizontal: 12,
+
+      paddingVertical: 8,
+    },
+
+    instructionText: {
+      fontSize: 12,
+
+      lineHeight: 18,
+
+      flexShrink: 1,
+    },
+
+    /* ============================================================
+       GAME FIELD
+    ============================================================ */
+
+    playField: {
+      position: 'absolute',
+
+      top: 225,
+
+      left: 0,
+
+      right: 0,
+
+      bottom: 0,
+
+      overflow: 'hidden',
+
+      zIndex: 5,
+    },
+
+    objectWrapper: {
+      position: 'absolute',
+
+      alignItems: 'center',
+
+      justifyContent: 'center',
+    },
+
+    imageButton: {
+      width: '100%',
+
+      height: '100%',
+
+      alignItems: 'center',
+
+      justifyContent: 'center',
+
+      backgroundColor:
+        'transparent',
+
+      borderWidth: 0,
+
+      padding: 0,
+
+      margin: 0,
+    },
+
+    gameImage: {
+      width: '100%',
+
+      height: '100%',
+
+      borderWidth: 0,
+    },
+
+    /* ============================================================
+       POPUP
+    ============================================================ */
+
+    popup: {
+      position: 'absolute',
+
+      zIndex: 100,
+
+      minWidth: 40,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    popupText: {
+      fontSize: 22,
+
+      fontWeight: '900',
+
+      textShadowColor:
+        'rgba(0,0,0,0.15)',
+
+      textShadowOffset: {
+        width: 0,
+
+        height: 1,
+      },
+
+      textShadowRadius: 2,
+    },
+
+    /* ============================================================
+       FLASH
+    ============================================================ */
+
+    flashOverlay: {
+      position: 'absolute',
+
+      top: 0,
+
+      left: 0,
+
+      right: 0,
+
+      bottom: 0,
+
+      backgroundColor:
+        '#EF4444',
+
+      zIndex: 200,
+    },
+
+    /* ============================================================
+       RESULT
+    ============================================================ */
+
+    resultScroll: {
+      flex: 1,
+    },
+
+    resultScrollContent: {
+      flexGrow: 1,
+
+      paddingBottom: 50,
+    },
+
+    resultContent: {
+      paddingHorizontal:
+        Spacing.lg,
+
+      alignItems: 'center',
+
+      paddingTop: 28,
+
+      paddingBottom: 30,
+    },
+
+    resultIcon: {
+      width: 84,
+
+      height: 84,
+
+      borderRadius: 28,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      marginBottom: 14,
+    },
+
+    resultTitle: {
+      fontSize: 24,
+
+      fontWeight: '900',
+
+      textAlign: 'center',
+    },
+
+    resultScore: {
+      fontSize: 50,
+
+      fontWeight: '900',
+
+      marginTop: 14,
+    },
+
+    resultLabel: {
+      fontSize: 13,
+
+      marginTop: -3,
+    },
+
+    accuracyCard: {
+      width: '100%',
+
+      marginTop: 18,
+
+      paddingVertical: 14,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      borderWidth: 1,
+
+      alignItems: 'center',
+    },
+
+    accuracyValue: {
+      fontSize: 28,
+
+      fontWeight: '900',
+    },
+
+    accuracyLabel: {
+      fontSize: 11,
+
+      marginTop: 2,
+    },
+
+    statsCard: {
+      width: '100%',
+
+      marginTop: 12,
+
+      paddingVertical: 16,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      borderWidth: 1,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      justifyContent:
+        'space-around',
+    },
+
+    statItem: {
+      alignItems: 'center',
+
+      minWidth: 80,
+    },
+
+    statValue: {
+      fontSize: 20,
+
+      fontWeight: '900',
+
+      marginTop: 5,
+    },
+
+    statLabel: {
+      fontSize: 10,
+
+      marginTop: 2,
+    },
+
+    adaptiveResultCard: {
+      width: '100%',
+
+      marginTop: 12,
+
+      padding: Spacing.md,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      borderWidth: 1,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      gap: 10,
+    },
+
+    adaptiveResultText: {
+      flex: 1,
+    },
+
+    adaptiveResultTitle: {
+      fontSize: 14,
+
+      fontWeight: '800',
+    },
+
+    adaptiveResultDescription: {
+      fontSize: 11,
+
+      lineHeight: 18,
+
+      marginTop: 3,
+    },
+
+    nextLevelCard: {
+      width: '100%',
+
+      marginTop: 12,
+
+      padding: Spacing.md,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      borderWidth: 1,
+    },
+
+    nextLevelLabel: {
+      fontSize: 10,
+    },
+
+    nextLevelValue: {
+      fontSize: 18,
+
+      fontWeight: '900',
+
+      marginTop: 3,
+    },
+  });

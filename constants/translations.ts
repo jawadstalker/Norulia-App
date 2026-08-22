@@ -391,7 +391,29 @@ export const translations = {
     completed: 'Completed',
     pending: 'Pending',
     medications: 'Medications',
+// ===== PLUS MODULES =====
 
+modulesBadge: 'Smart Learning',
+modulesTitle: 'Modules',
+modulesSubtitle: 'Choose your favorite learning path',
+modulesComingSoon: 'Coming Soon',
+back: 'Back',
+
+quranModuleTitle: 'Quran Memorization',
+quranModuleDescription:
+  'Memorize verses and surahs with smart practice',
+
+gamesModuleTitle: 'Bilingual Games',
+gamesModuleDescription:
+  'Learn and train your mind with fun games',
+
+poemsModuleTitle: 'Poem Memorization',
+poemsModuleDescription:
+  'Improve memory, literature and understanding',
+
+sportsModuleTitle: 'Sports',
+sportsModuleDescription:
+  'Improve brain and body performance through sports training',
     // ===== Common Actions =====
     add: 'Add',
     delete: 'Delete',
@@ -541,7 +563,6 @@ home: 'Home',
     noMedicationsToday: 'No medications scheduled for today',
 // ===== Navigation =====
 // home: 'خانه',
-back: 'بازگشت',
 nextStep: 'مرحله بعد',
 previous: 'قبلی',
 done: 'انجام شد',
@@ -553,7 +574,28 @@ confirm: 'تأیید',
 submit: 'ثبت',
 update: 'به‌روزرسانی',
 reset: 'بازنشانی',
+// ===== PLUS MODULES =====
 
+// modulesBadge: 'یادگیری هوشمند',
+// modulesTitle: 'ماژول‌ها',
+// modulesSubtitle: 'مسیر یادگیری مورد علاقه‌ات را انتخاب کن',
+// modulesComingSoon: 'به‌زودی',
+
+// quranModuleTitle: 'حفظ قرآن',
+// quranModuleDescription:
+//   'حفظ آیات و سوره‌ها با تمرین هوشمند',
+
+// gamesModuleTitle: 'بازی‌های دوزبانه',
+// gamesModuleDescription:
+//   'یادگیری و تقویت ذهن با بازی‌های جذاب',
+
+// poemsModuleTitle: 'حفظ اشعار',
+// poemsModuleDescription:
+//   'حافظه، ادبیات و درک معنا را تقویت کن',
+
+// sportsModuleTitle: 'ورزش',
+// sportsModuleDescription:
+//   'تقویت عملکرد مغز و بدن با تمرین‌های ورزشی',
 // ===== Messages =====
 successMessage: 'عملیات با موفقیت انجام شد.',
 errorMessage: 'خطایی رخ داد. لطفاً دوباره تلاش کنید.',

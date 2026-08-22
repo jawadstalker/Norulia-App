@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, {
+  useEffect,
+  useState,
+} from 'react';
+
 import {
   View,
   Text,
@@ -6,81 +10,96 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { useRouter } from 'expo-router';
+
 import {
   MaterialCommunityIcons,
 } from '@expo/vector-icons';
+
 import { MotiView } from 'moti';
-import { Svg, Polygon } from 'react-native-svg';
+
+import {
+  Svg,
+  Polygon,
+} from 'react-native-svg';
+
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+
 import {
   Spacing,
   BorderRadius,
 } from '../../constants/theme';
 
-type Level = 'easy' | 'medium' | 'hard' | 'expert';
+
+type ShapeType =
+  | 'circle'
+  | 'square'
+  | 'triangle'
+  | 'diamond'
+  | 'star'
+  | 'hexagon';
 
 type Shape = {
-  shape:
-    | 'circle'
-    | 'square'
-    | 'triangle'
-    | 'diamond'
-    | 'star'
-    | 'hexagon';
+  shape: ShapeType;
   color: string;
 };
 
+/*
+ * ============================================================
+ * GAME CONFIG
+ * ============================================================
+ */
+
 const TOTAL_ROUNDS = 5;
 
-const levels = [
-  {
-    id: 'easy' as Level,
-    title: 'Easy',
-    titleFa: 'آسان',
-    description: '4 options, clear differences',
-    descriptionFa: '۴ گزینه، تفاوت واضح',
+const MIN_DIFFICULTY = 1;
+const MAX_DIFFICULTY = 4;
+
+const STORAGE_KEY =
+  'neurolia_memory_challenge_adaptive_v2';
+
+
+
+const difficultyConfig = {
+  1: {
     optionCount: 4,
     similarity: 0.9,
   },
-  {
-    id: 'medium' as Level,
-    title: 'Medium',
-    titleFa: 'متوسط',
-    description: '6 options, similar colors',
-    descriptionFa: '۶ گزینه، رنگ‌های مشابه',
+
+  2: {
     optionCount: 6,
     similarity: 0.7,
   },
-  {
-    id: 'hard' as Level,
-    title: 'Hard',
-    titleFa: 'سخت',
-    description: '6 options, similar shapes',
-    descriptionFa: '۶ گزینه، شکل‌های مشابه',
+
+  3: {
     optionCount: 6,
     similarity: 0.5,
   },
-  {
-    id: 'expert' as Level,
-    title: 'Expert',
-    titleFa: 'حرفه‌ای',
-    description: '9 options, maximum difficulty',
-    descriptionFa: '۹ گزینه، حداکثر سختی',
+
+  4: {
     optionCount: 9,
     similarity: 0.3,
   },
-];
+} as const;
 
-const shapeTypes = [
+/*
+ * ============================================================
+ * SHAPES
+ * ============================================================
+ */
+
+const shapeTypes: ShapeType[] = [
   'circle',
   'square',
   'triangle',
   'diamond',
   'star',
   'hexagon',
-] as const;
+];
 
 const shapeColors = [
   '#EF4444',
@@ -91,71 +110,313 @@ const shapeColors = [
   '#EC4899',
 ];
 
-const shapeNames = {
-  circle: 'Circle',
-  square: 'Square',
-  triangle: 'Triangle',
-  diamond: 'Diamond',
-  star: 'Star',
-  hexagon: 'Hexagon',
+/*
+ * ============================================================
+ * LOCAL TEXT
+ * ============================================================
+ */
+
+const text = {
+  fa: {
+    title: 'چالش حافظه',
+
+    subtitle:
+      'شکل و رنگ صحیح را پیدا کنید',
+
+    instruction:
+      'شکل صحیح را پیدا کنید',
+
+    start:
+      'شروع بازی',
+
+    gameCompleted:
+      'بازی تمام شد',
+
+    tryAgain:
+      'دوباره بازی کنید',
+
+    back:
+      'بازگشت',
+
+    round:
+      'مرحله',
+
+    score:
+      'امتیاز',
+
+    correct:
+      'صحیح',
+
+    correctAnswers:
+      'پاسخ صحیح',
+
+    answers:
+      'پاسخ',
+
+    of:
+      'از',
+
+    adaptive:
+      'سختی تطبیقی',
+
+    adaptiveUp:
+      'عملکرد شما عالی بود. مرحله بعد کمی سخت‌تر خواهد بود.',
+
+    adaptiveDown:
+      'این مرحله کمی دشوار بود. مرحله بعد کمی آسان‌تر خواهد بود.',
+
+    adaptiveSame:
+      'عملکرد شما مناسب بود. سختی بازی حفظ می‌شود.',
+
+    adaptiveInfo:
+      'سختی بازی بر اساس عملکرد واقعی شما به‌صورت خودکار تنظیم می‌شود.',
+
+    previousPerformance:
+      'عملکرد قبلی',
+
+    difficulty:
+      'سختی فعلی',
+
+    noSelection:
+      'نیازی به انتخاب سطح نیست',
+
+    excellent:
+      'عالی!',
+
+    veryGood:
+      'خیلی خوب!',
+
+    good:
+      'خوب بود!',
+
+    keepPracticing:
+      'به تمرین ادامه دهید!',
+
+    easy:
+      'آسان',
+
+    medium:
+      'متوسط',
+
+    hard:
+      'سخت',
+
+    expert:
+      'حرفه‌ای',
+
+    circle:
+      'دایره',
+
+    square:
+      'مربع',
+
+    triangle:
+      'مثلث',
+
+    diamond:
+      'لوزی',
+
+    star:
+      'ستاره',
+
+    hexagon:
+      'شش‌ضلعی',
+
+    red:
+      'قرمز',
+
+    blue:
+      'آبی',
+
+    green:
+      'سبز',
+
+    yellow:
+      'زرد',
+
+    purple:
+      'بنفش',
+
+    pink:
+      'صورتی',
+  },
+
+  en: {
+    title: 'Memory Challenge',
+
+    subtitle:
+      'Find the correct shape and color',
+
+    instruction:
+      'Find the correct shape',
+
+    start:
+      'Start Game',
+
+    gameCompleted:
+      'Game Completed',
+
+    tryAgain:
+      'Try Again',
+
+    back:
+      'Back',
+
+    round:
+      'Round',
+
+    score:
+      'Score',
+
+    correct:
+      'correct',
+
+    correctAnswers:
+      'Correct Answers',
+
+    answers:
+      'answers',
+
+    of:
+      'of',
+
+    adaptive:
+      'Adaptive Difficulty',
+
+    adaptiveUp:
+      'Excellent performance. The next session will be slightly harder.',
+
+    adaptiveDown:
+      'This session was challenging. The next session will be slightly easier.',
+
+    adaptiveSame:
+      'Good performance. The difficulty will remain stable.',
+
+    adaptiveInfo:
+      'Game difficulty automatically adapts to your actual performance.',
+
+    previousPerformance:
+      'Previous Performance',
+
+    difficulty:
+      'Current Difficulty',
+
+    noSelection:
+      'No level selection required',
+
+    excellent:
+      'Excellent!',
+
+    veryGood:
+      'Very Good!',
+
+    good:
+      'Good Job!',
+
+    keepPracticing:
+      'Keep Practicing!',
+
+    easy:
+      'Easy',
+
+    medium:
+      'Medium',
+
+    hard:
+      'Hard',
+
+    expert:
+      'Expert',
+
+    circle:
+      'Circle',
+
+    square:
+      'Square',
+
+    triangle:
+      'Triangle',
+
+    diamond:
+      'Diamond',
+
+    star:
+      'Star',
+
+    hexagon:
+      'Hexagon',
+
+    red:
+      'Red',
+
+    blue:
+      'Blue',
+
+    green:
+      'Green',
+
+    yellow:
+      'Yellow',
+
+    purple:
+      'Purple',
+
+    pink:
+      'Pink',
+  },
 };
 
-const shapeNamesFa = {
-  circle: 'دایره',
-  square: 'مربع',
-  triangle: 'مثلث',
-  diamond: 'لوزی',
-  star: 'ستاره',
-  hexagon: 'شش‌ضلعی',
-};
+/*
+ * ============================================================
+ * RANDOM HELPERS
+ * ============================================================
+ */
 
-const colorNames = {
-  '#EF4444': 'Red',
-  '#3B82F6': 'Blue',
-  '#10B981': 'Green',
-  '#F59E0B': 'Yellow',
-  '#8B5CF6': 'Purple',
-  '#EC4899': 'Pink',
-};
+function randomItem<T>(
+  array: T[]
+): T {
+  return array[
+    Math.floor(
+      Math.random() * array.length
+    )
+  ];
+}
 
-const colorNamesFa = {
-  '#EF4444': 'قرمز',
-  '#3B82F6': 'آبی',
-  '#10B981': 'سبز',
-  '#F59E0B': 'زرد',
-  '#8B5CF6': 'بنفش',
-  '#EC4899': 'صورتی',
-};
+function shuffle<T>(
+  array: T[]
+): T[] {
+  return [...array].sort(
+    () => Math.random() - 0.5
+  );
+}
 
-const generateRandomTarget = (): Shape => {
+/*
+ * ============================================================
+ * TARGET
+ * ============================================================
+ */
+
+function generateRandomTarget(): Shape {
   return {
-    shape:
-      shapeTypes[
-        Math.floor(
-          Math.random() * shapeTypes.length
-        )
-      ],
-    color:
-      shapeColors[
-        Math.floor(
-          Math.random() * shapeColors.length
-        )
-      ],
+    shape: randomItem(shapeTypes),
+    color: randomItem(shapeColors),
   };
-};
+}
 
-const generateOptions = (
+
+
+function generateOptions(
   target: Shape,
-  level: Level
-): Shape[] => {
-  const levelConfig = levels.find(
-    l => l.id === level
-  )!;
-
-  const count = levelConfig.optionCount;
-  const similarity = levelConfig.similarity;
+  difficulty: number
+): Shape[] {
+  const config =
+    difficultyConfig[
+      difficulty as keyof typeof difficultyConfig
+    ] || difficultyConfig[1];
 
   const options: Shape[] = [];
+
+
 
   options.push({
     shape: target.shape,
@@ -164,75 +425,88 @@ const generateOptions = (
 
   const availableShapes =
     shapeTypes.filter(
-      s => s !== target.shape
+      shape =>
+        shape !== target.shape
     );
 
   const availableColors =
     shapeColors.filter(
-      c => c !== target.color
+      color =>
+        color !== target.color
     );
 
   let attempts = 0;
 
   while (
-    options.length < count &&
-    attempts < 100
+    options.length <
+      config.optionCount &&
+    attempts < 150
   ) {
     attempts++;
 
-    let newShape: typeof shapeTypes[number];
+    let newShape: ShapeType;
     let newColor: string;
 
-    if (Math.random() > similarity) {
-      newShape =
-        availableShapes[
-          Math.floor(
-            Math.random() *
-              availableShapes.length
-          )
-        ];
+    /*
+     * Similar distractors.
+     */
 
-      newColor =
-        availableColors[
-          Math.floor(
-            Math.random() *
-              availableColors.length
-          )
-        ];
-    } else {
-      const useSameShape =
-        Math.random() > 0.5;
+    if (
+      Math.random() <
+      config.similarity
+    ) {
+      /*
+       * Same shape + different color
+       * OR
+       * different shape + same color
+       */
 
-      if (useSameShape) {
-        newShape = target.shape;
+      if (
+        Math.random() < 0.5
+      ) {
+        newShape =
+          target.shape;
 
         newColor =
-          availableColors[
-            Math.floor(
-              Math.random() *
-                availableColors.length
-            )
-          ];
+          randomItem(
+            availableColors
+          );
       } else {
         newShape =
-          availableShapes[
-            Math.floor(
-              Math.random() *
-                availableShapes.length
-            )
-          ];
+          randomItem(
+            availableShapes
+          );
 
-        newColor = target.color;
+        newColor =
+          target.color;
       }
+    } else {
+      /*
+       * Completely different
+       * shape + color.
+       */
+
+      newShape =
+        randomItem(
+          availableShapes
+        );
+
+      newColor =
+        randomItem(
+          availableColors
+        );
     }
 
-    const exists = options.some(
-      option =>
-        option.shape === newShape &&
-        option.color === newColor
-    );
+    const alreadyExists =
+      options.some(
+        option =>
+          option.shape ===
+            newShape &&
+          option.color ===
+            newColor
+      );
 
-    if (!exists) {
+    if (!alreadyExists) {
       options.push({
         shape: newShape,
         color: newColor,
@@ -240,23 +514,24 @@ const generateOptions = (
     }
   }
 
-  return options.sort(
-    () => Math.random() - 0.5
-  );
-};
+  return shuffle(options);
+}
 
-const ShapeComponent = ({
+/*
+ * ============================================================
+ * SHAPE COMPONENT
+ * ============================================================
+ */
+
+function ShapeComponent({
   type,
   color,
   size = 55,
 }: {
-  type: string;
+  type: ShapeType;
   color: string;
   size?: number;
-}) => {
-  const halfSize = size / 2;
-  const quarterSize = size / 4;
-
+}) {
   switch (type) {
     case 'circle':
       return (
@@ -266,7 +541,8 @@ const ShapeComponent = ({
             {
               width: size,
               height: size,
-              backgroundColor: color,
+              backgroundColor:
+                color,
             },
           ]}
         />
@@ -280,7 +556,8 @@ const ShapeComponent = ({
             {
               width: size,
               height: size,
-              backgroundColor: color,
+              backgroundColor:
+                color,
             },
           ]}
         />
@@ -292,7 +569,14 @@ const ShapeComponent = ({
           style={[
             styles.triangleShape,
             {
-              borderBottomColor: color,
+              borderLeftWidth:
+                size / 2,
+              borderRightWidth:
+                size / 2,
+              borderBottomWidth:
+                size,
+              borderBottomColor:
+                color,
             },
           ]}
         />
@@ -304,11 +588,16 @@ const ShapeComponent = ({
           style={[
             styles.diamondShape,
             {
-              width: size * 0.8,
-              height: size * 0.8,
-              backgroundColor: color,
+              width:
+                size * 0.72,
+              height:
+                size * 0.72,
+              backgroundColor:
+                color,
               transform: [
-                { rotate: '45deg' },
+                {
+                  rotate: '45deg',
+                },
               ],
             },
           ]}
@@ -322,7 +611,8 @@ const ShapeComponent = ({
             styles.starShape,
             {
               color,
-              fontSize: size,
+              fontSize:
+                size,
             },
           ]}
         >
@@ -338,27 +628,29 @@ const ShapeComponent = ({
           viewBox="0 0 100 100"
         >
           <Polygon
-            points="50,5 95,27.5 95,72.5 50,95 5,72.5 5,27.5"
+            points="
+              50,5
+              95,27.5
+              95,72.5
+              50,95
+              5,72.5
+              5,27.5
+            "
             fill={color}
           />
         </Svg>
       );
 
     default:
-      return (
-        <View
-          style={[
-            styles.circleShape,
-            {
-              width: size,
-              height: size,
-              backgroundColor: color,
-            },
-          ]}
-        />
-      );
+      return null;
   }
-};
+}
+
+/*
+ * ============================================================
+ * PAGE HEADER
+ * ============================================================
+ */
 
 interface PageHeaderProps {
   title: string;
@@ -366,7 +658,7 @@ interface PageHeaderProps {
   onBack: () => void;
   colors: any;
   isRTL: boolean;
-  backLabel?: string;
+  backLabel: string;
 }
 
 function PageHeader({
@@ -375,14 +667,15 @@ function PageHeader({
   onBack,
   colors,
   isRTL,
-  backLabel = 'Back',
+  backLabel,
 }: PageHeaderProps) {
   return (
     <View
       style={[
         styles.pageHeader,
         {
-          borderBottomColor: colors.border,
+          borderBottomColor:
+            colors.border,
         },
       ]}
     >
@@ -390,17 +683,25 @@ function PageHeader({
         onPress={onBack}
         activeOpacity={0.75}
         accessibilityRole="button"
-        accessibilityLabel={backLabel}
+        accessibilityLabel={
+          backLabel
+        }
         style={[
           styles.unifiedBackButton,
           {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
+            backgroundColor:
+              colors.surface,
+            borderColor:
+              colors.border,
           },
         ]}
       >
         <MaterialCommunityIcons
-          name="arrow-left"
+          name={
+            isRTL
+              ? 'arrow-left'
+              : 'arrow-right'
+          }
           size={23}
           color={colors.text}
         />
@@ -410,9 +711,10 @@ function PageHeader({
         style={[
           styles.pageHeaderText,
           {
-            alignItems: isRTL
-              ? 'flex-end'
-              : 'flex-start',
+            alignItems:
+              isRTL
+                ? 'flex-end'
+                : 'flex-start',
           },
         ]}
       >
@@ -421,9 +723,10 @@ function PageHeader({
             styles.pageHeaderTitle,
             {
               color: colors.text,
-              textAlign: isRTL
-                ? 'right'
-                : 'left',
+              textAlign:
+                isRTL
+                  ? 'right'
+                  : 'left',
             },
           ]}
           numberOfLines={2}
@@ -436,10 +739,12 @@ function PageHeader({
             style={[
               styles.pageHeaderSubtitle,
               {
-                color: colors.textSecondary,
-                textAlign: isRTL
-                  ? 'right'
-                  : 'left',
+                color:
+                  colors.textSecondary,
+                textAlign:
+                  isRTL
+                    ? 'right'
+                    : 'left',
               },
             ]}
           >
@@ -451,248 +756,509 @@ function PageHeader({
   );
 }
 
+/*
+ * ============================================================
+ * MAIN SCREEN
+ * ============================================================
+ */
+
 export default function MemoryChallenge() {
   const router = useRouter();
-  const { colors } = useTheme();
-  const { t, isRTL, language } =
-    useLanguage();
 
-  const [selectedLevel, setSelectedLevel] =
-    useState<Level>('easy');
+  const {
+    colors,
+  } = useTheme();
 
-  const [gameStarted, setGameStarted] =
-    useState(false);
+  const {
+    isRTL,
+    language,
+  } = useLanguage();
 
-  const [currentRound, setCurrentRound] =
-    useState(1);
+  const currentText =
+    language === 'fa'
+      ? text.fa
+      : text.en;
 
-  const [score, setScore] = useState(0);
+  /*
+   * Adaptive difficulty.
+   *
+   * User NEVER changes this manually.
+   */
 
-  const [correctAnswers, setCorrectAnswers] =
-    useState(0);
+  const [
+    difficulty,
+    setDifficulty,
+  ] = useState<number>(1);
 
-  const [gameFinished, setGameFinished] =
-    useState(false);
+  const [
+    previousAccuracy,
+    setPreviousAccuracy,
+  ] = useState<number | null>(
+    null
+  );
 
-  const [target, setTarget] = useState<Shape>(
+  /*
+   * Game state.
+   */
+
+  const [
+    gameStarted,
+    setGameStarted,
+  ] = useState(false);
+
+  const [
+    gameFinished,
+    setGameFinished,
+  ] = useState(false);
+
+  const [
+    currentRound,
+    setCurrentRound,
+  ] = useState(1);
+
+  const [
+    score,
+    setScore,
+  ] = useState(0);
+
+  const [
+    correctAnswers,
+    setCorrectAnswers,
+  ] = useState(0);
+
+  const [
+    target,
+    setTarget,
+  ] = useState<Shape>(
     generateRandomTarget()
   );
 
-  const [options, setOptions] =
-    useState<Shape[]>([]);
+  const [
+    options,
+    setOptions,
+  ] = useState<Shape[]>([]);
+
+  const [
+    adaptiveResult,
+    setAdaptiveResult,
+  ] = useState<
+    'up' | 'down' | 'same' | null
+  >(null);
+
+  /*
+   * ============================================================
+   * LOAD ADAPTIVE DATA
+   * ============================================================
+   */
 
   useEffect(() => {
-    if (
-      gameStarted &&
-      !gameFinished
-    ) {
-      const newTarget =
-        generateRandomTarget();
+    loadAdaptiveState();
+  }, []);
 
-      setTarget(newTarget);
+  async function loadAdaptiveState() {
+    try {
+      const saved =
+        await AsyncStorage.getItem(
+          STORAGE_KEY
+        );
 
-      setOptions(
-        generateOptions(
-          newTarget,
-          selectedLevel
-        )
+      if (!saved) {
+        return;
+      }
+
+      const data =
+        JSON.parse(saved);
+
+      if (
+        typeof data.difficulty ===
+        'number'
+      ) {
+        const safeDifficulty =
+          Math.max(
+            MIN_DIFFICULTY,
+            Math.min(
+              MAX_DIFFICULTY,
+              data.difficulty
+            )
+          );
+
+        setDifficulty(
+          safeDifficulty
+        );
+      }
+
+      if (
+        typeof data.accuracy ===
+        'number'
+      ) {
+        setPreviousAccuracy(
+          data.accuracy
+        );
+      }
+    } catch (error) {
+      console.log(
+        '[MemoryChallenge] Failed to load adaptive state:',
+        error
       );
     }
-  }, [
-    currentRound,
-    gameStarted,
-    gameFinished,
-    selectedLevel,
-  ]);
+  }
 
-  const handleBack = () => {
-    if (gameStarted || gameFinished) {
+  /*
+   * ============================================================
+   * SAVE ADAPTIVE DATA
+   * ============================================================
+   */
+
+  async function saveAdaptiveState(
+    nextDifficulty: number,
+    accuracy: number
+  ) {
+    try {
+      await AsyncStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          difficulty:
+            nextDifficulty,
+
+          accuracy,
+
+          lastCorrectAnswers:
+            correctAnswers,
+
+          totalRounds:
+            TOTAL_ROUNDS,
+
+          updatedAt:
+            new Date().toISOString(),
+        })
+      );
+    } catch (error) {
+      console.log(
+        '[MemoryChallenge] Failed to save adaptive state:',
+        error
+      );
+    }
+  }
+
+  /*
+   * ============================================================
+   * START GAME
+   * ============================================================
+   */
+
+  function startGame() {
+    const newTarget =
+      generateRandomTarget();
+
+    setTarget(newTarget);
+
+    setOptions(
+      generateOptions(
+        newTarget,
+        difficulty
+      )
+    );
+
+    setGameStarted(true);
+    setGameFinished(false);
+
+    setCurrentRound(1);
+
+    setScore(0);
+
+    setCorrectAnswers(0);
+
+    setAdaptiveResult(null);
+  }
+
+  /*
+   * ============================================================
+   * SELECT ANSWER
+   * ============================================================
+   */
+
+  function selectShape(
+    selectedShape: Shape
+  ) {
+    const isCorrect =
+      selectedShape.shape ===
+        target.shape &&
+      selectedShape.color ===
+        target.color;
+
+    const newCorrectAnswers =
+      isCorrect
+        ? correctAnswers + 1
+        : correctAnswers;
+
+    if (isCorrect) {
+      setScore(
+        previous =>
+          previous + 20
+      );
+
+      setCorrectAnswers(
+        previous =>
+          previous + 1
+      );
+    }
+
+    /*
+     * Finish after the final round.
+     */
+
+    if (
+      currentRound >=
+      TOTAL_ROUNDS
+    ) {
+      finishGame(
+        newCorrectAnswers
+      );
+
+      return;
+    }
+
+    /*
+     * Next round.
+     */
+
+    const nextRound =
+      currentRound + 1;
+
+    const newTarget =
+      generateRandomTarget();
+
+    setCurrentRound(
+      nextRound
+    );
+
+    setTarget(newTarget);
+
+    setOptions(
+      generateOptions(
+        newTarget,
+        difficulty
+      )
+    );
+  }
+
+  /*
+   * ============================================================
+   * FINISH GAME
+   * ============================================================
+   */
+
+  async function finishGame(
+    finalCorrectAnswers: number
+  ) {
+    const accuracy = Math.round(
+      (finalCorrectAnswers /
+        TOTAL_ROUNDS) *
+        100
+    );
+
+    let nextDifficulty =
+      difficulty;
+
+    let result:
+      | 'up'
+      | 'down'
+      | 'same' =
+      'same';
+
+    /*
+     * Adaptive rules.
+     *
+     * 80-100% -> harder
+     * 40-79%  -> same
+     * 0-39%   -> easier
+     */
+
+    if (
+      accuracy >= 80 &&
+      difficulty <
+        MAX_DIFFICULTY
+    ) {
+      nextDifficulty =
+        difficulty + 1;
+
+      result = 'up';
+    } else if (
+      accuracy < 40 &&
+      difficulty >
+        MIN_DIFFICULTY
+    ) {
+      nextDifficulty =
+        difficulty - 1;
+
+      result = 'down';
+    }
+
+    setPreviousAccuracy(
+      accuracy
+    );
+
+    setAdaptiveResult(
+      result
+    );
+
+    setDifficulty(
+      nextDifficulty
+    );
+
+    setGameFinished(true);
+
+    await saveAdaptiveState(
+      nextDifficulty,
+      accuracy
+    );
+  }
+
+  /*
+   * ============================================================
+   * RESET / PLAY AGAIN
+   * ============================================================
+   */
+
+  function resetGame() {
+    /*
+     * IMPORTANT:
+     * Start from the NEW adaptive difficulty.
+     */
+
+    const newTarget =
+      generateRandomTarget();
+
+    setTarget(newTarget);
+
+    setOptions(
+      generateOptions(
+        newTarget,
+        difficulty
+      )
+    );
+
+    setCurrentRound(1);
+
+    setScore(0);
+
+    setCorrectAnswers(0);
+
+    setGameFinished(false);
+
+    setGameStarted(true);
+
+    setAdaptiveResult(null);
+  }
+
+  /*
+   * ============================================================
+   * BACK
+   * ============================================================
+   */
+
+  function handleBack() {
+    if (
+      gameStarted ||
+      gameFinished
+    ) {
       setGameStarted(false);
+
       setGameFinished(false);
+
       setCurrentRound(1);
+
       setScore(0);
+
       setCorrectAnswers(0);
+
       return;
     }
 
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/(tabs)/psycho');
-    }
-  };
-
-  const startGame = () => {
-    setScore(0);
-    setCorrectAnswers(0);
-    setCurrentRound(1);
-    setGameFinished(false);
-    setGameStarted(true);
-
-    const newTarget =
-      generateRandomTarget();
-
-    setTarget(newTarget);
-
-    setOptions(
-      generateOptions(
-        newTarget,
-        selectedLevel
-      )
-    );
-  };
-
-  const selectShape = (
-    shape: Shape
-  ) => {
-    const isCorrect =
-      shape.shape === target.shape &&
-      shape.color === target.color;
-
-    if (isCorrect) {
-      setScore(
-        prev => prev + 20
-      );
-
-      setCorrectAnswers(
-        prev => prev + 1
+      router.replace(
+        '/(tabs)/psycho'
       );
     }
+  }
 
-    if (
-      currentRound >= TOTAL_ROUNDS
-    ) {
-      setGameFinished(true);
-      return;
+  /*
+   * ============================================================
+   * HELPERS
+   * ============================================================
+   */
+
+  function getShapeName(
+    shape: ShapeType
+  ) {
+    return currentText[
+      shape
+    ];
+  }
+
+  function getColorName(
+    color: string
+  ) {
+    const colorMap: Record<
+      string,
+      keyof typeof text.fa
+    > = {
+      '#EF4444': 'red',
+      '#3B82F6': 'blue',
+      '#10B981': 'green',
+      '#F59E0B': 'yellow',
+      '#8B5CF6': 'purple',
+      '#EC4899': 'pink',
+    };
+
+    return currentText[
+      colorMap[color]
+    ];
+  }
+
+  function getDifficultyName() {
+    const names = {
+      1: currentText.easy,
+      2: currentText.medium,
+      3: currentText.hard,
+      4: currentText.expert,
+    };
+
+    return names[
+      difficulty as keyof typeof names
+    ];
+  }
+
+  function getFeedback(
+    percentage: number
+  ) {
+    if (percentage >= 80) {
+      return currentText.excellent;
     }
 
-    setCurrentRound(
-      prev => prev + 1
-    );
-  };
+    if (percentage >= 60) {
+      return currentText.veryGood;
+    }
 
-  const resetGame = () => {
-    setCurrentRound(1);
-    setScore(0);
-    setCorrectAnswers(0);
-    setGameFinished(false);
-    setGameStarted(true);
+    if (percentage >= 40) {
+      return currentText.good;
+    }
 
-    const newTarget =
-      generateRandomTarget();
+    return currentText.keepPracticing;
+  }
 
-    setTarget(newTarget);
+  /*
+   * ============================================================
+   * START SCREEN
+   * ============================================================
+   */
 
-    setOptions(
-      generateOptions(
-        newTarget,
-        selectedLevel
-      )
-    );
-  };
-
-  const getLevelTitle = (
-    levelId: string
-  ) => {
-    const level = levels.find(
-      l => l.id === levelId
-    );
-
-    if (!level) return '';
-
-    return language === 'fa'
-      ? level.titleFa
-      : level.title;
-  };
-
-  const getLevelDescription = (
-    levelId: string
-  ) => {
-    const level = levels.find(
-      l => l.id === levelId
-    );
-
-    if (!level) return '';
-
-    return language === 'fa'
-      ? level.descriptionFa
-      : level.description;
-  };
-
-  const getShapeName = (
-    shapeType: string
-  ) => {
-    return language === 'fa'
-      ? shapeNamesFa[
-          shapeType as keyof typeof shapeNamesFa
-        ]
-      : shapeNames[
-          shapeType as keyof typeof shapeNames
-        ];
-  };
-
-  const getColorName = (
-    colorCode: string
-  ) => {
-    return language === 'fa'
-      ? colorNamesFa[
-          colorCode as keyof typeof colorNamesFa
-        ]
-      : colorNames[
-          colorCode as keyof typeof colorNames
-        ];
-  };
-
-  const getFeedback = (
-    percentage: number
-  ) => {
-    if (percentage >= 100)
-      return language === 'fa'
-        ? 'عالی! امتیاز کامل!'
-        : 'Perfect Score! Amazing!';
-
-    if (percentage >= 80)
-      return language === 'fa'
-        ? 'کار عالی!'
-        : 'Excellent work!';
-
-    if (percentage >= 60)
-      return language === 'fa'
-        ? 'خوب بود!'
-        : 'Good job!';
-
-    if (percentage >= 40)
-      return language === 'fa'
-        ? 'به تلاش ادامه دهید!'
-        : 'Keep trying!';
-
-    return language === 'fa'
-      ? 'تمرین کنید!'
-      : 'Keep practicing!';
-  };
-
-  const getEmoji = (
-    percentage: number
-  ) => {
-    if (percentage >= 100)
-      return '🏆';
-
-    if (percentage >= 80)
-      return '🌟';
-
-    if (percentage >= 60)
-      return '💪';
-
-    if (percentage >= 40)
-      return '📚';
-
-    return '😊';
-  };
-
-  const textAlignStyle =
-    isRTL ? 'right' : 'left';
-
-  if (!gameStarted) {
+  if (
+    !gameStarted &&
+    !gameFinished
+  ) {
     return (
       <View
         style={[
@@ -705,19 +1271,19 @@ export default function MemoryChallenge() {
       >
         <PageHeader
           title={
-            language === 'fa'
-              ? 'چالش حافظه'
-              : 'Memory Challenge'
+            currentText.title
           }
           subtitle={
-            language === 'fa'
-              ? 'سطح مورد نظر خود را انتخاب کنید'
-              : 'Choose your level'
+            currentText.noSelection
           }
-          onBack={handleBack}
+          onBack={
+            handleBack
+          }
           colors={colors}
           isRTL={isRTL}
-          backLabel={language === 'fa' ? 'بازگشت' : 'Back'}
+          backLabel={
+            currentText.back
+          }
         />
 
         <ScrollView
@@ -739,153 +1305,215 @@ export default function MemoryChallenge() {
             }}
             transition={{
               type: 'timing',
-              duration: 500,
+              duration: 450,
             }}
           >
+            {/* Game intro */}
+
             <View
-              style={
-                styles.levelsContainer
-              }
+              style={[
+                styles.introCard,
+                {
+                  backgroundColor:
+                    colors.surface,
+                  borderColor:
+                    colors.border,
+                },
+              ]}
             >
-              {levels.map(level => {
-                const active =
-                  selectedLevel ===
-                  level.id;
+              <View
+                style={[
+                  styles.introIcon,
+                  {
+                    backgroundColor:
+                      colors.primary +
+                      '15',
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="brain"
+                  size={43}
+                  color={
+                    colors.primary
+                  }
+                />
+              </View>
 
-                return (
-                  <TouchableOpacity
-                    key={level.id}
-                    onPress={() =>
-                      setSelectedLevel(
-                        level.id
-                      )
-                    }
-                    activeOpacity={0.8}
+              <Text
+                style={[
+                  styles.introTitle,
+                  {
+                    color:
+                      colors.text,
+                  },
+                ]}
+              >
+                {currentText.title}
+              </Text>
+
+              <Text
+                style={[
+                  styles.introDescription,
+                  {
+                    color:
+                      colors.textSecondary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {currentText.adaptiveInfo}
+              </Text>
+            </View>
+
+            {/* Adaptive information */}
+
+            <View
+              style={[
+                styles.adaptiveCard,
+                {
+                  backgroundColor:
+                    colors.primary +
+                    '10',
+                  borderColor:
+                    colors.primary +
+                    '30',
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.adaptiveIcon,
+                  {
+                    backgroundColor:
+                      colors.primary +
+                      '18',
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="auto-fix"
+                  size={22}
+                  color={
+                    colors.primary
+                  }
+                />
+              </View>
+
+              <View
+                style={
+                  styles.adaptiveInfoContent
+                }
+              >
+                <Text
+                  style={[
+                    styles.adaptiveTitle,
+                    {
+                      color:
+                        colors.text,
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
+                  ]}
+                >
+                  {currentText.adaptive}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.adaptiveDescription,
+                    {
+                      color:
+                        colors.textSecondary,
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
+                  ]}
+                >
+                  {
+                    currentText.adaptiveInfo
+                  }
+                </Text>
+              </View>
+            </View>
+
+            {/* Previous performance */}
+
+            {previousAccuracy !==
+              null && (
+              <View
+                style={[
+                  styles.previousCard,
+                  {
+                    backgroundColor:
+                      colors.surface,
+                    borderColor:
+                      colors.border,
+                  },
+                ]}
+              >
+                <View>
+                  <Text
                     style={[
-                      styles.levelCard,
+                      styles.previousLabel,
                       {
-                        backgroundColor:
-                          active
-                            ? colors.primary +
-                              '14'
-                            : colors.surface,
-
-                        borderColor:
-                          active
-                            ? colors.primary
-                            : colors.border,
+                        color:
+                          colors.textSecondary,
+                        textAlign:
+                          isRTL
+                            ? 'right'
+                            : 'left',
                       },
                     ]}
                   >
-                    <View
-                      style={[
-                        styles.levelContent,
-                        {
-                          flexDirection:
-                            isRTL
-                              ? 'row-reverse'
-                              : 'row',
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.levelIconBox,
-                          {
-                            backgroundColor:
-                              active
-                                ? colors.primary +
-                                  '18'
-                                : colors.background,
-                            borderColor:
-                              active
-                                ? colors.primary +
-                                  '30'
-                                : colors.border,
-                          },
-                        ]}
-                      >
-                        <MaterialCommunityIcons
-                          name={
-                            level.id ===
-                            'easy'
-                              ? 'leaf'
-                              : level.id ===
-                                'medium'
-                              ? 'brain'
-                              : level.id ===
-                                'hard'
-                              ? 'target'
-                              : 'fire'
-                          }
-                          size={20}
-                          color={
-                            active
-                              ? colors.primary
-                              : colors.textSecondary
-                          }
-                        />
-                      </View>
+                    {
+                      currentText.previousPerformance
+                    }
+                  </Text>
 
-                      <View
-                        style={
+                  <Text
+                    style={[
+                      styles.previousValue,
+                      {
+                        color:
+                          colors.text,
+                        textAlign:
                           isRTL
-                            ? styles.levelInfoRTL
-                            : styles.levelInfo
-                        }
-                      >
-                        <Text
-                          style={[
-                            styles.levelTitle,
-                            {
-                              color:
-                                colors.text,
-                              textAlign:
-                                textAlignStyle,
-                            },
-                          ]}
-                        >
-                          {getLevelTitle(
-                            level.id
-                          )}
-                        </Text>
+                            ? 'right'
+                            : 'left',
+                      },
+                    ]}
+                  >
+                    {
+                      previousAccuracy
+                    }
+                    %
+                  </Text>
+                </View>
 
-                        <Text
-                          style={[
-                            styles.levelDescription,
-                            {
-                              color:
-                                colors.textSecondary,
-                              textAlign:
-                                textAlignStyle,
-                            },
-                          ]}
-                        >
-                          {getLevelDescription(
-                            level.id
-                          )}
-                        </Text>
-                      </View>
+                <MaterialCommunityIcons
+                  name="chart-line"
+                  size={27}
+                  color={
+                    colors.primary
+                  }
+                />
+              </View>
+            )}
 
-                      {active && (
-                        <View
-                          style={[
-                            styles.selectedDot,
-                            {
-                              backgroundColor:
-                                colors.primary,
-                            },
-                          ]}
-                        />
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            {/* Start */}
 
             <TouchableOpacity
-              onPress={startGame}
+              onPress={
+                startGame
+              }
               activeOpacity={0.85}
               style={[
                 styles.startButton,
@@ -902,9 +1530,11 @@ export default function MemoryChallenge() {
               />
 
               <Text
-                style={styles.startText}
+                style={
+                  styles.startText
+                }
               >
-                {t.startGame}
+                {currentText.start}
               </Text>
             </TouchableOpacity>
           </MotiView>
@@ -913,20 +1543,21 @@ export default function MemoryChallenge() {
     );
   }
 
+  /*
+   * ============================================================
+   * RESULT SCREEN
+   * ============================================================
+   */
+
   if (gameFinished) {
     const maxScore =
       TOTAL_ROUNDS * 20;
 
     const percentage =
       Math.round(
-        (score / maxScore) * 100
+        (score / maxScore) *
+          100
       );
-
-    const feedback =
-      getFeedback(percentage);
-
-    const emoji =
-      getEmoji(percentage);
 
     return (
       <View
@@ -940,19 +1571,19 @@ export default function MemoryChallenge() {
       >
         <PageHeader
           title={
-            language === 'fa'
-              ? 'پایان بازی'
-              : 'Game Over'
+            currentText.gameCompleted
           }
           subtitle={
-            language === 'fa'
-              ? 'نتیجه شما'
-              : 'Your result'
+            currentText.title
           }
-          onBack={handleBack}
+          onBack={
+            handleBack
+          }
           colors={colors}
           isRTL={isRTL}
-          backLabel={language === 'fa' ? 'بازگشت' : 'Back'}
+          backLabel={
+            currentText.back
+          }
         />
 
         <ScrollView
@@ -966,7 +1597,7 @@ export default function MemoryChallenge() {
           <MotiView
             from={{
               opacity: 0,
-              scale: 0.9,
+              scale: 0.92,
             }}
             animate={{
               opacity: 1,
@@ -974,45 +1605,28 @@ export default function MemoryChallenge() {
             }}
             transition={{
               type: 'spring',
-              damping: 20,
+              damping: 18,
             }}
-            style={
-              styles.resultContainer
-            }
           >
-            <View
-              style={
-                styles.resultHeader
-              }
-            >
-              <View
-                style={[
-                  styles.resultIconBox,
-                  {
-                    backgroundColor:
-                      colors.primary +
-                      '15',
-                  },
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name="trophy"
-                  size={48}
-                  color={colors.primary}
-                />
-              </View>
+            {/* Result icon */}
 
-              <Text
-                style={[
-                  styles.resultEmoji,
-                  {
-                    color:
-                      colors.text,
-                  },
-                ]}
-              >
-                {emoji}
-              </Text>
+            <View
+              style={[
+                styles.resultIconBox,
+                {
+                  backgroundColor:
+                    colors.primary +
+                    '15',
+                },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="trophy"
+                size={46}
+                color={
+                  colors.primary
+                }
+              />
             </View>
 
             <Text
@@ -1024,8 +1638,12 @@ export default function MemoryChallenge() {
                 },
               ]}
             >
-              {t.gameCompleted}
+              {
+                currentText.gameCompleted
+              }
             </Text>
+
+            {/* Score */}
 
             <View
               style={[
@@ -1063,6 +1681,8 @@ export default function MemoryChallenge() {
               </Text>
             </View>
 
+            {/* Correct answers */}
+
             <Text
               style={[
                 styles.resultDescription,
@@ -1073,14 +1693,14 @@ export default function MemoryChallenge() {
               ]}
             >
               {correctAnswers}{' '}
-              {language === 'fa'
-                ? 'از'
-                : 'of'}{' '}
+              {currentText.of}{' '}
               {TOTAL_ROUNDS}{' '}
-              {language === 'fa'
-                ? 'پاسخ صحیح'
-                : 'answers were correct'}
+              {
+                currentText.correctAnswers
+              }
             </Text>
+
+            {/* Feedback */}
 
             <Text
               style={[
@@ -1091,8 +1711,12 @@ export default function MemoryChallenge() {
                 },
               ]}
             >
-              {feedback}
+              {getFeedback(
+                percentage
+              )}
             </Text>
+
+            {/* Percentage */}
 
             <View
               style={[
@@ -1121,8 +1745,143 @@ export default function MemoryChallenge() {
               />
             </View>
 
+            {/* Adaptive result */}
+
+            <View
+              style={[
+                styles.adaptiveResultCard,
+                {
+                  backgroundColor:
+                    colors.surface,
+                  borderColor:
+                    colors.border,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.adaptiveResultIcon,
+                  {
+                    backgroundColor:
+                      colors.primary +
+                      '15',
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="auto-fix"
+                  size={21}
+                  color={
+                    colors.primary
+                  }
+                />
+              </View>
+
+              <View
+                style={
+                  styles.adaptiveResultContent
+                }
+              >
+                <Text
+                  style={[
+                    styles.adaptiveResultTitle,
+                    {
+                      color:
+                        colors.text,
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
+                  ]}
+                >
+                  {
+                    currentText.adaptive
+                  }
+                </Text>
+
+                <Text
+                  style={[
+                    styles.adaptiveResultDescription,
+                    {
+                      color:
+                        colors.textSecondary,
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
+                  ]}
+                >
+                  {adaptiveResult ===
+                  'up'
+                    ? currentText.adaptiveUp
+                    : adaptiveResult ===
+                        'down'
+                      ? currentText.adaptiveDown
+                      : currentText.adaptiveSame}
+                </Text>
+              </View>
+            </View>
+
+            {/* New difficulty */}
+
+            <View
+              style={[
+                styles.nextDifficultyCard,
+                {
+                  backgroundColor:
+                    colors.primary +
+                    '0D',
+                  borderColor:
+                    colors.primary +
+                    '25',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.nextDifficultyLabel,
+                  {
+                    color:
+                      colors.textSecondary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {
+                  currentText.difficulty
+                }
+              </Text>
+
+              <Text
+                style={[
+                  styles.nextDifficultyValue,
+                  {
+                    color:
+                      colors.primary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {
+                  getDifficultyName()
+                }
+              </Text>
+            </View>
+
+            {/* Try again */}
+
             <TouchableOpacity
-              onPress={resetGame}
+              onPress={
+                resetGame
+              }
               activeOpacity={0.85}
               style={[
                 styles.startButton,
@@ -1145,7 +1904,9 @@ export default function MemoryChallenge() {
                   styles.startText
                 }
               >
-                {t.tryAgain}
+                {
+                  currentText.tryAgain
+                }
               </Text>
             </TouchableOpacity>
           </MotiView>
@@ -1154,16 +1915,21 @@ export default function MemoryChallenge() {
     );
   }
 
+  /*
+   * ============================================================
+   * GAME SCREEN
+   * ============================================================
+   */
+
   const targetShapeName =
-    getShapeName(target.shape);
+    getShapeName(
+      target.shape
+    );
 
   const targetColorName =
-    getColorName(target.color);
-
-  const roundLabel =
-    language === 'fa'
-      ? 'مرحله'
-      : 'Round';
+    getColorName(
+      target.color
+    );
 
   return (
     <View
@@ -1177,16 +1943,20 @@ export default function MemoryChallenge() {
     >
       <PageHeader
         title={
-          language === 'fa'
-            ? 'چالش حافظه'
-            : 'Memory Challenge'
+          currentText.title
         }
-        subtitle={`${roundLabel} ${currentRound} / ${TOTAL_ROUNDS} • ${t.score}: ${score}`}
-        onBack={handleBack}
+        subtitle={`${currentText.round} ${currentRound} / ${TOTAL_ROUNDS} • ${currentText.score}: ${score}`}
+        onBack={
+          handleBack
+        }
         colors={colors}
         isRTL={isRTL}
-        backLabel={language === 'fa' ? 'بازگشت' : 'Back'}
+        backLabel={
+          currentText.back
+        }
       />
+
+      {/* Progress */}
 
       <View
         style={
@@ -1210,15 +1980,13 @@ export default function MemoryChallenge() {
               {
                 color:
                   colors.primary,
-                textAlign:
-                  textAlignStyle,
               },
             ]}
           >
             ✓ {correctAnswers}{' '}
-            {language === 'fa'
-              ? 'صحیح'
-              : 'correct'}
+            {
+              currentText.correct
+            }
           </Text>
         </View>
 
@@ -1241,7 +2009,7 @@ export default function MemoryChallenge() {
             }}
             transition={{
               type: 'timing',
-              duration: 400,
+              duration: 350,
             }}
             style={[
               styles.progressFill,
@@ -1254,8 +2022,12 @@ export default function MemoryChallenge() {
         </View>
       </View>
 
+      {/* Game */}
+
       <View
-        style={styles.gameContent}
+        style={
+          styles.gameContent
+        }
       >
         <Text
           style={[
@@ -1263,13 +2035,27 @@ export default function MemoryChallenge() {
             {
               color:
                 colors.textSecondary,
+              textAlign:
+                'center',
             },
           ]}
         >
-          {language === 'fa'
-            ? 'شکل صحیح را پیدا کنید'
-            : 'Find the correct shape'}
+          {
+            currentText.instruction
+          }
         </Text>
+
+        {/*
+         * IMPORTANT:
+         *
+         * This is the original core mechanic.
+         *
+         * Example:
+         * "Red Circle"
+         *
+         * User must find exactly:
+         * Circle + Red
+         */}
 
         <Text
           style={[
@@ -1277,47 +2063,81 @@ export default function MemoryChallenge() {
             {
               color:
                 colors.text,
+              textAlign:
+                'center',
             },
           ]}
         >
-          {language === 'fa'
+          {isRTL
             ? `${targetShapeName} ${targetColorName}`
             : `${targetColorName} ${targetShapeName}`}
         </Text>
 
+        {/* Options */}
+
         <View
-          style={styles.options}
+          style={
+            styles.options
+          }
         >
           {options.map(
-            (shape, index) => (
-              <TouchableOpacity
+            (
+              shape,
+              index
+            ) => (
+              <MotiView
                 key={`${shape.shape}-${shape.color}-${index}`}
-                onPress={() =>
-                  selectShape(
-                    shape
-                  )
-                }
-                activeOpacity={0.8}
-                style={[
-                  styles.shapeOption,
-                  {
-                    backgroundColor:
-                      colors.surface,
-                    borderColor:
-                      colors.border,
-                  },
-                ]}
+                from={{
+                  opacity: 0,
+                  scale: 0.88,
+                }}
+                animate={{
+                  opacity: 1,
+                  scale: 1,
+                }}
+                transition={{
+                  delay:
+                    index * 35,
+                  type: 'timing',
+                  duration: 220,
+                }}
               >
-                <ShapeComponent
-                  type={
-                    shape.shape
+                <TouchableOpacity
+                  onPress={() =>
+                    selectShape(
+                      shape
+                    )
                   }
-                  color={
-                    shape.color
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    `${getColorName(
+                      shape.color
+                    )} ${getShapeName(
+                      shape.shape
+                    )}`
                   }
-                  size={50}
-                />
-              </TouchableOpacity>
+                  style={[
+                    styles.shapeOption,
+                    {
+                      backgroundColor:
+                        colors.surface,
+                      borderColor:
+                        colors.border,
+                    },
+                  ]}
+                >
+                  <ShapeComponent
+                    type={
+                      shape.shape
+                    }
+                    color={
+                      shape.color
+                    }
+                    size={50}
+                  />
+                </TouchableOpacity>
+              </MotiView>
             )
           )}
         </View>
@@ -1326,295 +2146,443 @@ export default function MemoryChallenge() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+/*
+ * ============================================================
+ * STYLES
+ * ============================================================
+ */
 
-  pageHeader: {
-    width: '100%',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: 60,
-    paddingBottom: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
 
-  unifiedBackButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-    marginRight: 12,
-  },
+    /*
+     * HEADER
+     */
 
-  pageHeaderText: {
-    flex: 1,
-    minWidth: 0,
-  },
+    pageHeader: {
+      width: '100%',
+      paddingHorizontal:
+        Spacing.lg,
+      paddingTop: 60,
+      paddingBottom: 15,
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderBottomWidth:
+        StyleSheet.hairlineWidth,
+    },
 
-  pageHeaderTitle: {
-    fontSize: 21,
-    fontWeight: '800',
-    lineHeight: 27,
-  },
+    unifiedBackButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      borderWidth: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+      marginRight: 12,
+    },
 
-  pageHeaderSubtitle: {
-    fontSize: 12,
-    marginTop: 3,
-    lineHeight: 18,
-  },
+    pageHeaderText: {
+      flex: 1,
+      minWidth: 0,
+    },
 
-  content: {
-    paddingTop: 20,
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: 100,
-  },
+    pageHeaderTitle: {
+      fontSize: 21,
+      fontWeight: '800',
+      lineHeight: 27,
+    },
 
-  resultContent: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: 100,
-  },
+    pageHeaderSubtitle: {
+      fontSize: 12,
+      marginTop: 3,
+      lineHeight: 18,
+    },
 
-  levelsContainer: {
-    gap: 0,
-  },
+    /*
+     * CONTENT
+     */
 
-  levelCard: {
-    minHeight: 82,
-    borderWidth: 1.5,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-  },
+    content: {
+      paddingTop: 20,
+      paddingHorizontal:
+        Spacing.lg,
+      paddingBottom: 100,
+    },
 
-  levelContent: {
-    flex: 1,
-    alignItems: 'center',
-  },
+    resultContent: {
+      paddingHorizontal:
+        Spacing.lg,
+      paddingBottom: 100,
+    },
 
-  levelIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    /*
+     * INTRO
+     */
 
-  levelInfo: {
-    flex: 1,
-    marginLeft: Spacing.md,
-  },
+    introCard: {
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius.lg,
+      padding: Spacing.xl,
+      alignItems: 'center',
+    },
 
-  levelInfoRTL: {
-    flex: 1,
-    marginRight: Spacing.md,
-  },
+    introIcon: {
+      width: 82,
+      height: 82,
+      borderRadius: 26,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: Spacing.md,
+    },
 
-  levelTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
+    introTitle: {
+      fontSize: 25,
+      fontWeight: '800',
+    },
 
-  levelDescription: {
-    marginTop: 5,
-    fontSize: 13,
-    lineHeight: 18,
-  },
+    introDescription: {
+      fontSize: 14,
+      lineHeight: 22,
+      marginTop: 9,
+    },
 
-  selectedDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginLeft: 8,
-    marginRight: 8,
-  },
+    /*
+     * ADAPTIVE
+     */
 
-  startButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: Spacing.md,
-    paddingVertical: 16,
-    borderRadius: BorderRadius.full,
-  },
+    adaptiveCard: {
+      marginTop: Spacing.md,
+      padding: Spacing.md,
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius.lg,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
 
-  startText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+    adaptiveIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
 
-  progressContainer: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
-  },
+    adaptiveInfoContent: {
+      flex: 1,
+    },
 
-  progressHeader: {
-    justifyContent: 'flex-end',
-    marginBottom: 7,
-  },
+    adaptiveTitle: {
+      fontSize: 14,
+      fontWeight: '800',
+    },
 
-  correctText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
+    adaptiveDescription: {
+      fontSize: 11,
+      lineHeight: 18,
+      marginTop: 3,
+    },
 
-  progressBackground: {
-    height: 6,
-    borderRadius: BorderRadius.full,
-    overflow: 'hidden',
-  },
+    previousCard: {
+      marginTop: Spacing.md,
+      paddingHorizontal:
+        Spacing.md,
+      paddingVertical:
+        Spacing.sm,
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius.lg,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent:
+        'space-between',
+    },
 
-  progressFill: {
-    height: '100%',
-    borderRadius: BorderRadius.full,
-  },
+    previousLabel: {
+      fontSize: 11,
+    },
 
-  gameContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: Spacing.lg,
-  },
+    previousValue: {
+      fontSize: 23,
+      fontWeight: '900',
+      marginTop: 2,
+    },
 
-  instruction: {
-    fontSize: 15,
-  },
+    /*
+     * BUTTON
+     */
 
-  targetText: {
-    fontSize: 30,
-    fontWeight: '800',
-    marginTop: 8,
-    marginBottom: Spacing.xl,
-  },
+    startButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      marginTop:
+        Spacing.md,
+      paddingVertical: 16,
+      borderRadius:
+        BorderRadius.full,
+    },
 
-  options: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: Spacing.md,
-    width: '100%',
-  },
+    startText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '700',
+    },
 
-  shapeOption: {
-    width: 100,
-    height: 100,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    /*
+     * PROGRESS
+     */
 
-  circleShape: {
-    borderRadius: 999,
-  },
+    progressContainer: {
+      paddingHorizontal:
+        Spacing.lg,
+      paddingTop:
+        Spacing.md,
+      paddingBottom:
+        Spacing.sm,
+    },
 
-  squareShape: {
-    borderRadius: 4,
-  },
+    progressHeader: {
+      justifyContent:
+        'flex-end',
+      marginBottom: 7,
+    },
 
-  triangleShape: {
-    width: 0,
-    height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
-    borderLeftWidth: 30,
-    borderRightWidth: 30,
-    borderBottomWidth: 50,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-  },
+    correctText: {
+      fontSize: 14,
+      fontWeight: '600',
+    },
 
-  diamondShape: {
-    borderRadius: 2,
-  },
+    progressBackground: {
+      height: 6,
+      borderRadius:
+        BorderRadius.full,
+      overflow: 'hidden',
+    },
 
-  starShape: {
-    textAlign: 'center',
-    lineHeight: 55,
-  },
+    progressFill: {
+      height: '100%',
+      borderRadius:
+        BorderRadius.full,
+    },
 
-  resultContainer: {
-    alignItems: 'center',
-    padding: 20,
-  },
+    /*
+     * GAME
+     */
 
-  resultHeader: {
-    alignItems: 'center',
-    marginBottom: Spacing.md,
-  },
+    gameContent: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding:
+        Spacing.lg,
+    },
 
-  resultIconBox: {
-        width: 82,
-    height: 82,
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    instruction: {
+      fontSize: 15,
+      lineHeight: 22,
+    },
 
-  resultEmoji: {
-    fontSize: 48,
-    marginTop: 4,
-  },
+    targetText: {
+      fontSize: 30,
+      fontWeight: '800',
+      marginTop: 8,
+      marginBottom:
+        Spacing.xl,
+    },
 
-  resultTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: Spacing.md,
-    textAlign: 'center',
-  },
+    options: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent:
+        'center',
+      gap: Spacing.md,
+      width: '100%',
+    },
 
-  resultScoreContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.xs,
-    borderWidth: 1,
-  },
+    shapeOption: {
+      width: 100,
+      height: 100,
+      borderRadius:
+        BorderRadius.lg,
+      borderWidth: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  resultScore: {
-    fontSize: 48,
-    fontWeight: '900',
-  },
+    /*
+     * SHAPES
+     */
 
-  resultMaxScore: {
-    fontSize: 20,
-    marginLeft: 4,
-  },
+    circleShape: {
+      borderRadius: 999,
+    },
 
-  resultDescription: {
-    fontSize: 16,
-    marginBottom: Spacing.md,
-    textAlign: 'center',
-  },
+    squareShape: {
+      borderRadius: 4,
+    },
 
-  feedbackText: {
-    fontSize: 17,
-    fontWeight: '700',
-    marginBottom: Spacing.md,
-    textAlign: 'center',
-  },
+    triangleShape: {
+      width: 0,
+      height: 0,
+      backgroundColor:
+        'transparent',
+      borderStyle: 'solid',
+      borderLeftColor:
+        'transparent',
+      borderRightColor:
+        'transparent',
+    },
 
-  percentageBar: {
-    width: '80%',
-    height: 8,
-    borderRadius: BorderRadius.full,
-    overflow: 'hidden',
-    marginBottom: Spacing.lg,
-  },
+    diamondShape: {
+      borderRadius: 2,
+    },
 
-  percentageFill: {
-    height: '100%',
-    borderRadius: BorderRadius.full,
-  },
-});
+    starShape: {
+      textAlign: 'center',
+      lineHeight: 55,
+    },
+
+    /*
+     * RESULT
+     */
+
+    resultIconBox: {
+      width: 82,
+      height: 82,
+      borderRadius: 26,
+      alignItems: 'center',
+      justifyContent: 'center',
+      alignSelf: 'center',
+      marginTop: 25,
+    },
+
+    resultTitle: {
+      fontSize: 24,
+      fontWeight: '700',
+      marginTop: Spacing.md,
+      marginBottom:
+        Spacing.md,
+      textAlign: 'center',
+    },
+
+    resultScoreContainer: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      paddingHorizontal:
+        Spacing.xl,
+      paddingVertical:
+        Spacing.md,
+      borderRadius:
+        BorderRadius.lg,
+      borderWidth: 1,
+      alignSelf: 'center',
+    },
+
+    resultScore: {
+      fontSize: 48,
+      fontWeight: '900',
+    },
+
+    resultMaxScore: {
+      fontSize: 20,
+      marginLeft: 4,
+    },
+
+    resultDescription: {
+      fontSize: 16,
+      marginTop: Spacing.md,
+      marginBottom:
+        Spacing.md,
+      textAlign: 'center',
+    },
+
+    feedbackText: {
+      fontSize: 17,
+      fontWeight: '700',
+      marginBottom:
+        Spacing.md,
+      textAlign: 'center',
+    },
+
+    percentageBar: {
+      width: '80%',
+      height: 8,
+      borderRadius:
+        BorderRadius.full,
+      overflow: 'hidden',
+      marginBottom:
+        Spacing.lg,
+      alignSelf: 'center',
+    },
+
+    percentageFill: {
+      height: '100%',
+      borderRadius:
+        BorderRadius.full,
+    },
+
+    /*
+     * ADAPTIVE RESULT
+     */
+
+    adaptiveResultCard: {
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius.lg,
+      padding: Spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+
+    adaptiveResultIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    adaptiveResultContent: {
+      flex: 1,
+    },
+
+    adaptiveResultTitle: {
+      fontSize: 14,
+      fontWeight: '800',
+    },
+
+    adaptiveResultDescription: {
+      fontSize: 11,
+      lineHeight: 18,
+      marginTop: 4,
+    },
+
+    nextDifficultyCard: {
+      marginTop: Spacing.md,
+      padding:
+        Spacing.md,
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius.lg,
+    },
+
+    nextDifficultyLabel: {
+      fontSize: 11,
+    },
+
+    nextDifficultyValue: {
+      fontSize: 18,
+      fontWeight: '900',
+      marginTop: 3,
+    },
+  });
