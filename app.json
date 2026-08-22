@@ -23,6 +23,10 @@
     },
 
     "android": {
+      "notification": {
+  "icon": "./assets/avatars/blue.png",
+  "color": "#7C5CFC"
+},
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.jpg",
         "backgroundColor": "#7C5CFF"

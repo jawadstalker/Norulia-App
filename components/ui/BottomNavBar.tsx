@@ -1,33 +1,30 @@
 import React, {
   memo,
   useCallback,
+  useEffect,
   useMemo,
 } from 'react';
-
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
+  Platform,
 } from 'react-native';
-
 import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
-import {
-  useTheme,
-} from '../../context/ThemeContext';
-
-import {
-  useLanguage,
-} from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 import {
   Home,
@@ -36,10 +33,6 @@ import {
   User,
   Sparkles,
 } from 'lucide-react-native';
-
-import {
-  Spacing,
-} from '../../constants/theme';
 
 /* ================================================================
    TYPES
@@ -64,21 +57,34 @@ interface BottomNavBarProps {
   onNavigate: (route: string) => void;
 }
 
+interface AnimatedNavItemProps {
+  item: NavItem;
+  active: boolean;
+  colors: any;
+  isDark: boolean;
+  inactiveColor: string;
+  activeColor: string;
+  label: string;
+  onPress: () => void;
+}
+
 /* ================================================================
    CONSTANTS
 ================================================================ */
 
-const NAV_COUNT = 5;
+const BAR_HEIGHT = 82;
+const CONTENT_HEIGHT = 68;
+const CENTER_BUTTON_SIZE = 58;
 
-const BAR_HEIGHT = 76;
-
-const CONTENT_HEIGHT = 60;
-
-const ACTIVE_HEIGHT = 50;
-
-const ACTIVE_MARGIN = 5;
-
-const NOVA_SIZE = 54;
+/*
+ * Shine configuration
+ *
+ * این مقادیر عمداً مستقل از رنگ تم هستند
+ * تا در Dark / Light هر دو زیبا دیده شود.
+ */
+const SHINE_WIDTH = 95;
+const SHINE_DURATION = 2600;
+const SHINE_PAUSE = 1800;
 
 /* ================================================================
    NAVIGATION ITEMS
@@ -90,26 +96,22 @@ const NAV_ITEMS: readonly NavItem[] = [
     icon: Home,
     route: '/(tabs)',
   },
-
   {
     id: 'brain',
     icon: Brain,
     route: '/(tabs)/protocol',
   },
-
   {
     id: 'nova',
     icon: Sparkles,
     route: '/(tabs)/assistant',
     isCenter: true,
   },
-
   {
     id: 'calendar',
     icon: Calendar,
     route: '/(tabs)/schedule',
   },
-
   {
     id: 'profile',
     icon: User,
@@ -121,32 +123,20 @@ const NAV_ITEMS: readonly NavItem[] = [
    ROUTE NORMALIZATION
 ================================================================ */
 
-function normalizeRoute(
-  path: string
-): string {
+function normalizeRoute(path: string): string {
   if (!path) {
     return '/';
   }
 
   let result = path
-    .replace(
-      /\/\([^)]+\)/g,
-      ''
-    )
-    .replace(
-      /\/{2,}/g,
-      '/'
-    );
+    .replace(/\/\([^)]+\)/g, '')
+    .replace(/\/{2,}/g, '/');
 
   if (
     result.length > 1 &&
     result.endsWith('/')
   ) {
-    result =
-      result.slice(
-        0,
-        -1
-      );
+    result = result.slice(0, -1);
   }
 
   return result || '/';
@@ -157,10 +147,9 @@ function normalizeRoute(
 ================================================================ */
 
 function getActiveItem(
-  route: string
+  route: string,
 ): NavItemId | null {
-  const normalized =
-    normalizeRoute(route);
+  const normalized = normalizeRoute(route);
 
   if (
     normalized === '/' ||
@@ -171,54 +160,273 @@ function getActiveItem(
 
   if (
     normalized === '/protocol' ||
-    normalized.startsWith(
-      '/protocol/'
-    )
+    normalized.startsWith('/protocol/')
   ) {
     return 'brain';
   }
 
   if (
     normalized === '/assistant' ||
-    normalized.startsWith(
-      '/assistant/'
-    )
+    normalized.startsWith('/assistant/')
   ) {
     return 'nova';
   }
 
   if (
     normalized === '/schedule' ||
-    normalized.startsWith(
-      '/schedule/'
-    )
+    normalized.startsWith('/schedule/')
   ) {
     return 'calendar';
   }
 
   if (
     normalized === '/profile' ||
-    normalized.startsWith(
-      '/profile/'
-    )
+    normalized.startsWith('/profile/')
   ) {
     return 'profile';
   }
 
-  /*
-   * Important:
-   *
-   * Pages such as settings do not belong
-   * to any bottom navigation item.
-   *
-   * Therefore we return null instead
-   * of incorrectly activating another item.
-   */
   return null;
 }
 
 /* ================================================================
-   COMPONENT
+   ANIMATED NAV ITEM
+================================================================ */
+
+const AnimatedNavItem = memo(
+  function AnimatedNavItem({
+    item,
+    active,
+    colors,
+    isDark,
+    inactiveColor,
+    activeColor,
+    label,
+    onPress,
+  }: AnimatedNavItemProps) {
+    const Icon = item.icon;
+
+    /* ------------------------------------------------------------
+       ICON ANIMATION
+    ------------------------------------------------------------ */
+
+    const scale = useSharedValue(
+      active ? 1 : 0.94,
+    );
+
+    const opacity = useSharedValue(
+      active ? 1 : 0.72,
+    );
+
+    useEffect(() => {
+      scale.value = withSpring(
+        active ? 1 : 0.94,
+        {
+          damping: 16,
+          stiffness: 220,
+          mass: 0.7,
+        },
+      );
+
+      opacity.value = withTiming(
+        active ? 1 : 0.72,
+        {
+          duration: 160,
+        },
+      );
+    }, [
+      active,
+      opacity,
+      scale,
+    ]);
+
+    const animatedIconStyle =
+      useAnimatedStyle(() => ({
+        transform: [
+          {
+            scale: scale.value,
+          },
+        ],
+        opacity: opacity.value,
+      }));
+
+    /* ============================================================
+       CENTER NEUROLIA BUTTON
+    ============================================================ */
+
+    if (item.isCenter) {
+      return (
+        <View style={styles.centerColumn}>
+          <Pressable
+            onPress={onPress}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+            hitSlop={8}
+            android_ripple={null}
+            style={({ pressed }) => [
+              styles.centerButton,
+              {
+                backgroundColor: active
+                  ? colors.primary
+                  : isDark
+                    ? '#2A2433'
+                    : '#F2EFF7',
+
+                borderColor: isDark
+                  ? '#17131F'
+                  : '#FFFFFF',
+
+                shadowColor: active
+                  ? colors.primary
+                  : '#000000',
+
+                shadowOpacity: active
+                  ? isDark
+                    ? 0.32
+                    : 0.20
+                  : isDark
+                    ? 0.14
+                    : 0.07,
+
+                shadowRadius: active
+                  ? 13
+                  : 9,
+
+                shadowOffset: {
+                  width: 0,
+                  height: 4,
+                },
+
+                elevation: active
+                  ? 9
+                  : 5,
+
+                transform: [
+                  {
+                    scale: pressed
+                      ? 0.92
+                      : 1,
+                  },
+                ],
+              },
+            ]}
+          >
+            <Animated.View
+              style={animatedIconStyle}
+            >
+              <Sparkles
+                size={24}
+                color={
+                  active
+                    ? '#FFFFFF'
+                    : colors.textSecondary
+                }
+                strokeWidth={
+                  active ? 2.5 : 2.1
+                }
+              />
+            </Animated.View>
+          </Pressable>
+
+          <Text
+            numberOfLines={1}
+            style={[
+              styles.centerLabel,
+              {
+                color: active
+                  ? activeColor
+                  : inactiveColor,
+              },
+            ]}
+          >
+            {label}
+          </Text>
+        </View>
+      );
+    }
+
+    /* ============================================================
+       NORMAL NAVIGATION ITEM
+    ============================================================ */
+
+    return (
+      <View style={styles.navColumn}>
+        <Pressable
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={label}
+          hitSlop={6}
+          android_ripple={null}
+          style={({ pressed }) => [
+            styles.navButton,
+            {
+              opacity: pressed ? 0.68 : 1,
+            },
+          ]}
+        >
+          <Animated.View
+            style={[
+              styles.iconWrapper,
+              animatedIconStyle,
+              {
+                backgroundColor: active
+                  ? isDark
+                    ? `${colors.primary}24`
+                    : `${colors.primary}12`
+                  : 'transparent',
+              },
+            ]}
+          >
+            <Icon
+              size={21}
+              color={
+                active
+                  ? activeColor
+                  : inactiveColor
+              }
+              strokeWidth={
+                active ? 2.35 : 1.85
+              }
+            />
+          </Animated.View>
+
+          <Text
+            numberOfLines={1}
+            style={[
+              styles.navLabel,
+              {
+                color: active
+                  ? activeColor
+                  : inactiveColor,
+
+                fontWeight: active
+                  ? '800'
+                  : '600',
+              },
+            ]}
+          >
+            {label}
+          </Text>
+
+          {active && (
+            <View
+              style={[
+                styles.activeDot,
+                {
+                  backgroundColor:
+                    activeColor,
+                },
+              ]}
+            />
+          )}
+        </Pressable>
+      </View>
+    );
+  },
+);
+
+/* ================================================================
+   MAIN COMPONENT
 ================================================================ */
 
 function BottomNavBarComponent({
@@ -245,9 +453,9 @@ function BottomNavBarComponent({
     useMemo(
       () =>
         normalizeRoute(
-          currentRoute
+          currentRoute,
         ),
-      [currentRoute]
+      [currentRoute],
     );
 
   /* ==============================================================
@@ -258,109 +466,9 @@ function BottomNavBarComponent({
     useMemo(
       () =>
         getActiveItem(
-          normalizedRoute
+          normalizedRoute,
         ),
-      [normalizedRoute]
-    );
-
-  /* ==============================================================
-     ACTIVE INDEX
-  ============================================================== */
-
-  const activeIndex =
-    useMemo(() => {
-      if (!activeItem) {
-        return -1;
-      }
-
-      return NAV_ITEMS.findIndex(
-        (item) =>
-          item.id ===
-          activeItem
-      );
-    }, [activeItem]);
-
-  /* ==============================================================
-     INDICATOR POSITION
-  ============================================================== */
-
-  const indicatorX =
-    useSharedValue(
-      activeIndex >= 0
-        ? activeIndex /
-          NAV_COUNT
-        : 0
-    );
-
-  const indicatorOpacity =
-    useSharedValue(
-      activeIndex >= 0
-        ? 1
-        : 0
-    );
-
-  /*
-   * The indicator uses a normalized
-   * 0..1 position.
-   *
-   * This avoids onLayout,
-   * refs and layout callbacks.
-   *
-   * Much less work for React Native.
-   */
-
-  React.useEffect(() => {
-    if (
-      activeIndex < 0
-    ) {
-      indicatorOpacity.value =
-        withTiming(
-          0,
-          {
-            duration: 100,
-          }
-        );
-
-      return;
-    }
-
-    indicatorX.value =
-      withTiming(
-        activeIndex /
-          NAV_COUNT,
-        {
-          duration: 180,
-        }
-      );
-
-    indicatorOpacity.value =
-      withTiming(
-        1,
-        {
-          duration: 120,
-        }
-      );
-  }, [
-    activeIndex,
-    indicatorOpacity,
-    indicatorX,
-  ]);
-
-  /* ==============================================================
-     INDICATOR STYLE
-  ============================================================== */
-
-  const indicatorStyle =
-    useAnimatedStyle(
-      () => ({
-        left: `${indicatorX.value * 100}%`,
-
-        opacity:
-          indicatorOpacity.value,
-
-        width: `${100 / NAV_COUNT}%`,
-      }),
-      []
+      [normalizedRoute],
     );
 
   /* ==============================================================
@@ -371,9 +479,7 @@ function BottomNavBarComponent({
     useCallback(
       (route: string) => {
         const target =
-          normalizeRoute(
-            route
-          );
+          normalizeRoute(route);
 
         if (
           target ===
@@ -387,17 +493,17 @@ function BottomNavBarComponent({
       [
         normalizedRoute,
         onNavigate,
-      ]
+      ],
     );
 
   /* ==============================================================
-     LABEL
+     LABELS
   ============================================================== */
 
   const getLabel =
     useCallback(
       (
-        id: NavItemId
+        id: NavItemId,
       ): string => {
         switch (id) {
           case 'home':
@@ -413,7 +519,9 @@ function BottomNavBarComponent({
             );
 
           case 'nova':
-            return 'Nova';
+            return t.language === 'fa'
+              ? 'نورولیا'
+              : 'Neurolia';
 
           case 'calendar':
             return (
@@ -431,7 +539,7 @@ function BottomNavBarComponent({
             return '';
         }
       },
-      [t]
+      [t],
     );
 
   /* ==============================================================
@@ -445,26 +553,158 @@ function BottomNavBarComponent({
 
   const borderColor =
     isDark
-      ? 'rgba(255,255,255,0.08)'
-      : colors.border;
+      ? 'rgba(255,255,255,0.07)'
+      : 'rgba(30,25,45,0.07)';
 
   const inactiveColor =
     isDark
-      ? 'rgba(255,255,255,0.55)'
+      ? 'rgba(255,255,255,0.52)'
       : colors.textTertiary;
 
   const activeColor =
     colors.primary;
 
-  const indicatorBackground =
-    isDark
-      ? `${colors.primary}1C`
-      : `${colors.primary}12`;
+  /* ==============================================================
+     ✨ SHINE ANIMATION
+     
+     یک باریکه‌ی نور از چپ به راست
+     روی کل Bottom Navbar حرکت می‌کند.
+  ============================================================== */
 
-  const indicatorBorder =
-    isDark
-      ? `${colors.primary}30`
-      : `${colors.primary}18`;
+  const shineX =
+    useSharedValue(-SHINE_WIDTH);
+
+  const shineOpacity =
+    useSharedValue(0);
+
+  useEffect(() => {
+    shineX.value = -SHINE_WIDTH;
+    shineOpacity.value = 0;
+
+    shineX.value = withRepeat(
+      withSequence(
+        /*
+         * قبل از شروع حرکت
+         */
+        withTiming(
+          -SHINE_WIDTH,
+          {
+            duration: SHINE_PAUSE,
+          },
+        ),
+
+        /*
+         * ظاهر شدن نور
+         */
+        withTiming(
+          0,
+          {
+            duration: 250,
+          },
+        ),
+
+        /*
+         * عبور کامل نور
+         */
+        withTiming(
+          430,
+          {
+            duration:
+              SHINE_DURATION,
+          },
+        ),
+
+        /*
+         * محو شدن
+         */
+        withTiming(
+          520,
+          {
+            duration: 250,
+          },
+        ),
+
+        /*
+         * فاصله تا حرکت بعدی
+         */
+        withTiming(
+          520,
+          {
+            duration: SHINE_PAUSE,
+          },
+        ),
+      ),
+      -1,
+      false,
+    );
+
+    shineOpacity.value =
+      withRepeat(
+        withSequence(
+          withTiming(
+            0,
+            {
+              duration:
+                SHINE_PAUSE,
+            },
+          ),
+
+          withTiming(
+            0.9,
+            {
+              duration: 260,
+            },
+          ),
+
+          withTiming(
+            0.9,
+            {
+              duration:
+                SHINE_DURATION,
+            },
+          ),
+
+          withTiming(
+            0,
+            {
+              duration: 280,
+            },
+          ),
+
+          withTiming(
+            0,
+            {
+              duration:
+                SHINE_PAUSE,
+            },
+          ),
+        ),
+        -1,
+        false,
+      );
+
+  }, [
+    shineOpacity,
+    shineX,
+  ]);
+
+  const shineStyle =
+    useAnimatedStyle(
+      () => ({
+        transform: [
+          {
+            translateX:
+              shineX.value,
+          },
+          {
+            rotate: '18deg',
+          },
+        ],
+
+        opacity:
+          shineOpacity.value,
+      }),
+    );
 
   /* ==============================================================
      RENDER
@@ -482,264 +722,93 @@ function BottomNavBarComponent({
           paddingBottom:
             Math.max(
               insets.bottom,
-              0
-            ) +
-            Spacing.sm,
+              0,
+            ) + 5,
 
           shadowColor:
             '#000000',
 
           shadowOpacity:
             isDark
-              ? 0.24
-              : 0.06,
+              ? 0.28
+              : 0.055,
 
           shadowRadius:
-            isDark
-              ? 14
-              : 10,
+            isDark ? 18 : 12,
 
           shadowOffset: {
             width: 0,
-            height: -3,
+            height: -4,
           },
 
-          elevation: 10,
+          elevation: 14,
         },
       ]}
     >
-      {/* ==========================================================
+
+      {/* ========================================================
+          ✨ SHINE LAYER
+
+          مهم:
+          pointerEvents="none"
+          تا روی دکمه‌ها جلوی لمس را نگیرد.
+      ======================================================== */}
+
+      <View
+        pointerEvents="none"
+        style={styles.shineClip}
+      >
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.shine,
+            shineStyle,
+            {
+              backgroundColor:
+                isDark
+                  ? 'rgba(255,255,255,0.26)'
+                  : 'rgba(255,255,255,0.82)',
+            },
+          ]}
+        />
+      </View>
+
+      {/* ========================================================
           NAVIGATION AREA
-
-          IMPORTANT:
-
-          The active background belongs to the
-          navigation column itself.
-
-          There is only ONE active indicator.
-      ========================================================== */}
+      ======================================================== */}
 
       <View
         style={
           styles.navigationArea
         }
       >
-        {/* ========================================================
-            ACTIVE INDICATOR
-        ======================================================== */}
-
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.activeIndicator,
-            indicatorStyle,
-            {
-              backgroundColor:
-                indicatorBackground,
-
-              borderColor:
-                indicatorBorder,
-            },
-          ]}
-        />
-
-        {/* ========================================================
-            ITEMS
-        ======================================================== */}
-
         {NAV_ITEMS.map(
-          (item) => {
-            const Icon =
-              item.icon;
-
-            const isActive =
-              activeItem ===
-              item.id;
-
-            /* ====================================================
-               NOVA
-            ==================================================== */
-
-            if (
-              item.isCenter
-            ) {
-              return (
-                <View
-                  key={item.id}
-                  style={
-                    styles.navColumn
-                  }
-                >
-                  <Pressable
-                    onPress={() =>
-                      handleNavigate(
-                        item.route
-                      )
-                    }
-                    accessibilityRole="button"
-                    accessibilityLabel="Nova AI"
-                    android_ripple={
-                      {
-                        color:
-                          'transparent',
-                        borderless:
-                          false,
-                      }
-                    }
-                    style={({ pressed }) => [
-                      styles.novaButton,
-
-                      {
-                        backgroundColor:
-                          isActive
-                            ? colors.primary
-                            : isDark
-                            ? '#292231'
-                            : '#F1EFF5',
-
-                        borderColor:
-                          isDark
-                            ? '#17131F'
-                            : '#FFFFFF',
-
-                        opacity:
-                          pressed
-                            ? 0.82
-                            : 1,
-
-                        shadowColor:
-                          isActive
-                            ? colors.primary
-                            : '#000000',
-
-                        shadowOpacity:
-                          isActive
-                            ? isDark
-                              ? 0.30
-                              : 0.18
-                            : isDark
-                            ? 0.12
-                            : 0.06,
-                      },
-                    ]}
-                  >
-                    <Sparkles
-                      size={23}
-                      color={
-                        isActive
-                          ? '#FFFFFF'
-                          : isDark
-                          ? colors.textSecondary
-                          : colors.textTertiary
-                      }
-                      strokeWidth={
-                        isActive
-                          ? 2.4
-                          : 2
-                      }
-                    />
-                  </Pressable>
-
-                  <Text
-                    numberOfLines={
-                      1
-                    }
-                    style={[
-                      styles.label,
-                      {
-                        color:
-                          isActive
-                            ? activeColor
-                            : inactiveColor,
-                      },
-                    ]}
-                  >
-                    Nova
-                  </Text>
-                </View>
-              );
-            }
-
-            /* ====================================================
-               NORMAL ITEM
-            ==================================================== */
-
-            return (
-              <View
-                key={item.id}
-                style={
-                  styles.navColumn
-                }
-              >
-                <Pressable
-                  onPress={() =>
-                    handleNavigate(
-                      item.route
-                    )
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel={getLabel(
-                    item.id
-                  )}
-                  android_ripple={{
-                    color:
-                      'transparent',
-                    borderless:
-                      false,
-                  }}
-                  style={({ pressed }) => [
-                    styles.navButton,
-
-                    {
-                      opacity:
-                        pressed
-                          ? 0.70
-                          : 1,
-                    },
-                  ]}
-                >
-                  <View
-                    style={
-                      styles.iconBox
-                    }
-                  >
-                    <Icon
-                      size={21}
-                      color={
-                        isActive
-                          ? activeColor
-                          : inactiveColor
-                      }
-                      strokeWidth={
-                        isActive
-                          ? 2.35
-                          : 1.9
-                      }
-                    />
-                  </View>
-
-                  <Text
-                    numberOfLines={
-                      1
-                    }
-                    style={[
-                      styles.label,
-                      {
-                        color:
-                          isActive
-                            ? activeColor
-                            : inactiveColor,
-                      },
-                    ]}
-                  >
-                    {getLabel(
-                      item.id
-                    )}
-                  </Text>
-                </Pressable>
-              </View>
-            );
-          }
+          (item) => (
+            <AnimatedNavItem
+              key={item.id}
+              item={item}
+              active={
+                activeItem ===
+                item.id
+              }
+              colors={colors}
+              isDark={isDark}
+              inactiveColor={
+                inactiveColor
+              }
+              activeColor={
+                activeColor
+              }
+              label={getLabel(
+                item.id,
+              )}
+              onPress={() =>
+                handleNavigate(
+                  item.route,
+                )
+              }
+            />
+          ),
         )}
       </View>
     </View>
@@ -747,13 +816,15 @@ function BottomNavBarComponent({
 }
 
 /* ================================================================
-   MEMO
+   EXPORT
 ================================================================ */
 
 export const BottomNavBar =
   memo(
-    BottomNavBarComponent
+    BottomNavBarComponent,
   );
+
+export default BottomNavBar;
 
 /* ================================================================
    STYLES
@@ -761,17 +832,16 @@ export const BottomNavBar =
 
 const styles =
   StyleSheet.create({
+
     /* ============================================================
-       OUTER BAR
+       CONTAINER
     ============================================================ */
 
     container: {
       width: '100%',
-
-      height:
-        BAR_HEIGHT,
-
       minHeight:
+        BAR_HEIGHT,
+      height:
         BAR_HEIGHT,
 
       borderTopWidth:
@@ -781,8 +851,83 @@ const styles =
         'visible',
 
       zIndex: 100,
+      elevation: 14,
 
-      elevation: 10,
+      ...(Platform.OS ===
+        'ios'
+        ? {
+            shadowOffset: {
+              width: 0,
+              height: -4,
+            },
+          }
+        : {}),
+    },
+
+    /* ============================================================
+       SHINE CLIP
+       
+       این View باعث می‌شود Shine فقط
+       داخل BottomNavbar دیده شود.
+    ============================================================ */
+
+    shineClip: {
+      position: 'absolute',
+
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+
+      overflow: 'hidden',
+
+      zIndex: 50,
+
+      pointerEvents:
+        'none',
+    },
+
+    /* ============================================================
+       SHINE
+
+       نوار نورانی باریک.
+    ============================================================ */
+
+    shine: {
+      position: 'absolute',
+
+      top: -45,
+
+      left: '18%',
+
+      width:
+        SHINE_WIDTH,
+
+      height: 180,
+
+      borderRadius: 100,
+
+      transform: [
+        {
+          rotate: '18deg',
+        },
+      ],
+
+      shadowColor:
+        '#FFFFFF',
+
+      shadowOpacity:
+        0.8,
+
+      shadowRadius:
+        18,
+
+      shadowOffset: {
+        width: 0,
+        height: 0,
+      },
+
+      elevation: 8,
     },
 
     /* ============================================================
@@ -792,15 +937,6 @@ const styles =
     navigationArea: {
       position: 'relative',
 
-      flex: 1,
-
-      flexDirection: 'row',
-
-      alignItems: 'center',
-
-      justifyContent:
-        'space-between',
-
       width: '100%',
 
       height:
@@ -809,43 +945,24 @@ const styles =
       minHeight:
         CONTENT_HEIGHT,
 
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'space-between',
+
       paddingHorizontal: 4,
 
-      paddingTop: 2,
+      paddingTop: 1,
+
+      zIndex: 2,
     },
 
     /* ============================================================
-       ACTIVE INDICATOR
-
-       IMPORTANT:
-
-       The indicator is INSIDE the navigation area.
-
-       Therefore it can never move outside
-       the bottom navigation.
-    ============================================================ */
-
-    activeIndicator: {
-      position: 'absolute',
-
-      top:
-        ACTIVE_MARGIN,
-
-      height:
-        ACTIVE_HEIGHT,
-
-      borderRadius:
-        ACTIVE_HEIGHT / 2,
-
-      borderWidth: 1,
-
-      marginHorizontal: 1,
-
-      zIndex: 0,
-    },
-
-    /* ============================================================
-       COLUMN
+       NORMAL COLUMN
     ============================================================ */
 
     navColumn: {
@@ -863,17 +980,10 @@ const styles =
         'center',
 
       zIndex: 2,
-
-      overflow:
-        'visible',
     },
 
     /* ============================================================
        NORMAL BUTTON
-
-       No fixed Touchable opacity highlight.
-       No negative margins.
-       No absolute positioning.
     ============================================================ */
 
     navButton: {
@@ -888,27 +998,24 @@ const styles =
       justifyContent:
         'center',
 
-      paddingHorizontal: 2,
+      position:
+        'relative',
 
-      paddingVertical: 3,
-
-      borderRadius: 12,
+      paddingTop: 2,
 
       backgroundColor:
         'transparent',
-
-      overflow:
-        'hidden',
     },
 
     /* ============================================================
-       ICON BOX
+       ICON WRAPPER
     ============================================================ */
 
-    iconBox: {
-      width: 28,
+    iconWrapper: {
+      width: 38,
+      height: 32,
 
-      height: 25,
+      borderRadius: 12,
 
       alignItems:
         'center',
@@ -923,49 +1030,44 @@ const styles =
        LABEL
     ============================================================ */
 
-    label: {
-      fontSize: 10,
+    navLabel: {
+      fontSize: 9.5,
 
       lineHeight: 13,
-
-      fontWeight: '600',
-
-      letterSpacing: 0.1,
 
       textAlign:
         'center',
 
-      includeFontPadding:
-        false,
-
-      maxWidth:
-        '100%',
+      maxWidth: 66,
     },
 
     /* ============================================================
-       NOVA BUTTON
-
-       No negative top.
-
-       This is the important fix for the
-       icon/button escaping the navbar.
+       ACTIVE DOT
     ============================================================ */
 
-    novaButton: {
-      width:
-        NOVA_SIZE,
+    activeDot: {
+      position:
+        'absolute',
+
+      bottom: 3,
+
+      width: 4,
+      height: 4,
+
+      borderRadius: 2,
+    },
+
+    /* ============================================================
+       CENTER NEUROLIA COLUMN
+    ============================================================ */
+
+    centerColumn: {
+      flex: 1,
 
       height:
-        NOVA_SIZE,
+        CONTENT_HEIGHT,
 
-      maxWidth:
-        NOVA_SIZE,
-
-      maxHeight:
-        NOVA_SIZE,
-
-      borderRadius:
-        NOVA_SIZE / 2,
+      minWidth: 0,
 
       alignItems:
         'center',
@@ -973,18 +1075,53 @@ const styles =
       justifyContent:
         'center',
 
+      zIndex: 4,
+
+      overflow:
+        'visible',
+    },
+
+    /* ============================================================
+       CENTER BUTTON
+    ============================================================ */
+
+    centerButton: {
+      width:
+        CENTER_BUTTON_SIZE,
+
+      height:
+        CENTER_BUTTON_SIZE,
+
+      borderRadius:
+        CENTER_BUTTON_SIZE / 2,
+
       borderWidth: 3,
 
-      shadowOffset: {
-        width: 0,
+      alignItems:
+        'center',
 
-        height: 3,
-      },
+      justifyContent:
+        'center',
 
-      shadowRadius: 7,
+      marginTop: -10,
+    },
 
-      elevation: 7,
+    /* ============================================================
+       CENTER LABEL
+    ============================================================ */
 
-      marginBottom: 1,
+    centerLabel: {
+      fontSize: 9.5,
+
+      lineHeight: 13,
+
+      fontWeight: '800',
+
+      textAlign:
+        'center',
+
+      marginTop: -4,
+
+      maxWidth: 66,
     },
   });

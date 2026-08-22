@@ -4,7 +4,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-
 import {
   View,
   Text,
@@ -17,12 +16,10 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-
 import { MotiView, AnimatePresence } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-
 import {
   Send,
   Mic,
@@ -38,26 +35,12 @@ import {
   AlertCircle,
   RotateCcw,
 } from 'lucide-react-native';
-
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { BorderRadius } from '../../constants/theme';
 
-/* =========================================================
-   API
-========================================================= */
-
 const CHAT_API_URL =
   'https://smith-wrongful-punctual.ngrok-free.dev/chat';
-
-/*
- * اگر backend شما بعداً به URL دیگری منتقل شد،
- * فقط همین مقدار را تغییر بده.
- */
-
-/* =========================================================
-   TYPES
-========================================================= */
 
 interface Message {
   id: string;
@@ -76,10 +59,6 @@ interface ChatResponse {
   data?: unknown;
   error?: unknown;
 }
-
-/* =========================================================
-   QUICK ACTIONS
-========================================================= */
 
 const suggestions = [
   {
@@ -104,40 +83,31 @@ const suggestions = [
   },
 ];
 
-/* =========================================================
-   HELPERS
-========================================================= */
-
 const normalizeResponseText = (
   value: unknown
 ): string | null => {
   if (typeof value === 'string') {
     return value.trim() || null;
   }
-
   if (
     typeof value === 'number' ||
     typeof value === 'boolean'
   ) {
     return String(value);
   }
-
   if (Array.isArray(value)) {
     for (const item of value) {
       const result = normalizeResponseText(item);
-
       if (result) {
         return result;
       }
     }
   }
-
   if (
     value &&
     typeof value === 'object'
   ) {
     const object = value as Record<string, unknown>;
-
     const possibleKeys = [
       'response',
       'message',
@@ -146,43 +116,32 @@ const normalizeResponseText = (
       'text',
       'content',
     ];
-
     for (const key of possibleKeys) {
       if (key in object) {
         const result =
           normalizeResponseText(object[key]);
-
         if (result) {
           return result;
         }
       }
     }
-
     if ('data' in object) {
       const result =
         normalizeResponseText(object.data);
-
       if (result) {
         return result;
       }
     }
-
     if ('choices' in object) {
       const result =
         normalizeResponseText(object.choices);
-
       if (result) {
         return result;
       }
     }
   }
-
   return null;
 };
-
-/* =========================================================
-   COMPONENT
-========================================================= */
 
 export default function AssistantScreen() {
   const { colors, isDark } = useTheme();
@@ -191,55 +150,37 @@ export default function AssistantScreen() {
 
   const [messages, setMessages] =
     useState<Message[]>([]);
-
   const [inputText, setInputText] =
     useState('');
-
   const [isTyping, setIsTyping] =
     useState(false);
-
   const [showScrollButton, setShowScrollButton] =
     useState(false);
-
   const [notice, setNotice] =
     useState<string | null>(null);
-
   const [requestError, setRequestError] =
     useState(false);
 
   const scrollRef =
     useRef<ScrollView>(null);
-
   const inputRef =
     useRef<TextInput>(null);
-
   const noticeTimer =
     useRef<ReturnType<typeof setTimeout> | null>(
       null
     );
-
   const scrollTimer =
     useRef<ReturnType<typeof setTimeout> | null>(
       null
     );
-
   const abortController =
     useRef<AbortController | null>(null);
-
   const conversationId =
     useRef(
       `neurolia-${Date.now()}-${Math.random()
         .toString(36)
         .slice(2, 8)}`
     );
-
-  const rowDirection = isRTL
-    ? 'row-reverse'
-    : 'row';
-
-  /* =======================================================
-     TIME
-  ======================================================= */
 
   const getCurrentTime = useCallback(() => {
     return new Date().toLocaleTimeString(
@@ -253,32 +194,21 @@ export default function AssistantScreen() {
     );
   }, [language]);
 
-  /* =======================================================
-     HAPTICS
-  ======================================================= */
-
   const lightHaptic = useCallback(() => {
     Haptics.impactAsync(
       Haptics.ImpactFeedbackStyle.Light
     ).catch(() => {});
   }, []);
 
-  /* =======================================================
-     NOTICE
-  ======================================================= */
-
   const showNotice = useCallback(
     (message: string) => {
       Haptics.notificationAsync(
         Haptics.NotificationFeedbackType.Warning
       ).catch(() => {});
-
       if (noticeTimer.current) {
         clearTimeout(noticeTimer.current);
       }
-
       setNotice(message);
-
       noticeTimer.current =
         setTimeout(() => {
           setNotice(null);
@@ -287,13 +217,8 @@ export default function AssistantScreen() {
     []
   );
 
-  /* =======================================================
-     SCROLL
-  ======================================================= */
-
   const scrollToBottom = useCallback(() => {
     lightHaptic();
-
     scrollRef.current?.scrollToEnd({
       animated: true,
     });
@@ -306,12 +231,10 @@ export default function AssistantScreen() {
         contentSize,
         layoutMeasurement,
       } = event.nativeEvent;
-
       const distance =
         contentSize.height -
         contentOffset.y -
         layoutMeasurement.height;
-
       setShowScrollButton(
         distance > 100 &&
           messages.length > 0
@@ -319,10 +242,6 @@ export default function AssistantScreen() {
     },
     [messages.length]
   );
-
-  /* =======================================================
-     ADD MESSAGE
-  ======================================================= */
 
   const addMessage = useCallback(
     (
@@ -335,14 +254,10 @@ export default function AssistantScreen() {
         }-${Math.random()
           .toString(36)
           .slice(2, 7)}`,
-
         text,
-
         isUser,
-
         timestamp: getCurrentTime(),
       };
-
       setMessages(prev => [
         ...prev,
         message,
@@ -351,215 +266,120 @@ export default function AssistantScreen() {
     [getCurrentTime]
   );
 
-  /* =======================================================
-     API REQUEST
-  ======================================================= */
-
   const requestAssistant = useCallback(
     async (text: string) => {
-      /*
-       * Abort request قبلی
-       */
       abortController.current?.abort();
-
       const controller =
         new AbortController();
-
       abortController.current =
         controller;
-
-      /*
-       * Body اصلی.
-       *
-       * message مهم‌ترین فیلد است.
-       *
-       * conversation_id برای حفظ session
-       * در backend فرستاده می‌شود.
-       */
-
       const body = {
         message: text,
-
         conversation_id:
           conversationId.current,
-
         language:
           language === 'fa'
             ? 'fa'
             : 'en',
       };
-
       const response =
         await fetch(
           CHAT_API_URL,
           {
             method: 'POST',
-
             headers: {
               'Content-Type':
                 'application/json',
-
               Accept:
                 'application/json, text/plain, */*',
             },
-
             body: JSON.stringify(body),
-
             signal:
               controller.signal,
           }
         );
-
       if (!response.ok) {
         throw new Error(
           `HTTP ${response.status}`
         );
       }
-
-      /*
-       * بعضی backendها JSON برمی‌گردانند،
-       * بعضی text.
-       *
-       * اول text می‌گیریم تا هر دو حالت
-       * را پشتیبانی کنیم.
-       */
-
       const raw =
         await response.text();
-
       if (!raw.trim()) {
         throw new Error(
           'Empty response from server'
         );
       }
-
-      /*
-       * JSON
-       */
-
       try {
         const parsed =
           JSON.parse(raw) as ChatResponse;
-
         const textResponse =
           normalizeResponseText(parsed);
-
         if (textResponse) {
           return textResponse;
         }
-
-        /*
-         * اگر JSON معتبر بود ولی ساختارش
-         * متفاوت بود، خود JSON را نمایش
-         * نمی‌دهیم.
-         */
         throw new Error(
           'Unable to find assistant response'
         );
       } catch (jsonError) {
-        /*
-         * اگر JSON نبود، خود response
-         * را به عنوان text قبول می‌کنیم.
-         */
-
         if (
           raw.trim().startsWith('{') ||
           raw.trim().startsWith('[')
         ) {
           throw jsonError;
         }
-
         return raw.trim();
       }
     },
     [language]
   );
 
-  /* =======================================================
-     SEND MESSAGE
-  ======================================================= */
-
   const handleSend = useCallback(
     async (value?: string) => {
       const text =
         (value ?? inputText).trim();
-
       if (
         !text ||
         isTyping
       ) {
         return;
       }
-
       lightHaptic();
-
       setRequestError(false);
-
-      /*
-       * User message
-       */
-
       addMessage(
         text,
         true
       );
-
       setInputText('');
-
       setIsTyping(true);
-
-      /*
-       * Keyboard را در صورت نیاز ببند
-       */
-
       inputRef.current?.blur();
-
-      /*
-       * اجازه بده UI اول پیام کاربر
-       * را render کند.
-       */
-
       await new Promise(resolve =>
         setTimeout(resolve, 80)
       );
-
       try {
         const answer =
           await requestAssistant(text);
-
-        /*
-         * پاسخ خالی
-         */
-
         if (!answer) {
           throw new Error(
             'Assistant returned empty response'
           );
         }
-
         addMessage(
           answer,
           false
         );
       } catch (error) {
-        /*
-         * Abort خطای واقعی نیست
-         */
-
         if (
           error instanceof Error &&
           error.name === 'AbortError'
         ) {
           return;
         }
-
         console.error(
           'NEUROLIA AI CHAT ERROR:',
           error
         );
-
         setRequestError(true);
-
         addMessage(
           language === 'fa'
             ? 'در ارتباط با دستیار هوشمند مشکلی پیش آمد. اتصال سرور را بررسی کنید و دوباره تلاش کنید.'
@@ -568,7 +388,6 @@ export default function AssistantScreen() {
         );
       } finally {
         setIsTyping(false);
-
         abortController.current =
           null;
       }
@@ -583,24 +402,14 @@ export default function AssistantScreen() {
     ]
   );
 
-  /* =======================================================
-     RETRY
-  ======================================================= */
-
   const handleRetry = useCallback(() => {
     const lastUserMessage =
       [...messages]
         .reverse()
         .find(message => message.isUser);
-
     if (!lastUserMessage) {
       return;
     }
-
-    /*
-     * آخرین پاسخ خطا را حذف کن
-     */
-
     setMessages(prev => {
       const lastAssistantIndex =
         [...prev]
@@ -612,7 +421,6 @@ export default function AssistantScreen() {
           .find(
             item => !item.message.isUser
           );
-
       if (
         lastAssistantIndex &&
         lastAssistantIndex.index >
@@ -628,12 +436,9 @@ export default function AssistantScreen() {
             lastAssistantIndex.index
         );
       }
-
       return prev;
     });
-
     setRequestError(false);
-
     handleSend(
       lastUserMessage.text
     );
@@ -641,10 +446,6 @@ export default function AssistantScreen() {
     messages,
     handleSend,
   ]);
-
-  /* =======================================================
-     QUICK ACTION
-  ======================================================= */
 
   const handleSuggestion = useCallback(
     (suggestion: {
@@ -655,40 +456,31 @@ export default function AssistantScreen() {
         t[
           suggestion.label as keyof typeof t
         ];
-
       const text =
         typeof translation === 'string' &&
         translation.trim()
           ? translation
           : suggestion.fallback;
-
       handleSend(text);
     },
     [t, handleSend]
   );
 
-  /* =======================================================
-     SCROLL AFTER MESSAGE
-  ======================================================= */
-
   useEffect(() => {
     if (messages.length === 0) {
       return;
     }
-
     if (scrollTimer.current) {
       clearTimeout(
         scrollTimer.current
       );
     }
-
     scrollTimer.current =
       setTimeout(() => {
         scrollRef.current?.scrollToEnd({
           animated: true,
         });
       }, 100);
-
     return () => {
       if (scrollTimer.current) {
         clearTimeout(
@@ -698,20 +490,14 @@ export default function AssistantScreen() {
     };
   }, [messages]);
 
-  /* =======================================================
-     CLEANUP
-  ======================================================= */
-
   useEffect(() => {
     return () => {
       abortController.current?.abort();
-
       if (noticeTimer.current) {
         clearTimeout(
           noticeTimer.current
         );
       }
-
       if (scrollTimer.current) {
         clearTimeout(
           scrollTimer.current
@@ -719,10 +505,6 @@ export default function AssistantScreen() {
       }
     };
   }, []);
-
-  /* =======================================================
-     COLORS
-  ======================================================= */
 
   const backgroundGradient =
     isDark
@@ -740,10 +522,6 @@ export default function AssistantScreen() {
       colors.primary,
       colors.primaryLight,
     ] as const;
-
-  /* =======================================================
-     RENDER
-  ======================================================= */
 
   return (
     <LinearGradient
@@ -763,11 +541,6 @@ export default function AssistantScreen() {
             : 0
         }
       >
-
-        {/* =================================================
-            HEADER
-        ================================================= */}
-
         <MotiView
           from={{
             opacity: 0,
@@ -796,14 +569,12 @@ export default function AssistantScreen() {
             style={[
               styles.headerContent,
               {
-                flexDirection:
-                  rowDirection,
+                flexDirection: isRTL
+                  ? 'row-reverse'
+                  : 'row',
               },
             ]}
           >
-
-            {/* Avatar */}
-
             <View
               style={[
                 styles.avatarWrapper,
@@ -812,7 +583,6 @@ export default function AssistantScreen() {
                     isDark
                       ? 'rgba(130,116,216,0.22)'
                       : 'rgba(130,116,216,0.14)',
-
                   borderColor:
                     isDark
                       ? 'rgba(164,155,230,0.32)'
@@ -826,7 +596,6 @@ export default function AssistantScreen() {
                 )}
                 style={styles.avatar}
               />
-
               <View
                 style={[
                   styles.onlineDot,
@@ -839,9 +608,6 @@ export default function AssistantScreen() {
                 ]}
               />
             </View>
-
-            {/* Identity */}
-
             <View
               style={[
                 styles.headerIdentity,
@@ -857,8 +623,9 @@ export default function AssistantScreen() {
                 style={[
                   styles.nameLine,
                   {
-                    flexDirection:
-                      rowDirection,
+                    flexDirection: isRTL
+                      ? 'row-reverse'
+                      : 'row',
                   },
                 ]}
               >
@@ -874,7 +641,6 @@ export default function AssistantScreen() {
                   {t.novaAI ||
                     'Nova AI'}
                 </Text>
-
                 <View
                   style={[
                     styles.aiBadge,
@@ -895,13 +661,13 @@ export default function AssistantScreen() {
                   />
                 </View>
               </View>
-
               <View
                 style={[
                   styles.onlineRow,
                   {
-                    flexDirection:
-                      rowDirection,
+                    flexDirection: isRTL
+                      ? 'row-reverse'
+                      : 'row',
                   },
                 ]}
               >
@@ -910,7 +676,6 @@ export default function AssistantScreen() {
                     styles.onlineIndicator
                   }
                 />
-
                 <Text
                   style={[
                     styles.onlineText,
@@ -925,9 +690,6 @@ export default function AssistantScreen() {
                 </Text>
               </View>
             </View>
-
-            {/* More */}
-
             <TouchableOpacity
               activeOpacity={0.7}
               onPress={() =>
@@ -956,7 +718,6 @@ export default function AssistantScreen() {
               />
             </TouchableOpacity>
           </View>
-
           <View
             style={[
               styles.headerLine,
@@ -967,10 +728,6 @@ export default function AssistantScreen() {
             ]}
           />
         </MotiView>
-
-        {/* =================================================
-            CHAT
-        ================================================= */}
 
         <View style={styles.chatArea}>
           <ScrollView
@@ -988,11 +745,6 @@ export default function AssistantScreen() {
             onScroll={handleScroll}
             scrollEventThrottle={100}
           >
-
-            {/* =============================================
-                EMPTY STATE
-            ============================================= */}
-
             {messages.length === 0 && (
               <MotiView
                 from={{
@@ -1028,7 +780,6 @@ export default function AssistantScreen() {
                     strokeWidth={2}
                   />
                 </View>
-
                 <Text
                   style={[
                     styles.welcomeTitle,
@@ -1041,7 +792,6 @@ export default function AssistantScreen() {
                   {t.hello ||
                     'Hello'}
                 </Text>
-
                 <Text
                   style={[
                     styles.welcomeDescription,
@@ -1054,7 +804,6 @@ export default function AssistantScreen() {
                   {t.cognitiveCompanion ||
                     'Your cognitive companion'}
                 </Text>
-
                 <Text
                   style={[
                     styles.welcomeHint,
@@ -1067,7 +816,6 @@ export default function AssistantScreen() {
                   {t.howCanHelp ||
                     'How can I help you today?'}
                 </Text>
-
                 <View
                   style={
                     styles.quickActions
@@ -1080,19 +828,16 @@ export default function AssistantScreen() {
                     ) => {
                       const Icon =
                         suggestion.icon;
-
                       const translation =
                         t[
                           suggestion.label as keyof typeof t
                         ];
-
                       const label =
                         typeof translation ===
                           'string' &&
                         translation.trim()
                           ? translation
                           : suggestion.fallback;
-
                       return (
                         <MotiView
                           key={
@@ -1130,7 +875,6 @@ export default function AssistantScreen() {
                               {
                                 backgroundColor:
                                   colors.surface,
-
                                 borderColor:
                                   colors.border,
                               },
@@ -1155,7 +899,6 @@ export default function AssistantScreen() {
                                 strokeWidth={2}
                               />
                             </View>
-
                             <Text
                               numberOfLines={
                                 2
@@ -1178,10 +921,6 @@ export default function AssistantScreen() {
                 </View>
               </MotiView>
             )}
-
-            {/* =============================================
-                MESSAGES
-            ============================================= */}
 
             {messages.map(
               (
@@ -1215,10 +954,8 @@ export default function AssistantScreen() {
                     {
                       flexDirection:
                         message.isUser
-                          ? isRTL
-                            ? 'row'
-                            : 'row-reverse'
-                          : rowDirection,
+                          ? 'row-reverse'
+                          : 'row',
                     },
                   ]}
                 >
@@ -1229,7 +966,6 @@ export default function AssistantScreen() {
                         {
                           backgroundColor:
                             colors.surfaceSecondary,
-
                           borderColor:
                             colors.border,
                         },
@@ -1245,11 +981,16 @@ export default function AssistantScreen() {
                       />
                     </View>
                   )}
-
                   <View
-                    style={
-                      styles.messageColumn
-                    }
+                    style={[
+                      styles.messageColumn,
+                      {
+                        alignItems:
+                          message.isUser
+                            ? 'flex-end'
+                            : 'flex-start',
+                      },
+                    ]}
                   >
                     {!message.isUser && (
                       <Text
@@ -1258,7 +999,6 @@ export default function AssistantScreen() {
                           {
                             color:
                               colors.textSecondary,
-
                             textAlign:
                               isRTL
                                 ? 'right'
@@ -1270,7 +1010,6 @@ export default function AssistantScreen() {
                           'Nova AI'}
                       </Text>
                     )}
-
                     {message.isUser ? (
                       <LinearGradient
                         colors={
@@ -1286,9 +1025,7 @@ export default function AssistantScreen() {
                         }}
                         style={[
                           styles.userBubble,
-                          isRTL
-                            ? styles.userBubbleRTL
-                            : styles.userBubbleLTR,
+                          styles.userBubbleRight,
                         ]}
                       >
                         <Text
@@ -1297,7 +1034,6 @@ export default function AssistantScreen() {
                             {
                               color:
                                 '#FFFFFF',
-
                               textAlign:
                                 isRTL
                                   ? 'right'
@@ -1314,10 +1050,10 @@ export default function AssistantScreen() {
                       <View
                         style={[
                           styles.assistantBubble,
+                          styles.assistantBubbleLeft,
                           {
                             backgroundColor:
                               colors.surface,
-
                             borderColor:
                               colors.border,
                           },
@@ -1329,7 +1065,6 @@ export default function AssistantScreen() {
                             {
                               color:
                                 colors.text,
-
                               textAlign:
                                 isRTL
                                   ? 'right'
@@ -1343,22 +1078,16 @@ export default function AssistantScreen() {
                         </Text>
                       </View>
                     )}
-
                     <Text
                       style={[
                         styles.timestamp,
                         {
                           color:
                             colors.textTertiary,
-
                           textAlign:
                             message.isUser
-                              ? isRTL
-                                ? 'left'
-                                : 'right'
-                              : isRTL
-                                ? 'right'
-                                : 'left',
+                              ? 'right'
+                              : 'left',
                         },
                       ]}
                     >
@@ -1370,10 +1099,6 @@ export default function AssistantScreen() {
                 </MotiView>
               )
             )}
-
-            {/* =============================================
-                TYPING
-            ============================================= */}
 
             <AnimatePresence>
               {isTyping && (
@@ -1394,7 +1119,7 @@ export default function AssistantScreen() {
                     styles.typingRow,
                     {
                       flexDirection:
-                        rowDirection,
+                        'row',
                     },
                   ]}
                 >
@@ -1404,7 +1129,6 @@ export default function AssistantScreen() {
                       {
                         backgroundColor:
                           colors.surfaceSecondary,
-
                         borderColor:
                           colors.border,
                       },
@@ -1419,14 +1143,12 @@ export default function AssistantScreen() {
                       }
                     />
                   </View>
-
                   <View
                     style={[
                       styles.typingBubble,
                       {
                         backgroundColor:
                           colors.surface,
-
                         borderColor:
                           colors.border,
                       },
@@ -1459,7 +1181,6 @@ export default function AssistantScreen() {
                           },
                         ]}
                       />
-
                       <MotiView
                         from={{
                           opacity: 0.3,
@@ -1483,7 +1204,6 @@ export default function AssistantScreen() {
                           },
                         ]}
                       />
-
                       <MotiView
                         from={{
                           opacity: 0.3,
@@ -1512,12 +1232,7 @@ export default function AssistantScreen() {
                 </MotiView>
               )}
             </AnimatePresence>
-
           </ScrollView>
-
-          {/* =============================================
-              SCROLL BUTTON
-          ============================================= */}
 
           <AnimatePresence>
             {showScrollButton && (
@@ -1548,7 +1263,6 @@ export default function AssistantScreen() {
                     {
                       backgroundColor:
                         colors.surface,
-
                       borderColor:
                         colors.border,
                     },
@@ -1565,10 +1279,6 @@ export default function AssistantScreen() {
             )}
           </AnimatePresence>
         </View>
-
-        {/* =================================================
-            INPUT
-        ================================================= */}
 
         <View
           style={[
@@ -1588,13 +1298,11 @@ export default function AssistantScreen() {
               {
                 backgroundColor:
                   colors.surface,
-
                 borderColor:
                   colors.border,
               },
             ]}
           >
-
             <TouchableOpacity
               activeOpacity={0.7}
               onPress={() =>
@@ -1616,7 +1324,6 @@ export default function AssistantScreen() {
                 strokeWidth={2}
               />
             </TouchableOpacity>
-
             <TextInput
               ref={inputRef}
               value={inputText}
@@ -1656,7 +1363,6 @@ export default function AssistantScreen() {
                 }
               }}
             />
-
             <TouchableOpacity
               activeOpacity={0.7}
               onPress={() =>
@@ -1678,7 +1384,6 @@ export default function AssistantScreen() {
                 strokeWidth={2}
               />
             </TouchableOpacity>
-
             <TouchableOpacity
               activeOpacity={0.82}
               disabled={
@@ -1721,10 +1426,6 @@ export default function AssistantScreen() {
           </View>
         </View>
 
-        {/* =================================================
-            NOTICE
-        ================================================= */}
-
         <AnimatePresence>
           {notice && (
             <MotiView
@@ -1748,7 +1449,6 @@ export default function AssistantScreen() {
                 {
                   backgroundColor:
                     colors.surface,
-
                   borderColor:
                     colors.border,
                 },
@@ -1760,7 +1460,6 @@ export default function AssistantScreen() {
                   colors.primary
                 }
               />
-
               <Text
                 style={[
                   styles.noticeText,
@@ -1775,10 +1474,6 @@ export default function AssistantScreen() {
             </MotiView>
           )}
         </AnimatePresence>
-
-        {/* =================================================
-            ERROR RETRY
-        ================================================= */}
 
         <AnimatePresence>
           {requestError &&
@@ -1803,7 +1498,6 @@ export default function AssistantScreen() {
                       isDark
                         ? 'rgba(228,123,123,0.12)'
                         : 'rgba(217,107,107,0.08)',
-
                     borderColor:
                       isDark
                         ? 'rgba(228,123,123,0.22)'
@@ -1817,7 +1511,6 @@ export default function AssistantScreen() {
                     colors.error
                   }
                 />
-
                 <Text
                   style={[
                     styles.errorText,
@@ -1832,7 +1525,6 @@ export default function AssistantScreen() {
                     ? 'اتصال به سرور برقرار نشد'
                     : 'Connection failed'}
                 </Text>
-
                 <TouchableOpacity
                   activeOpacity={0.7}
                   onPress={
@@ -1848,7 +1540,6 @@ export default function AssistantScreen() {
                       colors.error
                     }
                   />
-
                   <Text
                     style={[
                       styles.retryText,
@@ -1867,570 +1558,348 @@ export default function AssistantScreen() {
               </MotiView>
             )}
         </AnimatePresence>
-
       </KeyboardAvoidingView>
     </LinearGradient>
   );
 }
 
-/* =========================================================
-   STYLES
-========================================================= */
-
 const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
-
   container: {
     flex: 1,
   },
-
-  /* =======================================================
-     HEADER
-  ======================================================= */
-
   header: {
     paddingHorizontal: 18,
   },
-
   headerContent: {
     minHeight: 72,
     alignItems: 'center',
   },
-
   avatarWrapper: {
     width: 50,
     height: 50,
     borderRadius: 25,
-
     justifyContent: 'center',
     alignItems: 'center',
-
     borderWidth: 1,
-
     overflow: 'visible',
   },
-
   avatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
   },
-
   onlineDot: {
     position: 'absolute',
-
     right: -1,
     bottom: 1,
-
     width: 12,
     height: 12,
-
     borderRadius: 6,
-
     backgroundColor: '#55C99A',
-
     borderWidth: 2,
   },
-
   headerIdentity: {
     flex: 1,
-
     marginHorizontal: 12,
   },
-
   nameLine: {
     alignItems: 'center',
-
     gap: 7,
   },
-
   aiName: {
     fontSize: 17,
     fontWeight: '700',
-
     letterSpacing: -0.2,
   },
-
   aiBadge: {
     width: 23,
     height: 23,
-
     borderRadius: 8,
-
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   onlineRow: {
     alignItems: 'center',
-
     marginTop: 3,
-
     gap: 5,
   },
-
   onlineIndicator: {
     width: 6,
     height: 6,
-
     borderRadius: 3,
-
     backgroundColor: '#55C99A',
   },
-
   onlineText: {
     fontSize: 12,
-
     fontWeight: '500',
   },
-
   moreButton: {
     width: 42,
     height: 42,
-
     borderRadius: 13,
-
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   headerLine: {
     height: 1,
-
     marginTop: 2,
-
     opacity: 0.65,
   },
-
-  /* =======================================================
-     CHAT
-  ======================================================= */
-
   chatArea: {
     flex: 1,
-
     position: 'relative',
   },
-
   scroll: {
     flex: 1,
   },
-
   scrollContent: {
     paddingHorizontal: 18,
     paddingTop: 20,
     paddingBottom: 20,
   },
-
   emptyScroll: {
     flexGrow: 1,
-
     justifyContent: 'center',
   },
-
-  /* =======================================================
-     WELCOME
-  ======================================================= */
-
   welcome: {
     width: '100%',
-
     alignItems: 'center',
-
     paddingVertical: 20,
   },
-
   welcomeIcon: {
     width: 62,
     height: 62,
-
     borderRadius: 21,
-
     justifyContent: 'center',
     alignItems: 'center',
-
     marginBottom: 18,
   },
-
   welcomeTitle: {
     fontSize: 26,
     fontWeight: '700',
-
     letterSpacing: -0.5,
   },
-
   welcomeDescription: {
     marginTop: 6,
-
     fontSize: 15,
-
     fontWeight: '500',
   },
-
   welcomeHint: {
     marginTop: 5,
-
     fontSize: 13,
   },
-
-  /* =======================================================
-     QUICK ACTIONS
-  ======================================================= */
-
   quickActions: {
     width: '100%',
-
     flexDirection: 'row',
-
     flexWrap: 'wrap',
-
     justifyContent: 'center',
-
     marginTop: 28,
-
     gap: 10,
   },
-
   quickActionWrapper: {
     width: '47%',
     maxWidth: 190,
   },
-
   quickAction: {
     minHeight: 78,
-
     borderRadius: 18,
-
     borderWidth: 1,
-
     padding: 12,
-
     flexDirection: 'row',
-
     alignItems: 'center',
-
     gap: 10,
   },
-
   quickIcon: {
     width: 40,
     height: 40,
-
     borderRadius: 13,
-
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   quickLabel: {
     flex: 1,
-
     fontSize: 13,
-
     fontWeight: '600',
-
     lineHeight: 18,
   },
-
-  /* =======================================================
-     MESSAGE
-  ======================================================= */
-
   messageRow: {
     width: '100%',
-
     alignItems: 'flex-end',
-
     marginBottom: 17,
   },
-
   messageAvatar: {
     width: 34,
     height: 34,
-
     borderRadius: 12,
-
     justifyContent: 'center',
     alignItems: 'center',
-
     borderWidth: 1,
-
     overflow: 'hidden',
-
     marginHorizontal: 7,
   },
-
   messageAvatarImage: {
     width: 30,
     height: 30,
-
     borderRadius: 10,
   },
-
   messageColumn: {
     maxWidth: '78%',
   },
-
   sender: {
     fontSize: 11,
-
     fontWeight: '600',
-
     marginBottom: 5,
-
     paddingHorizontal: 3,
   },
-
   userBubble: {
     paddingHorizontal: 15,
     paddingVertical: 11,
-
     borderRadius: 18,
-
     maxWidth: '100%',
   },
-
-  userBubbleLTR: {
+  userBubbleRight: {
     borderBottomRightRadius: 5,
   },
-
-  userBubbleRTL: {
-    borderBottomLeftRadius: 5,
-  },
-
   assistantBubble: {
     paddingHorizontal: 15,
     paddingVertical: 12,
-
     borderRadius: 18,
-
     borderWidth: 1,
-
+  },
+  assistantBubbleLeft: {
     borderBottomLeftRadius: 5,
   },
-
   messageText: {
     fontSize: 14,
-
     lineHeight: 21,
-
     fontWeight: '400',
   },
-
   timestamp: {
     fontSize: 10,
-
     marginTop: 5,
-
     paddingHorizontal: 3,
   },
-
-  /* =======================================================
-     TYPING
-  ======================================================= */
-
   typingRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-
     marginBottom: 12,
   },
-
   typingBubble: {
     minWidth: 64,
     height: 42,
-
     borderRadius: 16,
-
     borderWidth: 1,
-
     justifyContent: 'center',
     alignItems: 'center',
-
     paddingHorizontal: 15,
   },
-
   typingDots: {
     flexDirection: 'row',
-
     alignItems: 'center',
-
     gap: 4,
   },
-
   dot: {
     width: 6,
     height: 6,
-
     borderRadius: 3,
   },
-
-  /* =======================================================
-     SCROLL BUTTON
-  ======================================================= */
-
   scrollButtonWrapper: {
     position: 'absolute',
-
     right: 18,
     bottom: 18,
   },
-
   scrollButton: {
     width: 42,
     height: 42,
-
     borderRadius: 14,
-
     justifyContent: 'center',
     alignItems: 'center',
-
     borderWidth: 1,
   },
-
-  /* =======================================================
-     INPUT
-  ======================================================= */
-
   inputArea: {
     paddingHorizontal: 14,
     paddingTop: 8,
   },
-
   inputWrapper: {
     minHeight: 56,
-
     borderRadius: 20,
-
     borderWidth: 1,
-
     flexDirection: 'row',
-
     alignItems: 'flex-end',
-
     paddingHorizontal: 7,
     paddingVertical: 6,
   },
-
   input: {
     flex: 1,
-
     minHeight: 42,
     maxHeight: 120,
-
     paddingHorizontal: 8,
     paddingVertical: 10,
-
     fontSize: 14,
-
     lineHeight: 20,
   },
-
   inputIconButton: {
     width: 40,
     height: 42,
-
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   sendButton: {
     width: 42,
     height: 42,
-
     borderRadius: 14,
-
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  /* =======================================================
-     NOTICE
-  ======================================================= */
-
   notice: {
     position: 'absolute',
-
     left: 22,
     right: 22,
-
     bottom: 88,
-
     minHeight: 46,
-
     borderRadius: 15,
-
     borderWidth: 1,
-
     paddingHorizontal: 14,
-
     flexDirection: 'row',
-
     alignItems: 'center',
-
     gap: 9,
-
     elevation: 8,
   },
-
   noticeText: {
     flex: 1,
-
     fontSize: 12,
-
     fontWeight: '600',
   },
-
-  /* =======================================================
-     ERROR
-  ======================================================= */
-
   errorBar: {
     position: 'absolute',
-
     left: 18,
     right: 18,
-
     bottom: 76,
-
     minHeight: 42,
-
     borderRadius: 13,
-
     borderWidth: 1,
-
     paddingHorizontal: 12,
-
     flexDirection: 'row',
-
     alignItems: 'center',
-
     gap: 7,
   },
-
   errorText: {
     flex: 1,
-
     fontSize: 11,
-
     fontWeight: '600',
   },
-
   retryButton: {
     flexDirection: 'row',
-
     alignItems: 'center',
-
     gap: 5,
-
     paddingHorizontal: 7,
     paddingVertical: 5,
   },
-
   retryText: {
     fontSize: 11,
-
     fontWeight: '700',
   },
 });

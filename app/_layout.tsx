@@ -38,6 +38,7 @@ import {
 
 import * as SplashScreen from 'expo-splash-screen';
 import * as NavigationBar from 'expo-navigation-bar';
+import * as Notifications from 'expo-notifications';
 
 import {
   ThemeProvider,
@@ -80,6 +81,19 @@ import {
 SplashScreen.preventAutoHideAsync().catch(
   () => {}
 );
+
+/* ================================================================
+   NOTIFICATION CONFIGURATION
+================================================================ */
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 /* ================================================================
    FONT FAMILY
@@ -160,11 +174,163 @@ async function hideAndroidNavigationBar() {
     );
   } catch {
     /*
-     * Some Android versions or Expo Go
+     * Some Android versions or Expo
      * versions may not support every
      * navigation-bar API.
      */
   }
+}
+
+/* ================================================================
+   WORKOUT REMINDER NOTIFICATION
+================================================================ */
+
+function useWorkoutReminderNotification() {
+  useEffect(() => {
+    let mounted = true;
+
+    const setupNotification =
+      async () => {
+        try {
+          /*
+           * Android notification channel
+           */
+          if (
+            Platform.OS === 'android'
+          ) {
+            await Notifications.setNotificationChannelAsync(
+              'daily-reminder',
+              {
+                name: 'Daily Reminders',
+
+                importance:
+                  Notifications
+                    .AndroidImportance
+                    .HIGH,
+
+                vibrationPattern: [
+                  0,
+                  250,
+                  250,
+                  250,
+                ],
+
+                sound: 'default',
+
+                lockscreenVisibility:
+                  Notifications
+                    .AndroidNotificationVisibility
+                    .PUBLIC,
+              }
+            );
+          }
+
+          /*
+           * Check notification permission
+           */
+          const currentPermissions =
+            await Notifications.getPermissionsAsync();
+
+          let permissionStatus =
+            currentPermissions.status;
+
+          /*
+           * Ask the user for permission
+           * when permission has not been
+           * granted yet.
+           */
+          if (
+            permissionStatus !==
+            'granted'
+          ) {
+            const requestedPermissions =
+              await Notifications.requestPermissionsAsync();
+
+            permissionStatus =
+              requestedPermissions.status;
+          }
+
+          /*
+           * Permission denied.
+           */
+          if (
+            permissionStatus !==
+              'granted' ||
+            !mounted
+          ) {
+            return;
+          }
+
+          /*
+           * Wait exactly 10 seconds
+           * after application startup.
+           */
+          await new Promise<void>(
+            resolve => {
+              setTimeout(
+                resolve,
+                10000
+              );
+            }
+          );
+
+          /*
+           * Component/layout was
+           * unmounted during the wait.
+           */
+          if (!mounted) {
+            return;
+          }
+
+          /*
+           * Send local notification.
+           */
+          await Notifications.scheduleNotificationAsync(
+            {
+              content: {
+                title: 'Neurolia',
+
+                body:
+                  "You haven't completed today's workout yet. Don't forget to take care of your body!",
+
+                sound: 'default',
+
+                data: {
+                  type:
+                    'workout-reminder',
+
+                  source:
+                    'app-launch',
+                },
+              },
+
+              /*
+               * null = send immediately.
+               * The 10 second delay is handled
+               * above so it only happens once
+               * after this app launch.
+               */
+              trigger: null,
+            }
+          );
+        } catch (error) {
+          console.warn(
+            'Neurolia notification error:',
+            error
+          );
+        }
+      };
+
+    setupNotification();
+
+    /*
+     * Cancel the pending operation
+     * when the layout is unmounted.
+     */
+    return () => {
+      mounted = false;
+    };
+  }, []);
 }
 
 /* ================================================================
@@ -192,6 +358,13 @@ function AppContent() {
     showSplash,
     setShowSplash,
   ] = useState(true);
+
+  /*
+   * Notification reminder
+   *
+   * This starts when AppContent mounts.
+   */
+  useWorkoutReminderNotification();
 
   /* ==============================================================
      SYSTEM NAVIGATION BAR
@@ -261,7 +434,6 @@ function AppContent() {
 
         /*
          * Already on this route.
-         * Do absolutely nothing.
          */
         if (
           current === target
@@ -270,9 +442,8 @@ function AppContent() {
         }
 
         /*
-         * replace() prevents the navigation
-         * stack from growing every time the
-         * user changes a bottom tab.
+         * replace() prevents the
+         * navigation stack from growing.
          */
         router.replace(
           route as any
@@ -402,9 +573,8 @@ function AppContent() {
       {/* ========================================================
           MAIN ROUTER
 
-          IMPORTANT:
-          BottomNavBar is NOT inside this Stack.
-          It exists exactly once below the Stack.
+          BottomNavBar is outside Stack
+          and exists exactly once.
       ======================================================== */}
 
       <View
@@ -421,21 +591,7 @@ function AppContent() {
       </View>
 
       {/* ========================================================
-          SINGLE GLOBAL BOTTOM NAVIGATION
-
-          This is the ONLY BottomNavBar in the app.
-          
-          Because it is outside Stack:
-          
-          - Home        -> visible
-          - Protocol    -> visible
-          - Nova        -> visible
-          - Schedule    -> visible
-          - Profile     -> visible
-          - Settings    -> visible
-          
-          And it won't be duplicated by
-          the tabs navigator.
+          GLOBAL BOTTOM NAVIGATION
       ======================================================== */}
 
       <BottomNavBar
