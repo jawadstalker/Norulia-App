@@ -38,124 +38,236 @@ const weeks = [
     id: 1,
     label: 'Week 1',
     shortLabel: 'W1',
-    theme: 'Curiosity & Purpose',
+    theme: {
+      en: 'Mind & Basic Calm',
+      fa: 'آشنایی با ذهن و آرامش پایه',
+    },
 
     movie: {
-      title: 'The Odyssey',
-      year: '2026',
-      duration: '2h 45m',
-      rating: '8.9',
-      genre: 'Adventure • Epic • Fantasy',
-      description:
-        'A visually breathtaking journey through ancient Greek mythology, exploring heroism, fate, and the human spirit.',
-      poster: require('../../assets/movies/movie1.jpg'),
+      title: {
+        en: 'Good Will Hunting',
+        fa: 'ویل هانتینگ نابغه',
+      },
+      year: '1997',
+      duration: {
+        en: '2h 6m',
+        fa: '۲ ساعت و ۶ دقیقه',
+      },
+      rating: '8.3',
+      genre: {
+        en: 'Drama • Romance • Psychological',
+        fa: 'درام • عاشقانه • روانشناختی',
+      },
+      description: {
+        en: 'Will Hunting is a twenty-year-old young man from South Boston who, despite having a criminal record, is a mathematical genius who has developed his knowledge largely on his own. After being released on probation, he works as a janitor at the Massachusetts Institute of Technology. The film follows a psychologist who tries to help Will discover his potential and confront his troubled past. A powerful story about personal growth, friendship, and the importance of human connection.',
+        fa: 'ویل هانتینگ، جوان بیست ساله‌ای از جنوب بوستون، با وجود اینکه سابقه زندان دارد، نابغه‌ای در ریاضیات است که دانش خود را به‌صورت خودآموخته پرورش داده است. او پس از آزادی مشروط به عنوان نظافتچی در مؤسسه فناوری ماساچوست مشغول به کار می‌شود. داستان فیلم درباره تلاش یک روانشناس برای کمک به ویل در کشف استعدادهایش و رهایی از گذشته دشوار اوست؛ فیلمی تأثیرگذار درباره رشد شخصی، دوستی و اهمیت ارتباط انسانی.',
+      },
+      poster: require('../../assets/movies/movie_1.jpg'),
     },
 
     book: {
-      title: 'The Alchemist',
-      author: 'Paulo Coelho',
-      genre: 'Adventure • Philosophy',
-      rating: '8.1',
-      description:
-        'A timeless story about dreams, purpose, courage, and discovering your own path.',
-      cover: require('../../assets/movies/book1.jpg'),
+      title: {
+        en: 'Psycho-Logical',
+        fa: 'ذهن پریشان',
+      },
+      author: {
+        en: 'Psycho-Logical',
+        fa: 'Psycho-Logical',
+      },
+      genre: {
+        en: 'Psychology • Neuroscience • Self-help',
+        fa: 'روانشناسی • علوم اعصاب • خودیاری',
+      },
+      rating: '4.3',
+      year: '2021',
+      description: {
+        en: 'One in four people experiences some form of mental health problem during a year, while anxiety and depression alone affect more than 500 million people worldwide. This book explores why psychological problems have become so widespread and examines how modern life can disrupt our mental wellbeing. It explains complex psychological concepts in a simple way and provides practical approaches for understanding the mind and managing stress and anxiety.',
+        fa: 'از هر چهار نفر، یک نفر در طول سال دچار نوعی مشکل سلامت روان می‌شود و تنها اضطراب و افسردگی بیش از ۵۰۰ میلیون نفر را در سراسر جهان تحت‌تأثیر قرار داده‌اند. اما چرا این مشکلات تا این حد فراگیر شده‌اند؟ چه چیزی در زندگی مدرن روان ما را تحت‌تأثیر قرار می‌دهد؟ این کتاب به بررسی عمیق این موضوع می‌پردازد و راهکارهایی برای مدیریت استرس و اضطراب ارائه می‌دهد. نویسنده با زبانی ساده مفاهیم پیچیده روانشناسی را توضیح می‌دهد و به خواننده کمک می‌کند درک بهتری از ذهن خود پیدا کند.',
+      },
+      cover: require('../../assets/movies/Book_1.jpg'),
     },
 
-    reason:
-      'This week focuses on curiosity, imagination, purpose, and exploring new perspectives.',
+    reason: {
+      en: 'This week focuses on understanding the mind, developing psychological awareness, and building a foundation for calm and emotional wellbeing.',
+      fa: 'این هفته بر شناخت ذهن، افزایش آگاهی روانشناختی و ایجاد پایه‌ای برای آرامش و سلامت هیجانی تمرکز دارد.',
+    },
   },
 
   {
     id: 2,
     label: 'Week 2',
     shortLabel: 'W2',
-    theme: 'Meaning & Resilience',
+    theme: {
+      en: 'Emotional Regulation & Acceptance',
+      fa: 'تنظیم هیجانات و پذیرش',
+    },
 
     movie: {
-      title: 'The Sandman',
-      year: '2026',
-      duration: '2h 18m',
-      rating: '8.2',
-      genre: 'Fantasy • Drama • Mystery',
-      description:
-        'A mysterious journey between dreams and reality where memory and identity begin to collide.',
-      poster: require('../../assets/movies/movie2.jpg'),
+      title: {
+        en: 'Everything Everywhere All at Once',
+        fa: 'همه‌چیز همه‌جا به‌یکباره',
+      },
+      year: '2022',
+      duration: {
+        en: '2h 19m',
+        fa: '۲ ساعت و ۱۹ دقیقه',
+      },
+      rating: '8.0',
+      genre: {
+        en: 'Sci-Fi • Comedy • Drama',
+        fa: 'علمی‌تخیلی • کمدی • درام',
+      },
+      description: {
+        en: 'A Chinese-American woman dealing with a tax audit suddenly finds herself caught in a chaotic adventure across multiple realities. The film explores acceptance, family love, identity, and finding meaning in everyday life.',
+        fa: 'داستان زنی چینی-آمریکایی که درگیر حسابرسی مالیاتی است و ناگهان خود را در میان ماجراجویی عجیب و دیوانه‌واری برای نجات جهان می‌یابد. فیلم درباره پذیرش، عشق خانوادگی، هویت و پیدا کردن معنا در زندگی روزمره است.',
+      },
+      poster: require('../../assets/movies/movie_2.jpg'),
     },
 
     book: {
-      title: 'Man’s Search for Meaning',
-      author: 'Viktor E. Frankl',
-      genre: 'Psychology • Philosophy',
-      rating: '8.8',
-      description:
-        'A powerful reflection on meaning, resilience, and the human ability to find purpose.',
-      cover: require('../../assets/movies/book2.jpg'),
+      title: {
+        en: 'The Happiness Trap',
+        fa: 'تله شادی',
+      },
+      author: {
+        en: 'Russ Harris',
+        fa: 'راس هریس',
+      },
+      genre: {
+        en: 'Psychology • Self-help • Cognitive Therapy',
+        fa: 'روانشناسی • خودیاری • درمان شناختی',
+      },
+      rating: '4.2',
+      year: '2008',
+      description: {
+        en: 'Based on Acceptance and Commitment Therapy (ACT), this book explains how the constant pursuit of happiness can sometimes make us unhappy. It teaches practical ways to stop fighting negative thoughts and instead build a richer and more meaningful life through acceptance and psychological flexibility.',
+        fa: 'آیا مانند میلیون‌ها نفر در دام شادی گرفتار شده‌اید؟ راس هریس توضیح می‌دهد که تلاش مداوم برای یافتن خوشبختی گاهی می‌تواند باعث ناراحتی بیشتر شود. این کتاب بر اساس درمان مبتنی بر پذیرش و تعهد یا ACT نوشته شده و به شما کمک می‌کند به جای مبارزه با افکار منفی، زندگی غنی‌تر و معنادارتری بسازید. کتاب شامل تکنیک‌های عملی برای کاهش استرس و افزایش آرامش است.',
+      },
+      cover: require('../../assets/movies/Book_2.jpg'),
     },
 
-    reason:
-      'This week is designed around reflection, emotional awareness, meaning, and psychological resilience.',
+    reason: {
+      en: 'This week focuses on emotional awareness, acceptance, psychological flexibility, and learning to respond to difficult thoughts more effectively.',
+      fa: 'این هفته بر آگاهی هیجانی، پذیرش، انعطاف‌پذیری روانشناختی و یادگیری واکنش مؤثرتر به افکار و احساسات دشوار تمرکز دارد.',
+    },
   },
 
   {
     id: 3,
     label: 'Week 3',
     shortLabel: 'W3',
-    theme: 'Choices & Growth',
+    theme: {
+      en: 'Creativity & Burnout Prevention',
+      fa: 'شکوفایی خلاقیت و پیشگیری از فرسودگی',
+    },
 
     movie: {
-      title: 'Spider-Man: No Way Home',
-      year: '2021',
-      duration: '2h 28m',
-      rating: '8.7',
-      genre: 'Action • Adventure • Superhero',
-      description:
-        'A fast-paced story about identity, responsibility, choices, and the consequences of our decisions.',
-      poster: require('../../assets/movies/movie.jpg'),
+      title: {
+        en: 'Frida',
+        fa: 'فریدا',
+      },
+      year: '2002',
+      duration: {
+        en: '2h 3m',
+        fa: '۲ ساعت و ۳ دقیقه',
+      },
+      rating: '7.4',
+      genre: {
+        en: 'Biography • Drama • Art',
+        fa: 'بیوگرافی • درام • هنری',
+      },
+      description: {
+        en: 'A film about the life of Mexican surrealist painter Frida Kahlo. The story portrays her passionate and painful life and shows how art helped her cope with physical disability and the challenges she faced.',
+        fa: 'این فیلم درباره زندگی نقاش مکزیکی سورئالیست، فریدا کالو است. فیلم زندگی پر از درد و رنج اما پرشور او را به تصویر می‌کشد و نشان می‌دهد چگونه هنر به او کمک کرد تا با محدودیت‌های جسمی و سختی‌های زندگی کنار بیاید. بازی درخشان سلما هایک و طراحی صحنه‌های چشمگیر از ویژگی‌های این فیلم است.',
+      },
+      poster: require('../../assets/movies/movie_3.jpg'),
     },
 
     book: {
-      title: 'Atomic Habits',
-      author: 'James Clear',
-      genre: 'Self Development',
-      rating: '8.6',
-      description:
-        'A practical exploration of how small behavioral changes can create remarkable results.',
-      cover: require('../../assets/movies/book3.jpg'),
+      title: {
+        en: "The Artist's Way",
+        fa: 'راه هنرمند',
+      },
+      author: {
+        en: 'Julia Cameron',
+        fa: 'جولیا کامرون',
+      },
+      genre: {
+        en: 'Creativity • Art • Self-discovery • Psychology',
+        fa: 'خلاقیت • هنر • خودشناسی • روانشناسی',
+      },
+      rating: '4.1',
+      year: '1992',
+      description: {
+        en: "The Artist's Way is a revolutionary program for personal renewal that helps readers reconnect with themselves and rediscover their creativity. The twelve-week program includes techniques such as Morning Pages and Artist Dates to identify and overcome creative blocks.",
+        fa: 'کتاب «راه هنرمند» یک برنامه برای نوسازی شخصی است که به شما کمک می‌کند دوباره به مسیر خود بازگردید و احساسات و خلاقیتتان را کشف کنید. این کتاب شامل تمرین‌های ۱۲ هفته‌ای برای شکوفایی خلاقیت است. روش‌هایی مانند صبح‌نویسی و قرار هنری به شما کمک می‌کنند موانع خلاقیت را شناسایی کرده و از بین ببرید.',
+      },
+      cover: require('../../assets/movies/Book_3.jpg'),
     },
 
-    reason:
-      'This week emphasizes decision-making, personal responsibility, habits, and gradual positive change.',
+    reason: {
+      en: 'This week focuses on creativity, self-expression, psychological recovery, and protecting yourself from emotional and mental burnout.',
+      fa: 'این هفته بر خلاقیت، خودبیانگری، بازیابی روانی و محافظت از خود در برابر فرسودگی هیجانی و ذهنی تمرکز دارد.',
+    },
   },
 
   {
     id: 4,
     label: 'Week 4',
     shortLabel: 'W4',
-    theme: 'Mind & Perception',
+    theme: {
+      en: 'Emotional Roots & Deep Calm',
+      fa: 'ریشه‌های هیجانی و آرامش عمیق',
+    },
 
     movie: {
-      title: 'Shutter Island',
+      title: {
+        en: 'The Secret World of Arrietty',
+        fa: 'دنیای مخفی آریتی',
+      },
       year: '2010',
-      duration: '2h 18m',
-      rating: '8.2',
-      genre: 'Mystery • Thriller • Drama',
-      description:
-        'A psychologically intense mystery that challenges perception, memory, and the nature of reality.',
-      poster: require('../../assets/movies/movie3.jpg'),
+      duration: {
+        en: '1h 35m',
+        fa: '۱ ساعت و ۳۵ دقیقه',
+      },
+      rating: '7.6',
+      genre: {
+        en: 'Animation • Adventure • Family • Fantasy',
+        fa: 'انیمیشن • ماجراجویی • خانوادگی • فانتزی',
+      },
+      description: {
+        en: 'Arrietty is a young Borrower, one of a tiny people who live secretly within human homes. She meets a sick young boy and their friendship soon creates danger for her family. A beautiful Studio Ghibli animation exploring empathy, trust, nature, accepting differences, and the importance of home and family.',
+        fa: 'آریتی دختری از نژاد قرض‌گیرندگان است؛ موجوداتی ریزاندام که در مخفیگاه‌های خانه‌های انسان‌ها زندگی می‌کنند. او با یک پسر بیمار آشنا می‌شود و این آشنایی به‌زودی خطراتی را برای خانواده‌اش به همراه می‌آورد. انیمیشنی زیبا از استودیو جیبلی که به موضوعاتی مانند همدلی، اعتماد، ارتباط با طبیعت، پذیرش تفاوت‌ها و اهمیت خانه و خانواده می‌پردازد.',
+      },
+      poster: require('../../assets/movies/movie_4.jpg'),
     },
 
     book: {
-      title: 'Thinking, Fast and Slow',
-      author: 'Daniel Kahneman',
-      genre: 'Psychology • Cognitive Science',
-      rating: '8.4',
-      description:
-        'An exploration of the two systems that shape our judgments, decisions, and everyday thinking.',
-      cover: require('../../assets/movies/book4.jpg'),
+      title: {
+        en: 'Scattered Minds',
+        fa: 'ذهن فروپاشیده',
+      },
+      author: {
+        en: 'Gabor Maté',
+        fa: 'گابور ماته',
+      },
+      genre: {
+        en: 'Psychology • Neuroscience • Mental Health',
+        fa: 'روانشناسی • علوم اعصاب • اختلالات روانی',
+      },
+      rating: '4.4',
+      year: '2019',
+      description: {
+        en: 'Scattered Minds by Gabor Maté presents a different perspective on ADHD and explores how developmental and environmental factors may influence its formation. The book examines emotional and psychological roots and offers approaches for understanding and managing the condition.',
+        fa: 'کتاب «ذهن فروپاشیده» اثر گابور ماته با نگاهی متفاوت به اختلال نقص توجه و بیش‌فعالی ADHD می‌پردازد. نویسنده عوامل محیطی و تجربیات دوران کودکی را در رشد این اختلال مهم می‌داند و به بررسی ریشه‌های هیجانی و روانی آن می‌پردازد. کتاب برای والدین، معلمان و افرادی که به دنبال درک عمیق‌تر این موضوع هستند مفید است.',
+      },
+      cover: require('../../assets/movies/Book_4.jpg'),
     },
 
-    reason:
-      'The final week encourages critical thinking, perspective taking, attention, and understanding how the mind works.',
+    reason: {
+      en: 'The final week focuses on emotional roots, deeper self-understanding, empathy, acceptance, and developing a stronger sense of inner calm.',
+      fa: 'هفته پایانی بر ریشه‌های هیجانی، خودشناسی عمیق‌تر، همدلی، پذیرش و ایجاد احساس آرامش درونی تمرکز دارد.',
+    },
   },
 ];
 
@@ -339,6 +451,11 @@ export default function CulturalScreen() {
     }
   };
 
+  // Helper to get localized text
+  const getLocalized = (obj: any) => {
+    return isRTL ? obj.fa : obj.en;
+  };
+
   // PAGE 1 — WEEK LIST
   if (selectedWeek === null) {
     return (
@@ -366,11 +483,11 @@ export default function CulturalScreen() {
             <PageHeader
               title={
                 t.weeklyCinema ||
-                'Cultural Journey'
+                'سفر فرهنگی'
               }
               subtitle={
                 t.weeklyCinemaSubtitle ||
-                'A movie and a book selected for your cognitive wellness'
+                'یک فیلم و یک کتاب متناسب با سلامت شناختی شما'
               }
               icon={
                 <Film
@@ -383,7 +500,7 @@ export default function CulturalScreen() {
               colors={colors}
               isDark={isDark}
               isRTL={isRTL}
-              backLabel={t.back || 'Back'}
+              backLabel={t.back || 'بازگشت'}
             />
           </MotiView>
 
@@ -453,7 +570,7 @@ export default function CulturalScreen() {
                   ]}
                 >
                   {t.monthlyJourney ||
-                    'Your 4-Week Journey'}
+                    'سفر چهار هفته‌ای شما'}
                 </Text>
 
                 <Text
@@ -469,7 +586,7 @@ export default function CulturalScreen() {
                   ]}
                 >
                   {t.chooseWeek ||
-                    'Choose a week to discover your cultural recommendations.'}
+                    'یک هفته را انتخاب کنید تا پیشنهادهای فرهنگی آن را ببینید.'}
                 </Text>
               </View>
             </View>
@@ -575,7 +692,7 @@ export default function CulturalScreen() {
                             ]}
                           >
                             {t.current ||
-                              'START'}
+                              'شروع'}
                           </Text>
                         </View>
                       )}
@@ -592,7 +709,7 @@ export default function CulturalScreen() {
                         },
                       ]}
                     >
-                      {t.week || 'Week'}{' '}
+                      {t.week || 'هفته'}{' '}
                       {week.id}
                     </Text>
 
@@ -607,7 +724,7 @@ export default function CulturalScreen() {
                         },
                       ]}
                     >
-                      {week.theme}
+                      {getLocalized(week.theme)}
                     </Text>
 
                     <View
@@ -677,7 +794,7 @@ export default function CulturalScreen() {
                         ]}
                       >
                         {t.explore ||
-                          'Explore'}
+                          'مشاهده'}
                       </Text>
 
                       <ChevronRight
@@ -709,7 +826,7 @@ export default function CulturalScreen() {
               ]}
             >
               {t.culturalWellness ||
-                'Small moments of culture can create meaningful moments for the mind.'}
+                'لحظات کوچک فرهنگی می‌توانند لحظات معناداری برای ذهن ایجاد کنند.'}
             </Text>
           </View>
 
@@ -746,13 +863,13 @@ export default function CulturalScreen() {
           }}
         >
           <PageHeader
-            title={weekData.theme}
-            eyebrow={`${t.week || 'WEEK'} ${weekData.id}`}
+            title={getLocalized(weekData.theme)}
+            eyebrow={`${t.week || 'هفته'} ${weekData.id}`}
             onBack={handleBack}
             colors={colors}
             isDark={isDark}
             isRTL={isRTL}
-            backLabel={t.back || 'Back'}
+            backLabel={t.back || 'بازگشت'}
           />
         </MotiView>
 
@@ -829,7 +946,7 @@ export default function CulturalScreen() {
                 },
               ]}
             >
-              {t.week || 'WEEK'}{' '}
+              {t.week || 'هفته'}{' '}
               {weekData.id}
             </Text>
           </View>
@@ -846,7 +963,7 @@ export default function CulturalScreen() {
             ]}
           >
             {t.recommendations ||
-              'Your weekly recommendations'}
+              'پیشنهادهای هفتگی شما'}
           </Text>
 
           <Text
@@ -862,7 +979,7 @@ export default function CulturalScreen() {
             ]}
           >
             {t.culturalWellness ||
-              'Take some time to explore, reflect, and discover something meaningful.'}
+              'کمی زمان بگذارید تا کشف کنید، تأمل کنید و چیزی معنادار پیدا کنید.'}
           </Text>
         </View>
 
@@ -933,7 +1050,7 @@ export default function CulturalScreen() {
                     },
                   ]}
                 >
-                  {t.movie || 'MOVIE'}
+                  {t.movie || 'فیلم'}
                 </Text>
               </View>
 
@@ -1002,7 +1119,7 @@ export default function CulturalScreen() {
                   },
                 ]}
               >
-                {weekData.movie.title}
+                {getLocalized(weekData.movie.title)}
               </Text>
 
               <Text
@@ -1018,7 +1135,7 @@ export default function CulturalScreen() {
                 ]}
               >
                 {weekData.movie.year} •{' '}
-                {weekData.movie.genre}
+                {getLocalized(weekData.movie.genre)}
               </Text>
 
               <View
@@ -1048,7 +1165,7 @@ export default function CulturalScreen() {
                       },
                     ]}
                   >
-                    {weekData.movie.duration}
+                    {getLocalized(weekData.movie.duration)}
                   </Text>
                 </View>
 
@@ -1085,7 +1202,7 @@ export default function CulturalScreen() {
                   },
                 ]}
               >
-                {weekData.movie.description}
+                {getLocalized(weekData.movie.description)}
               </Text>
 
               <TouchableOpacity
@@ -1120,7 +1237,7 @@ export default function CulturalScreen() {
                   ]}
                 >
                   {t.exploreMovie ||
-                    'Explore Movie'}
+                    'مشاهده فیلم'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1192,7 +1309,7 @@ export default function CulturalScreen() {
                     },
                   ]}
                 >
-                  {t.book || 'BOOK'}
+                  {t.book || 'کتاب'}
                 </Text>
               </View>
 
@@ -1238,7 +1355,7 @@ export default function CulturalScreen() {
                     },
                   ]}
                 >
-                  {weekData.book.title}
+                  {getLocalized(weekData.book.title)}
                 </Text>
 
                 <Text
@@ -1253,7 +1370,7 @@ export default function CulturalScreen() {
                     },
                   ]}
                 >
-                  {weekData.book.author}
+                  {getLocalized(weekData.book.author)}
                 </Text>
 
                 <Text
@@ -1268,7 +1385,7 @@ export default function CulturalScreen() {
                     },
                   ]}
                 >
-                  {weekData.book.genre}
+                  {getLocalized(weekData.book.genre)}
                 </Text>
 
                 <View
@@ -1307,7 +1424,7 @@ export default function CulturalScreen() {
                 },
               ]}
             >
-              {weekData.book.description}
+              {getLocalized(weekData.book.description)}
             </Text>
 
             <TouchableOpacity
@@ -1345,7 +1462,7 @@ export default function CulturalScreen() {
                 ]}
               >
                 {t.exploreBook ||
-                  'Explore Book'}
+                  'مشاهده کتاب'}
               </Text>
 
               <ChevronRight
@@ -1412,7 +1529,7 @@ export default function CulturalScreen() {
               ]}
             >
               {t.whyThisWeek ||
-                'Why this week?'}
+                'چرا این هفته؟'}
             </Text>
 
             <Text
@@ -1427,7 +1544,7 @@ export default function CulturalScreen() {
                 },
               ]}
             >
-              {weekData.reason}
+              {getLocalized(weekData.reason)}
             </Text>
           </View>
         </View>
@@ -1475,7 +1592,7 @@ export default function CulturalScreen() {
                 ]}
               >
                 {t.previous ||
-                  'Previous'}
+                  'قبلی'}
               </Text>
             </TouchableOpacity>
           ) : (
@@ -1503,7 +1620,7 @@ export default function CulturalScreen() {
                   styles.nextButtonText
                 }
               >
-                {t.next || 'Next'}
+                {t.next || 'بعدی'}
               </Text>
 
               <ChevronRight

@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useMemo,
 } from 'react';
+
 import {
   View,
   Text,
@@ -11,9 +12,11 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
+
 import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -77,14 +80,24 @@ const CONTENT_HEIGHT = 68;
 const CENTER_BUTTON_SIZE = 58;
 
 /*
- * Shine configuration
+ * Shine
  *
- * این مقادیر عمداً مستقل از رنگ تم هستند
- * تا در Dark / Light هر دو زیبا دیده شود.
+ * Shine از خارج سمت چپ وارد می‌شود،
+ * از کل نوبار عبور می‌کند و از سمت راست خارج می‌شود.
+ *
+ * مقدار rotate باعث می‌شود نور کمی مورب باشد.
  */
-const SHINE_WIDTH = 95;
-const SHINE_DURATION = 2600;
-const SHINE_PAUSE = 1800;
+
+const SHINE_WIDTH = 70;
+const SHINE_HEIGHT = 190;
+
+const SHINE_START = -150;
+const SHINE_END = 650;
+
+const SHINE_DELAY = 1700;
+const SHINE_IN_DURATION = 220;
+const SHINE_MOVE_DURATION = 2100;
+const SHINE_OUT_DURATION = 220;
 
 /* ================================================================
    NAVIGATION ITEMS
@@ -96,22 +109,26 @@ const NAV_ITEMS: readonly NavItem[] = [
     icon: Home,
     route: '/(tabs)',
   },
+
   {
     id: 'brain',
     icon: Brain,
     route: '/(tabs)/protocol',
   },
+
   {
     id: 'nova',
     icon: Sparkles,
     route: '/(tabs)/assistant',
     isCenter: true,
   },
+
   {
     id: 'calendar',
     icon: Calendar,
     route: '/(tabs)/schedule',
   },
+
   {
     id: 'profile',
     icon: User,
@@ -206,9 +223,9 @@ const AnimatedNavItem = memo(
   }: AnimatedNavItemProps) {
     const Icon = item.icon;
 
-    /* ------------------------------------------------------------
+    /* ============================================================
        ICON ANIMATION
-    ------------------------------------------------------------ */
+    ============================================================ */
 
     const scale = useSharedValue(
       active ? 1 : 0.94,
@@ -247,7 +264,9 @@ const AnimatedNavItem = memo(
             scale: scale.value,
           },
         ],
-        opacity: opacity.value,
+
+        opacity:
+          opacity.value,
       }));
 
     /* ============================================================
@@ -257,6 +276,7 @@ const AnimatedNavItem = memo(
     if (item.isCenter) {
       return (
         <View style={styles.centerColumn}>
+
           <Pressable
             onPress={onPress}
             accessibilityRole="button"
@@ -265,6 +285,7 @@ const AnimatedNavItem = memo(
             android_ripple={null}
             style={({ pressed }) => [
               styles.centerButton,
+
               {
                 backgroundColor: active
                   ? colors.primary
@@ -322,7 +343,9 @@ const AnimatedNavItem = memo(
                     : colors.textSecondary
                 }
                 strokeWidth={
-                  active ? 2.5 : 2.1
+                  active
+                    ? 2.5
+                    : 2.1
                 }
               />
             </Animated.View>
@@ -341,6 +364,7 @@ const AnimatedNavItem = memo(
           >
             {label}
           </Text>
+
         </View>
       );
     }
@@ -351,6 +375,7 @@ const AnimatedNavItem = memo(
 
     return (
       <View style={styles.navColumn}>
+
         <Pressable
           onPress={onPress}
           accessibilityRole="button"
@@ -359,24 +384,81 @@ const AnimatedNavItem = memo(
           android_ripple={null}
           style={({ pressed }) => [
             styles.navButton,
+
             {
-              opacity: pressed ? 0.68 : 1,
+              opacity:
+                pressed
+                  ? 0.68
+                  : 1,
             },
           ]}
         >
+
+          {/* ------------------------------------------------------
+             ACTIVE HIGHLIGHT
+
+             این قسمت عمداً باقی مانده است.
+
+             وقتی آیتم فعال باشد،
+             فقط پشت آیکون یک highlight نرم قرار می‌گیرد.
+          ------------------------------------------------------ */}
+
           <Animated.View
             style={[
               styles.iconWrapper,
+
               animatedIconStyle,
+
               {
-                backgroundColor: active
-                  ? isDark
-                    ? `${colors.primary}24`
-                    : `${colors.primary}12`
-                  : 'transparent',
+                backgroundColor:
+                  active
+                    ? isDark
+                      ? `${colors.primary}24`
+                      : `${colors.primary}12`
+                    : 'transparent',
+
+                borderWidth:
+                  active
+                    ? 1
+                    : 0,
+
+                borderColor:
+                  active
+                    ? isDark
+                      ? `${colors.primary}38`
+                      : `${colors.primary}20`
+                    : 'transparent',
+
+                shadowColor:
+                  active
+                    ? colors.primary
+                    : 'transparent',
+
+                shadowOpacity:
+                  active
+                    ? isDark
+                      ? 0.18
+                      : 0.10
+                    : 0,
+
+                shadowRadius:
+                  active
+                    ? 8
+                    : 0,
+
+                shadowOffset: {
+                  width: 0,
+                  height: 2,
+                },
+
+                elevation:
+                  active
+                    ? 2
+                    : 0,
               },
             ]}
           >
+
             <Icon
               size={21}
               color={
@@ -385,28 +467,42 @@ const AnimatedNavItem = memo(
                   : inactiveColor
               }
               strokeWidth={
-                active ? 2.35 : 1.85
+                active
+                  ? 2.35
+                  : 1.85
               }
             />
+
           </Animated.View>
+
+          {/* ------------------------------------------------------
+             LABEL
+          ------------------------------------------------------ */}
 
           <Text
             numberOfLines={1}
             style={[
               styles.navLabel,
-              {
-                color: active
-                  ? activeColor
-                  : inactiveColor,
 
-                fontWeight: active
-                  ? '800'
-                  : '600',
+              {
+                color:
+                  active
+                    ? activeColor
+                    : inactiveColor,
+
+                fontWeight:
+                  active
+                    ? '800'
+                    : '600',
               },
             ]}
           >
             {label}
           </Text>
+
+          {/* ------------------------------------------------------
+             ACTIVE DOT
+          ------------------------------------------------------ */}
 
           {active && (
             <View
@@ -415,11 +511,29 @@ const AnimatedNavItem = memo(
                 {
                   backgroundColor:
                     activeColor,
+
+                  shadowColor:
+                    activeColor,
+
+                  shadowOpacity:
+                    0.45,
+
+                  shadowRadius:
+                    4,
+
+                  shadowOffset: {
+                    width: 0,
+                    height: 1,
+                  },
+
+                  elevation: 2,
                 },
               ]}
             />
           )}
+
         </Pressable>
+
       </View>
     );
   },
@@ -433,6 +547,7 @@ function BottomNavBarComponent({
   currentRoute,
   onNavigate,
 }: BottomNavBarProps) {
+
   const {
     colors,
     isDark,
@@ -478,6 +593,7 @@ function BottomNavBarComponent({
   const handleNavigate =
     useCallback(
       (route: string) => {
+
         const target =
           normalizeRoute(route);
 
@@ -490,6 +606,7 @@ function BottomNavBarComponent({
 
         onNavigate(route);
       },
+
       [
         normalizedRoute,
         onNavigate,
@@ -505,7 +622,9 @@ function BottomNavBarComponent({
       (
         id: NavItemId,
       ): string => {
+
         switch (id) {
+
           case 'home':
             return (
               t.home ||
@@ -538,6 +657,7 @@ function BottomNavBarComponent({
           default:
             return '';
         }
+
       },
       [t],
     );
@@ -565,128 +685,158 @@ function BottomNavBarComponent({
     colors.primary;
 
   /* ==============================================================
-     ✨ SHINE ANIMATION
-     
-     یک باریکه‌ی نور از چپ به راست
-     روی کل Bottom Navbar حرکت می‌کند.
+     SHINE ANIMATION
+
+     نکته مهم:
+
+     قبلاً Shine با left: 18% شروع می‌شد.
+     بنابراین روی بعضی دستگاه‌ها به نظر می‌رسید
+     از وسط نوبار شروع شده.
+
+     حالا translateX از -150 شروع می‌شود
+     و کاملاً از بیرون سمت چپ وارد می‌شود.
   ============================================================== */
 
   const shineX =
-    useSharedValue(-SHINE_WIDTH);
+    useSharedValue(
+      SHINE_START,
+    );
 
   const shineOpacity =
     useSharedValue(0);
 
   useEffect(() => {
-    shineX.value = -SHINE_WIDTH;
-    shineOpacity.value = 0;
 
-    shineX.value = withRepeat(
-      withSequence(
-        /*
-         * قبل از شروع حرکت
-         */
-        withTiming(
-          -SHINE_WIDTH,
-          {
-            duration: SHINE_PAUSE,
-          },
+    shineX.value =
+      SHINE_START;
+
+    shineOpacity.value =
+      0;
+
+    /* ------------------------------------------------------------
+       MOVEMENT
+    ------------------------------------------------------------ */
+
+    shineX.value =
+      withRepeat(
+        withSequence(
+
+          /* انتظار قبل از شروع */
+          withTiming(
+            SHINE_START,
+            {
+              duration:
+                SHINE_DELAY,
+            },
+          ),
+
+          /* ورود نرم */
+          withTiming(
+            SHINE_START + 35,
+            {
+              duration:
+                SHINE_IN_DURATION,
+            },
+          ),
+
+          /* حرکت اصلی */
+          withTiming(
+            SHINE_END,
+            {
+              duration:
+                SHINE_MOVE_DURATION,
+            },
+          ),
+
+          /* خروج */
+          withTiming(
+            SHINE_END + 70,
+            {
+              duration:
+                SHINE_OUT_DURATION,
+            },
+          ),
+
+          /* فاصله */
+          withTiming(
+            SHINE_END + 70,
+            {
+              duration:
+                SHINE_DELAY,
+            },
+          ),
         ),
 
-        /*
-         * ظاهر شدن نور
-         */
-        withTiming(
-          0,
-          {
-            duration: 250,
-          },
-        ),
+        -1,
+        false,
+      );
 
-        /*
-         * عبور کامل نور
-         */
-        withTiming(
-          430,
-          {
-            duration:
-              SHINE_DURATION,
-          },
-        ),
-
-        /*
-         * محو شدن
-         */
-        withTiming(
-          520,
-          {
-            duration: 250,
-          },
-        ),
-
-        /*
-         * فاصله تا حرکت بعدی
-         */
-        withTiming(
-          520,
-          {
-            duration: SHINE_PAUSE,
-          },
-        ),
-      ),
-      -1,
-      false,
-    );
+    /* ------------------------------------------------------------
+       OPACITY
+    ------------------------------------------------------------ */
 
     shineOpacity.value =
       withRepeat(
         withSequence(
+
+          /* مخفی */
           withTiming(
             0,
             {
               duration:
-                SHINE_PAUSE,
+                SHINE_DELAY,
             },
           ),
 
+          /* ظاهر شدن */
           withTiming(
-            0.9,
-            {
-              duration: 260,
-            },
-          ),
-
-          withTiming(
-            0.9,
+            0.95,
             {
               duration:
-                SHINE_DURATION,
+                SHINE_IN_DURATION,
             },
           ),
 
+          /* عبور */
           withTiming(
-            0,
+            0.95,
             {
-              duration: 280,
+              duration:
+                SHINE_MOVE_DURATION,
             },
           ),
 
+          /* محو شدن */
           withTiming(
             0,
             {
               duration:
-                SHINE_PAUSE,
+                SHINE_OUT_DURATION,
+            },
+          ),
+
+          /* فاصله */
+          withTiming(
+            0,
+            {
+              duration:
+                SHINE_DELAY,
             },
           ),
         ),
+
         -1,
         false,
       );
 
   }, [
-    shineOpacity,
     shineX,
+    shineOpacity,
   ]);
+
+  /* ==============================================================
+     SHINE STYLE
+  ============================================================== */
 
   const shineStyle =
     useAnimatedStyle(
@@ -696,8 +846,16 @@ function BottomNavBarComponent({
             translateX:
               shineX.value,
           },
+
+          /*
+           * Shine کمی مورب است.
+           *
+           * مقدار مثبت یعنی به سمت پایین
+           * در هنگام حرکت.
+           */
           {
-            rotate: '18deg',
+            rotate:
+              '18deg',
           },
         ],
 
@@ -714,8 +872,10 @@ function BottomNavBarComponent({
     <View
       style={[
         styles.container,
+
         {
           backgroundColor,
+
           borderTopColor:
             borderColor,
 
@@ -734,7 +894,9 @@ function BottomNavBarComponent({
               : 0.055,
 
           shadowRadius:
-            isDark ? 18 : 12,
+            isDark
+              ? 18
+              : 12,
 
           shadowOffset: {
             width: 0,
@@ -747,30 +909,34 @@ function BottomNavBarComponent({
     >
 
       {/* ========================================================
-          ✨ SHINE LAYER
+          SHINE LAYER
 
-          مهم:
+          این لایه کاملاً مستقل از Navigation است.
+
           pointerEvents="none"
-          تا روی دکمه‌ها جلوی لمس را نگیرد.
+          باعث می‌شود هیچ اختلالی در لمس ایجاد نکند.
       ======================================================== */}
 
       <View
         pointerEvents="none"
         style={styles.shineClip}
       >
+
         <Animated.View
           pointerEvents="none"
           style={[
             styles.shine,
             shineStyle,
+
             {
               backgroundColor:
                 isDark
-                  ? 'rgba(255,255,255,0.26)'
-                  : 'rgba(255,255,255,0.82)',
+                  ? 'rgba(255,255,255,0.28)'
+                  : 'rgba(255,255,255,0.88)',
             },
           ]}
         />
+
       </View>
 
       {/* ========================================================
@@ -782,35 +948,54 @@ function BottomNavBarComponent({
           styles.navigationArea
         }
       >
+
         {NAV_ITEMS.map(
           (item) => (
+
             <AnimatedNavItem
               key={item.id}
+
               item={item}
+
               active={
                 activeItem ===
                 item.id
               }
-              colors={colors}
-              isDark={isDark}
+
+              colors={
+                colors
+              }
+
+              isDark={
+                isDark
+              }
+
               inactiveColor={
                 inactiveColor
               }
+
               activeColor={
                 activeColor
               }
-              label={getLabel(
-                item.id,
-              )}
+
+              label={
+                getLabel(
+                  item.id,
+                )
+              }
+
               onPress={() =>
                 handleNavigate(
                   item.route,
                 )
               }
             />
+
           ),
         )}
+
       </View>
+
     </View>
   );
 }
@@ -838,9 +1023,12 @@ const styles =
     ============================================================ */
 
     container: {
+
       width: '100%',
+
       minHeight:
         BAR_HEIGHT,
+
       height:
         BAR_HEIGHT,
 
@@ -851,6 +1039,7 @@ const styles =
         'visible',
 
       zIndex: 100,
+
       elevation: 14,
 
       ...(Platform.OS ===
@@ -866,20 +1055,25 @@ const styles =
 
     /* ============================================================
        SHINE CLIP
-       
-       این View باعث می‌شود Shine فقط
-       داخل BottomNavbar دیده شود.
+
+       Shine فقط داخل خود BottomNavbar دیده می‌شود.
     ============================================================ */
 
     shineClip: {
-      position: 'absolute',
+
+      position:
+        'absolute',
 
       top: 0,
+
       left: 0,
+
       right: 0,
+
       bottom: 0,
 
-      overflow: 'hidden',
+      overflow:
+        'hidden',
 
       zIndex: 50,
 
@@ -890,37 +1084,53 @@ const styles =
     /* ============================================================
        SHINE
 
-       نوار نورانی باریک.
+       باریکه‌ی نور.
+
+       left حذف شده است.
+
+       دلیل:
+       قبلاً left: '18%' باعث می‌شد
+       نقطه شروع روی بعضی صفحه‌ها وسط باشد.
+
+       حالا translateX خودش مسیر را کنترل می‌کند.
     ============================================================ */
 
     shine: {
-      position: 'absolute',
 
-      top: -45,
+      position:
+        'absolute',
 
-      left: '18%',
+      top:
+        -55,
+
+      left:
+        0,
 
       width:
         SHINE_WIDTH,
 
-      height: 180,
+      height:
+        SHINE_HEIGHT,
 
-      borderRadius: 100,
+      borderRadius:
+        100,
 
-      transform: [
-        {
-          rotate: '18deg',
-        },
-      ],
+      /*
+       * این rotate پایه فقط برای
+       * سازگاری است.
+       *
+       * rotate اصلی توسط Reanimated
+       * اعمال می‌شود.
+       */
 
       shadowColor:
         '#FFFFFF',
 
       shadowOpacity:
-        0.8,
+        0.85,
 
       shadowRadius:
-        18,
+        20,
 
       shadowOffset: {
         width: 0,
@@ -928,6 +1138,9 @@ const styles =
       },
 
       elevation: 8,
+
+      pointerEvents:
+        'none',
     },
 
     /* ============================================================
@@ -935,9 +1148,12 @@ const styles =
     ============================================================ */
 
     navigationArea: {
-      position: 'relative',
 
-      width: '100%',
+      position:
+        'relative',
+
+      width:
+        '100%',
 
       height:
         CONTENT_HEIGHT,
@@ -954,9 +1170,11 @@ const styles =
       justifyContent:
         'space-between',
 
-      paddingHorizontal: 4,
+      paddingHorizontal:
+        4,
 
-      paddingTop: 1,
+      paddingTop:
+        1,
 
       zIndex: 2,
     },
@@ -966,6 +1184,7 @@ const styles =
     ============================================================ */
 
     navColumn: {
+
       flex: 1,
 
       height:
@@ -987,7 +1206,9 @@ const styles =
     ============================================================ */
 
     navButton: {
-      width: '100%',
+
+      width:
+        '100%',
 
       height:
         CONTENT_HEIGHT,
@@ -1001,21 +1222,27 @@ const styles =
       position:
         'relative',
 
-      paddingTop: 2,
+      paddingTop:
+        2,
 
       backgroundColor:
         'transparent',
     },
 
     /* ============================================================
-       ICON WRAPPER
+       ACTIVE ICON WRAPPER
     ============================================================ */
 
     iconWrapper: {
-      width: 38,
-      height: 32,
 
-      borderRadius: 12,
+      width:
+        38,
+
+      height:
+        32,
+
+      borderRadius:
+        12,
 
       alignItems:
         'center',
@@ -1023,7 +1250,8 @@ const styles =
       justifyContent:
         'center',
 
-      marginBottom: 2,
+      marginBottom:
+        2,
     },
 
     /* ============================================================
@@ -1031,14 +1259,18 @@ const styles =
     ============================================================ */
 
     navLabel: {
-      fontSize: 9.5,
 
-      lineHeight: 13,
+      fontSize:
+        9.5,
+
+      lineHeight:
+        13,
 
       textAlign:
         'center',
 
-      maxWidth: 66,
+      maxWidth:
+        66,
     },
 
     /* ============================================================
@@ -1046,15 +1278,21 @@ const styles =
     ============================================================ */
 
     activeDot: {
+
       position:
         'absolute',
 
-      bottom: 3,
+      bottom:
+        3,
 
-      width: 4,
-      height: 4,
+      width:
+        4,
 
-      borderRadius: 2,
+      height:
+        4,
+
+      borderRadius:
+        2,
     },
 
     /* ============================================================
@@ -1062,6 +1300,7 @@ const styles =
     ============================================================ */
 
     centerColumn: {
+
       flex: 1,
 
       height:
@@ -1075,7 +1314,8 @@ const styles =
       justifyContent:
         'center',
 
-      zIndex: 4,
+      zIndex:
+        4,
 
       overflow:
         'visible',
@@ -1086,6 +1326,7 @@ const styles =
     ============================================================ */
 
     centerButton: {
+
       width:
         CENTER_BUTTON_SIZE,
 
@@ -1095,7 +1336,8 @@ const styles =
       borderRadius:
         CENTER_BUTTON_SIZE / 2,
 
-      borderWidth: 3,
+      borderWidth:
+        3,
 
       alignItems:
         'center',
@@ -1103,7 +1345,8 @@ const styles =
       justifyContent:
         'center',
 
-      marginTop: -10,
+      marginTop:
+        -10,
     },
 
     /* ============================================================
@@ -1111,17 +1354,24 @@ const styles =
     ============================================================ */
 
     centerLabel: {
-      fontSize: 9.5,
 
-      lineHeight: 13,
+      fontSize:
+        9.5,
 
-      fontWeight: '800',
+      lineHeight:
+        13,
+
+      fontWeight:
+        '800',
 
       textAlign:
         'center',
 
-      marginTop: -4,
+      marginTop:
+        -4,
 
-      maxWidth: 66,
+      maxWidth:
+        66,
     },
+
   });

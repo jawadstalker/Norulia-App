@@ -35,16 +35,64 @@ import {
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 
+/* ================================================================
+   COLOR SYSTEM
+   ================================================================ */
+
+const PALETTE = {
+  light: {
+    pageStart: '#F8F7FC',
+    pageEnd: '#FFFFFF',
+
+    surface: '#FFFFFF',
+    surfaceSoft: '#F7F5FB',
+    surfaceMuted: '#F2F0F7',
+
+    primary: '#7C3AED',
+    primaryStrong: '#6D28D9',
+    primarySoft: '#F0EAFE',
+    primaryFaint: '#F7F4FD',
+
+    text: '#211C2B',
+    textSecondary: '#746D80',
+    textTertiary: '#9A93A4',
+
+    border: '#E9E4F0',
+    track: '#EDE9F2',
+  },
+
+  dark: {
+    pageStart: '#15121C',
+    pageEnd: '#1B1724',
+
+    surface: '#211C2A',
+    surfaceSoft: '#251F30',
+    surfaceMuted: '#2B2535',
+
+    primary: '#A78BFA',
+    primaryStrong: '#8B5CF6',
+    primarySoft: 'rgba(167,139,250,0.14)',
+    primaryFaint: 'rgba(167,139,250,0.07)',
+
+    text: '#F7F4FA',
+    textSecondary: '#B5ADBF',
+    textTertiary: '#817889',
+
+    border: 'rgba(255,255,255,0.075)',
+    track: 'rgba(255,255,255,0.085)',
+  },
+};
+
 export default function SportsScreen() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const { isRTL } = useLanguage();
 
-  /*
-   * ============================================================
-   * LOCAL TRANSLATIONS
-   * ============================================================
-   */
+  const palette = isDark ? PALETTE.dark : PALETTE.light;
+
+  /* ================================================================
+     TRANSLATIONS
+  ================================================================ */
 
   const TEXTS = {
     fa: {
@@ -53,8 +101,7 @@ export default function SportsScreen() {
       badge: 'Brain × Body × Performance',
 
       title: 'ورزش',
-      subtitle:
-        'برنامه روزانه‌ای برای تقویت بدن، ذهن و انرژی شما',
+      subtitle: 'برنامه روزانه‌ای برای تقویت بدن، ذهن و انرژی شما',
 
       today: 'امروز',
       todayPlan: 'برنامه امروز',
@@ -63,8 +110,7 @@ export default function SportsScreen() {
       remaining: 'باقی مانده',
 
       yourMood: 'حال امروزت چطوره؟',
-      moodSubtitle:
-        'برنامه امروز با وضعیت فعلی شما هماهنگ می‌شود',
+      moodSubtitle: 'برنامه امروز با وضعیت فعلی شما هماهنگ می‌شود',
 
       great: 'عالی',
       good: 'خوب',
@@ -133,11 +179,9 @@ export default function SportsScreen() {
       start: 'شروع',
       done: 'انجام شد',
 
-      noPressure:
-        'اگر امروز انرژی کمتری داری، شدت تمرین را کاهش بده.',
+      noPressure: 'اگر امروز انرژی کمتری داری، شدت تمرین را کاهش بده.',
 
-      safeTraining:
-        'حرکات را با فرم مناسب و در محدوده توانایی خود انجام دهید.',
+      safeTraining: 'حرکات را با فرم مناسب و در محدوده توانایی خود انجام دهید.',
     },
 
     en: {
@@ -146,8 +190,7 @@ export default function SportsScreen() {
       badge: 'Brain × Body × Performance',
 
       title: 'Sports',
-      subtitle:
-        'A daily plan to improve your body, mind and energy',
+      subtitle: 'A daily plan to improve your body, mind and energy',
 
       today: 'Today',
       todayPlan: "Today's Plan",
@@ -156,8 +199,7 @@ export default function SportsScreen() {
       remaining: 'Remaining',
 
       yourMood: 'How are you feeling today?',
-      moodSubtitle:
-        'Your daily plan adapts to your current state',
+      moodSubtitle: 'Your daily plan adapts to your current state',
 
       great: 'Great',
       good: 'Good',
@@ -226,91 +268,36 @@ export default function SportsScreen() {
       start: 'Start',
       done: 'Done',
 
-      noPressure:
-        'If your energy is lower today, reduce the workout intensity.',
+      noPressure: 'If your energy is lower today, reduce the workout intensity.',
 
-      safeTraining:
-        'Perform movements with proper form and within your ability.',
+      safeTraining: 'Perform movements with proper form and within your ability.',
     },
   };
 
   const text = isRTL ? TEXTS.fa : TEXTS.en;
 
-  /*
-   * ============================================================
-   * STATE
-   * ============================================================
-   */
+  /* ================================================================
+     STATE
+  ================================================================ */
 
-  const [selectedMood, setSelectedMood] =
-    useState('good');
+  const [selectedMood, setSelectedMood] = useState('good');
+  const [completedExercises, setCompletedExercises] = useState<string[]>([]);
 
-  const [completedExercises, setCompletedExercises] =
-    useState<string[]>([]);
-
-  /*
-   * ============================================================
-   * MOODS
-   * ============================================================
-   */
+  /* ================================================================
+     MOODS
+  ================================================================ */
 
   const moods = [
-    {
-      id: 'great',
-      label: text.great,
-      icon: Sparkles,
-      color: '#22C55E',
-      background: isDark
-        ? 'rgba(34,197,94,0.15)'
-        : '#F0FDF4',
-    },
-
-    {
-      id: 'good',
-      label: text.good,
-      icon: Zap,
-      color: '#84CC16',
-      background: isDark
-        ? 'rgba(132,204,22,0.15)'
-        : '#F7FEE7',
-    },
-
-    {
-      id: 'normal',
-      label: text.normal,
-      icon: Activity,
-      color: '#F59E0B',
-      background: isDark
-        ? 'rgba(245,158,11,0.15)'
-        : '#FFFBEB',
-    },
-
-    {
-      id: 'tired',
-      label: text.tired,
-      icon: Wind,
-      color: '#6366F1',
-      background: isDark
-        ? 'rgba(99,102,241,0.15)'
-        : '#EEF2FF',
-    },
-
-    {
-      id: 'stressed',
-      label: text.stressed,
-      icon: HeartPulse,
-      color: '#EC4899',
-      background: isDark
-        ? 'rgba(236,72,153,0.15)'
-        : '#FDF2F8',
-    },
+    { id: 'great', label: text.great, icon: Sparkles },
+    { id: 'good', label: text.good, icon: Zap },
+    { id: 'normal', label: text.normal, icon: Activity },
+    { id: 'tired', label: text.tired, icon: Wind },
+    { id: 'stressed', label: text.stressed, icon: HeartPulse },
   ];
 
-  /*
-   * ============================================================
-   * TODAY EXERCISES
-   * ============================================================
-   */
+  /* ================================================================
+     TODAY EXERCISES
+  ================================================================ */
 
   const exercises = [
     {
@@ -319,53 +306,31 @@ export default function SportsScreen() {
       subtitle: text.mobility,
       duration: 5,
       icon: Wind,
-      color: '#06B6D4',
-      background: isDark
-        ? 'rgba(6,182,212,0.15)'
-        : '#ECFEFF',
     },
 
     {
       id: 'squat',
-      title: isRTL
-        ? 'اسکوات'
-        : 'Bodyweight Squat',
+      title: isRTL ? 'اسکوات' : 'Bodyweight Squat',
       subtitle: text.strength,
       reps: 12,
       sets: 3,
       icon: PersonStanding,
-      color: '#8B5CF6',
-      background: isDark
-        ? 'rgba(139,92,246,0.15)'
-        : '#F5F3FF',
     },
 
     {
       id: 'walk',
-      title: isRTL
-        ? 'راه رفتن سریع'
-        : 'Brisk Walk',
+      title: isRTL ? 'راه رفتن سریع' : 'Brisk Walk',
       subtitle: text.cardio,
       duration: 10,
       icon: Footprints,
-      color: '#10B981',
-      background: isDark
-        ? 'rgba(16,185,129,0.15)'
-        : '#ECFDF5',
     },
 
     {
       id: 'balance',
-      title: isRTL
-        ? 'تمرین تعادل'
-        : 'Balance Hold',
+      title: isRTL ? 'تمرین تعادل' : 'Balance Hold',
       subtitle: text.balance,
       duration: 60,
       icon: Target,
-      color: '#F59E0B',
-      background: isDark
-        ? 'rgba(245,158,11,0.15)'
-        : '#FFFBEB',
     },
 
     {
@@ -374,18 +339,12 @@ export default function SportsScreen() {
       subtitle: text.recovery,
       duration: 5,
       icon: Wind,
-      color: '#3B82F6',
-      background: isDark
-        ? 'rgba(59,130,246,0.15)'
-        : '#EFF6FF',
     },
   ];
 
-  /*
-   * ============================================================
-   * WEEKLY PLAN
-   * ============================================================
-   */
+  /* ================================================================
+     WEEKLY PLAN
+  ================================================================ */
 
   const weeklyPlan = [
     {
@@ -453,151 +412,87 @@ export default function SportsScreen() {
     },
   ];
 
-  /*
-   * ============================================================
-   * PROGRESS
-   * ============================================================
-   */
+  /* ================================================================
+     PROGRESS
+  ================================================================ */
 
-  const completedCount =
-    completedExercises.length;
+  const completedCount = completedExercises.length;
+  const progress = Math.round((completedCount / exercises.length) * 100);
 
-  const progress =
-    Math.round(
-      (completedCount /
-        exercises.length) *
-        100
-    );
+  /* ================================================================
+     TOGGLE EXERCISE
+  ================================================================ */
 
-  /*
-   * ============================================================
-   * TOGGLE EXERCISE
-   * ============================================================
-   */
-
-  const toggleExercise = (
-    exerciseId: string
-  ) => {
+  const toggleExercise = (exerciseId: string) => {
     setCompletedExercises((current) => {
       if (current.includes(exerciseId)) {
-        return current.filter(
-          (id) => id !== exerciseId
-        );
+        return current.filter((id) => id !== exerciseId);
       }
-
-      return [
-        ...current,
-        exerciseId,
-      ];
+      return [...current, exerciseId];
     });
   };
 
-  /*
-   * ============================================================
-   * WEEKLY STATS
-   * ============================================================
-   */
+  /* ================================================================
+     WEEKLY STATS
+  ================================================================ */
 
   const weeklyStats = useMemo(
     () => [
-      {
-        label: text.workoutsCompleted,
-        value: '3',
-        icon: CheckCircle2,
-        color: '#22C55E',
-      },
-
-      {
-        label: text.totalMinutes,
-        value: '95',
-        icon: Clock3,
-        color: '#3B82F6',
-      },
-
-      {
-        label: text.activeDays,
-        value: '3',
-        icon: CalendarDays,
-        color: '#8B5CF6',
-      },
-
-      {
-        label: text.currentStreak,
-        value: '3',
-        icon: Flame,
-        color: '#F97316',
-      },
+      { label: text.workoutsCompleted, value: '3', icon: CheckCircle2 },
+      { label: text.totalMinutes, value: '95', icon: Clock3 },
+      { label: text.activeDays, value: '3', icon: CalendarDays },
+      { label: text.currentStreak, value: '3', icon: Flame },
     ],
     [text]
   );
 
-  /*
-   * ============================================================
-   * RENDER
-   * ============================================================
-   */
+  /* ================================================================
+     GO BACK FUNCTION (like HafezScreen)
+  ================================================================ */
+
+  const goBack = () => {
+    router.back();
+  };
+
+  /* ================================================================
+     RENDER
+  ================================================================ */
 
   return (
     <LinearGradient
-      colors={
-        isDark
-          ? [
-              '#171329',
-              '#211A3A',
-              '#2B2350',
-            ]
-          : [
-              '#F8F7FC',
-              '#FFFFFF',
-            ]
-      }
+      colors={[palette.pageStart, palette.pageEnd]}
       style={styles.container}
     >
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={
-          styles.scrollContent
-        }
+        contentContainerStyle={styles.scrollContent}
       >
-
-        {/* ======================================================
+        {/* ==========================================================
             HEADER
-        ====================================================== */}
+        ========================================================== */}
 
         <View style={styles.header}>
           <TouchableOpacity
             activeOpacity={0.75}
-            onPress={() =>
-              router.back()
-            }
+            onPress={goBack}
+            accessibilityRole="button"
+            accessibilityLabel={text.back}
             style={[
               styles.backButton,
               {
-                backgroundColor:
-                  isDark
-                    ? 'rgba(255,255,255,0.08)'
-                    : '#FFFFFF',
-
-                borderColor:
-                  colors.border,
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
               },
             ]}
           >
-            <ArrowLeft
-              size={22}
-              strokeWidth={2.4}
-              color={colors.text}
-            />
+            <ArrowLeft size={21} strokeWidth={2.2} color={palette.text} />
           </TouchableOpacity>
 
           <View
             style={[
               styles.headerText,
               {
-                alignItems:
-                  isRTL
-                    ? 'flex-end'
-                    : 'flex-start',
+                alignItems: isRTL ? 'flex-end' : 'flex-start',
               },
             ]}
           >
@@ -605,26 +500,18 @@ export default function SportsScreen() {
               style={[
                 styles.badge,
                 {
-                  flexDirection:
-                    isRTL
-                      ? 'row-reverse'
-                      : 'row',
+                  flexDirection: isRTL ? 'row-reverse' : 'row',
+                  backgroundColor: palette.primaryFaint,
                 },
               ]}
             >
-              <Dumbbell
-                size={15}
-                color={
-                  colors.primary
-                }
-              />
+              <Dumbbell size={14} color={palette.primary} />
 
               <Text
                 style={[
                   styles.badgeText,
                   {
-                    color:
-                      colors.primary,
+                    color: palette.primary,
                   },
                 ]}
               >
@@ -636,13 +523,8 @@ export default function SportsScreen() {
               style={[
                 styles.title,
                 {
-                  color:
-                    colors.text,
-
-                  textAlign:
-                    isRTL
-                      ? 'right'
-                      : 'left',
+                  color: palette.text,
+                  textAlign: isRTL ? 'right' : 'left',
                 },
               ]}
             >
@@ -653,13 +535,8 @@ export default function SportsScreen() {
               style={[
                 styles.subtitle,
                 {
-                  color:
-                    colors.textSecondary,
-
-                  textAlign:
-                    isRTL
-                      ? 'right'
-                      : 'left',
+                  color: palette.textSecondary,
+                  textAlign: isRTL ? 'right' : 'left',
                 },
               ]}
             >
@@ -668,23 +545,16 @@ export default function SportsScreen() {
           </View>
         </View>
 
-        {/* ======================================================
-            TODAY PROGRESS CARD
-        ====================================================== */}
+        {/* ==========================================================
+            TODAY PROGRESS
+        ========================================================== */}
 
         <View
           style={[
             styles.progressCard,
             {
-              backgroundColor:
-                isDark
-                  ? 'rgba(124,58,237,0.18)'
-                  : '#F3EFFF',
-
-              borderColor:
-                isDark
-                  ? 'rgba(124,58,237,0.25)'
-                  : '#E9E0FF',
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
             },
           ]}
         >
@@ -692,10 +562,7 @@ export default function SportsScreen() {
             style={[
               styles.progressTop,
               {
-                flexDirection:
-                  isRTL
-                    ? 'row-reverse'
-                    : 'row',
+                flexDirection: isRTL ? 'row-reverse' : 'row',
               },
             ]}
           >
@@ -703,29 +570,18 @@ export default function SportsScreen() {
               style={[
                 styles.progressIcon,
                 {
-                  backgroundColor:
-                    isDark
-                      ? 'rgba(255,255,255,0.09)'
-                      : '#FFFFFF',
+                  backgroundColor: palette.primarySoft,
                 },
               ]}
             >
-              <Activity
-                size={24}
-                color={
-                  colors.primary
-                }
-              />
+              <Activity size={23} color={palette.primary} />
             </View>
 
             <View
               style={[
                 styles.progressInfo,
                 {
-                  alignItems:
-                    isRTL
-                      ? 'flex-end'
-                      : 'flex-start',
+                  alignItems: isRTL ? 'flex-end' : 'flex-start',
                 },
               ]}
             >
@@ -733,8 +589,7 @@ export default function SportsScreen() {
                 style={[
                   styles.progressLabel,
                   {
-                    color:
-                      colors.textSecondary,
+                    color: palette.textSecondary,
                   },
                 ]}
               >
@@ -745,8 +600,7 @@ export default function SportsScreen() {
                 style={[
                   styles.progressValue,
                   {
-                    color:
-                      colors.text,
+                    color: palette.text,
                   },
                 ]}
               >
@@ -754,30 +608,23 @@ export default function SportsScreen() {
               </Text>
             </View>
 
-            <View
-              style={
-                styles.progressPercent
-              }
-            >
+            <View style={styles.progressPercent}>
               <Text
                 style={[
                   styles.progressPercentText,
                   {
-                    color:
-                      colors.primary,
+                    color: palette.primary,
                   },
                 ]}
               >
-                {completedCount}/
-                {exercises.length}
+                {completedCount}/{exercises.length}
               </Text>
 
               <Text
                 style={[
                   styles.progressPercentLabel,
                   {
-                    color:
-                      colors.textSecondary,
+                    color: palette.textSecondary,
                   },
                 ]}
               >
@@ -790,10 +637,7 @@ export default function SportsScreen() {
             style={[
               styles.progressTrack,
               {
-                backgroundColor:
-                  isDark
-                    ? 'rgba(255,255,255,0.10)'
-                    : '#E5DDF8',
+                backgroundColor: palette.track,
               },
             ]}
           >
@@ -801,28 +645,23 @@ export default function SportsScreen() {
               style={[
                 styles.progressFill,
                 {
-                  width:
-                    `${progress}%`,
-                  backgroundColor:
-                    colors.primary,
+                  width: `${progress}%`,
+                  backgroundColor: palette.primary,
                 },
               ]}
             />
           </View>
         </View>
 
-        {/* ======================================================
+        {/* ==========================================================
             MOOD
-        ====================================================== */}
+        ========================================================== */}
 
         <View
           style={[
             styles.sectionHeader,
             {
-              alignItems:
-                isRTL
-                  ? 'flex-end'
-                  : 'flex-start',
+              alignItems: isRTL ? 'flex-end' : 'flex-start',
             },
           ]}
         >
@@ -830,12 +669,8 @@ export default function SportsScreen() {
             style={[
               styles.sectionTitle,
               {
-                color:
-                  colors.text,
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
+                color: palette.text,
+                textAlign: isRTL ? 'right' : 'left',
               },
             ]}
           >
@@ -846,12 +681,8 @@ export default function SportsScreen() {
             style={[
               styles.sectionSubtitle,
               {
-                color:
-                  colors.textSecondary,
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
+                color: palette.textSecondary,
+                textAlign: isRTL ? 'right' : 'left',
               },
             ]}
           >
@@ -861,47 +692,23 @@ export default function SportsScreen() {
 
         <ScrollView
           horizontal
-          showsHorizontalScrollIndicator={
-            false
-          }
-          contentContainerStyle={
-            styles.moodScroll
-          }
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.moodScroll}
         >
-          {(isRTL
-            ? [...moods].reverse()
-            : moods
-          ).map((mood) => {
+          {(isRTL ? [...moods].reverse() : moods).map((mood) => {
             const Icon = mood.icon;
-
-            const selected =
-              selectedMood ===
-              mood.id;
+            const selected = selectedMood === mood.id;
 
             return (
               <TouchableOpacity
                 key={mood.id}
-                activeOpacity={0.8}
-                onPress={() =>
-                  setSelectedMood(
-                    mood.id
-                  )
-                }
+                activeOpacity={0.78}
+                onPress={() => setSelectedMood(mood.id)}
                 style={[
                   styles.moodCard,
-
                   {
-                    backgroundColor:
-                      selected
-                        ? mood.background
-                        : isDark
-                          ? 'rgba(255,255,255,0.055)'
-                          : '#FFFFFF',
-
-                    borderColor:
-                      selected
-                        ? mood.color
-                        : colors.border,
+                    backgroundColor: selected ? palette.primarySoft : palette.surface,
+                    borderColor: selected ? palette.primary : palette.border,
                   },
                 ]}
               >
@@ -909,16 +716,14 @@ export default function SportsScreen() {
                   style={[
                     styles.moodIcon,
                     {
-                      backgroundColor:
-                        mood.background,
+                      backgroundColor: selected ? palette.primary : palette.surfaceMuted,
                     },
                   ]}
                 >
                   <Icon
-                    size={20}
-                    color={
-                      mood.color
-                    }
+                    size={19}
+                    color={selected ? '#FFFFFF' : palette.primary}
+                    strokeWidth={selected ? 2.4 : 2}
                   />
                 </View>
 
@@ -926,8 +731,7 @@ export default function SportsScreen() {
                   style={[
                     styles.moodText,
                     {
-                      color:
-                        colors.text,
+                      color: selected ? palette.primary : palette.text,
                     },
                   ]}
                 >
@@ -938,19 +742,16 @@ export default function SportsScreen() {
           })}
         </ScrollView>
 
-        {/* ======================================================
+        {/* ==========================================================
             TODAY'S WORKOUT
-        ====================================================== */}
+        ========================================================== */}
 
         <View
           style={[
             styles.sectionHeader,
             {
               marginTop: 28,
-              alignItems:
-                isRTL
-                  ? 'flex-end'
-                  : 'flex-start',
+              alignItems: isRTL ? 'flex-end' : 'flex-start',
             },
           ]}
         >
@@ -958,12 +759,8 @@ export default function SportsScreen() {
             style={[
               styles.sectionTitle,
               {
-                color:
-                  colors.text,
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
+                color: palette.text,
+                textAlign: isRTL ? 'right' : 'left',
               },
             ]}
           >
@@ -974,12 +771,8 @@ export default function SportsScreen() {
             style={[
               styles.sectionSubtitle,
               {
-                color:
-                  colors.textSecondary,
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
+                color: palette.textSecondary,
+                textAlign: isRTL ? 'right' : 'left',
               },
             ]}
           >
@@ -987,56 +780,47 @@ export default function SportsScreen() {
           </Text>
         </View>
 
-        {/* Main workout card */}
+        {/* ==========================================================
+            WORKOUT HERO
+        ========================================================== */}
 
         <LinearGradient
           colors={
             isDark
-              ? [
-                  '#292044',
-                  '#332657',
-                ]
-              : [
-                  '#EEE8FF',
-                  '#F8F5FF',
-                ]
+              ? ['#292236', '#211C2A']
+              : ['#F0EAFE', '#FAF9FD']
           }
-          style={
-            styles.workoutHero
-          }
+          style={[
+            styles.workoutHero,
+            {
+              borderColor: palette.border,
+            },
+          ]}
         >
           <View
             style={[
               styles.workoutHeroTop,
               {
-                flexDirection:
-                  isRTL
-                    ? 'row-reverse'
-                    : 'row',
+                flexDirection: isRTL ? 'row-reverse' : 'row',
               },
             ]}
           >
             <View
-              style={
-                styles.workoutHeroIcon
-              }
+              style={[
+                styles.workoutHeroIcon,
+                {
+                  backgroundColor: palette.primary,
+                },
+              ]}
             >
-              <Dumbbell
-                size={30}
-                color={
-                  colors.primary
-                }
-              />
+              <Dumbbell size={28} color="#FFFFFF" />
             </View>
 
             <View
               style={[
                 styles.workoutHeroInfo,
                 {
-                  alignItems:
-                    isRTL
-                      ? 'flex-end'
-                      : 'flex-start',
+                  alignItems: isRTL ? 'flex-end' : 'flex-start',
                 },
               ]}
             >
@@ -1044,36 +828,24 @@ export default function SportsScreen() {
                 style={[
                   styles.workoutHeroTitle,
                   {
-                    color:
-                      colors.text,
-                    textAlign:
-                      isRTL
-                        ? 'right'
-                        : 'left',
+                    color: palette.text,
+                    textAlign: isRTL ? 'right' : 'left',
                   },
                 ]}
               >
-                {isRTL
-                  ? 'تمرین ترکیبی امروز'
-                  : 'Full Body Session'}
+                {isRTL ? 'تمرین ترکیبی امروز' : 'Full Body Session'}
               </Text>
 
               <Text
                 style={[
                   styles.workoutHeroSubtitle,
                   {
-                    color:
-                      colors.textSecondary,
-                    textAlign:
-                      isRTL
-                        ? 'right'
-                        : 'left',
+                    color: palette.textSecondary,
+                    textAlign: isRTL ? 'right' : 'left',
                   },
                 ]}
               >
-                {text.strength} •{' '}
-                {text.mobility} •{' '}
-                {text.cardio}
+                {text.strength} • {text.mobility} • {text.cardio}
               </Text>
             </View>
           </View>
@@ -1082,29 +854,18 @@ export default function SportsScreen() {
             style={[
               styles.workoutMeta,
               {
-                flexDirection:
-                  isRTL
-                    ? 'row-reverse'
-                    : 'row',
+                flexDirection: isRTL ? 'row-reverse' : 'row',
               },
             ]}
           >
-            <View
-              style={styles.metaItem}
-            >
-              <Clock3
-                size={16}
-                color={
-                  colors.textSecondary
-                }
-              />
+            <View style={styles.metaItem}>
+              <Clock3 size={15} color={palette.primary} />
 
               <Text
                 style={[
                   styles.metaText,
                   {
-                    color:
-                      colors.textSecondary,
+                    color: palette.textSecondary,
                   },
                 ]}
               >
@@ -1112,104 +873,69 @@ export default function SportsScreen() {
               </Text>
             </View>
 
-            <View
-              style={styles.metaItem}
-            >
-              <Target
-                size={16}
-                color={
-                  colors.textSecondary
-                }
-              />
+            <View style={styles.metaItem}>
+              <Target size={15} color={palette.primary} />
 
               <Text
                 style={[
                   styles.metaText,
                   {
-                    color:
-                      colors.textSecondary,
+                    color: palette.textSecondary,
                   },
                 ]}
               >
-                {exercises.length}{' '}
-                {text.exercises}
+                {exercises.length} {text.exercises}
               </Text>
             </View>
 
-            <View
-              style={styles.metaItem}
-            >
-              <Flame
-                size={16}
-                color="#F97316"
-              />
+            <View style={styles.metaItem}>
+              <Activity size={15} color={palette.primary} />
 
               <Text
                 style={[
                   styles.metaText,
                   {
-                    color:
-                      colors.textSecondary,
+                    color: palette.textSecondary,
                   },
                 ]}
               >
-                {isRTL
-                  ? 'متوسط'
-                  : 'Moderate'}
+                {isRTL ? 'متوسط' : 'Moderate'}
               </Text>
             </View>
           </View>
 
           <TouchableOpacity
-            activeOpacity={0.85}
+            activeOpacity={0.86}
             style={[
               styles.startButton,
               {
-                backgroundColor:
-                  colors.primary,
+                backgroundColor: palette.primary,
               },
             ]}
             onPress={() => {
-              if (
-                exercises.length > 0
-              ) {
-                toggleExercise(
-                  exercises[0].id
-                );
+              if (exercises.length > 0) {
+                toggleExercise(exercises[0].id);
               }
             }}
           >
-            <Play
-              size={18}
-              color="#FFFFFF"
-              fill="#FFFFFF"
-            />
+            <Play size={17} color="#FFFFFF" fill="#FFFFFF" />
 
-            <Text
-              style={
-                styles.startButtonText
-              }
-            >
-              {completedCount > 0
-                ? text.continueWorkout
-                : text.startWorkout}
+            <Text style={styles.startButtonText}>
+              {completedCount > 0 ? text.continueWorkout : text.startWorkout}
             </Text>
           </TouchableOpacity>
         </LinearGradient>
 
-        {/* ======================================================
+        {/* ==========================================================
             EXERCISES
-        ====================================================== */}
+        ========================================================== */}
 
         <View
           style={[
             styles.sectionHeader,
             {
               marginTop: 28,
-              alignItems:
-                isRTL
-                  ? 'flex-end'
-                  : 'flex-start',
+              alignItems: isRTL ? 'flex-end' : 'flex-start',
             },
           ]}
         >
@@ -1217,12 +943,8 @@ export default function SportsScreen() {
             style={[
               styles.sectionTitle,
               {
-                color:
-                  colors.text,
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
+                color: palette.text,
+                textAlign: isRTL ? 'right' : 'left',
               },
             ]}
           >
@@ -1230,269 +952,179 @@ export default function SportsScreen() {
           </Text>
         </View>
 
-        <View
-          style={styles.exerciseList}
-        >
-          {exercises.map(
-            (exercise, index) => {
-              const Icon =
-                exercise.icon;
+        <View style={styles.exerciseList}>
+          {exercises.map((exercise, index) => {
+            const Icon = exercise.icon;
+            const completed = completedExercises.includes(exercise.id);
 
-              const completed =
-                completedExercises.includes(
-                  exercise.id
-                );
+            return (
+              <TouchableOpacity
+                key={exercise.id}
+                activeOpacity={0.82}
+                onPress={() => toggleExercise(exercise.id)}
+                style={[
+                  styles.exerciseCard,
+                  {
+                    backgroundColor: palette.surface,
+                    borderColor: completed ? palette.primary : palette.border,
+                    flexDirection: isRTL ? 'row-reverse' : 'row',
+                  },
+                ]}
+              >
+                {/* Number */}
 
-              return (
-                <TouchableOpacity
-                  key={exercise.id}
-                  activeOpacity={0.85}
-                  onPress={() =>
-                    toggleExercise(
-                      exercise.id
-                    )
-                  }
+                <View
                   style={[
-                    styles.exerciseCard,
-
+                    styles.exerciseNumber,
                     {
-                      backgroundColor:
-                        isDark
-                          ? 'rgba(255,255,255,0.055)'
-                          : '#FFFFFF',
-
-                      borderColor:
-                        completed
-                          ? '#22C55E'
-                          : colors.border,
-
-                      flexDirection:
-                        isRTL
-                          ? 'row-reverse'
-                          : 'row',
+                      backgroundColor: completed ? palette.primary : palette.surfaceMuted,
                     },
                   ]}
                 >
-                  {/* Number */}
+                  {completed ? (
+                    <Check size={16} color="#FFFFFF" strokeWidth={3} />
+                  ) : (
+                    <Text
+                      style={[
+                        styles.exerciseNumberText,
+                        {
+                          color: palette.textSecondary,
+                        },
+                      ]}
+                    >
+                      {index + 1}
+                    </Text>
+                  )}
+                </View>
 
-                  <View
+                {/* Icon */}
+
+                <View
+                  style={[
+                    styles.exerciseIcon,
+                    {
+                      backgroundColor: palette.primarySoft,
+
+                      marginLeft: isRTL ? 12 : 0,
+
+                      marginRight: isRTL ? 0 : 12,
+                    },
+                  ]}
+                >
+                  <Icon size={21} color={palette.primary} />
+                </View>
+
+                {/* Content */}
+
+                <View
+                  style={[
+                    styles.exerciseContent,
+                    {
+                      alignItems: isRTL ? 'flex-end' : 'flex-start',
+                    },
+                  ]}
+                >
+                  <Text
                     style={[
-                      styles.exerciseNumber,
+                      styles.exerciseTitle,
                       {
-                        backgroundColor:
-                          completed
-                            ? '#22C55E'
-                            : isDark
-                              ? 'rgba(255,255,255,0.08)'
-                              : '#F5F3FA',
+                        color: palette.text,
+                        textAlign: isRTL ? 'right' : 'left',
+                        textDecorationLine: completed ? 'line-through' : 'none',
                       },
                     ]}
                   >
-                    {completed ? (
-                      <Check
-                        size={17}
-                        color="#FFFFFF"
-                        strokeWidth={3}
-                      />
-                    ) : (
+                    {exercise.title}
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.exerciseSubtitle,
+                      {
+                        color: palette.textSecondary,
+                        textAlign: isRTL ? 'right' : 'left',
+                      },
+                    ]}
+                  >
+                    {exercise.subtitle}
+                  </Text>
+                </View>
+
+                {/* Stats */}
+
+                <View
+                  style={[
+                    styles.exerciseStats,
+                    {
+                      alignItems: isRTL ? 'flex-start' : 'flex-end',
+                    },
+                  ]}
+                >
+                  {'reps' in exercise && exercise.reps ? (
+                    <>
                       <Text
                         style={[
-                          styles.exerciseNumberText,
+                          styles.exerciseStatValue,
                           {
-                            color:
-                              colors.textSecondary,
+                            color: palette.text,
                           },
                         ]}
                       >
-                        {index + 1}
+                        {exercise.reps}
                       </Text>
-                    )}
-                  </View>
 
-                  {/* Icon */}
-
-                  <View
-                    style={[
-                      styles.exerciseIcon,
-                      {
-                        backgroundColor:
-                          exercise.background,
-
-                        marginLeft:
-                          isRTL
-                            ? 12
-                            : 0,
-
-                        marginRight:
-                          isRTL
-                            ? 0
-                            : 12,
-                      },
-                    ]}
-                  >
-                    <Icon
-                      size={22}
-                      color={
-                        exercise.color
-                      }
-                    />
-                  </View>
-
-                  {/* Content */}
-
-                  <View
-                    style={[
-                      styles.exerciseContent,
-                      {
-                        alignItems:
-                          isRTL
-                            ? 'flex-end'
-                            : 'flex-start',
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.exerciseTitle,
-                        {
-                          color:
-                            colors.text,
-
-                          textAlign:
-                            isRTL
-                              ? 'right'
-                              : 'left',
-
-                          textDecorationLine:
-                            completed
-                              ? 'line-through'
-                              : 'none',
-                        },
-                      ]}
-                    >
-                      {
-                        exercise.title
-                      }
-                    </Text>
-
-                    <Text
-                      style={[
-                        styles.exerciseSubtitle,
-                        {
-                          color:
-                            colors.textSecondary,
-
-                          textAlign:
-                            isRTL
-                              ? 'right'
-                              : 'left',
-                        },
-                      ]}
-                    >
-                      {
-                        exercise.subtitle
-                      }
-                    </Text>
-                  </View>
-
-                  {/* Stats */}
-
-                  <View
-                    style={[
-                      styles.exerciseStats,
-                      {
-                        alignItems:
-                          isRTL
-                            ? 'flex-start'
-                            : 'flex-end',
-                      },
-                    ]}
-                  >
-                    {'reps' in
-                      exercise &&
-                    exercise.reps ? (
-                      <>
-                        <Text
-                          style={[
-                            styles.exerciseStatValue,
-                            {
-                              color:
-                                colors.text,
-                            },
-                          ]}
-                        >
+                      <Text
+                        style={[
+                          styles.exerciseStatLabel,
                           {
-                            exercise.reps
-                          }
-                        </Text>
-
-                        <Text
-                          style={[
-                            styles.exerciseStatLabel,
-                            {
-                              color:
-                                colors.textSecondary,
-                            },
-                          ]}
-                        >
+                            color: palette.textSecondary,
+                          },
+                        ]}
+                      >
+                        {text.reps}
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text
+                        style={[
+                          styles.exerciseStatValue,
                           {
-                            text.reps
-                          }
-                        </Text>
-                      </>
-                    ) : (
-                      <>
-                        <Text
-                          style={[
-                            styles.exerciseStatValue,
-                            {
-                              color:
-                                colors.text,
-                            },
-                          ]}
-                        >
-                          {
-                            exercise.duration
-                          }
-                        </Text>
+                            color: palette.text,
+                          },
+                        ]}
+                      >
+                        {exercise.duration}
+                      </Text>
 
-                        <Text
-                          style={[
-                            styles.exerciseStatLabel,
-                            {
-                              color:
-                                colors.textSecondary,
-                            },
-                          ]}
-                        >
-                          {' '}
-                          {exercise.id ===
-                          'balance'
-                            ? text.seconds
-                            : text.duration}
-                        </Text>
-                      </>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              );
-            }
-          )}
+                      <Text
+                        style={[
+                          styles.exerciseStatLabel,
+                          {
+                            color: palette.textSecondary,
+                          },
+                        ]}
+                      >
+                        {exercise.id === 'balance' ? text.seconds : text.duration}
+                      </Text>
+                    </>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        {/* ======================================================
+        {/* ==========================================================
             WEEKLY PLAN
-        ====================================================== */}
+        ========================================================== */}
 
         <View
           style={[
             styles.sectionHeader,
             {
               marginTop: 32,
-              alignItems:
-                isRTL
-                  ? 'flex-end'
-                  : 'flex-start',
+              alignItems: isRTL ? 'flex-end' : 'flex-start',
             },
           ]}
         >
@@ -1500,12 +1132,8 @@ export default function SportsScreen() {
             style={[
               styles.sectionTitle,
               {
-                color:
-                  colors.text,
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
+                color: palette.text,
+                textAlign: isRTL ? 'right' : 'left',
               },
             ]}
           >
@@ -1516,12 +1144,8 @@ export default function SportsScreen() {
             style={[
               styles.sectionSubtitle,
               {
-                color:
-                  colors.textSecondary,
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
+                color: palette.textSecondary,
+                textAlign: isRTL ? 'right' : 'left',
               },
             ]}
           >
@@ -1531,36 +1155,18 @@ export default function SportsScreen() {
 
         <ScrollView
           horizontal
-          showsHorizontalScrollIndicator={
-            false
-          }
-          contentContainerStyle={
-            styles.weekScroll
-          }
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.weekScroll}
         >
-          {(isRTL
-            ? [...weeklyPlan].reverse()
-            : weeklyPlan
-          ).map((day) => (
+          {(isRTL ? [...weeklyPlan].reverse() : weeklyPlan).map((day) => (
             <View
               key={day.id}
               style={[
                 styles.dayCard,
-
                 {
-                  backgroundColor:
-                    day.today
-                      ? isDark
-                        ? 'rgba(124,58,237,0.18)'
-                        : '#F0EAFE'
-                      : isDark
-                        ? 'rgba(255,255,255,0.055)'
-                        : '#FFFFFF',
+                  backgroundColor: day.today ? palette.primaryFaint : palette.surface,
 
-                  borderColor:
-                    day.today
-                      ? colors.primary
-                      : colors.border,
+                  borderColor: day.today ? palette.primary : palette.border,
                 },
               ]}
             >
@@ -1568,8 +1174,7 @@ export default function SportsScreen() {
                 style={[
                   styles.dayName,
                   {
-                    color:
-                      colors.textSecondary,
+                    color: palette.textSecondary,
                   },
                 ]}
               >
@@ -1579,34 +1184,23 @@ export default function SportsScreen() {
               <View
                 style={[
                   styles.dayCircle,
-
                   {
-                    backgroundColor:
-                      day.completed
-                        ? '#22C55E'
-                        : day.today
-                          ? colors.primary
-                          : isDark
-                            ? 'rgba(255,255,255,0.08)'
-                            : '#F3F1F8',
+                    backgroundColor: day.completed
+                      ? palette.primary
+                      : day.today
+                      ? palette.primary
+                      : palette.surfaceMuted,
                   },
                 ]}
               >
                 {day.completed ? (
-                  <Check
-                    size={18}
-                    color="#FFFFFF"
-                    strokeWidth={3}
-                  />
+                  <Check size={17} color="#FFFFFF" strokeWidth={3} />
                 ) : (
                   <Text
                     style={[
                       styles.dayLetter,
                       {
-                        color:
-                          day.today
-                            ? '#FFFFFF'
-                            : colors.textSecondary,
+                        color: day.today ? '#FFFFFF' : palette.textSecondary,
                       },
                     ]}
                   >
@@ -1619,8 +1213,7 @@ export default function SportsScreen() {
                 style={[
                   styles.dayType,
                   {
-                    color:
-                      colors.text,
+                    color: palette.text,
                   },
                 ]}
                 numberOfLines={1}
@@ -1632,13 +1225,11 @@ export default function SportsScreen() {
                 style={[
                   styles.dayDuration,
                   {
-                    color:
-                      colors.textSecondary,
+                    color: palette.textSecondary,
                   },
                 ]}
               >
-                {day.duration}{' '}
-                {text.duration}
+                {day.duration} {text.duration}
               </Text>
 
               {day.today && (
@@ -1646,36 +1237,26 @@ export default function SportsScreen() {
                   style={[
                     styles.todayBadge,
                     {
-                      backgroundColor:
-                        colors.primary,
+                      backgroundColor: palette.primary,
                     },
                   ]}
                 >
-                  <Text
-                    style={
-                      styles.todayBadgeText
-                    }
-                  >
-                    {text.todayShort}
-                  </Text>
+                  <Text style={styles.todayBadgeText}>{text.todayShort}</Text>
                 </View>
               )}
             </View>
           ))}
         </ScrollView>
 
-        {/* ======================================================
+        {/* ==========================================================
             WEEKLY REPORT
-        ====================================================== */}
+        ========================================================== */}
 
         <View
           style={[
             styles.reportHeader,
             {
-              flexDirection:
-                isRTL
-                  ? 'row-reverse'
-                  : 'row',
+              flexDirection: isRTL ? 'row-reverse' : 'row',
             },
           ]}
         >
@@ -1683,10 +1264,7 @@ export default function SportsScreen() {
             style={[
               styles.reportTitleContainer,
               {
-                alignItems:
-                  isRTL
-                    ? 'flex-end'
-                    : 'flex-start',
+                alignItems: isRTL ? 'flex-end' : 'flex-start',
               },
             ]}
           >
@@ -1694,12 +1272,8 @@ export default function SportsScreen() {
               style={[
                 styles.sectionTitle,
                 {
-                  color:
-                    colors.text,
-                  textAlign:
-                    isRTL
-                      ? 'right'
-                      : 'left',
+                  color: palette.text,
+                  textAlign: isRTL ? 'right' : 'left',
                 },
               ]}
             >
@@ -1710,12 +1284,8 @@ export default function SportsScreen() {
               style={[
                 styles.sectionSubtitle,
                 {
-                  color:
-                    colors.textSecondary,
-                  textAlign:
-                    isRTL
-                      ? 'right'
-                      : 'left',
+                  color: palette.textSecondary,
+                  textAlign: isRTL ? 'right' : 'left',
                 },
               ]}
             >
@@ -1727,110 +1297,77 @@ export default function SportsScreen() {
             style={[
               styles.reportIcon,
               {
-                backgroundColor:
-                  isDark
-                    ? 'rgba(124,58,237,0.15)'
-                    : '#F0EAFE',
+                backgroundColor: palette.primarySoft,
               },
             ]}
           >
-            <BarChart3
-              size={22}
-              color={
-                colors.primary
-              }
-            />
+            <BarChart3 size={21} color={palette.primary} />
           </View>
         </View>
 
-        <View
-          style={styles.statsGrid}
-        >
-          {weeklyStats.map(
-            (stat) => {
-              const Icon =
-                stat.icon;
+        <View style={styles.statsGrid}>
+          {weeklyStats.map((stat) => {
+            const Icon = stat.icon;
 
-              return (
+            return (
+              <View
+                key={stat.label}
+                style={[
+                  styles.statCard,
+                  {
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                  },
+                ]}
+              >
                 <View
-                  key={stat.label}
                   style={[
-                    styles.statCard,
+                    styles.statIcon,
                     {
-                      backgroundColor:
-                        isDark
-                          ? 'rgba(255,255,255,0.055)'
-                          : '#FFFFFF',
-
-                      borderColor:
-                        colors.border,
+                      backgroundColor: palette.primarySoft,
                     },
                   ]}
                 >
-                  <View
-                    style={[
-                      styles.statIcon,
-                      {
-                        backgroundColor:
-                          isDark
-                            ? `${stat.color}20`
-                            : `${stat.color}14`,
-                      },
-                    ]}
-                  >
-                    <Icon
-                      size={18}
-                      color={
-                        stat.color
-                      }
-                    />
-                  </View>
-
-                  <Text
-                    style={[
-                      styles.statValue,
-                      {
-                        color:
-                          colors.text,
-                      },
-                    ]}
-                  >
-                    {stat.value}
-                  </Text>
-
-                  <Text
-                    style={[
-                      styles.statLabel,
-                      {
-                        color:
-                          colors.textSecondary,
-                      },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {stat.label}
-                  </Text>
+                  <Icon size={17} color={palette.primary} />
                 </View>
-              );
-            }
-          )}
+
+                <Text
+                  style={[
+                    styles.statValue,
+                    {
+                      color: palette.text,
+                    },
+                  ]}
+                >
+                  {stat.value}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.statLabel,
+                    {
+                      color: palette.textSecondary,
+                    },
+                  ]}
+                  numberOfLines={2}
+                >
+                  {stat.label}
+                </Text>
+              </View>
+            );
+          })}
         </View>
 
-        {/* ======================================================
+        {/* ==========================================================
             PERFORMANCE
-        ====================================================== */}
+        ========================================================== */}
 
         <View
           style={[
             styles.performanceCard,
             {
-              backgroundColor:
-                isDark
-                  ? 'rgba(255,255,255,0.055)'
-                  : '#FFFFFF',
-
-              borderColor:
-                colors.border,
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
             },
           ]}
         >
@@ -1838,10 +1375,7 @@ export default function SportsScreen() {
             style={[
               styles.performanceHeader,
               {
-                flexDirection:
-                  isRTL
-                    ? 'row-reverse'
-                    : 'row',
+                flexDirection: isRTL ? 'row-reverse' : 'row',
               },
             ]}
           >
@@ -1849,27 +1383,18 @@ export default function SportsScreen() {
               style={[
                 styles.performanceIcon,
                 {
-                  backgroundColor:
-                    isDark
-                      ? 'rgba(124,58,237,0.15)'
-                      : '#F0EAFE',
+                  backgroundColor: palette.primarySoft,
                 },
               ]}
             >
-              <Brain
-                size={21}
-                color={
-                  colors.primary
-                }
-              />
+              <Brain size={20} color={palette.primary} />
             </View>
 
             <Text
               style={[
                 styles.performanceTitle,
                 {
-                  color:
-                    colors.text,
+                  color: palette.text,
                 },
               ]}
             >
@@ -1883,10 +1408,7 @@ export default function SportsScreen() {
             style={[
               styles.performanceRow,
               {
-                flexDirection:
-                  isRTL
-                    ? 'row-reverse'
-                    : 'row',
+                flexDirection: isRTL ? 'row-reverse' : 'row',
               },
             ]}
           >
@@ -1894,10 +1416,7 @@ export default function SportsScreen() {
               style={[
                 styles.performanceLabelContainer,
                 {
-                  alignItems:
-                    isRTL
-                      ? 'flex-end'
-                      : 'flex-start',
+                  alignItems: isRTL ? 'flex-end' : 'flex-start',
                 },
               ]}
             >
@@ -1905,8 +1424,7 @@ export default function SportsScreen() {
                 style={[
                   styles.performanceLabel,
                   {
-                    color:
-                      colors.text,
+                    color: palette.text,
                   },
                 ]}
               >
@@ -1918,10 +1436,7 @@ export default function SportsScreen() {
               style={[
                 styles.performanceBar,
                 {
-                  backgroundColor:
-                    isDark
-                      ? 'rgba(255,255,255,0.08)'
-                      : '#F1EFF5',
+                  backgroundColor: palette.track,
                 },
               ]}
             >
@@ -1930,8 +1445,7 @@ export default function SportsScreen() {
                   styles.performanceFill,
                   {
                     width: '72%',
-                    backgroundColor:
-                      '#22C55E',
+                    backgroundColor: palette.primary,
                   },
                 ]}
               />
@@ -1941,8 +1455,7 @@ export default function SportsScreen() {
               style={[
                 styles.performanceValue,
                 {
-                  color:
-                    colors.text,
+                  color: palette.text,
                 },
               ]}
             >
@@ -1956,10 +1469,7 @@ export default function SportsScreen() {
             style={[
               styles.performanceRow,
               {
-                flexDirection:
-                  isRTL
-                    ? 'row-reverse'
-                    : 'row',
+                flexDirection: isRTL ? 'row-reverse' : 'row',
               },
             ]}
           >
@@ -1967,10 +1477,7 @@ export default function SportsScreen() {
               style={[
                 styles.performanceLabelContainer,
                 {
-                  alignItems:
-                    isRTL
-                      ? 'flex-end'
-                      : 'flex-start',
+                  alignItems: isRTL ? 'flex-end' : 'flex-start',
                 },
               ]}
             >
@@ -1978,8 +1485,7 @@ export default function SportsScreen() {
                 style={[
                   styles.performanceLabel,
                   {
-                    color:
-                      colors.text,
+                    color: palette.text,
                   },
                 ]}
               >
@@ -1991,10 +1497,7 @@ export default function SportsScreen() {
               style={[
                 styles.performanceBar,
                 {
-                  backgroundColor:
-                    isDark
-                      ? 'rgba(255,255,255,0.08)'
-                      : '#F1EFF5',
+                  backgroundColor: palette.track,
                 },
               ]}
             >
@@ -2003,8 +1506,7 @@ export default function SportsScreen() {
                   styles.performanceFill,
                   {
                     width: '84%',
-                    backgroundColor:
-                      '#8B5CF6',
+                    backgroundColor: palette.primary,
                   },
                 ]}
               />
@@ -2014,8 +1516,7 @@ export default function SportsScreen() {
               style={[
                 styles.performanceValue,
                 {
-                  color:
-                    colors.text,
+                  color: palette.text,
                 },
               ]}
             >
@@ -2024,23 +1525,16 @@ export default function SportsScreen() {
           </View>
         </View>
 
-        {/* ======================================================
+        {/* ==========================================================
             WEEKLY INSIGHT
-        ====================================================== */}
+        ========================================================== */}
 
         <View
           style={[
             styles.insightCard,
             {
-              backgroundColor:
-                isDark
-                  ? 'rgba(59,130,246,0.10)'
-                  : '#EFF6FF',
-
-              borderColor:
-                isDark
-                  ? 'rgba(59,130,246,0.20)'
-                  : '#DBEAFE',
+              backgroundColor: palette.primaryFaint,
+              borderColor: isDark ? 'rgba(167,139,250,0.18)' : '#E6DDF7',
             },
           ]}
         >
@@ -2048,10 +1542,7 @@ export default function SportsScreen() {
             style={[
               styles.insightTop,
               {
-                flexDirection:
-                  isRTL
-                    ? 'row-reverse'
-                    : 'row',
+                flexDirection: isRTL ? 'row-reverse' : 'row',
               },
             ]}
           >
@@ -2059,25 +1550,18 @@ export default function SportsScreen() {
               style={[
                 styles.insightIcon,
                 {
-                  backgroundColor:
-                    isDark
-                      ? 'rgba(59,130,246,0.18)'
-                      : '#DBEAFE',
+                  backgroundColor: palette.primarySoft,
                 },
               ]}
             >
-              <Sparkles
-                size={19}
-                color="#3B82F6"
-              />
+              <Sparkles size={18} color={palette.primary} />
             </View>
 
             <Text
               style={[
                 styles.insightTitle,
                 {
-                  color:
-                    colors.text,
+                  color: palette.text,
                 },
               ]}
             >
@@ -2089,13 +1573,8 @@ export default function SportsScreen() {
             style={[
               styles.insightText,
               {
-                color:
-                  colors.textSecondary,
-
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
+                color: palette.textSecondary,
+                textAlign: isRTL ? 'right' : 'left',
               },
             ]}
           >
@@ -2103,42 +1582,37 @@ export default function SportsScreen() {
           </Text>
         </View>
 
-        {/* ======================================================
-            SAFETY / LOW ENERGY NOTE
-        ====================================================== */}
+        {/* ==========================================================
+            LOW ENERGY NOTE
+        ========================================================== */}
 
         <View
           style={[
             styles.noteCard,
             {
-              backgroundColor:
-                isDark
-                  ? 'rgba(245,158,11,0.08)'
-                  : '#FFFBEB',
-
-              borderColor:
-                isDark
-                  ? 'rgba(245,158,11,0.18)'
-                  : '#FDE68A',
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
+              flexDirection: isRTL ? 'row-reverse' : 'row',
             },
           ]}
         >
-          <HeartPulse
-            size={18}
-            color="#F59E0B"
-          />
+          <View
+            style={[
+              styles.noteIcon,
+              {
+                backgroundColor: palette.primarySoft,
+              },
+            ]}
+          >
+            <HeartPulse size={17} color={palette.primary} />
+          </View>
 
           <Text
             style={[
               styles.noteText,
               {
-                color:
-                  colors.textSecondary,
-
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
+                color: palette.textSecondary,
+                textAlign: isRTL ? 'right' : 'left',
               },
             ]}
           >
@@ -2150,33 +1624,23 @@ export default function SportsScreen() {
           style={[
             styles.safeTraining,
             {
-              color:
-                colors.textTertiary,
-
-              textAlign:
-                isRTL
-                  ? 'right'
-                  : 'left',
+              color: palette.textTertiary,
+              textAlign: isRTL ? 'right' : 'left',
             },
           ]}
         >
           {text.safeTraining}
         </Text>
 
-        <View
-          style={styles.bottomSpace}
-        />
-
+        <View style={styles.bottomSpace} />
       </ScrollView>
     </LinearGradient>
   );
 }
 
-/*
- * ================================================================
- * STYLES
- * ================================================================
- */
+/* ================================================================
+   STYLES
+================================================================ */
 
 const styles = StyleSheet.create({
   container: {
@@ -2189,9 +1653,9 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  /*
-   * HEADER
-   */
+  /* ==============================================================
+     HEADER
+  ============================================================== */
 
   header: {
     flexDirection: 'row',
@@ -2200,9 +1664,9 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 30,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -2216,17 +1680,21 @@ const styles = StyleSheet.create({
   badge: {
     alignItems: 'center',
     gap: 6,
-    marginBottom: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 9,
+    marginBottom: 8,
   },
 
   badgeText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
   },
 
   title: {
     fontSize: 31,
     fontWeight: '900',
+    letterSpacing: -0.5,
   },
 
   subtitle: {
@@ -2235,14 +1703,14 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
 
-  /*
-   * PROGRESS
-   */
+  /* ==============================================================
+     PROGRESS
+  ============================================================== */
 
   progressCard: {
-    borderRadius: 24,
+    borderRadius: 22,
     borderWidth: 1,
-    padding: 18,
+    padding: 17,
     marginBottom: 26,
   },
 
@@ -2251,9 +1719,9 @@ const styles = StyleSheet.create({
   },
 
   progressIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 47,
+    height: 47,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2280,7 +1748,7 @@ const styles = StyleSheet.create({
 
   progressPercentText: {
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: '900',
   },
 
   progressPercentLabel: {
@@ -2289,7 +1757,7 @@ const styles = StyleSheet.create({
   },
 
   progressTrack: {
-    height: 8,
+    height: 7,
     borderRadius: 8,
     overflow: 'hidden',
     marginTop: 16,
@@ -2300,9 +1768,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
 
-  /*
-   * SECTION
-   */
+  /* ==============================================================
+     SECTION
+  ============================================================== */
 
   sectionHeader: {
     marginBottom: 12,
@@ -2311,6 +1779,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '900',
+    letterSpacing: -0.2,
   },
 
   sectionSubtitle: {
@@ -2319,12 +1788,12 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
 
-  /*
-   * MOOD
-   */
+  /* ==============================================================
+     MOOD
+  ============================================================== */
 
   moodScroll: {
-    gap: 10,
+    gap: 9,
     paddingBottom: 4,
   },
 
@@ -2352,12 +1821,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  /*
-   * WORKOUT HERO
-   */
+  /* ==============================================================
+     WORKOUT HERO
+  ============================================================== */
 
   workoutHero: {
-    borderRadius: 26,
+    borderRadius: 25,
+    borderWidth: 1,
     padding: 19,
     overflow: 'hidden',
   },
@@ -2367,11 +1837,9 @@ const styles = StyleSheet.create({
   },
 
   workoutHeroIcon: {
-    width: 58,
-    height: 58,
+    width: 57,
+    height: 57,
     borderRadius: 18,
-    backgroundColor:
-      'rgba(124,58,237,0.13)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2424,9 +1892,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
-  /*
-   * EXERCISES
-   */
+  /* ==============================================================
+     EXERCISES
+  ============================================================== */
 
   exerciseList: {
     gap: 10,
@@ -2489,9 +1957,9 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 
-  /*
-   * WEEK
-   */
+  /* ==============================================================
+     WEEK
+  ============================================================== */
 
   weekScroll: {
     gap: 9,
@@ -2551,9 +2019,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
-  /*
-   * REPORT
-   */
+  /* ==============================================================
+     REPORT
+  ============================================================== */
 
   reportHeader: {
     alignItems: 'center',
@@ -2608,9 +2076,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  /*
-   * PERFORMANCE
-   */
+  /* ==============================================================
+     PERFORMANCE
+  ============================================================== */
 
   performanceCard: {
     borderRadius: 22,
@@ -2672,9 +2140,9 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 
-  /*
-   * INSIGHT
-   */
+  /* ==============================================================
+     INSIGHT
+  ============================================================== */
 
   insightCard: {
     borderRadius: 22,
@@ -2708,18 +2176,25 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
 
-  /*
-   * NOTE
-   */
+  /* ==============================================================
+     NOTE
+  ============================================================== */
 
   noteCard: {
     borderRadius: 17,
     borderWidth: 1,
     padding: 13,
     marginTop: 12,
-    flexDirection: 'row',
     alignItems: 'center',
     gap: 9,
+  },
+
+  noteIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   noteText: {
