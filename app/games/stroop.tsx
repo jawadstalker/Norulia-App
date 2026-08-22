@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
     minWidth: 44,
     height: 44,
     paddingHorizontal: 12,
-    borderRadius: BorderRadius.md,
+    borderRadius: 30,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
