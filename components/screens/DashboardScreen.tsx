@@ -1,4 +1,5 @@
 import React from 'react';
+
 import {
   View,
   Text,
@@ -7,13 +8,27 @@ import {
   RefreshControl,
   Image,
   TouchableOpacity,
+  Pressable,
   useWindowDimensions,
 } from 'react-native';
+
 import { MotiView } from 'moti';
+
 import { LinearGradient } from 'expo-linear-gradient';
+
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+
 import { Card } from '../ui/Card';
+
 import { useRouter } from 'expo-router';
 
 import {
@@ -32,6 +47,10 @@ import {
   LayoutGrid,
 } from 'lucide-react-native';
 
+/* ================================================================
+   MENU ITEMS
+================================================================ */
+
 const menuItems = [
   {
     id: 'psycho',
@@ -39,30 +58,35 @@ const menuItems = [
     icon: BrainCircuit,
     route: '/psycho',
   },
+
   {
     id: 'cultural',
     titleKey: 'culturalInterventions',
     icon: BookOpen,
     route: '/cultural',
   },
+
   {
     id: 'plus',
     titleKey: 'plusModule',
     icon: Sparkles,
     route: '/(tabs)/plus',
   },
+
   {
     id: 'medication',
     titleKey: 'medicationManagement',
     icon: Pill,
     route: '/medication',
   },
+
   {
     id: 'consultation',
     titleKey: 'consultation',
     icon: Stethoscope,
     route: '/consultation',
   },
+
   {
     id: 'settings',
     titleKey: 'settings',
@@ -71,8 +95,220 @@ const menuItems = [
   },
 ];
 
+interface ShineEffectProps {
+  color?: string;
+  delay?: number;
+  duration?: number;
+  opacity?: number;
+}
+
+function ShineEffect({
+  color = '#FFFFFF',
+  delay = 1600,
+  duration = 1900,
+  opacity = 0.16,
+}: ShineEffectProps) {
+  const shineX = useSharedValue(-180);
+
+  const shineOpacity = useSharedValue(0);
+
+  React.useEffect(() => {
+    shineX.value = -180;
+    shineOpacity.value = 0;
+
+    shineX.value = withRepeat(
+      withSequence(
+        /* --------------------------------------------------------
+           WAIT
+        -------------------------------------------------------- */
+
+        withTiming(
+          -180,
+          {
+            duration: delay,
+          },
+        ),
+
+        /* --------------------------------------------------------
+           FADE IN
+        -------------------------------------------------------- */
+
+        withTiming(
+          -145,
+          {
+            duration: 180,
+          },
+        ),
+
+        /* --------------------------------------------------------
+           MAIN MOVEMENT
+        -------------------------------------------------------- */
+
+        withTiming(
+          430,
+          {
+            duration,
+          },
+        ),
+
+        /* --------------------------------------------------------
+           FADE OUT / EXIT
+        -------------------------------------------------------- */
+
+        withTiming(
+          500,
+          {
+            duration: 220,
+          },
+        ),
+
+        /* --------------------------------------------------------
+           SMALL GAP
+        -------------------------------------------------------- */
+
+        withTiming(
+          500,
+          {
+            duration: 350,
+          },
+        ),
+      ),
+      -1,
+      false,
+    );
+
+    shineOpacity.value = withRepeat(
+      withSequence(
+        withTiming(
+          0,
+          {
+            duration: delay,
+          },
+        ),
+
+        withTiming(
+          opacity,
+          {
+            duration: 180,
+          },
+        ),
+
+        withTiming(
+          opacity,
+          {
+            duration,
+          },
+        ),
+
+        withTiming(
+          0,
+          {
+            duration: 220,
+          },
+        ),
+
+        withTiming(
+          0,
+          {
+            duration: 350,
+          },
+        ),
+      ),
+      -1,
+      false,
+    );
+  }, [
+    delay,
+    duration,
+    opacity,
+    shineOpacity,
+    shineX,
+  ]);
+
+  const animatedStyle =
+    useAnimatedStyle(() => ({
+      transform: [
+        {
+          translateX:
+            shineX.value,
+        },
+        {
+          rotate: '20deg',
+        },
+      ],
+
+      opacity:
+        shineOpacity.value,
+    }));
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.shineContainer,
+        animatedStyle,
+      ]}
+    >
+      <LinearGradient
+        colors={[
+          'transparent',
+          `${color}10`,
+          `${color}45`,
+          `${color}10`,
+          'transparent',
+        ]}
+        locations={[
+          0,
+          0.28,
+          0.5,
+          0.72,
+          1,
+        ]}
+        start={{
+          x: 0,
+          y: 0.5,
+        }}
+        end={{
+          x: 1,
+          y: 0.5,
+        }}
+        style={styles.shineGradient}
+      />
+    </Animated.View>
+  );
+}
+
+
+interface GlowLayerProps {
+  color: string;
+  opacity?: number;
+}
+
+function GlowLayer({
+  color,
+  opacity = 0.10,
+}: GlowLayerProps) {
+  return (
+    <View
+      pointerEvents="none"
+      style={[
+        styles.glowLayer,
+        {
+          borderColor: color,
+          opacity,
+        },
+      ]}
+    />
+  );
+}
+
+/* ================================================================
+   GREETING
+================================================================ */
+
 function getGreeting(t: any) {
-  const hour = new Date().getHours();
+  const hour =
+    new Date().getHours();
 
   if (hour < 12) {
     return t.goodMorning;
@@ -85,20 +321,39 @@ function getGreeting(t: any) {
   return t.goodEvening;
 }
 
+/* ================================================================
+   DASHBOARD
+================================================================ */
+
 export function DashboardScreen() {
-  const { colors, isDark } = useTheme();
-  const { t, isRTL } = useLanguage();
-  const router = useRouter();
+  const {
+    colors,
+    isDark,
+  } = useTheme();
 
-  const { width } = useWindowDimensions();
+  const {
+    t,
+    isRTL,
+  } = useLanguage();
 
-  const [refreshing, setRefreshing] =
-    React.useState(false);
+  const router =
+    useRouter();
+
+  const {
+    width,
+  } = useWindowDimensions();
+
+  const [
+    refreshing,
+    setRefreshing,
+  ] = React.useState(false);
 
   const refreshTimerRef =
-    React.useRef<ReturnType<
-      typeof setTimeout
-    > | null>(null);
+    React.useRef<
+      ReturnType<
+        typeof setTimeout
+      > | null
+    >(null);
 
   const isSmallScreen =
     width < 380;
@@ -106,12 +361,26 @@ export function DashboardScreen() {
   const isVerySmallScreen =
     width < 350;
 
-    const heroGradient: [
-      string,
-      string
-    ] = isDark
-      ? ['#3D2E70', '#261268']
-      : ['#F0ECFA', '#E3DCF5'];
+  /* ==============================================================
+     HERO GRADIENT
+  ============================================================== */
+
+  const heroGradient: [
+    string,
+    string,
+  ] = isDark
+    ? [
+        '#3D2E70',
+        '#261268',
+      ]
+    : [
+        '#F0ECFA',
+        '#E3DCF5',
+      ];
+
+  /* ==============================================================
+     REFRESH
+  ============================================================== */
 
   const onRefresh =
     React.useCallback(() => {
@@ -120,28 +389,39 @@ export function DashboardScreen() {
       refreshTimerRef.current =
         setTimeout(() => {
           setRefreshing(false);
-          refreshTimerRef.current = null;
+
+          refreshTimerRef.current =
+            null;
         }, 1500);
     }, []);
 
   React.useEffect(() => {
     return () => {
-      if (refreshTimerRef.current) {
+      if (
+        refreshTimerRef.current
+      ) {
         clearTimeout(
-          refreshTimerRef.current
+          refreshTimerRef.current,
         );
       }
     };
   }, []);
 
+  /* ==============================================================
+     MENU CARD
+  ============================================================== */
+
   const renderMenuCard = (
     item: (typeof menuItems)[number],
-    index: number
+    index: number,
   ) => {
-    const IconComponent = item.icon;
+    const IconComponent =
+      item.icon;
 
     const title =
-      t[item.titleKey as keyof typeof t] ||
+      t[
+        item.titleKey as keyof typeof t
+      ] ||
       item.titleKey;
 
     return (
@@ -160,7 +440,9 @@ export function DashboardScreen() {
         transition={{
           type: 'timing',
           duration: 380,
-          delay: 320 + index * 70,
+          delay:
+            320 +
+            index * 70,
         }}
         style={[
           styles.menuCardWrapper,
@@ -173,10 +455,10 @@ export function DashboardScreen() {
         ]}
       >
         <TouchableOpacity
-          activeOpacity={0.78}
+          activeOpacity={0.82}
           onPress={() =>
             router.push(
-              item.route as any
+              item.route as any,
             )
           }
           accessibilityRole="button"
@@ -197,6 +479,43 @@ export function DashboardScreen() {
             },
           ]}
         >
+          {/* =====================================================
+             SHINE
+          ===================================================== */}
+
+          <ShineEffect
+            color={
+              isDark
+                ? '#FFFFFF'
+                : colors.primary
+            }
+            delay={
+              1500 +
+              index * 260
+            }
+            duration={1750}
+            opacity={
+              isDark
+                ? 0.15
+                : 0.12
+            }
+          />
+
+          <GlowLayer
+            color={
+              colors.primary
+            }
+            opacity={
+              isDark
+                ? 0.08
+                : 0.045
+            }
+          />
+
+          {/* =====================================================
+             ICON
+          ===================================================== */}
+
           <View
             style={[
               styles.menuIconContainer,
@@ -231,6 +550,10 @@ export function DashboardScreen() {
             />
           </View>
 
+          {/* =====================================================
+             TITLE
+          ===================================================== */}
+
           <Text
             numberOfLines={2}
             ellipsizeMode="tail"
@@ -261,6 +584,10 @@ export function DashboardScreen() {
       </MotiView>
     );
   };
+
+  /* ==============================================================
+     RENDER
+  ============================================================== */
 
   return (
     <View
@@ -302,6 +629,10 @@ export function DashboardScreen() {
           />
         }
       >
+        {/* ======================================================
+           HEADER
+        ====================================================== */}
+
         <MotiView
           from={{
             opacity: 0,
@@ -404,6 +735,10 @@ export function DashboardScreen() {
           </Text>
         </MotiView>
 
+        {/* ======================================================
+           HERO CARD
+        ====================================================== */}
+
         <MotiView
           from={{
             opacity: 0,
@@ -422,7 +757,9 @@ export function DashboardScreen() {
           }}
         >
           <LinearGradient
-            colors={heroGradient}
+            colors={
+              heroGradient
+            }
             start={{
               x: 0,
               y: 0,
@@ -461,6 +798,12 @@ export function DashboardScreen() {
               },
             ]}
           >
+
+
+            {/* ==================================================
+               DECORATIVE BLOBS
+            ================================================== */}
+
             <View
               pointerEvents="none"
               style={[
@@ -487,11 +830,25 @@ export function DashboardScreen() {
               ]}
             />
 
-            <View style={styles.characterWrapper}>
-              <View style={styles.avatarContainer}>
+            {/* ==================================================
+               CHARACTER
+            ================================================== */}
+
+            <View
+              style={
+                styles.characterWrapper
+              }
+            >
+              <View
+                style={
+                  styles.avatarContainer
+                }
+              >
                 <Image
                   source={require('../../assets/avatars/model.png')}
-                  style={styles.avatar}
+                  style={
+                    styles.avatar
+                  }
                 />
               </View>
 
@@ -499,46 +856,60 @@ export function DashboardScreen() {
                 style={[
                   styles.characterTitle,
                   {
-                    color: isDark
-                      ? '#FFFFFF'
-                      : '#2F2850',
+                    color:
+                      isDark
+                        ? '#FFFFFF'
+                        : '#2F2850',
 
-                    textAlign: isRTL
-                      ? 'right'
-                      : 'left',
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
 
-                    writingDirection: isRTL
-                      ? 'rtl'
-                      : 'ltr',
+                    writingDirection:
+                      isRTL
+                        ? 'rtl'
+                        : 'ltr',
                   },
                 ]}
               >
-                {t.dashboardReadyHelp}
+                {
+                  t.dashboardReadyHelp
+                }
               </Text>
 
               <Text
                 style={[
                   styles.characterSubtitle,
                   {
-                    color: isDark
-                      ? 'rgba(255,255,255,0.80)'
-                      : '#675F7E',
+                    color:
+                      isDark
+                        ? 'rgba(255,255,255,0.80)'
+                        : '#675F7E',
 
-                    textAlign: isRTL
-                      ? 'right'
-                      : 'left',
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
 
-                    writingDirection: isRTL
-                      ? 'rtl'
-                      : 'ltr',
+                    writingDirection:
+                      isRTL
+                        ? 'rtl'
+                        : 'ltr',
                   },
                 ]}
               >
-                {t.dashboardWellnessJourney}
+                {
+                  t.dashboardWellnessJourney
+                }
               </Text>
             </View>
           </LinearGradient>
         </MotiView>
+
+        {/* ======================================================
+           PROGRESS CARD
+        ====================================================== */}
 
         <MotiView
           from={{
@@ -560,8 +931,40 @@ export function DashboardScreen() {
               ...styles.progressCard,
               backgroundColor:
                 colors.surface,
+              overflow:
+                'hidden',
             }}
           >
+            {/* ==================================================
+               PROGRESS SHINE
+            ================================================== */}
+
+            <ShineEffect
+              color={
+                isDark
+                  ? '#FFFFFF'
+                  : colors.primary
+              }
+              delay={2100}
+              duration={2050}
+              opacity={
+                isDark
+                  ? 0.13
+                  : 0.09
+              }
+            />
+
+            <GlowLayer
+              color={
+                colors.primary
+              }
+              opacity={
+                isDark
+                  ? 0.055
+                  : 0.035
+              }
+            />
+
             <View
               style={[
                 styles.progressHeader,
@@ -629,6 +1032,10 @@ export function DashboardScreen() {
                 82%
               </Text>
             </View>
+
+            {/* ==================================================
+               PROGRESS BAR
+            ================================================== */}
 
             <View
               style={
@@ -718,11 +1125,17 @@ export function DashboardScreen() {
                   },
                 ]}
               >
-                {t.dashboardKeepGoing}
+                {
+                  t.dashboardKeepGoing
+                }
               </Text>
             </View>
           </Card>
         </MotiView>
+
+        {/* ======================================================
+           QUICK ACCESS HEADER
+        ====================================================== */}
 
         <MotiView
           from={{
@@ -779,6 +1192,10 @@ export function DashboardScreen() {
           </Text>
         </MotiView>
 
+        {/* ======================================================
+           MENU GRID
+        ====================================================== */}
+
         <View
           style={[
             styles.menuGrid,
@@ -791,7 +1208,7 @@ export function DashboardScreen() {
           ]}
         >
           {menuItems.map(
-            renderMenuCard
+            renderMenuCard,
           )}
         </View>
 
@@ -804,6 +1221,10 @@ export function DashboardScreen() {
     </View>
   );
 }
+
+/* ================================================================
+   STYLES
+================================================================ */
 
 const styles =
   StyleSheet.create({
@@ -818,8 +1239,13 @@ const styles =
       paddingBottom: 40,
     },
 
+    /* ============================================================
+       HEADER
+    ============================================================ */
+
     header: {
       width: '100%',
+
       marginBottom:
         Spacing.lg,
     },
@@ -832,6 +1258,7 @@ const styles =
         'center',
 
       paddingHorizontal: 11,
+
       paddingVertical: 6,
 
       borderRadius: 14,
@@ -841,6 +1268,7 @@ const styles =
 
     greetingText: {
       fontSize: 11,
+
       fontWeight: '700',
     },
 
@@ -848,6 +1276,7 @@ const styles =
       width: '100%',
 
       fontSize: 30,
+
       lineHeight: 37,
 
       fontWeight: '800',
@@ -857,10 +1286,53 @@ const styles =
       width: '100%',
 
       fontSize: 15,
+
       lineHeight: 22,
 
       marginTop: 6,
     },
+
+    /* ============================================================
+       GENERIC SHINE
+    ============================================================ */
+
+    shineContainer: {
+      position:
+        'absolute',
+
+      top: -90,
+
+      left: -20,
+
+      width: 72,
+
+      height: 280,
+
+      zIndex: 20,
+
+      elevation: 20,
+    },
+
+    shineGradient: {
+      width: '100%',
+
+      height: '100%',
+    },
+
+    glowLayer: {
+      ...StyleSheet.absoluteFillObject,
+
+      borderWidth: 1,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      zIndex: 5,
+    },
+
+    /* ============================================================
+       HERO
+    ============================================================ */
 
     characterCard: {
       width: '100%',
@@ -879,7 +1351,11 @@ const styles =
 
       borderWidth: 1,
 
-      overflow: 'hidden',
+      overflow:
+        'hidden',
+
+      position:
+        'relative',
     },
 
     heroBlobA: {
@@ -887,6 +1363,7 @@ const styles =
         'absolute',
 
       width: 200,
+
       height: 160,
 
       borderRadius: 80,
@@ -894,6 +1371,7 @@ const styles =
       opacity: 0.07,
 
       top: -50,
+
       right: -40,
     },
 
@@ -902,6 +1380,7 @@ const styles =
         'absolute',
 
       width: 110,
+
       height: 110,
 
       borderRadius: 55,
@@ -909,45 +1388,67 @@ const styles =
       opacity: 0.06,
 
       bottom: -30,
+
       left: -30,
     },
 
     characterWrapper: {
-      
-      alignItems: 'center',
-      paddingVertical: Spacing.md,
+      alignItems:
+        'center',
+
+      paddingVertical:
+        Spacing.md,
     },
 
     avatarContainer: {
       width: 121,
+
       height: 121,
-      alignItems: 'center',
-      justifyContent: 'center',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
     },
 
     avatar: {
-  
       width: 180,
+
       height: 180,
-      resizeMode: 'contain',
+
+      resizeMode:
+        'contain',
     },
 
     characterTitle: {
       paddingTop: 20,
 
       width: '100%',
+
       fontSize: 20,
+
       lineHeight: 27,
+
       fontWeight: '700',
-      marginTop: Spacing.md,
+
+      marginTop:
+        Spacing.md,
     },
 
     characterSubtitle: {
       width: '100%',
+
       fontSize: 14,
+
       lineHeight: 21,
+
       marginTop: 4,
     },
+
+    /* ============================================================
+       PROGRESS
+    ============================================================ */
 
     progressCard: {
       marginBottom:
@@ -961,10 +1462,19 @@ const styles =
         height: 4,
       },
 
-      shadowOpacity: 0.06,
-      shadowRadius: 10,
+      shadowOpacity:
+        0.06,
+
+      shadowRadius:
+        10,
 
       elevation: 3,
+
+      overflow:
+        'hidden',
+
+      position:
+        'relative',
     },
 
     progressHeader: {
@@ -979,6 +1489,7 @@ const styles =
 
     progressIconWrap: {
       width: 32,
+
       height: 32,
 
       borderRadius: 10,
@@ -994,6 +1505,7 @@ const styles =
       flex: 1,
 
       fontSize: 15,
+
       lineHeight: 21,
 
       fontWeight: '600',
@@ -1007,6 +1519,7 @@ const styles =
 
     progressBarContainer: {
       width: '100%',
+
       height: 7,
 
       position:
@@ -1035,6 +1548,7 @@ const styles =
 
     progressBarFill: {
       width: '100%',
+
       height: '100%',
 
       borderRadius: 4,
@@ -1048,8 +1562,13 @@ const styles =
 
     progressText: {
       fontSize: 11,
+
       lineHeight: 17,
     },
+
+    /* ============================================================
+       QUICK ACCESS
+    ============================================================ */
 
     menuSectionHeader: {
       width: '100%',
@@ -1060,6 +1579,7 @@ const styles =
       gap: 7,
 
       marginBottom: 12,
+
       marginTop: 2,
     },
 
@@ -1067,6 +1587,7 @@ const styles =
       flex: 1,
 
       fontSize: 14,
+
       lineHeight: 20,
 
       fontWeight: '700',
@@ -1086,6 +1607,7 @@ const styles =
 
     menuCardWrapper: {
       flexGrow: 0,
+
       flexShrink: 0,
     },
 
@@ -1097,6 +1619,7 @@ const styles =
       borderWidth: 1,
 
       paddingHorizontal: 8,
+
       paddingVertical: 12,
 
       alignItems:
@@ -1108,6 +1631,9 @@ const styles =
       position:
         'relative',
 
+      overflow:
+        'hidden',
+
       shadowColor:
         '#000000',
 
@@ -1116,7 +1642,9 @@ const styles =
         height: 3,
       },
 
-      shadowOpacity: 0.035,
+      shadowOpacity:
+        0.035,
+
       shadowRadius: 7,
 
       elevation: 2,

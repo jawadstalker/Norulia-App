@@ -9,6 +9,13 @@ import {
 } from 'react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Card } from '../../components/ui/Card';
@@ -38,9 +45,118 @@ interface Event {
   color: string;
 }
 
-/* ==========================================================================
-   Persian Date
-   ========================================================================== */
+function ShineEffect({
+  color = '#FFFFFF',
+  delay = 1600,
+  duration = 1900,
+  opacity = 0.14,
+}: {
+  color?: string;
+  delay?: number;
+  duration?: number;
+  opacity?: number;
+}) {
+  const translateX = useSharedValue(-180);
+  const shineOpacity = useSharedValue(0);
+
+  React.useEffect(() => {
+    translateX.value = withRepeat(
+      withSequence(
+        withTiming(-180, {
+          duration: delay,
+        }),
+        withTiming(430, {
+          duration,
+        }),
+        withTiming(500, {
+          duration: 220,
+        }),
+      ),
+      -1,
+      false,
+    );
+
+    shineOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0, {
+          duration: delay,
+        }),
+        withTiming(opacity, {
+          duration: 180,
+        }),
+        withTiming(opacity, {
+          duration,
+        }),
+        withTiming(0, {
+          duration: 220,
+        }),
+      ),
+      -1,
+      false,
+    );
+  }, []);
+
+  const animatedStyle =
+    useAnimatedStyle(() => ({
+      transform: [
+        {
+          translateX:
+            translateX.value,
+        },
+        {
+          rotate: '20deg',
+        },
+      ],
+      opacity:
+        shineOpacity.value,
+    }));
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        {
+          position: 'absolute',
+          top: -90,
+          left: -20,
+          width: 70,
+          height: 280,
+          zIndex: 20,
+        },
+        animatedStyle,
+      ]}
+    >
+      <LinearGradient
+        colors={[
+          'transparent',
+          `${color}12`,
+          `${color}45`,
+          `${color}12`,
+          'transparent',
+        ]}
+        locations={[
+          0,
+          0.28,
+          0.5,
+          0.72,
+          1,
+        ]}
+        start={{
+          x: 0,
+          y: 0.5,
+        }}
+        end={{
+          x: 1,
+          y: 0.5,
+        }}
+        style={{
+          width: '100%',
+          height: '100%',
+        }}
+      />
+    </Animated.View>
+  );
+}
 
 function toPersianDate(
   date: Date
@@ -135,10 +251,6 @@ function toPersianDate(
   };
 }
 
-/* ==========================================================================
-   Persian Weekday
-   ========================================================================== */
-
 function getPersianWeekday(date: Date): string {
   const weekdays = [
     'یکشنبه',
@@ -152,10 +264,6 @@ function getPersianWeekday(date: Date): string {
 
   return weekdays[date.getDay()];
 }
-
-/* ==========================================================================
-   Persian Month
-   ========================================================================== */
 
 function getPersianMonthName(month: number): string {
   const monthNames = [
@@ -176,10 +284,6 @@ function getPersianMonthName(month: number): string {
   return monthNames[month - 1] || '';
 }
 
-/* ==========================================================================
-   Persian Digits
-   ========================================================================== */
-
 function toPersianDigits(value: string | number): string {
   const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
 
@@ -196,36 +300,12 @@ function toPersianDigits(value: string | number): string {
     .join('');
 }
 
-/* ==========================================================================
-   Screen
-   ========================================================================== */
-
 export default function ScheduleScreen() {
   const { colors, isDark } = useTheme();
   const { t, isRTL } = useLanguage();
   const router = useRouter();
 
-  /*
-   * IMPORTANT
-   * ---------------------------------------------------------------
-   * The requested layout is intentionally opposite to the normal
-   * language direction:
-   *
-   * English  -> timeline/cards on the RIGHT
-   * Persian  -> timeline/cards on the LEFT
-   *
-   * Therefore:
-   *
-   * isRTL === true  -> Persian -> LEFT
-   * isRTL === false -> English -> RIGHT
-   * ---------------------------------------------------------------
-   */
-
   const isLayoutRight = !isRTL;
-
-  /* ==========================================================================
-     Purple Palette
-     ========================================================================== */
 
   const softPurple = isDark
     ? '#8B78C7'
@@ -238,10 +318,6 @@ export default function ScheduleScreen() {
   const heroGradient: [string, string] = isDark
     ? ['#342660', '#21104F']
     : ['#F2EEFF', '#D8CEFA'];
-
-  /* ==========================================================================
-     Events
-     ========================================================================== */
 
   const [events, setEvents] = useState<Event[]>([
     {
@@ -307,10 +383,6 @@ export default function ScheduleScreen() {
   const [isFabOpen, setIsFabOpen] =
     useState(false);
 
-  /* ==========================================================================
-     Event Completion
-     ========================================================================== */
-
   const toggleCompletion = (
     id: string
   ) => {
@@ -334,10 +406,6 @@ export default function ScheduleScreen() {
 
   const totalCount = events.length;
 
-  /* ==========================================================================
-     Greeting
-     ========================================================================== */
-
   const getGreeting = () => {
     const hour = new Date().getHours();
 
@@ -360,10 +428,6 @@ export default function ScheduleScreen() {
       'Good evening'
     );
   };
-
-  /* ==========================================================================
-     Date
-     ========================================================================== */
 
   const getDateDisplay = () => {
     const now = new Date();
@@ -404,10 +468,6 @@ export default function ScheduleScreen() {
     );
   };
 
-  /* ==========================================================================
-     FAB Options
-     ========================================================================== */
-
   const fabOptions = [
     {
       id: 'task',
@@ -433,23 +493,11 @@ export default function ScheduleScreen() {
     },
   ];
 
-  /* ==========================================================================
-     Navigation
-     ========================================================================== */
-
   const handleNavigate = (
     route: string
   ) => {
     router.navigate(route as any);
   };
-
-  /* ==========================================================================
-     Dynamic Card Styles
-     --------------------------------------------------------------------------
-     IMPORTANT:
-     Card.tsx expects ViewStyle, not ViewStyle[].
-     Therefore every Card receives ONE plain style object.
-     ========================================================================== */
 
   const dateCardStyle = {
     ...styles.dateCard,
@@ -457,10 +505,6 @@ export default function ScheduleScreen() {
       ? colors.surface
       : '#FFFFFF',
   };
-
-  /* ==========================================================================
-     Render
-     ========================================================================== */
 
   return (
     <LinearGradient
@@ -479,10 +523,6 @@ export default function ScheduleScreen() {
           false
         }
       >
-        {/* ==================================================================
-            HERO
-            ================================================================== */}
-
         <MotiView
           from={{
             opacity: 0,
@@ -529,8 +569,6 @@ export default function ScheduleScreen() {
               },
             ]}
           >
-            {/* Avatar */}
-
             <MotiView
               from={{
                 opacity: 0,
@@ -560,8 +598,6 @@ export default function ScheduleScreen() {
                 />
               </View>
             </MotiView>
-
-            {/* Hero Text */}
 
             <MotiView
               from={{
@@ -631,10 +667,6 @@ export default function ScheduleScreen() {
           </LinearGradient>
         </MotiView>
 
-        {/* ==================================================================
-            DATE CARD
-            ================================================================== */}
-
         <MotiView
           from={{
             opacity: 0,
@@ -651,8 +683,29 @@ export default function ScheduleScreen() {
           }}
         >
           <Card
-            style={dateCardStyle}
+            style={[
+              dateCardStyle,
+              {
+                overflow: 'hidden',
+                position: 'relative',
+              },
+            ]}
           >
+            <ShineEffect
+              color={
+                isDark
+                  ? '#FFFFFF'
+                  : softPurple
+              }
+              delay={1800}
+              duration={1900}
+              opacity={
+                isDark
+                  ? 0.13
+                  : 0.09
+              }
+            />
+
             <View
               style={[
                 styles.dateContent,
@@ -777,12 +830,6 @@ export default function ScheduleScreen() {
           </Card>
         </MotiView>
 
-        {/* ==================================================================
-            TIMELINE
-            English  -> RIGHT
-            Persian  -> LEFT
-            ================================================================== */}
-
         <View style={styles.timeline}>
           {events.map(
             (event, index) => {
@@ -854,8 +901,6 @@ export default function ScheduleScreen() {
                         : styles.timelineItemLeft,
                     ]}
                   >
-                    {/* Timeline Line */}
-
                     {index <
                       events.length -
                         1 && (
@@ -872,8 +917,6 @@ export default function ScheduleScreen() {
                         ]}
                       />
                     )}
-
-                    {/* Timeline Dot */}
 
                     <View
                       style={[
@@ -893,13 +936,33 @@ export default function ScheduleScreen() {
                       ]}
                     />
 
-                    {/* Event Card */}
-
                     <Card
-                      style={
-                        eventCardStyle
-                      }
+                      style={[
+                        eventCardStyle,
+                        {
+                          overflow: 'hidden',
+                          position: 'relative',
+                        },
+                      ]}
                     >
+                      <ShineEffect
+                        color={
+                          isDark
+                            ? '#FFFFFF'
+                            : event.color
+                        }
+                        delay={
+                          1500 +
+                          index * 320
+                        }
+                        duration={1800}
+                        opacity={
+                          isDark
+                            ? 0.12
+                            : 0.08
+                        }
+                      />
+
                       <TouchableOpacity
                         onPress={() =>
                           toggleCompletion(
@@ -914,8 +977,6 @@ export default function ScheduleScreen() {
                         ]}
                         activeOpacity={0.7}
                       >
-                        {/* Event Icon */}
-
                         <View
                           style={[
                             styles.eventIconContainer,
@@ -936,15 +997,11 @@ export default function ScheduleScreen() {
                           />
                         </View>
 
-                        {/* Event Text */}
-
                         <View
                           style={
                             styles.eventTextContainer
                           }
                         >
-                          {/* Header */}
-
                           <View
                             style={[
                               styles.eventHeader,
@@ -977,8 +1034,6 @@ export default function ScheduleScreen() {
                                 event.title
                               }
                             </Text>
-
-                            {/* Status */}
 
                             <View
                               style={[
@@ -1021,8 +1076,6 @@ export default function ScheduleScreen() {
                             </View>
                           </View>
 
-                          {/* Details */}
-
                           <View
                             style={[
                               styles.eventDetails,
@@ -1063,8 +1116,6 @@ export default function ScheduleScreen() {
                             </Text>
                           </View>
 
-                          {/* Category */}
-
                           <View
                             style={[
                               styles.eventCategory,
@@ -1100,12 +1151,6 @@ export default function ScheduleScreen() {
           )}
         </View>
       </ScrollView>
-
-      {/* ====================================================================
-          FAB MENU
-          English -> LEFT
-          Persian -> RIGHT
-          ==================================================================== */}
 
       <AnimatePresence>
         {isFabOpen && (
@@ -1159,6 +1204,7 @@ export default function ScheduleScreen() {
                         {
                           backgroundColor:
                             option.color,
+                          overflow: 'hidden',
                         },
                       ]}
                       onPress={() => {
@@ -1191,6 +1237,16 @@ export default function ScheduleScreen() {
                       }}
                       activeOpacity={0.8}
                     >
+                      <ShineEffect
+                        color="#FFFFFF"
+                        delay={
+                          1300 +
+                          index * 250
+                        }
+                        duration={1600}
+                        opacity={0.16}
+                      />
+
                       <OptionIcon
                         size={24}
                         color="#FFFFFF"
@@ -1221,18 +1277,13 @@ export default function ScheduleScreen() {
         )}
       </AnimatePresence>
 
-      {/* ====================================================================
-          FAB
-          English -> LEFT
-          Persian -> RIGHT
-          ==================================================================== */}
-
       <TouchableOpacity
         style={[
           styles.fab,
           {
             backgroundColor:
               softPurple,
+            overflow: 'hidden',
           },
           isLayoutRight
             ? styles.fabLeft
@@ -1245,6 +1296,13 @@ export default function ScheduleScreen() {
         }
         activeOpacity={0.8}
       >
+        <ShineEffect
+          color="#FFFFFF"
+          delay={1200}
+          duration={1500}
+          opacity={0.18}
+        />
+
         <MotiView
           animate={{
             rotate: isFabOpen
@@ -1266,15 +1324,7 @@ export default function ScheduleScreen() {
   );
 }
 
-/* ==========================================================================
-   Styles
-   ========================================================================== */
-
 const styles = StyleSheet.create({
-  /* ==========================================================================
-     Container
-     ========================================================================== */
-
   container: {
     flex: 1,
     paddingTop: 40,
@@ -1285,10 +1335,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingBottom: 160,
   },
-
-  /* ==========================================================================
-     Hero
-     ========================================================================== */
 
   heroWrapper: {
     width: '100%',
@@ -1318,10 +1364,6 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
   },
 
-  /* ==========================================================================
-     Avatar
-     ========================================================================== */
-
   avatarContainer: {
     width: 220,
     height: 220,
@@ -1340,10 +1382,6 @@ const styles = StyleSheet.create({
 
     resizeMode: 'contain',
   },
-
-  /* ==========================================================================
-     Hero Text
-     ========================================================================== */
 
   greeting: {
     fontSize: 14,
@@ -1375,10 +1413,6 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
 
-  /* ==========================================================================
-     Date Card
-     ========================================================================== */
-
   dateCard: {
     marginBottom: Spacing.lg,
     padding: Spacing.md,
@@ -1391,19 +1425,9 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
-  /*
-   * English:
-   * Date section visually sits on the RIGHT.
-   */
-
   dateContentRight: {
     flexDirection: 'row-reverse',
   },
-
-  /*
-   * Persian:
-   * Date section visually sits on the LEFT.
-   */
 
   dateContentLeft: {
     flexDirection: 'row',
@@ -1472,17 +1496,9 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
 
-  /* ==========================================================================
-     Timeline
-     ========================================================================== */
-
   timeline: {
     paddingTop: Spacing.sm,
   },
-
-  /*
-   * English -> timeline on RIGHT
-   */
 
   timelineItemRight: {
     paddingRight: 20,
@@ -1492,10 +1508,6 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
 
-  /*
-   * Persian -> timeline on LEFT
-   */
-
   timelineItemLeft: {
     paddingLeft: 20,
     paddingRight: 0,
@@ -1503,10 +1515,6 @@ const styles = StyleSheet.create({
 
     position: 'relative',
   },
-
-  /* ==========================================================================
-     Timeline Line
-     ========================================================================== */
 
   timelineLine: {
     position: 'absolute',
@@ -1526,10 +1534,6 @@ const styles = StyleSheet.create({
     left: 6,
     right: 'auto',
   },
-
-  /* ==========================================================================
-     Timeline Dot
-     ========================================================================== */
 
   timelineDot: {
     position: 'absolute',
@@ -1555,21 +1559,9 @@ const styles = StyleSheet.create({
     right: 'auto',
   },
 
-  /* ==========================================================================
-     Event Card
-     ========================================================================== */
-
   eventCard: {
     padding: Spacing.md,
   },
-
-  /*
-   * English cards are placed to the RIGHT.
-   */
-
-  /* ==========================================================================
-     Event Content
-     ========================================================================== */
 
   eventContent: {
     width: '100%',
@@ -1583,10 +1575,6 @@ const styles = StyleSheet.create({
   eventContentLeft: {
     flexDirection: 'row',
   },
-
-  /* ==========================================================================
-     Event Icon
-     ========================================================================== */
 
   eventIconContainer: {
     width: 48,
@@ -1608,18 +1596,10 @@ const styles = StyleSheet.create({
     marginRight: Spacing.md,
   },
 
-  /* ==========================================================================
-     Event Text
-     ========================================================================== */
-
   eventTextContainer: {
     flex: 1,
     minWidth: 0,
   },
-
-  /* ==========================================================================
-     Event Header
-     ========================================================================== */
 
   eventHeader: {
     width: '100%',
@@ -1664,10 +1644,6 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.md,
   },
 
-  /* ==========================================================================
-     Event Details
-     ========================================================================== */
-
   eventDetails: {
     alignItems: 'center',
     marginTop: 6,
@@ -1695,10 +1671,6 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
 
-  /* ==========================================================================
-     Category
-     ========================================================================== */
-
   eventCategory: {
     marginTop: 4,
   },
@@ -1714,10 +1686,6 @@ const styles = StyleSheet.create({
   eventCategoryText: {
     fontSize: 12,
   },
-
-  /* ==========================================================================
-     FAB
-     ========================================================================== */
 
   fab: {
     position: 'absolute',
@@ -1747,27 +1715,15 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
 
-  /*
-   * English -> FAB LEFT
-   */
-
   fabLeft: {
     left: 30,
     right: 'auto',
   },
 
-  /*
-   * Persian -> FAB RIGHT
-   */
-
   fabRight: {
     right: 30,
     left: 'auto',
   },
-
-  /* ==========================================================================
-     FAB Menu
-     ========================================================================== */
 
   fabMenu: {
     position: 'absolute',
@@ -1777,29 +1733,17 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
 
-  /*
-   * English -> menu LEFT
-   */
-
   fabMenuLeft: {
     left: 20,
     right: 'auto',
     alignItems: 'flex-start',
   },
 
-  /*
-   * Persian -> menu RIGHT
-   */
-
   fabMenuRight: {
     right: 20,
     left: 'auto',
     alignItems: 'flex-end',
   },
-
-  /* ==========================================================================
-     FAB Options
-     ========================================================================== */
 
   fabOption: {
     alignItems: 'center',

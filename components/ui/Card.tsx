@@ -84,20 +84,6 @@ export function Card({
       style,
     ],
   );
-
-  /*
-   * Card animations are intentionally lighter
-   * than the previous version.
-   *
-   * Previous:
-   * opacity + translateY 20 + scale 0.95
-   *
-   * New:
-   * opacity + translateY 12 + scale 0.985
-   *
-   * This reduces the amount of work when many
-   * cards are rendered inside ScrollViews.
-   */
   if (animate) {
     return (
       <MotiView
