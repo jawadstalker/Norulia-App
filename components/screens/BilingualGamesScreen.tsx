@@ -44,7 +44,7 @@ const bilingualGames = [
     titleFa: 'حافظه دوزبانه',
     description: 'Train your memory with two languages',
     descriptionFa: 'حافظه خود را با دو زبان تقویت کن',
-    image: require('../../assets/games/game3.png'),
+    image: require('../../assets/games/game_10.png'),
     level: 'Medium',
     levelFa: 'متوسط',
     time: '8 min',
