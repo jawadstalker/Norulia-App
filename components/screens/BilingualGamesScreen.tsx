@@ -1,8 +1,3 @@
-// ============================================================
-//                      BILINGUAL GAMES SCREEN
-//              (دکمه برگشت در چپ، عنوان در راست)
-// ============================================================
-
 import React from 'react';
 import {
   View,
@@ -43,19 +38,19 @@ const bilingualGames = [
     timeFa: '۱۰ دقیقه',
     route: '/games/Word',
   },
-  // {
-  //   id: 'memory-bilingual',
-  //   title: 'Bilingual Memory',
-  //   titleFa: 'حافظه دوزبانه',
-  //   description: 'Train your memory with two languages',
-  //   descriptionFa: 'حافظه خود را با دو زبان تقویت کن',
-  //   image: require('../../assets/games/game3.png'),
-  //   level: 'Medium',
-  //   levelFa: 'متوسط',
-  //   time: '8 min',
-  //   timeFa: '۸ دقیقه',
-  //   route: '/games/memory-challenge',
-  // },
+  {
+    id: 'memory-bilingual',
+    title: 'Bilingual Memory',
+    titleFa: 'حافظه دوزبانه',
+    description: 'Train your memory with two languages',
+    descriptionFa: 'حافظه خود را با دو زبان تقویت کن',
+    image: require('../../assets/games/game3.png'),
+    level: 'Medium',
+    levelFa: 'متوسط',
+    time: '8 min',
+    timeFa: '۸ دقیقه',
+    route: '/games/BilingualSequence',
+  },
   {
     id: 'language-challenge',
     title: 'Language Challenge',
