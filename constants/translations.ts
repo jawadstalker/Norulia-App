@@ -643,7 +643,6 @@ endTime: 'زمان پایان',
 saveActivity: 'ذخیره فعالیت',
 activityAdded: 'فعالیت با موفقیت اضافه شد.',
 noActivities: 'فعالیتی برای نمایش وجود ندارد.',
-neurolia: 'نورولیا',
 // ===== Consultation =====
 consultationTitle: 'جلسه مشاوره',
 bookConsultation: 'رزرو جلسه مشاوره',

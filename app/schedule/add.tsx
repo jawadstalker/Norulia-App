@@ -2201,6 +2201,7 @@ const styles =
      * تا Back در سمت چپ باقی بماند.
      */
     header: {
+      paddingTop: 40,
       minHeight: 66,
 
       paddingHorizontal: 18,
@@ -2217,7 +2218,7 @@ const styles =
 
       height: 43,
 
-      borderRadius: 14,
+      borderRadius: 30,
 
       borderWidth: 1,
 

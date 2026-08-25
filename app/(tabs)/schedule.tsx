@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   Pressable,
   Alert,
+  Image,
 } from 'react-native';
 
 import { useFocusEffect } from '@react-navigation/native';
@@ -33,6 +34,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 
 import {
   Calendar,
@@ -50,8 +52,10 @@ import {
 } from 'lucide-react-native';
 
 import { useRouter } from 'expo-router';
+import { Spacing } from '../../constants/theme';
 
-const STORAGE_KEY = '@neurolia_schedule_custom_events';
+const STORAGE_KEY =
+  '@neurolia_schedule_custom_events';
 
 interface CustomEvent {
   id: string;
@@ -82,10 +86,6 @@ interface DisplayEvent {
   color: string;
   isCustom: boolean;
 }
-
-/* -------------------------------------------------------------------------- */
-/* Shine Effect                                                               */
-/* -------------------------------------------------------------------------- */
 
 function ShineEffect({
   color = '#FFFFFF',
@@ -196,10 +196,6 @@ function ShineEffect({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Persian Date                                                               */
-/* -------------------------------------------------------------------------- */
-
 function toPersianDate(
   date: Date,
 ): {
@@ -233,7 +229,11 @@ function toPersianDate(
 
   let dayOfYear = gd;
 
-  for (let i = 0; i < gm - 1; i++) {
+  for (
+    let i = 0;
+    i < gm - 1;
+    i++
+  ) {
     dayOfYear +=
       gDaysInMonth[i];
   }
@@ -251,6 +251,7 @@ function toPersianDate(
   }
 
   let jy = gy - 622;
+
   let jd =
     dayOfYear - 79;
 
@@ -361,10 +362,6 @@ function getPersianMonthName(
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Icon                                                                       */
-/* -------------------------------------------------------------------------- */
-
 function getIcon(
   type: CustomEvent['iconType'],
 ) {
@@ -387,10 +384,6 @@ function getIcon(
   }
 }
 
-/* -------------------------------------------------------------------------- */
-/* Schedule Screen                                                            */
-/* -------------------------------------------------------------------------- */
-
 export default function ScheduleScreen() {
   const {
     colors,
@@ -405,26 +398,37 @@ export default function ScheduleScreen() {
   const router =
     useRouter();
 
+  const { user } = useAuth();
+
+  const primary =
+    colors.primary;
+
   const softPurple =
     isDark
       ? '#9B87D4'
-      : '#8B78C7';
+      : primary;
 
   const softPurpleStrong =
     isDark
       ? '#8069C2'
-      : '#7358A8';
+      : primary;
 
   const green =
-    '#22C55E';
+    isDark
+      ? '#4ADE80'
+      : '#22C55E';
 
   const pink =
-    '#EC4899';
+    isDark
+      ? '#F472B6'
+      : '#EC4899';
 
-  const [customEvents, setCustomEvents] =
-    useState<CustomEvent[]>(
-      [],
-    );
+  const [
+    customEvents,
+    setCustomEvents,
+  ] = useState<CustomEvent[]>(
+    [],
+  );
 
   const [
     loadingEvents,
@@ -435,10 +439,6 @@ export default function ScheduleScreen() {
     isFabOpen,
     setIsFabOpen,
   ] = useState(false);
-
-  /* ---------------------------------------------------------------------- */
-  /* Load user events                                                       */
-  /* ---------------------------------------------------------------------- */
 
   const loadCustomEvents =
     useCallback(
@@ -488,11 +488,6 @@ export default function ScheduleScreen() {
       [],
     );
 
-  /*
-   * بسیار مهم:
-   * هر بار که از صفحه Add به Schedule برمی‌گردیم
-   * دوباره storage خوانده می‌شود.
-   */
   useFocusEffect(
     useCallback(() => {
       loadCustomEvents();
@@ -500,10 +495,6 @@ export default function ScheduleScreen() {
       loadCustomEvents,
     ]),
   );
-
-  /* ---------------------------------------------------------------------- */
-  /* Default events                                                         */
-  /* ---------------------------------------------------------------------- */
 
   const defaultEvents =
     useMemo<
@@ -521,12 +512,13 @@ export default function ScheduleScreen() {
             'Mindfulness',
           duration:
             `20 ${t.minutes || 'min'}`,
-          completed: true,
+          completed: false,
           icon: Brain,
           color:
             softPurple,
           isCustom: false,
         },
+
         {
           id: 'default-2',
           title:
@@ -544,6 +536,7 @@ export default function ScheduleScreen() {
             green,
           isCustom: false,
         },
+
         {
           id: 'default-3',
           title:
@@ -561,6 +554,7 @@ export default function ScheduleScreen() {
             pink,
           isCustom: false,
         },
+
         {
           id: 'default-4',
           title:
@@ -583,12 +577,27 @@ export default function ScheduleScreen() {
         t,
         softPurple,
         softPurpleStrong,
+        green,
+        pink,
       ],
     );
 
-  /* ---------------------------------------------------------------------- */
-  /* Convert custom events                                                  */
-  /* ---------------------------------------------------------------------- */
+  const [defaultEventsState, setDefaultEventsState] =
+    useState<DisplayEvent[]>(defaultEvents);
+
+  useEffect(() => {
+    setDefaultEventsState(defaultEvents);
+  }, [defaultEvents]);
+
+  const toggleDefaultEvent = (id: string) => {
+    setDefaultEventsState(prev =>
+      prev.map(event =>
+        event.id === id
+          ? { ...event, completed: !event.completed }
+          : event
+      )
+    );
+  };
 
   const userEvents =
     useMemo<
@@ -627,18 +636,14 @@ export default function ScheduleScreen() {
   const allEvents =
     useMemo(
       () => [
-        ...defaultEvents,
+        ...defaultEventsState,
         ...userEvents,
       ],
       [
-        defaultEvents,
+        defaultEventsState,
         userEvents,
       ],
     );
-
-  /* ---------------------------------------------------------------------- */
-  /* Completion                                                             */
-  /* ---------------------------------------------------------------------- */
 
   const completedCount =
     allEvents.filter(
@@ -687,9 +692,13 @@ export default function ScheduleScreen() {
       }
     };
 
-  /* ---------------------------------------------------------------------- */
-  /* Delete custom event                                                    */
-  /* ---------------------------------------------------------------------- */
+  const toggleEvent = (id: string, isCustom: boolean) => {
+    if (isCustom) {
+      toggleCustomEvent(id);
+    } else {
+      toggleDefaultEvent(id);
+    }
+  };
 
   const deleteCustomEvent =
     (
@@ -705,9 +714,11 @@ export default function ScheduleScreen() {
         isRTL
           ? 'حذف برنامه'
           : 'Delete activity',
+
         isRTL
           ? `آیا می‌خواهی «${event.title}» حذف شود؟`
           : `Delete "${event.title}" from your schedule?`,
+
         [
           {
             text:
@@ -717,6 +728,7 @@ export default function ScheduleScreen() {
             style:
               'cancel',
           },
+
           {
             text:
               isRTL
@@ -724,6 +736,7 @@ export default function ScheduleScreen() {
                 : 'Delete',
             style:
               'destructive',
+
             onPress:
               async () => {
                 const next =
@@ -748,10 +761,6 @@ export default function ScheduleScreen() {
         ],
       );
     };
-
-  /* ---------------------------------------------------------------------- */
-  /* Date                                                                    */
-  /* ---------------------------------------------------------------------- */
 
   const dateText =
     useMemo(() => {
@@ -792,10 +801,6 @@ export default function ScheduleScreen() {
       isRTL,
     ]);
 
-  /* ---------------------------------------------------------------------- */
-  /* Greeting                                                                */
-  /* ---------------------------------------------------------------------- */
-
   const greeting =
     useMemo(() => {
       const hour =
@@ -821,59 +826,72 @@ export default function ScheduleScreen() {
       );
     }, [t]);
 
-  /* ---------------------------------------------------------------------- */
-  /* FAB                                                                     */
-  /* ---------------------------------------------------------------------- */
-
   const fabOptions = [
     {
       id: 'activity',
+
       title:
         isRTL
           ? 'برنامه جدید'
           : 'New Activity',
+
       description:
         isRTL
           ? 'یک فعالیت به برنامه امروز اضافه کن'
           : 'Add a new activity to your day',
+
       icon:
         Sparkles,
+
       color:
         softPurple,
+
       route:
         '/schedule/add',
     },
+
     {
       id: 'medication',
+
       title:
         isRTL
           ? 'داروی جدید'
           : 'New Medication',
+
       description:
         isRTL
           ? 'دارو و یادآور مصرف آن'
           : 'Add a medication reminder',
+
       icon:
         Pill,
+
       color:
         green,
+
       route:
         '/medication/add',
     },
+
     {
       id: 'consultation',
+
       title:
         isRTL
           ? 'جلسات مشاوره'
           : 'Consultation',
+
       description:
         isRTL
           ? 'مشاهده جلسات مشاوره'
           : 'Open your counseling sessions',
+
       icon:
         Heart,
+
       color:
         pink,
+
       route:
         '/consultation',
     },
@@ -895,17 +913,13 @@ export default function ScheduleScreen() {
       );
     };
 
-  /* ---------------------------------------------------------------------- */
-  /* Handle FAB Press                                                       */
-  /* ---------------------------------------------------------------------- */
-
-  const handleFabPress = () => {
-    setIsFabOpen((previous) => !previous);
-  };
-
-  /* ---------------------------------------------------------------------- */
-  /* Render                                                                  */
-  /* ---------------------------------------------------------------------- */
+  const handleFabPress =
+    () => {
+      setIsFabOpen(
+        (previous) =>
+          !previous,
+      );
+    };
 
   return (
     <LinearGradient
@@ -939,97 +953,132 @@ export default function ScheduleScreen() {
           },
         ]}
       >
-        {/* -------------------------------------------------------------- */}
-        {/* Header                                                          */}
-        {/* -------------------------------------------------------------- */}
 
-        <MotiView
-          from={{
-            opacity: 0,
-            translateY: -18,
-          }}
-          animate={{
-            opacity: 1,
-            translateY: 0,
-          }}
-          transition={{
-            type: 'timing',
-            duration: 450,
-          }}
+        <LinearGradient
+          colors={
+            isDark
+              ? ['#342660', '#21104F']
+              : ['#F2EEFF', '#D8CEFA']
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={[
-            styles.header,
+            styles.scheduleHero,
             {
-              flexDirection:
-                isRTL
-                  ? 'row-reverse'
-                  : 'row',
+              borderColor: isDark
+                ? 'rgba(255,255,255,0.10)'
+                : 'rgba(107,90,166,0.06)',
+
+              shadowColor: isDark
+                ? '#000000'
+                : '#6B5AA6',
+
+              shadowOpacity: isDark
+                ? 0.20
+                : 0.08,
+
+              elevation: isDark
+                ? 8
+                : 3,
             },
           ]}
         >
-          <View
-            style={
-              styles.headerText
-            }
+
+          <View style={styles.scheduleCharacterStage}>
+
+            <MotiView
+              from={{
+                opacity: 0,
+                translateY: 30,
+                scale: 0.82,
+              }}
+              animate={{
+                opacity: 1,
+                translateY: 0,
+                scale: 1,
+              }}
+              transition={{
+                type: 'spring',
+                damping: 13,
+                stiffness: 120,
+                mass: 0.8,
+              }}
+              style={styles.scheduleCharacterWrapper}
+            >
+              <Image
+                source={require('../../assets/avatars/model6.png')}
+                style={styles.scheduleCharacterHead}
+              />
+            </MotiView>
+          </View>
+
+          <MotiView
+            from={{
+              opacity: 0,
+              translateY: 14,
+            }}
+            animate={{
+              opacity: 1,
+              translateY: 0,
+            }}
+            transition={{
+              type: 'timing',
+              duration: 450,
+              delay: 220,
+            }}
+            style={styles.scheduleHeroInfo}
           >
             <Text
               style={[
-                styles.greeting,
+                styles.scheduleHeroTitle,
                 {
-                  color:
-                    colors.textSecondary,
-                  textAlign:
-                    isRTL
-                      ? 'right'
-                      : 'left',
+                  color: isDark
+                    ? '#FFFFFF'
+                    : '#29213F',
                 },
               ]}
             >
-              {greeting}
+              {t.dailyPlanner || 'Daily Planner'}
             </Text>
 
             <Text
               style={[
-                styles.title,
+                styles.scheduleHeroSubtitle,
                 {
-                  color:
-                    colors.text,
-                  textAlign:
-                    isRTL
-                      ? 'right'
-                      : 'left',
+                  color: isDark
+                    ? 'rgba(255,255,255,0.72)'
+                    : 'rgba(41,33,63,0.62)',
                 },
               ]}
             >
-              {t.schedule ||
-                'Schedule'}
+              {user?.name
+                ? `${t.greeting || 'Hello'}, ${user.name}`
+                : t.activitiesToday || 'Activities Today'}
             </Text>
-          </View>
 
-          <View
-            style={[
-              styles.headerIcon,
-              {
-                backgroundColor:
-                  softPurple +
-                  '15',
-              },
-            ]}
-          >
-            <Calendar
-              size={23}
-              color={
-                softPurple
-              }
-              strokeWidth={
-                2.1
-              }
-            />
-          </View>
-        </MotiView>
-
-        {/* -------------------------------------------------------------- */}
-        {/* Date Card                                                       */}
-        {/* -------------------------------------------------------------- */}
+            <View
+              style={[
+                styles.scheduleHeroAccent,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255,255,255,0.22)'
+                    : 'rgba(41,33,63,0.16)',
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.scheduleHeroAccentDot,
+                  {
+                    backgroundColor: isDark
+                      ? 'rgba(255,255,255,0.85)'
+                      : 'rgba(41,33,63,0.60)',
+                  },
+                ]}
+              />
+            </View>
+          </MotiView>
+        </LinearGradient>
 
         <MotiView
           from={{
@@ -1043,7 +1092,7 @@ export default function ScheduleScreen() {
           transition={{
             type: 'timing',
             duration: 450,
-            delay: 70,
+            delay: 100,
           }}
           style={[
             styles.dateCard,
@@ -1151,10 +1200,6 @@ export default function ScheduleScreen() {
           </View>
         </MotiView>
 
-        {/* -------------------------------------------------------------- */}
-        {/* Progress                                                        */}
-        {/* -------------------------------------------------------------- */}
-
         <View
           style={[
             styles.progressBar,
@@ -1185,10 +1230,6 @@ export default function ScheduleScreen() {
             ]}
           />
         </View>
-
-        {/* -------------------------------------------------------------- */}
-        {/* Section header                                                  */}
-        {/* -------------------------------------------------------------- */}
 
         <View
           style={[
@@ -1275,10 +1316,6 @@ export default function ScheduleScreen() {
           )}
         </View>
 
-        {/* -------------------------------------------------------------- */}
-        {/* Events                                                          */}
-        {/* -------------------------------------------------------------- */}
-
         {loadingEvents ? (
           <View
             style={
@@ -1350,11 +1387,7 @@ export default function ScheduleScreen() {
                   >
                     <Pressable
                       onPress={() =>
-                        event.isCustom
-                          ? toggleCustomEvent(
-                              event.id,
-                            )
-                          : undefined
+                        toggleEvent(event.id, event.isCustom)
                       }
                       onLongPress={() =>
                         deleteCustomEvent(
@@ -1646,10 +1679,6 @@ export default function ScheduleScreen() {
           </AnimatePresence>
         )}
 
-        {/* -------------------------------------------------------------- */}
-        {/* Empty custom message                                            */}
-        {/* -------------------------------------------------------------- */}
-
         {userEvents.length ===
           0 && (
           <MotiView
@@ -1736,10 +1765,6 @@ export default function ScheduleScreen() {
         )}
       </ScrollView>
 
-      {/* ================================================================== */}
-      {/* FAB Overlay                                                         */}
-      {/* ================================================================== */}
-
       <AnimatePresence>
         {isFabOpen && (
           <MotiView
@@ -1823,7 +1848,9 @@ export default function ScheduleScreen() {
                             option.route,
                           )
                         }
-                        style={({ pressed }) => [
+                        style={({
+                          pressed,
+                        }) => [
                           styles.actionCard,
                           {
                             backgroundColor:
@@ -1917,14 +1944,13 @@ export default function ScheduleScreen() {
         )}
       </AnimatePresence>
 
-      {/* ================================================================== */}
-      {/* FAB                                                                  */}
-      {/* ================================================================== */}
-
       <MotiView
         animate={{
-          scale: isFabOpen ? 1 : 1,
-          rotate: isFabOpen ? '45deg' : '0deg',
+          scale: 1,
+          rotate:
+            isFabOpen
+              ? '45deg'
+              : '0deg',
         }}
         transition={{
           type: 'spring',
@@ -1934,21 +1960,36 @@ export default function ScheduleScreen() {
         style={[
           styles.fabWrapper,
           {
-            right: isRTL ? undefined : 22,
-            left: isRTL ? 22 : undefined,
+            right:
+              isRTL
+                ? undefined
+                : 22,
+            left:
+              isRTL
+                ? 22
+                : undefined,
           },
         ]}
       >
         <Pressable
-          onPress={handleFabPress}
-          style={({ pressed }) => [
+          onPress={
+            handleFabPress
+          }
+          style={({
+            pressed,
+          }) => [
             styles.fab,
             {
-              backgroundColor: softPurple,
-              shadowColor: softPurple,
+              backgroundColor:
+                primary,
+              shadowColor:
+                primary,
               transform: [
                 {
-                  scale: pressed ? 0.92 : 1,
+                  scale:
+                    pressed
+                      ? 0.92
+                      : 1,
                 },
               ],
             },
@@ -1958,13 +1999,17 @@ export default function ScheduleScreen() {
             <X
               size={25}
               color="#FFFFFF"
-              strokeWidth={2.4}
+              strokeWidth={
+                2.4
+              }
             />
           ) : (
             <Plus
               size={27}
               color="#FFFFFF"
-              strokeWidth={2.4}
+              strokeWidth={
+                2.4
+              }
             />
           )}
         </Pressable>
@@ -1972,10 +2017,6 @@ export default function ScheduleScreen() {
     </LinearGradient>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/* Styles                                                                     */
-/* -------------------------------------------------------------------------- */
 
 const styles =
   StyleSheet.create({
@@ -1985,38 +2026,96 @@ const styles =
 
     content: {
       paddingHorizontal: 18,
-      paddingTop: 22,
+      paddingTop: 18,
     },
 
-    header: {
+    scheduleHero: {
+      marginHorizontal: Spacing.lg,
+      marginTop: Spacing.lg,
+
+      paddingTop: 20,
+      paddingBottom: 34,
+      paddingHorizontal: Spacing.lg,
+
       alignItems: 'center',
-      justifyContent:
-        'space-between',
-      marginBottom: 18,
+
+      borderRadius: 32,
+      overflow: 'hidden',
+
+      borderWidth: 1,
+
+      shadowOffset: {
+        width: 0,
+        height: 10,
+      },
+
+      shadowRadius: 20,
     },
 
-    headerText: {
-      flex: 1,
-    },
+    scheduleCharacterStage: {
+      width: 190,
+      height: 175,
 
-    greeting: {
-      fontSize: 12,
-      fontWeight: '600',
-      marginBottom: 3,
-    },
-
-    title: {
-      fontSize: 28,
-      fontWeight: '900',
-      letterSpacing: -0.6,
-    },
-
-    headerIcon: {
-      width: 48,
-      height: 48,
-      borderRadius: 16,
       alignItems: 'center',
       justifyContent: 'center',
+
+      position: 'relative',
+    },
+
+    scheduleCharacterWrapper: {
+      width: 175,
+      height: 175,
+
+      alignItems: 'center',
+      justifyContent: 'center',
+
+      zIndex: 2,
+    },
+
+    scheduleCharacterHead: {
+      width: 175,
+      height: 175,
+
+      resizeMode: 'contain',
+    },
+
+    scheduleHeroInfo: {
+      alignItems: 'center',
+    },
+
+    scheduleHeroTitle: {
+      fontSize: 22,
+      fontWeight: '700',
+
+      textAlign: 'center',
+
+      marginTop: Spacing.sm,
+    },
+
+    scheduleHeroSubtitle: {
+      fontSize: 13,
+
+      textAlign: 'center',
+
+      marginTop: 4,
+    },
+
+    scheduleHeroAccent: {
+      width: 42,
+      height: 2,
+
+      marginTop: 12,
+
+      borderRadius: 2,
+
+      alignItems: 'flex-end',
+    },
+
+    scheduleHeroAccentDot: {
+      width: 10,
+      height: 2,
+
+      borderRadius: 2,
     },
 
     dateCard: {
@@ -2026,6 +2125,7 @@ const styles =
       padding: 13,
       alignItems: 'center',
       marginBottom: 12,
+      marginTop: Spacing.lg,
     },
 
     dateIcon: {

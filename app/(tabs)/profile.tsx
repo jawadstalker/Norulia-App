@@ -10,7 +10,6 @@ import {
 
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
-
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
