@@ -1357,11 +1357,6 @@ export default function SportsScreen() {
             );
           })}
         </View>
-
-        {/* ==========================================================
-            PERFORMANCE
-        ========================================================== */}
-
         <View
           style={[
             styles.performanceCard,
@@ -1525,9 +1520,6 @@ export default function SportsScreen() {
           </View>
         </View>
 
-        {/* ==========================================================
-            WEEKLY INSIGHT
-        ========================================================== */}
 
         <View
           style={[
@@ -1581,11 +1573,6 @@ export default function SportsScreen() {
             {text.weeklyInsightText}
           </Text>
         </View>
-
-        {/* ==========================================================
-            LOW ENERGY NOTE
-        ========================================================== */}
-
         <View
           style={[
             styles.noteCard,
@@ -1638,10 +1625,6 @@ export default function SportsScreen() {
   );
 }
 
-/* ================================================================
-   STYLES
-================================================================ */
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -1652,10 +1635,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
-
-  /* ==============================================================
-     HEADER
-  ============================================================== */
 
   header: {
     flexDirection: 'row',
@@ -1703,10 +1682,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
 
-  /* ==============================================================
-     PROGRESS
-  ============================================================== */
-
   progressCard: {
     borderRadius: 22,
     borderWidth: 1,
@@ -1750,28 +1725,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '900',
   },
-
   progressPercentLabel: {
     fontSize: 10,
     marginTop: 2,
   },
-
   progressTrack: {
     height: 7,
     borderRadius: 8,
     overflow: 'hidden',
     marginTop: 16,
   },
-
   progressFill: {
     height: '100%',
     borderRadius: 8,
   },
-
-  /* ==============================================================
-     SECTION
-  ============================================================== */
-
   sectionHeader: {
     marginBottom: 12,
   },
