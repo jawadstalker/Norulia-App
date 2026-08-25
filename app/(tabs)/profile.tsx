@@ -45,29 +45,12 @@ export default function ProfileScreen() {
     ? ChevronLeft
     : ChevronRight;
 
-  /*
-   * =========================================================
-   * PROFILE HERO GRADIENT
-   *
-   * Dark:
-   * Deep / premium purple
-   *
-   * Light:
-   * Soft / pastel purple
-   * =========================================================
-   */
 
   const heroGradient: [string, string] = isDark
     ? ['#342660', '#21104F']
     : ['#F2EEFF', '#D8CEFA'];
 
-  /*
-   * =========================================================
-   * SINGLE ICON COLOR
-   *
-   * تمام آیکون‌های صفحه از یک رنگ واحد استفاده می‌کنند.
-   * =========================================================
-   */
+
 
   const iconColor = isDark
     ? '#CFC6FF'

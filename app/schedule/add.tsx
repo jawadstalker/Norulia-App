@@ -1,4 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, {
+  useMemo,
+  useState,
+} from 'react';
+
 import {
   View,
   Text,
@@ -11,10 +15,27 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { MotiView } from 'moti';
+
+import {
+  useRouter,
+} from 'expo-router';
+
+import {
+  LinearGradient,
+} from 'expo-linear-gradient';
+
+import {
+  SafeAreaView,
+} from 'react-native-safe-area-context';
+
+import {
+  MotiView,
+} from 'moti';
+
 import * as Haptics from 'expo-haptics';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import {
   ArrowLeft,
   Brain,
@@ -27,68 +48,197 @@ import {
   Check,
   Minus,
   Plus,
+  Clock,
+  Sparkles,
 } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
 
-import { useTheme } from '../../context/ThemeContext';
-import { useLanguage } from '../../context/LanguageContext';
-import { Spacing, BorderRadius } from '../../constants/theme';
+import {
+  useTheme,
+} from '../../context/ThemeContext';
 
-type ActivityKey = 'training' | 'medication' | 'consultation';
+import {
+  useLanguage,
+} from '../../context/LanguageContext';
 
-function toPersianDigits(value: string | number): string {
-  const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
+const STORAGE_KEY =
+  '@neurolia_schedule_custom_events';
 
-  return value
-    .toString()
+type ActivityKey =
+  | 'training'
+  | 'medication'
+  | 'consultation';
+
+interface StoredScheduleEvent {
+  id: string;
+  title: string;
+  time: string;
+  category: string;
+  duration: string;
+  completed: boolean;
+  iconType:
+    | 'brain'
+    | 'pill'
+    | 'heart'
+    | 'moon'
+    | 'sparkles';
+  color: string;
+  reminderEnabled: boolean;
+  createdAt: number;
+}
+
+function toPersianDigits(
+  value: string | number,
+) {
+  const digits =
+    '۰۱۲۳۴۵۶۷۸۹';
+
+  return String(value)
     .split('')
-    .map((digit) => {
-      const number = parseInt(digit, 10);
-      return !isNaN(number) ? persianDigits[number] : digit;
+    .map((char) => {
+      const number =
+        Number(char);
+
+      return Number.isNaN(
+        number,
+      )
+        ? char
+        : digits[number];
     })
     .join('');
 }
 
-function pad(value: number): string {
-  return value.toString().padStart(2, '0');
+function pad(
+  value: number,
+) {
+  return String(value).padStart(
+    2,
+    '0',
+  );
 }
 
 export default function AddSchedule() {
-  const router = useRouter();
-  const { colors } = useTheme();
-  const { isRTL } = useLanguage();
+  const router =
+    useRouter();
+
+  const {
+    colors,
+    isDark,
+  } = useTheme();
+
+  const {
+    isRTL,
+  } = useLanguage();
 
   const TEXTS = {
-    headerTitle: isRTL ? 'فعالیت جدید' : 'New Activity',
-    headerSubtitle: isRTL ? 'افزودن به برنامه روزانه' : 'Add to your schedule',
-    heroTitle: isRTL ? 'برنامه‌ریزی هوشمند' : 'Plan something meaningful',
-    heroDescription: isRTL
-      ? 'یک یادآور ساده برای روتین روزانه‌ات بساز'
-      : 'Create a simple reminder for your daily routine.',
-    activityTypeLabel: isRTL ? 'نوع فعالیت' : 'Activity type',
-    detailsLabel: isRTL ? 'جزئیات فعالیت' : 'Activity details',
-    titleLabel: isRTL ? 'عنوان فعالیت' : 'Activity title',
-    titlePlaceholder: isRTL ? 'مثلاً مدیتیشن صبحگاهی' : 'e.g. Morning meditation',
-    timeLabel: isRTL ? 'زمان یادآوری' : 'Reminder time',
-    quickPicks: isRTL ? 'انتخاب سریع' : 'Quick picks',
-    reminderLabel: isRTL ? 'یادآوری' : 'Reminder',
-    reminderOnText: isRTL
-      ? 'در این ساعت به تو یادآوری می‌شود'
-      : 'You will be reminded at this time.',
-    reminderOffText: isRTL ? 'اعلانی ارسال نمی‌شود' : 'No notification will be sent.',
-    previewLabel: isRTL ? 'پیش‌نمایش فعالیت' : 'Activity preview',
-    previewPlaceholder: isRTL ? 'فعالیت جدید تو' : 'Your new activity',
-    createButton: isRTL ? 'ساخت فعالیت' : 'Create Activity',
-    createHint: isRTL
-      ? 'بعداً می‌تونی این فعالیت رو ویرایش یا حذف کنی'
-      : 'You can edit or remove this activity later.',
-    missingTitleTitle: isRTL ? 'عنوان لازم است' : 'Activity title required',
-    missingTitleMessage: isRTL
-      ? 'لطفاً یک عنوان برای فعالیت خود وارد کن.'
-      : 'Please enter a title for your activity.',
-    successTitle: isRTL ? 'فعالیت ساخته شد' : 'Schedule created',
-    successMessage: isRTL ? 'به برنامه روزانه‌ات اضافه شد.' : 'has been added to your schedule.',
-    ok: isRTL ? 'باشه' : 'OK',
+    headerTitle:
+      isRTL
+        ? 'فعالیت جدید'
+        : 'New Activity',
+
+    headerSubtitle:
+      isRTL
+        ? 'افزودن به برنامه روزانه'
+        : 'Add to your schedule',
+
+    heroTitle:
+      isRTL
+        ? 'برنامه‌ریزی هوشمند'
+        : 'Plan something meaningful',
+
+    heroDescription:
+      isRTL
+        ? 'یک فعالیت جدید برای برنامه روزانه‌ات بساز.'
+        : 'Create a new activity for your daily routine.',
+
+    activityTypeLabel:
+      isRTL
+        ? 'نوع فعالیت'
+        : 'Activity type',
+
+    detailsLabel:
+      isRTL
+        ? 'جزئیات فعالیت'
+        : 'Activity details',
+
+    titleLabel:
+      isRTL
+        ? 'عنوان فعالیت'
+        : 'Activity title',
+
+    titlePlaceholder:
+      isRTL
+        ? 'مثلاً تمرین تمرکز صبحگاهی'
+        : 'e.g. Morning focus training',
+
+    timeLabel:
+      isRTL
+        ? 'زمان'
+        : 'Time',
+
+    quickPicks:
+      isRTL
+        ? 'انتخاب سریع'
+        : 'Quick picks',
+
+    reminderLabel:
+      isRTL
+        ? 'یادآوری'
+        : 'Reminder',
+
+    reminderOnText:
+      isRTL
+        ? 'در زمان مشخص‌شده یادآوری می‌شود'
+        : 'You will be reminded at this time.',
+
+    reminderOffText:
+      isRTL
+        ? 'اعلانی ارسال نمی‌شود'
+        : 'No notification will be sent.',
+
+    previewLabel:
+      isRTL
+        ? 'پیش‌نمایش'
+        : 'Preview',
+
+    previewPlaceholder:
+      isRTL
+        ? 'فعالیت جدید تو'
+        : 'Your new activity',
+
+    createButton:
+      isRTL
+        ? 'افزودن به برنامه'
+        : 'Add to Schedule',
+
+    createHint:
+      isRTL
+        ? 'برنامه در صفحه Schedule ذخیره خواهد شد.'
+        : 'The activity will appear on your Schedule.',
+
+    missingTitleTitle:
+      isRTL
+        ? 'عنوان لازم است'
+        : 'Activity title required',
+
+    missingTitleMessage:
+      isRTL
+        ? 'لطفاً یک عنوان برای فعالیت وارد کن.'
+        : 'Please enter a title for your activity.',
+
+    successTitle:
+      isRTL
+        ? 'برنامه اضافه شد'
+        : 'Activity added',
+
+    successMessage:
+      isRTL
+        ? 'با موفقیت به برنامه امروز اضافه شد.'
+        : 'has been added to your schedule.',
+
+    ok:
+      isRTL
+        ? 'باشه'
+        : 'OK',
   };
 
   const ACTIVITY_CONFIG: {
@@ -97,526 +247,1643 @@ export default function AddSchedule() {
     description: string;
     color: string;
     icon: typeof Brain;
+    category: string;
   }[] = [
     {
       key: 'training',
-      name: isRTL ? 'تمرین ذهنی' : 'Brain Training',
-      description: isRTL ? 'بازی‌ها و تمرین‌های شناختی' : 'Cognitive exercises & games',
-      color: '#7C3AED',
+      name:
+        isRTL
+          ? 'تمرین ذهنی'
+          : 'Brain Training',
+      description:
+        isRTL
+          ? 'بازی و تمرین شناختی'
+          : 'Cognitive exercises & games',
+      color:
+        isDark
+          ? '#A58BE6'
+          : '#7C3AED',
       icon: Brain,
+      category:
+        isRTL
+          ? 'تمرین ذهنی'
+          : 'Brain Training',
     },
+
     {
       key: 'medication',
-      name: isRTL ? 'دارو' : 'Medication',
-      description: isRTL ? 'یادآور مصرف دارو' : 'Medicine & health reminders',
-      color: '#22C55E',
+      name:
+        isRTL
+          ? 'دارو'
+          : 'Medication',
+      description:
+        isRTL
+          ? 'یادآور مصرف دارو'
+          : 'Medicine reminder',
+      color:
+        '#22C55E',
       icon: Pill,
+      category:
+        isRTL
+          ? 'سلامت'
+          : 'Health',
     },
+
     {
       key: 'consultation',
-      name: isRTL ? 'مشاوره' : 'Consultation',
-      description: isRTL ? 'جلسات و قرار ملاقات' : 'Appointments & counseling',
-      color: '#EC4899',
+      name:
+        isRTL
+          ? 'مشاوره'
+          : 'Consultation',
+      description:
+        isRTL
+          ? 'جلسه و قرار مشاوره'
+          : 'Counseling appointment',
+      color:
+        '#EC4899',
       icon: Heart,
+      category:
+        isRTL
+          ? 'سلامت روان'
+          : 'Mental Health',
     },
   ];
 
   const TIME_PRESETS = [
-    { label: isRTL ? 'صبح' : 'Morning', hour: 8, minute: 0 },
-    { label: isRTL ? 'ظهر' : 'Noon', hour: 12, minute: 30 },
-    { label: isRTL ? 'عصر' : 'Evening', hour: 18, minute: 0 },
-    { label: isRTL ? 'شب' : 'Night', hour: 21, minute: 30 },
+    {
+      label:
+        isRTL
+          ? 'صبح'
+          : 'Morning',
+      hour: 8,
+      minute: 0,
+    },
+    {
+      label:
+        isRTL
+          ? 'ظهر'
+          : 'Noon',
+      hour: 12,
+      minute: 30,
+    },
+    {
+      label:
+        isRTL
+          ? 'عصر'
+          : 'Evening',
+      hour: 18,
+      minute: 0,
+    },
+    {
+      label:
+        isRTL
+          ? 'شب'
+          : 'Night',
+      hour: 21,
+      minute: 30,
+    },
   ];
 
-  const [selectedKey, setSelectedKey] = useState<ActivityKey>('training');
-  const [title, setTitle] = useState('');
-  const [hour, setHour] = useState(9);
-  const [minute, setMinute] = useState(0);
-  const [reminderOn, setReminderOn] = useState(true);
-  const [titleFocused, setTitleFocused] = useState(false);
-  const [titleError, setTitleError] = useState(false);
+  const [
+    selectedKey,
+    setSelectedKey,
+  ] =
+    useState<ActivityKey>(
+      'training',
+    );
 
-  const selectedActivity = useMemo(
-    () => ACTIVITY_CONFIG.find((item) => item.key === selectedKey) ?? ACTIVITY_CONFIG[0],
-    [selectedKey, isRTL],
-  );
+  const [
+    title,
+    setTitle,
+  ] = useState('');
 
-  const SelectedIcon = selectedActivity.icon;
+  const [
+    hour,
+    setHour,
+  ] = useState(9);
 
-  const lightHaptic = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-  };
+  const [
+    minute,
+    setMinute,
+  ] = useState(0);
 
-  const selectionHaptic = () => {
-    Haptics.selectionAsync().catch(() => {});
-  };
+  const [
+    reminderOn,
+    setReminderOn,
+  ] = useState(true);
 
-  const handleSelectType = (key: ActivityKey) => {
-    selectionHaptic();
-    setSelectedKey(key);
-  };
+  const [
+    titleFocused,
+    setTitleFocused,
+  ] = useState(false);
 
-  const adjustHour = (direction: 1 | -1) => {
-    selectionHaptic();
-    setHour((current) => (current + direction + 24) % 24);
-  };
+  const [
+    titleError,
+    setTitleError,
+  ] = useState(false);
 
-  const adjustMinute = (direction: 1 | -1) => {
-    selectionHaptic();
-    setMinute((current) => (current + direction * 5 + 60) % 60);
-  };
-
-  const applyPreset = (presetHour: number, presetMinute: number) => {
-    selectionHaptic();
-    setHour(presetHour);
-    setMinute(presetMinute);
-  };
-
-  const toggleReminder = () => {
-    lightHaptic();
-    setReminderOn((value) => !value);
-  };
-
-  const timeLabel = isRTL
-    ? `${toPersianDigits(pad(hour))}:${toPersianDigits(pad(minute))}`
-    : `${pad(hour)}:${pad(minute)}`;
-
-  const handleCreateSchedule = () => {
-    if (!title.trim()) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-      setTitleError(true);
-      setTimeout(() => setTitleError(false), 1200);
-      Alert.alert(TEXTS.missingTitleTitle, TEXTS.missingTitleMessage);
-      return;
-    }
-
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-
-    Alert.alert(
-      TEXTS.successTitle,
-      `${title.trim()} ${TEXTS.successMessage}`,
+  const selectedActivity =
+    useMemo(
+      () =>
+        ACTIVITY_CONFIG.find(
+          (item) =>
+            item.key ===
+            selectedKey,
+        ) ??
+        ACTIVITY_CONFIG[0],
       [
-        {
-          text: TEXTS.ok,
-          onPress: () => router.back(),
-        },
+        selectedKey,
+        isRTL,
+        isDark,
       ],
     );
-  };
+
+  const SelectedIcon =
+    selectedActivity.icon;
+
+  const lightHaptic =
+    () => {
+      Haptics.impactAsync(
+        Haptics.ImpactFeedbackStyle.Light,
+      ).catch(() => {});
+    };
+
+  const selectionHaptic =
+    () => {
+      Haptics.selectionAsync().catch(
+        () => {},
+      );
+    };
+
+  const handleSelectType =
+    (
+      key: ActivityKey,
+    ) => {
+      selectionHaptic();
+      setSelectedKey(
+        key,
+      );
+    };
+
+  const adjustHour =
+    (
+      direction: 1 | -1,
+    ) => {
+      selectionHaptic();
+
+      setHour(
+        (current) =>
+          (current +
+            direction +
+            24) %
+          24,
+      );
+    };
+
+  const adjustMinute =
+    (
+      direction: 1 | -1,
+    ) => {
+      selectionHaptic();
+
+      setMinute(
+        (current) =>
+          (current +
+            direction * 5 +
+            60) %
+          60,
+      );
+    };
+
+  const applyPreset =
+    (
+      presetHour: number,
+      presetMinute: number,
+    ) => {
+      selectionHaptic();
+
+      setHour(
+        presetHour,
+      );
+
+      setMinute(
+        presetMinute,
+      );
+    };
+
+  const toggleReminder =
+    () => {
+      lightHaptic();
+
+      setReminderOn(
+        (value) =>
+          !value,
+      );
+    };
+
+  const timeLabel =
+    isRTL
+      ? `${toPersianDigits(
+          pad(hour),
+        )}:${toPersianDigits(
+          pad(minute),
+        )}`
+      : `${pad(
+          hour,
+        )}:${pad(minute)}`;
+
+  /* ---------------------------------------------------------------------- */
+  /* REAL SAVE                                                              */
+  /* ---------------------------------------------------------------------- */
+
+  const handleCreateSchedule =
+    async () => {
+      const cleanTitle =
+        title.trim();
+
+      if (!cleanTitle) {
+        Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Warning,
+        ).catch(() => {});
+
+        setTitleError(
+          true,
+        );
+
+        setTimeout(
+          () =>
+            setTitleError(
+              false,
+            ),
+          1200,
+        );
+
+        Alert.alert(
+          TEXTS.missingTitleTitle,
+          TEXTS.missingTitleMessage,
+        );
+
+        return;
+      }
+
+      try {
+        Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        ).catch(() => {});
+
+        const stored =
+          await AsyncStorage.getItem(
+            STORAGE_KEY,
+          );
+
+        let current:
+          StoredScheduleEvent[] =
+          [];
+
+        if (stored) {
+          try {
+            const parsed =
+              JSON.parse(
+                stored,
+              );
+
+            if (
+              Array.isArray(
+                parsed,
+              )
+            ) {
+              current =
+                parsed;
+            }
+          } catch {
+            current =
+              [];
+          }
+        }
+
+        const newEvent: StoredScheduleEvent =
+          {
+            id: `custom-${Date.now()}-${Math.random()
+              .toString(36)
+              .slice(2, 8)}`,
+
+            title:
+              cleanTitle,
+
+            time:
+              timeLabel,
+
+            category:
+              selectedActivity.category,
+
+            duration:
+              selectedKey ===
+              'consultation'
+                ? isRTL
+                  ? '۴۵ دقیقه'
+                  : '45 min'
+                : selectedKey ===
+                    'training'
+                  ? isRTL
+                    ? '۲۰ دقیقه'
+                    : '20 min'
+                  : isRTL
+                    ? '۵ دقیقه'
+                    : '5 min',
+
+            completed:
+              false,
+
+            iconType:
+              selectedKey ===
+              'training'
+                ? 'brain'
+                : selectedKey ===
+                    'medication'
+                  ? 'pill'
+                  : 'heart',
+
+            color:
+              selectedActivity.color,
+
+            reminderEnabled:
+              reminderOn,
+
+            createdAt:
+              Date.now(),
+          };
+
+        const next =
+          [
+            ...current,
+            newEvent,
+          ];
+
+        await AsyncStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify(
+            next,
+          ),
+        );
+
+        Alert.alert(
+          TEXTS.successTitle,
+          `${cleanTitle} ${TEXTS.successMessage}`,
+          [
+            {
+              text:
+                TEXTS.ok,
+              onPress:
+                () => {
+                  /*
+                   * replace باعث می‌شود صفحه Add روی stack باقی نماند
+                   * و Schedule دوباره focus شود.
+                   */
+                  router.replace(
+                    '/(tabs)/schedule',
+                  );
+                },
+            },
+          ],
+        );
+      } catch (error) {
+        console.error(
+          'CREATE SCHEDULE ERROR:',
+          error,
+        );
+
+        Alert.alert(
+          isRTL
+            ? 'خطا'
+            : 'Error',
+          isRTL
+            ? 'ذخیره برنامه انجام نشد.'
+            : 'The activity could not be saved.',
+        );
+      }
+    };
 
   return (
     <LinearGradient
-      colors={[colors.background, colors.background]}
-      style={styles.container}
+      colors={[
+        colors.background,
+        colors.background,
+      ]}
+      style={
+        styles.container
+      }
     >
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <SafeAreaView
+        style={
+          styles.safeArea
+        }
+        edges={[
+          'top',
+          'bottom',
+        ]}
+      >
         <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={
+            styles.flex
+          }
+          behavior={
+            Platform.OS ===
+            'ios'
+              ? 'padding'
+              : undefined
+          }
         >
-          <MotiView
-            from={{ opacity: 0, translateY: -12 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 350 }}
-            style={[styles.header, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+          {/* ============================================================ */}
+          {/* HEADER                                                        */}
+          {/* ============================================================ */}
+
+          <View
+            style={[
+              styles.header,
+              {
+                flexDirection:
+                  isRTL
+                    ? 'row-reverse'
+                    : 'row',
+              },
+            ]}
           >
             <TouchableOpacity
+              activeOpacity={
+                0.75
+              }
               onPress={() => {
                 lightHaptic();
                 router.back();
               }}
-              activeOpacity={0.75}
               style={[
                 styles.backButton,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                {
+                  backgroundColor:
+                    colors.surface,
+                  borderColor:
+                    colors.border,
+                },
               ]}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <ArrowLeft size={20} color={colors.text} strokeWidth={2.2} />
+              <ArrowLeft
+                size={20}
+                color={
+                  colors.text
+                }
+                strokeWidth={
+                  2.2
+                }
+              />
             </TouchableOpacity>
 
-            <View style={styles.headerCenter}>
-              <Text style={[styles.headerTitle, { color: colors.text }]}>
-                {TEXTS.headerTitle}
+            <View
+              style={
+                styles.headerCenter
+              }
+            >
+              <Text
+                style={[
+                  styles.headerTitle,
+                  {
+                    color:
+                      colors.text,
+                  },
+                ]}
+              >
+                {
+                  TEXTS.headerTitle
+                }
               </Text>
-              <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-                {TEXTS.headerSubtitle}
+
+              <Text
+                style={[
+                  styles.headerSubtitle,
+                  {
+                    color:
+                      colors.textSecondary,
+                  },
+                ]}
+              >
+                {
+                  TEXTS.headerSubtitle
+                }
               </Text>
             </View>
 
-            <View style={styles.headerSpacer} />
-          </MotiView>
+            <View
+              style={
+                styles.headerSpacer
+              }
+            />
+          </View>
 
           <ScrollView
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator={
+              false
+            }
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={
+              styles.scrollContent
+            }
           >
+            {/* ======================================================== */}
+            {/* HERO                                                      */}
+            {/* ======================================================== */}
+
             <MotiView
-              from={{ opacity: 0, translateY: 14 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ type: 'timing', duration: 400, delay: 60 }}
+              from={{
+                opacity: 0,
+                translateY: 12,
+              }}
+              animate={{
+                opacity: 1,
+                translateY: 0,
+              }}
+              transition={{
+                type: 'timing',
+                duration: 400,
+              }}
               style={[
                 styles.hero,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                {
+                  backgroundColor:
+                    colors.surface,
+                  borderColor:
+                    colors.border,
+                },
               ]}
             >
               <LinearGradient
-                colors={[selectedActivity.color, selectedActivity.color + 'AA']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.heroIcon}
+                colors={[
+                  selectedActivity.color,
+                  selectedActivity.color +
+                    'A8',
+                ]}
+                start={{
+                  x: 0,
+                  y: 0,
+                }}
+                end={{
+                  x: 1,
+                  y: 1,
+                }}
+                style={
+                  styles.heroIcon
+                }
               >
-                <Calendar size={22} color="#FFFFFF" strokeWidth={2.2} />
+                <Sparkles
+                  size={22}
+                  color="#FFFFFF"
+                  strokeWidth={
+                    2.2
+                  }
+                />
               </LinearGradient>
 
-              <View style={styles.heroText}>
-                <Text style={[styles.heroTitle, { color: colors.text }]}>
-                  {TEXTS.heroTitle}
+              <View
+                style={
+                  styles.heroText
+                }
+              >
+                <Text
+                  style={[
+                    styles.heroTitle,
+                    {
+                      color:
+                        colors.text,
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
+                  ]}
+                >
+                  {
+                    TEXTS.heroTitle
+                  }
                 </Text>
-                <Text style={[styles.heroDescription, { color: colors.textSecondary }]}>
-                  {TEXTS.heroDescription}
+
+                <Text
+                  style={[
+                    styles.heroDescription,
+                    {
+                      color:
+                        colors.textSecondary,
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
+                  ]}
+                >
+                  {
+                    TEXTS.heroDescription
+                  }
                 </Text>
               </View>
             </MotiView>
 
-            <MotiView
-              from={{ opacity: 0, translateY: 16 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ type: 'timing', duration: 400, delay: 120 }}
-              style={styles.section}
+            {/* ======================================================== */}
+            {/* TYPE                                                       */}
+            {/* ======================================================== */}
+
+            <View
+              style={
+                styles.section
+              }
             >
-              <SectionHeader title={TEXTS.activityTypeLabel} colors={colors} isRTL={isRTL} />
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  {
+                    color:
+                      colors.text,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {
+                  TEXTS.activityTypeLabel
+                }
+              </Text>
 
-              <View style={[styles.typeRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                {ACTIVITY_CONFIG.map((activity, index) => {
-                  const Icon = activity.icon;
-                  const isSelected = selectedKey === activity.key;
+              <View
+                style={[
+                  styles.typeRow,
+                  {
+                    flexDirection:
+                      isRTL
+                        ? 'row-reverse'
+                        : 'row',
+                  },
+                ]}
+              >
+                {ACTIVITY_CONFIG.map(
+                  (
+                    activity,
+                  ) => {
+                    const Icon =
+                      activity.icon;
 
-                  return (
-                    <MotiView
-                      key={activity.key}
-                      from={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ type: 'timing', duration: 300, delay: 140 + index * 60 }}
-                      style={styles.typeCardWrapper}
-                    >
+                    const selected =
+                      selectedKey ===
+                      activity.key;
+
+                    return (
                       <Pressable
-                        onPress={() => handleSelectType(activity.key)}
+                        key={
+                          activity.key
+                        }
+                        onPress={() =>
+                          handleSelectType(
+                            activity.key,
+                          )
+                        }
                         style={({ pressed }) => [
                           styles.typeCard,
                           {
-                            backgroundColor: isSelected
-                              ? activity.color + '14'
-                              : colors.surface,
-                            borderColor: isSelected ? activity.color : colors.border,
-                            borderWidth: isSelected ? 1.5 : 1,
-                            transform: [{ scale: pressed ? 0.96 : 1 }],
+                            backgroundColor:
+                              selected
+                                ? activity.color +
+                                  '12'
+                                : colors.surface,
+                            borderColor:
+                              selected
+                                ? activity.color
+                                : colors.border,
+                            transform: [
+                              {
+                                scale:
+                                  pressed
+                                    ? 0.97
+                                    : 1,
+                              },
+                            ],
                           },
                         ]}
                       >
                         <View
                           style={[
                             styles.typeIcon,
-                            { backgroundColor: activity.color + '1C' },
+                            {
+                              backgroundColor:
+                                activity.color +
+                                '1A',
+                            },
                           ]}
                         >
-                          <Icon size={20} color={activity.color} strokeWidth={2.1} />
+                          <Icon
+                            size={
+                              20
+                            }
+                            color={
+                              activity.color
+                            }
+                            strokeWidth={
+                              2.1
+                            }
+                          />
                         </View>
 
                         <Text
-                          style={[styles.typeName, { color: colors.text }]}
-                          numberOfLines={1}
+                          style={[
+                            styles.typeName,
+                            {
+                              color:
+                                colors.text,
+                              textAlign:
+                                isRTL
+                                  ? 'right'
+                                  : 'left',
+                            },
+                          ]}
+                          numberOfLines={
+                            1
+                          }
                         >
-                          {activity.name}
+                          {
+                            activity.name
+                          }
                         </Text>
 
                         <Text
-                          style={[styles.typeDescription, { color: colors.textSecondary }]}
-                          numberOfLines={2}
+                          style={[
+                            styles.typeDescription,
+                            {
+                              color:
+                                colors.textSecondary,
+                              textAlign:
+                                isRTL
+                                  ? 'right'
+                                  : 'left',
+                            },
+                          ]}
+                          numberOfLines={
+                            2
+                          }
                         >
-                          {activity.description}
+                          {
+                            activity.description
+                          }
                         </Text>
 
-                        {isSelected && (
+                        {selected && (
                           <View
-                            style={[styles.typeCheck, { backgroundColor: activity.color }]}
+                            style={[
+                              styles.typeCheck,
+                              {
+                                backgroundColor:
+                                  activity.color,
+                              },
+                            ]}
                           >
-                            <Check size={11} color="#FFFFFF" strokeWidth={3} />
+                            <Check
+                              size={
+                                11
+                              }
+                              color="#FFFFFF"
+                              strokeWidth={
+                                3
+                              }
+                            />
                           </View>
                         )}
                       </Pressable>
-                    </MotiView>
-                  );
-                })}
+                    );
+                  },
+                )}
               </View>
-            </MotiView>
+            </View>
 
-            <MotiView
-              from={{ opacity: 0, translateY: 16 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ type: 'timing', duration: 400, delay: 200 }}
-              style={styles.section}
+            {/* ======================================================== */}
+            {/* TITLE                                                      */}
+            {/* ======================================================== */}
+
+            <View
+              style={
+                styles.section
+              }
             >
-              <SectionHeader title={TEXTS.detailsLabel} colors={colors} isRTL={isRTL} />
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  {
+                    color:
+                      colors.text,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {
+                  TEXTS.detailsLabel
+                }
+              </Text>
 
               <Text
                 style={[
                   styles.fieldLabel,
-                  { color: colors.text, textAlign: isRTL ? 'right' : 'left' },
+                  {
+                    color:
+                      colors.text,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
                 ]}
               >
-                {TEXTS.titleLabel}
+                {
+                  TEXTS.titleLabel
+                }
               </Text>
 
               <View
                 style={[
                   styles.inputContainer,
-                  { flexDirection: isRTL ? 'row-reverse' : 'row' },
                   {
-                    backgroundColor: colors.surface,
-                    borderColor: titleError
-                      ? colors.error
-                      : titleFocused
-                        ? colors.primary
-                        : colors.border,
+                    flexDirection:
+                      isRTL
+                        ? 'row-reverse'
+                        : 'row',
+
+                    backgroundColor:
+                      colors.surface,
+
+                    borderColor:
+                      titleError
+                        ? colors.error
+                        : titleFocused
+                          ? colors.primary
+                          : colors.border,
                   },
                 ]}
               >
-                <View style={[styles.inputIcon, { backgroundColor: colors.primary + '14' }]}>
-                  <PenLine size={16} color={colors.primary} strokeWidth={2.2} />
+                <View
+                  style={[
+                    styles.inputIcon,
+                    {
+                      backgroundColor:
+                        colors.primary +
+                        '14',
+                    },
+                  ]}
+                >
+                  <PenLine
+                    size={16}
+                    color={
+                      colors.primary
+                    }
+                    strokeWidth={
+                      2.2
+                    }
+                  />
                 </View>
 
                 <TextInput
                   value={title}
-                  onChangeText={(value) => {
-                    setTitle(value);
-                    if (titleError) {
-                      setTitleError(false);
+                  onChangeText={(
+                    value,
+                  ) => {
+                    setTitle(
+                      value,
+                    );
+
+                    if (
+                      titleError
+                    ) {
+                      setTitleError(
+                        false,
+                      );
                     }
                   }}
-                  onFocus={() => setTitleFocused(true)}
-                  onBlur={() => setTitleFocused(false)}
-                  placeholder={TEXTS.titlePlaceholder}
-                  placeholderTextColor={colors.textSecondary}
+                  onFocus={() =>
+                    setTitleFocused(
+                      true,
+                    )
+                  }
+                  onBlur={() =>
+                    setTitleFocused(
+                      false,
+                    )
+                  }
+                  placeholder={
+                    TEXTS.titlePlaceholder
+                  }
+                  placeholderTextColor={
+                    colors.textSecondary
+                  }
                   style={[
                     styles.input,
-                    { color: colors.text, textAlign: isRTL ? 'right' : 'left' },
+                    {
+                      color:
+                        colors.text,
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
                   ]}
                   returnKeyType="done"
                 />
               </View>
-            </MotiView>
+            </View>
 
-            <MotiView
-              from={{ opacity: 0, translateY: 16 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ type: 'timing', duration: 400, delay: 260 }}
-              style={styles.section}
+            {/* ======================================================== */}
+            {/* TIME                                                       */}
+            {/* ======================================================== */}
+
+            <View
+              style={
+                styles.section
+              }
             >
-              <SectionHeader title={TEXTS.timeLabel} colors={colors} isRTL={isRTL} />
+              <View
+                style={[
+                  styles.sectionTitleRow,
+                  {
+                    flexDirection:
+                      isRTL
+                        ? 'row-reverse'
+                        : 'row',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    {
+                      color:
+                        colors.text,
+                    },
+                  ]}
+                >
+                  {
+                    TEXTS.timeLabel
+                  }
+                </Text>
+
+                <View
+                  style={[
+                    styles.clockBadge,
+                    {
+                      backgroundColor:
+                        selectedActivity.color +
+                        '12',
+                    },
+                  ]}
+                >
+                  <Clock
+                    size={13}
+                    color={
+                      selectedActivity.color
+                    }
+                  />
+                </View>
+              </View>
 
               <View
                 style={[
-                  styles.timeCard,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  styles.timePicker,
+                  {
+                    backgroundColor:
+                      colors.surface,
+                    borderColor:
+                      colors.border,
+                  },
                 ]}
               >
-                <View style={[styles.timeRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                  <TimeStepper
-                    displayValue={isRTL ? toPersianDigits(pad(hour)) : pad(hour)}
-                    onIncrease={() => adjustHour(1)}
-                    onDecrease={() => adjustHour(-1)}
-                    color={selectedActivity.color}
-                    colors={colors}
-                  />
+                <View
+                  style={
+                    styles.timePart
+                  }
+                >
+                  <TouchableOpacity
+                    activeOpacity={
+                      0.7
+                    }
+                    onPress={() =>
+                      adjustHour(
+                        1,
+                      )
+                    }
+                    style={[
+                      styles.stepButton,
+                      {
+                        backgroundColor:
+                          colors.background,
+                      },
+                    ]}
+                  >
+                    <Plus
+                      size={17}
+                      color={
+                        colors.text
+                      }
+                    />
+                  </TouchableOpacity>
 
-                  <Text style={[styles.timeColon, { color: colors.text }]}>:</Text>
+                  <Text
+                    style={[
+                      styles.timeNumber,
+                      {
+                        color:
+                          colors.text,
+                      },
+                    ]}
+                  >
+                    {isRTL
+                      ? toPersianDigits(
+                          pad(
+                            hour,
+                          ),
+                        )
+                      : pad(
+                          hour,
+                        )}
+                  </Text>
 
-                  <TimeStepper
-                    displayValue={isRTL ? toPersianDigits(pad(minute)) : pad(minute)}
-                    onIncrease={() => adjustMinute(1)}
-                    onDecrease={() => adjustMinute(-1)}
-                    color={selectedActivity.color}
-                    colors={colors}
-                  />
+                  <TouchableOpacity
+                    activeOpacity={
+                      0.7
+                    }
+                    onPress={() =>
+                      adjustHour(
+                        -1,
+                      )
+                    }
+                    style={[
+                      styles.stepButton,
+                      {
+                        backgroundColor:
+                          colors.background,
+                      },
+                    ]}
+                  >
+                    <Minus
+                      size={17}
+                      color={
+                        colors.text
+                      }
+                    />
+                  </TouchableOpacity>
                 </View>
 
                 <Text
                   style={[
-                    styles.quickPicksLabel,
-                    { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' },
+                    styles.timeSeparator,
+                    {
+                      color:
+                        selectedActivity.color,
+                    },
                   ]}
                 >
-                  {TEXTS.quickPicks}
+                  :
                 </Text>
 
-                <View style={[styles.presetRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                  {TIME_PRESETS.map((preset) => {
-                    const isActive = preset.hour === hour && preset.minute === minute;
+                <View
+                  style={
+                    styles.timePart
+                  }
+                >
+                  <TouchableOpacity
+                    activeOpacity={
+                      0.7
+                    }
+                    onPress={() =>
+                      adjustMinute(
+                        1,
+                      )
+                    }
+                    style={[
+                      styles.stepButton,
+                      {
+                        backgroundColor:
+                          colors.background,
+                      },
+                    ]}
+                  >
+                    <Plus
+                      size={17}
+                      color={
+                        colors.text
+                      }
+                    />
+                  </TouchableOpacity>
+
+                  <Text
+                    style={[
+                      styles.timeNumber,
+                      {
+                        color:
+                          colors.text,
+                      },
+                    ]}
+                  >
+                    {isRTL
+                      ? toPersianDigits(
+                          pad(
+                            minute,
+                          ),
+                        )
+                      : pad(
+                          minute,
+                        )}
+                  </Text>
+
+                  <TouchableOpacity
+                    activeOpacity={
+                      0.7
+                    }
+                    onPress={() =>
+                      adjustMinute(
+                        -1,
+                      )
+                    }
+                    style={[
+                      styles.stepButton,
+                      {
+                        backgroundColor:
+                          colors.background,
+                      },
+                    ]}
+                  >
+                    <Minus
+                      size={17}
+                      color={
+                        colors.text
+                      }
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <Text
+                style={[
+                  styles.quickLabel,
+                  {
+                    color:
+                      colors.textSecondary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {
+                  TEXTS.quickPicks
+                }
+              </Text>
+
+              <View
+                style={[
+                  styles.presets,
+                  {
+                    flexDirection:
+                      isRTL
+                        ? 'row-reverse'
+                        : 'row',
+                  },
+                ]}
+              >
+                {TIME_PRESETS.map(
+                  (
+                    preset,
+                  ) => {
+                    const selected =
+                      hour ===
+                        preset.hour &&
+                      minute ===
+                        preset.minute;
 
                     return (
                       <Pressable
-                        key={preset.label}
-                        onPress={() => applyPreset(preset.hour, preset.minute)}
-                        style={({ pressed }) => [
-                          styles.presetChip,
+                        key={
+                          preset.label
+                        }
+                        onPress={() =>
+                          applyPreset(
+                            preset.hour,
+                            preset.minute,
+                          )
+                        }
+                        style={[
+                          styles.preset,
                           {
-                            backgroundColor: isActive
-                              ? selectedActivity.color
-                              : colors.surfaceSecondary,
-                            opacity: pressed ? 0.85 : 1,
+                            backgroundColor:
+                              selected
+                                ? selectedActivity.color +
+                                  '14'
+                                : colors.surface,
+                            borderColor:
+                              selected
+                                ? selectedActivity.color
+                                : colors.border,
                           },
                         ]}
                       >
                         <Text
                           style={[
-                            styles.presetChipText,
-                            { color: isActive ? '#FFFFFF' : colors.textSecondary },
+                            styles.presetText,
+                            {
+                              color:
+                                selected
+                                  ? selectedActivity.color
+                                  : colors.textSecondary,
+                            },
                           ]}
                         >
-                          {preset.label}
+                          {
+                            preset.label
+                          }
                         </Text>
                       </Pressable>
                     );
-                  })}
-                </View>
+                  },
+                )}
               </View>
-            </MotiView>
+            </View>
 
-            <MotiView
-              from={{ opacity: 0, translateY: 16 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ type: 'timing', duration: 400, delay: 320 }}
-              style={styles.section}
-            >
-              <SectionHeader title={TEXTS.reminderLabel} colors={colors} isRTL={isRTL} />
+            {/* ======================================================== */}
+            {/* REMINDER                                                    */}
+            {/* ======================================================== */}
 
-              <View
-                style={[
-                  styles.reminderCard,
-                  { flexDirection: isRTL ? 'row-reverse' : 'row' },
-                  { backgroundColor: colors.surface, borderColor: colors.border },
-                ]}
-              >
-                <View
-                  style={[styles.reminderLeft, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-                >
-                  <View
-                    style={[
-                      styles.reminderIcon,
-                      { backgroundColor: reminderOn ? colors.primary + '14' : colors.border },
-                    ]}
-                  >
-                    {reminderOn ? (
-                      <Bell size={19} color={colors.primary} strokeWidth={2} />
-                    ) : (
-                      <BellOff size={19} color={colors.textSecondary} strokeWidth={2} />
-                    )}
-                  </View>
-
-                  <Text
-                    style={[
-                      styles.reminderText,
-                      { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' },
-                    ]}
-                  >
-                    {reminderOn ? TEXTS.reminderOnText : TEXTS.reminderOffText}
-                  </Text>
-                </View>
-
-                <Pressable
-                  accessibilityRole="switch"
-                  accessibilityState={{ checked: reminderOn }}
-                  onPress={toggleReminder}
-                  style={[
-                    styles.switch,
-                    { backgroundColor: reminderOn ? colors.primary : colors.border },
-                  ]}
-                >
-                  <MotiView
-                    animate={{ translateX: reminderOn ? (isRTL ? -20 : 20) : 0 }}
-                    transition={{ type: 'spring', damping: 15, stiffness: 180 }}
-                    style={[styles.switchThumb, { backgroundColor: '#FFFFFF' }]}
-                  />
-                </Pressable>
-              </View>
-            </MotiView>
-
-            <MotiView
-              from={{ opacity: 0, translateY: 16 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ type: 'timing', duration: 400, delay: 380 }}
+            <Pressable
+              onPress={
+                toggleReminder
+              }
               style={[
-                styles.summaryCard,
-                { flexDirection: isRTL ? 'row-reverse' : 'row' },
+                styles.reminderCard,
                 {
-                  backgroundColor: selectedActivity.color + '0C',
-                  borderColor: selectedActivity.color + '30',
+                  backgroundColor:
+                    colors.surface,
+                  borderColor:
+                    reminderOn
+                      ? selectedActivity.color +
+                        '45'
+                      : colors.border,
+                  flexDirection:
+                    isRTL
+                      ? 'row-reverse'
+                      : 'row',
                 },
               ]}
             >
               <View
-                style={[styles.summaryIcon, { backgroundColor: selectedActivity.color + '1C' }]}
+                style={[
+                  styles.reminderIcon,
+                  {
+                    backgroundColor:
+                      reminderOn
+                        ? selectedActivity.color +
+                          '15'
+                        : colors.background,
+                  },
+                ]}
               >
-                <SelectedIcon size={19} color={selectedActivity.color} strokeWidth={2} />
+                {reminderOn ? (
+                  <Bell
+                    size={19}
+                    color={
+                      selectedActivity.color
+                    }
+                  />
+                ) : (
+                  <BellOff
+                    size={19}
+                    color={
+                      colors.textSecondary
+                    }
+                  />
+                )}
               </View>
 
-              <View style={styles.summaryContent}>
+              <View
+                style={
+                  styles.reminderText
+                }
+              >
                 <Text
                   style={[
-                    styles.summaryLabel,
-                    { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' },
+                    styles.reminderTitle,
+                    {
+                      color:
+                        colors.text,
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
                   ]}
                 >
-                  {TEXTS.previewLabel}
+                  {
+                    TEXTS.reminderLabel
+                  }
                 </Text>
 
                 <Text
                   style={[
-                    styles.summaryTitle,
-                    { color: colors.text, textAlign: isRTL ? 'right' : 'left' },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {title.trim() || TEXTS.previewPlaceholder}
-                </Text>
-
-                <Text
-                  style={[
-                    styles.summaryMeta,
-                    { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' },
+                    styles.reminderDescription,
+                    {
+                      color:
+                        colors.textSecondary,
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
                   ]}
                 >
-                  {selectedActivity.name}  •  {timeLabel}
+                  {reminderOn
+                    ? TEXTS.reminderOnText
+                    : TEXTS.reminderOffText}
                 </Text>
               </View>
-            </MotiView>
+
+              <View
+                style={[
+                  styles.switch,
+                  {
+                    backgroundColor:
+                      reminderOn
+                        ? selectedActivity.color
+                        : colors.border,
+                  },
+                ]}
+              >
+                <MotiView
+                  animate={{
+                    translateX:
+                      reminderOn
+                        ? isRTL
+                          ? -19
+                          : 19
+                        : 0,
+                  }}
+                  transition={{
+                    type: 'spring',
+                    damping: 16,
+                    stiffness: 180,
+                  }}
+                  style={
+                    styles.switchKnob
+                  }
+                />
+              </View>
+            </Pressable>
+
+            {/* ======================================================== */}
+            {/* PREVIEW                                                     */}
+            {/* ======================================================== */}
+
+            <View
+              style={
+                styles.section
+              }
+            >
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  {
+                    color:
+                      colors.text,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {
+                  TEXTS.previewLabel
+                }
+              </Text>
+
+              <View
+                style={[
+                  styles.previewCard,
+                  {
+                    backgroundColor:
+                      colors.surface,
+                    borderColor:
+                      selectedActivity.color +
+                      '35',
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.previewIcon,
+                    {
+                      backgroundColor:
+                        selectedActivity.color +
+                        '15',
+                    },
+                  ]}
+                >
+                  <SelectedIcon
+                    size={22}
+                    color={
+                      selectedActivity.color
+                    }
+                  />
+                </View>
+
+                <View
+                  style={
+                    styles.previewBody
+                  }
+                >
+                  <Text
+                    numberOfLines={
+                      1
+                    }
+                    style={[
+                      styles.previewTitle,
+                      {
+                        color:
+                          colors.text,
+                        textAlign:
+                          isRTL
+                            ? 'right'
+                            : 'left',
+                      },
+                    ]}
+                  >
+                    {title.trim() ||
+                      TEXTS.previewPlaceholder}
+                  </Text>
+
+                  <View
+                    style={[
+                      styles.previewMeta,
+                      {
+                        flexDirection:
+                          isRTL
+                            ? 'row-reverse'
+                            : 'row',
+                      },
+                    ]}
+                  >
+                    <Clock
+                      size={12}
+                      color={
+                        colors.textSecondary
+                      }
+                    />
+
+                    <Text
+                      style={[
+                        styles.previewMetaText,
+                        {
+                          color:
+                            colors.textSecondary,
+                        },
+                      ]}
+                    >
+                      {
+                        timeLabel
+                      }
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.previewDot,
+                        {
+                          color:
+                            colors.textTertiary,
+                        },
+                      ]}
+                    >
+                      •
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.previewMetaText,
+                        {
+                          color:
+                            colors.textSecondary,
+                        },
+                      ]}
+                    >
+                      {selectedKey ===
+                      'consultation'
+                        ? isRTL
+                          ? '۴۵ دقیقه'
+                          : '45 min'
+                        : selectedKey ===
+                            'training'
+                          ? isRTL
+                            ? '۲۰ دقیقه'
+                            : '20 min'
+                          : isRTL
+                            ? '۵ دقیقه'
+                            : '5 min'}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.previewCategory,
+                      {
+                        backgroundColor:
+                          selectedActivity.color +
+                          '12',
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.previewCategoryText,
+                        {
+                          color:
+                            selectedActivity.color,
+                        },
+                      ]}
+                    >
+                      {
+                        selectedActivity.category
+                      }
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* ======================================================== */}
+            {/* SAVE BUTTON                                                 */}
+            {/* ======================================================== */}
 
             <MotiView
-              from={{ opacity: 0, translateY: 18 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ type: 'timing', duration: 400, delay: 440 }}
-              style={styles.createSection}
+              from={{
+                opacity: 0,
+                translateY: 10,
+              }}
+              animate={{
+                opacity: 1,
+                translateY: 0,
+              }}
+              transition={{
+                type: 'timing',
+                duration: 400,
+              }}
             >
               <TouchableOpacity
-                activeOpacity={0.88}
-                onPress={handleCreateSchedule}
-                style={styles.saveWrapper}
+                activeOpacity={
+                  0.85
+                }
+                onPress={
+                  handleCreateSchedule
+                }
+                style={[
+                  styles.createButton,
+                  {
+                    backgroundColor:
+                      selectedActivity.color,
+                    shadowColor:
+                      selectedActivity.color,
+                  },
+                ]}
               >
-                <LinearGradient
-                  colors={[selectedActivity.color, selectedActivity.color + 'CC']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.saveButton}
+                <Calendar
+                  size={19}
+                  color="#FFFFFF"
+                  strokeWidth={
+                    2.2
+                  }
+                />
+
+                <Text
+                  style={
+                    styles.createButtonText
+                  }
                 >
-                  <Check size={19} color="#FFFFFF" strokeWidth={2.6} />
-                  <Text style={styles.saveText}>{TEXTS.createButton}</Text>
-                </LinearGradient>
+                  {
+                    TEXTS.createButton
+                  }
+                </Text>
               </TouchableOpacity>
 
-              <Text style={[styles.createHint, { color: colors.textSecondary }]}>
-                {TEXTS.createHint}
+              <Text
+                style={[
+                  styles.createHint,
+                  {
+                    color:
+                      colors.textSecondary,
+                  },
+                ]}
+              >
+                {
+                  TEXTS.createHint
+                }
               </Text>
             </MotiView>
           </ScrollView>
@@ -625,6 +1892,10 @@ export default function AddSchedule() {
     </LinearGradient>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Section                                                                     */
+/* -------------------------------------------------------------------------- */
 
 function SectionHeader({
   title,
@@ -636,431 +1907,407 @@ function SectionHeader({
   isRTL: boolean;
 }) {
   return (
-    <View style={[styles.sectionHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
-      <View style={[styles.sectionLine, { backgroundColor: colors.border }]} />
-    </View>
+    <Text
+      style={[
+        styles.sectionTitle,
+        {
+          color:
+            colors.text,
+          textAlign:
+            isRTL
+              ? 'right'
+              : 'left',
+        },
+      ]}
+    >
+      {title}
+    </Text>
   );
 }
 
-function TimeStepper({
-  displayValue,
-  onIncrease,
-  onDecrease,
-  color,
-  colors,
-}: {
-  displayValue: string;
-  onIncrease: () => void;
-  onDecrease: () => void;
-  color: string;
-  colors: any;
-}) {
-  return (
-    <View style={styles.stepper}>
-      <Pressable
-        onPress={onIncrease}
-        style={({ pressed }) => [
-          styles.stepperButton,
-          { backgroundColor: color + '14', opacity: pressed ? 0.7 : 1 },
-        ]}
-      >
-        <Plus size={16} color={color} strokeWidth={2.4} />
-      </Pressable>
+/* -------------------------------------------------------------------------- */
+/* Styles                                                                     */
+/* -------------------------------------------------------------------------- */
 
-      <View style={[styles.stepperValueBox, { backgroundColor: colors.surfaceSecondary }]}>
-        <Text style={[styles.stepperValue, { color: colors.text }]}>{displayValue}</Text>
-      </View>
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
 
-      <Pressable
-        onPress={onDecrease}
-        style={({ pressed }) => [
-          styles.stepperButton,
-          { backgroundColor: color + '14', opacity: pressed ? 0.7 : 1 },
-        ]}
-      >
-        <Minus size={16} color={color} strokeWidth={2.4} />
-      </Pressable>
-    </View>
-  );
-}
+    safeArea: {
+      flex: 1,
+    },
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+    flex: {
+      flex: 1,
+    },
 
-  flex: {
-    flex: 1,
-  },
+    header: {
+      minHeight: 66,
+      paddingHorizontal: 18,
+      alignItems: 'center',
+    },
 
-  safeArea: {
-    flex: 1,
-  },
+    backButton: {
+      width: 43,
+      height: 43,
+      borderRadius: 14,
+      borderWidth: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  scrollContent: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: 8,
-    paddingBottom: 48,
-  },
+    headerCenter: {
+      flex: 1,
+      alignItems: 'center',
+    },
 
-  header: {
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: 6,
-    paddingBottom: 12,
-  },
+    headerTitle: {
+      fontSize: 17,
+      fontWeight: '900',
+    },
 
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
+    headerSubtitle: {
+      fontSize: 9,
+      fontWeight: '600',
+      marginTop: 3,
+    },
 
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: -0.2,
-  },
+    headerSpacer: {
+      width: 43,
+    },
 
-  headerSubtitle: {
-    fontSize: 10.5,
-    fontWeight: '500',
-    marginTop: 2,
-  },
+    scrollContent: {
+      paddingHorizontal: 18,
+      paddingTop: 10,
+      paddingBottom: 40,
+    },
 
-  headerSpacer: {
-    width: 42,
-  },
+    hero: {
+      borderWidth: 1,
+      borderRadius: 23,
+      padding: 15,
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 25,
+    },
 
-  backButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    heroIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
 
-  hero: {
-    borderRadius: 22,
-    borderWidth: 1,
-    padding: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 26,
-  },
+    heroText: {
+      flex: 1,
+    },
 
-  heroIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 13,
-  },
+    heroTitle: {
+      fontSize: 15,
+      fontWeight: '900',
+    },
 
-  heroText: {
-    flex: 1,
-  },
+    heroDescription: {
+      fontSize: 10,
+      lineHeight: 15,
+      marginTop: 3,
+    },
 
-  heroTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    textAlign: 'right',
-  },
+    section: {
+      marginBottom: 24,
+    },
 
-  heroDescription: {
-    fontSize: 11.5,
-    lineHeight: 17,
-    marginTop: 4,
-    textAlign: 'right',
-  },
+    sectionTitle: {
+      fontSize: 15,
+      fontWeight: '900',
+      marginBottom: 11,
+    },
 
-  section: {
-    marginBottom: 24,
-  },
+    sectionTitleRow: {
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
 
-  sectionHeader: {
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 10,
-  },
+    clockBadge: {
+      width: 28,
+      height: 28,
+      borderRadius: 9,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 0.1,
-  },
+    typeRow: {
+      gap: 8,
+    },
 
-  sectionLine: {
-    height: 1,
-    flex: 1,
-  },
+    typeCard: {
+      flex: 1,
+      minHeight: 142,
+      borderRadius: 18,
+      borderWidth: 1,
+      padding: 10,
+      position: 'relative',
+    },
 
-  typeRow: {
-    gap: 9,
-  },
+    typeIcon: {
+      width: 37,
+      height: 37,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 9,
+    },
 
-  typeCardWrapper: {
-    flex: 1,
-  },
+    typeName: {
+      fontSize: 11,
+      fontWeight: '900',
+    },
 
-  typeCard: {
-    minHeight: 118,
-    borderRadius: 19,
-    padding: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    typeDescription: {
+      fontSize: 8,
+      lineHeight: 12,
+      marginTop: 4,
+    },
 
-  typeIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
+    typeCheck: {
+      position: 'absolute',
+      top: 9,
+      right: 9,
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  typeName: {
-    fontSize: 12.5,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
+    fieldLabel: {
+      fontSize: 10,
+      fontWeight: '700',
+      marginBottom: 7,
+    },
 
-  typeDescription: {
-    fontSize: 9.5,
-    marginTop: 3,
-    textAlign: 'center',
-    lineHeight: 13,
-  },
+    inputContainer: {
+      minHeight: 57,
+      borderWidth: 1,
+      borderRadius: 17,
+      alignItems: 'center',
+      paddingHorizontal: 10,
+    },
 
-  typeCheck: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    inputIcon: {
+      width: 35,
+      height: 35,
+      borderRadius: 11,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  fieldLabel: {
-    fontSize: 11.5,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
+    input: {
+      flex: 1,
+      fontSize: 12,
+      fontWeight: '600',
+      paddingHorizontal: 9,
+      paddingVertical: 0,
+      minHeight: 55,
+    },
 
-  inputContainer: {
-    height: 57,
-    borderRadius: 17,
-    borderWidth: 1,
-    alignItems: 'center',
-    paddingHorizontal: 10,
-  },
+    timePicker: {
+      minHeight: 145,
+      borderWidth: 1,
+      borderRadius: 21,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 15,
+    },
 
-  inputIcon: {
-    width: 35,
-    height: 35,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 9,
-  },
+    timePart: {
+      alignItems: 'center',
+      gap: 8,
+    },
 
-  input: {
-    flex: 1,
-    height: '100%',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+    stepButton: {
+      width: 38,
+      height: 32,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  timeCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 15,
-  },
+    timeNumber: {
+      fontSize: 35,
+      fontWeight: '900',
+      letterSpacing: 1,
+    },
 
-  timeRow: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
+    timeSeparator: {
+      fontSize: 30,
+      fontWeight: '900',
+      marginTop: 4,
+    },
 
-  timeColon: {
-    fontSize: 22,
-    fontWeight: '800',
-  },
+    quickLabel: {
+      fontSize: 9,
+      fontWeight: '700',
+      marginTop: 12,
+      marginBottom: 7,
+    },
 
-  stepper: {
-    alignItems: 'center',
-    gap: 8,
-  },
+    presets: {
+      gap: 7,
+    },
 
-  stepperButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    preset: {
+      flex: 1,
+      minHeight: 35,
+      borderRadius: 11,
+      borderWidth: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  stepperValueBox: {
-    width: 64,
-    height: 52,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    presetText: {
+      fontSize: 9,
+      fontWeight: '800',
+    },
 
-  stepperValue: {
-    fontSize: 22,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
+    reminderCard: {
+      minHeight: 72,
+      borderRadius: 19,
+      borderWidth: 1,
+      paddingHorizontal: 11,
+      paddingVertical: 9,
+      alignItems: 'center',
+      marginBottom: 24,
+    },
 
-  quickPicksLabel: {
-    fontSize: 10.5,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 9,
-  },
+    reminderIcon: {
+      width: 42,
+      height: 42,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginHorizontal: 5,
+    },
 
-  presetRow: {
-    gap: 8,
-  },
+    reminderText: {
+      flex: 1,
+      marginHorizontal: 9,
+    },
 
-  presetChip: {
-    flex: 1,
-    height: 36,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    reminderTitle: {
+      fontSize: 12,
+      fontWeight: '900',
+    },
 
-  presetChipText: {
-    fontSize: 11.5,
-    fontWeight: '700',
-  },
+    reminderDescription: {
+      fontSize: 8,
+      lineHeight: 13,
+      marginTop: 3,
+    },
 
-  reminderCard: {
-    minHeight: 78,
-    borderRadius: 20,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
+    switch: {
+      width: 45,
+      height: 26,
+      borderRadius: 14,
+      padding: 3,
+      justifyContent: 'center',
+    },
 
-  reminderLeft: {
-    flex: 1,
-    alignItems: 'center',
-    marginHorizontal: 4,
-  },
+    switchKnob: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: '#FFFFFF',
+    },
 
-  reminderIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 11,
-  },
+    previewCard: {
+      minHeight: 88,
+      borderWidth: 1,
+      borderRadius: 21,
+      padding: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
 
-  reminderText: {
-    flex: 1,
-    fontSize: 11.5,
-    lineHeight: 16,
-  },
+    previewIcon: {
+      width: 46,
+      height: 46,
+      borderRadius: 15,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 10,
+    },
 
-  switch: {
-    width: 48,
-    height: 28,
-    borderRadius: 15,
-    padding: 4,
-    justifyContent: 'center',
-  },
+    previewBody: {
+      flex: 1,
+    },
 
-  switchThumb: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-  },
+    previewTitle: {
+      fontSize: 13,
+      fontWeight: '900',
+    },
 
-  summaryCard: {
-    minHeight: 76,
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 12,
-    alignItems: 'center',
-    marginBottom: 18,
-  },
+    previewMeta: {
+      alignItems: 'center',
+      gap: 5,
+      marginTop: 4,
+    },
 
-  summaryIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 11,
-  },
+    previewMetaText: {
+      fontSize: 9,
+      fontWeight: '600',
+    },
 
-  summaryContent: {
-    flex: 1,
-  },
+    previewDot: {
+      fontSize: 9,
+    },
 
-  summaryLabel: {
-    fontSize: 9.5,
-    fontWeight: '600',
-  },
+    previewCategory: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+      borderRadius: 7,
+      marginTop: 5,
+    },
 
-  summaryTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    marginTop: 2,
-  },
+    previewCategoryText: {
+      fontSize: 8,
+      fontWeight: '800',
+    },
 
-  summaryMeta: {
-    fontSize: 10.5,
-    marginTop: 3,
-  },
+    createButton: {
+      height: 57,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'row',
+      gap: 8,
 
-  createSection: {
-    alignItems: 'center',
-  },
+      shadowOffset: {
+        width: 0,
+        height: 7,
+      },
 
-  saveWrapper: {
-    width: '100%',
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
+      shadowOpacity: 0.25,
+      shadowRadius: 14,
+      elevation: 6,
+    },
 
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.28,
-    shadowRadius: 14,
-    elevation: 6,
-  },
+    createButtonText: {
+      color: '#FFFFFF',
+      fontSize: 13,
+      fontWeight: '900',
+    },
 
-  saveButton: {
-    minHeight: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 9,
-  },
-
-  saveText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-
-  createHint: {
-    fontSize: 10,
-    marginTop: 10,
-    textAlign: 'center',
-  },
-});
+    createHint: {
+      textAlign: 'center',
+      fontSize: 8,
+      fontWeight: '500',
+      marginTop: 9,
+    },
+  });
