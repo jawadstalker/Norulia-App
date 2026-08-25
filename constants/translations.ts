@@ -2,6 +2,8 @@ import { Brain } from "lucide-react-native";
 
 export const translations = {
   fa: {
+    protocol: 'پروتکل',
+neurolia: 'نورولیا',
     // ===== General =====
     appName: 'نورولیا',
     welcome: 'خوش آمدید',
@@ -88,7 +90,6 @@ export const translations = {
     analyzeSymptoms: 'تحلیل علائم',
     medication: 'داروها',
     schedule: 'برنامه روزانه',
-    protocol: 'پروتکل',
 
     // ===== AI Responses =====
     breathingExercise: 'آیا مایل هستید یک تمرین تنفسی انجام دهید؟',
@@ -574,6 +575,7 @@ confirm: 'تأیید',
 submit: 'ثبت',
 update: 'به‌روزرسانی',
 reset: 'بازنشانی',
+neurolia: 'Neurolia',
 // ===== PLUS MODULES =====
 
 // modulesBadge: 'یادگیری هوشمند',
@@ -641,7 +643,7 @@ endTime: 'زمان پایان',
 saveActivity: 'ذخیره فعالیت',
 activityAdded: 'فعالیت با موفقیت اضافه شد.',
 noActivities: 'فعالیتی برای نمایش وجود ندارد.',
-
+neurolia: 'نورولیا',
 // ===== Consultation =====
 consultationTitle: 'جلسه مشاوره',
 bookConsultation: 'رزرو جلسه مشاوره',
@@ -652,6 +654,7 @@ confirmBooking: 'تأیید رزرو',
 bookingSuccessful: 'جلسه با موفقیت رزرو شد.',
 noConsultations: 'جلسه مشاوره‌ای وجود ندارد.',
     // ===== Add Medication =====
+
     addMedicationTitle: 'Add Medication ',
     medicationName: 'Medication Name',
     medicationNamePlaceholder: 'e.g., Donepezil',
@@ -669,7 +672,6 @@ noConsultations: 'جلسه مشاوره‌ای وجود ندارد.',
     medicationHistory: 'Medication History ',
     july: 'July',
     missedBadge: 'Missed',
-
     // ===== PLUS SCREEN - Persian Poetry Module =====
     personalCognitiveLibrary: 'Personal Cognitive Library',
     unlockBrainTraining: 'Unlock new ways to train your brain',

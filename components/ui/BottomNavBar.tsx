@@ -627,7 +627,7 @@ function BottomNavBarComponent({
           return t.protocol || 'Protocol';
   
         case 'nova':
-          return t.Neurolia || 'Neurolia';
+          return t.neurolia || 'Neurolia';
   
         case 'calendar':
           return t.plan || 'Plan';
