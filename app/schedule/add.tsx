@@ -98,9 +98,7 @@ function toPersianDigits(
       const number =
         Number(char);
 
-      return Number.isNaN(
-        number,
-      )
+      return Number.isNaN(number)
         ? char
         : digits[number];
     })
@@ -122,7 +120,6 @@ export default function AddSchedule() {
 
   const {
     colors,
-    isDark,
   } = useTheme();
 
   const {
@@ -241,6 +238,13 @@ export default function AddSchedule() {
         : 'OK',
   };
 
+  /*
+   * مهم:
+   * دیگر برای هر نوع فعالیت رنگ جداگانه نداریم.
+   *
+   * همه Activity ها از colors.primary استفاده می‌کنند
+   * تا با Theme انتخاب‌شده هماهنگ باشند.
+   */
   const ACTIVITY_CONFIG: {
     key: ActivityKey;
     name: string;
@@ -251,19 +255,23 @@ export default function AddSchedule() {
   }[] = [
     {
       key: 'training',
+
       name:
         isRTL
           ? 'تمرین ذهنی'
           : 'Brain Training',
+
       description:
         isRTL
           ? 'بازی و تمرین شناختی'
           : 'Cognitive exercises & games',
+
       color:
-        isDark
-          ? '#A58BE6'
-          : '#7C3AED',
-      icon: Brain,
+        colors.primary,
+
+      icon:
+        Brain,
+
       category:
         isRTL
           ? 'تمرین ذهنی'
@@ -272,17 +280,23 @@ export default function AddSchedule() {
 
     {
       key: 'medication',
+
       name:
         isRTL
           ? 'دارو'
           : 'Medication',
+
       description:
         isRTL
           ? 'یادآور مصرف دارو'
           : 'Medicine reminder',
+
       color:
-        '#22C55E',
-      icon: Pill,
+        colors.primary,
+
+      icon:
+        Pill,
+
       category:
         isRTL
           ? 'سلامت'
@@ -291,17 +305,23 @@ export default function AddSchedule() {
 
     {
       key: 'consultation',
+
       name:
         isRTL
           ? 'مشاوره'
           : 'Consultation',
+
       description:
         isRTL
           ? 'جلسه و قرار مشاوره'
           : 'Counseling appointment',
+
       color:
-        '#EC4899',
-      icon: Heart,
+        colors.primary,
+
+      icon:
+        Heart,
+
       category:
         isRTL
           ? 'سلامت روان'
@@ -315,32 +335,51 @@ export default function AddSchedule() {
         isRTL
           ? 'صبح'
           : 'Morning',
-      hour: 8,
-      minute: 0,
+
+      hour:
+        8,
+
+      minute:
+        0,
     },
+
     {
       label:
         isRTL
           ? 'ظهر'
           : 'Noon',
-      hour: 12,
-      minute: 30,
+
+      hour:
+        12,
+
+      minute:
+        30,
     },
+
     {
       label:
         isRTL
           ? 'عصر'
           : 'Evening',
-      hour: 18,
-      minute: 0,
+
+      hour:
+        18,
+
+      minute:
+        0,
     },
+
     {
       label:
         isRTL
           ? 'شب'
           : 'Night',
-      hour: 21,
-      minute: 30,
+
+      hour:
+        21,
+
+      minute:
+        30,
     },
   ];
 
@@ -355,32 +394,38 @@ export default function AddSchedule() {
   const [
     title,
     setTitle,
-  ] = useState('');
+  ] =
+    useState('');
 
   const [
     hour,
     setHour,
-  ] = useState(9);
+  ] =
+    useState(9);
 
   const [
     minute,
     setMinute,
-  ] = useState(0);
+  ] =
+    useState(0);
 
   const [
     reminderOn,
     setReminderOn,
-  ] = useState(true);
+  ] =
+    useState(true);
 
   const [
     titleFocused,
     setTitleFocused,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     titleError,
     setTitleError,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const selectedActivity =
     useMemo(
@@ -391,10 +436,11 @@ export default function AddSchedule() {
             selectedKey,
         ) ??
         ACTIVITY_CONFIG[0],
+
       [
         selectedKey,
         isRTL,
-        isDark,
+        colors.primary,
       ],
     );
 
@@ -405,7 +451,9 @@ export default function AddSchedule() {
     () => {
       Haptics.impactAsync(
         Haptics.ImpactFeedbackStyle.Light,
-      ).catch(() => {});
+      ).catch(
+        () => {},
+      );
     };
 
   const selectionHaptic =
@@ -420,6 +468,7 @@ export default function AddSchedule() {
       key: ActivityKey,
     ) => {
       selectionHaptic();
+
       setSelectedKey(
         key,
       );
@@ -433,10 +482,11 @@ export default function AddSchedule() {
 
       setHour(
         (current) =>
-          (current +
+          (
+            current +
             direction +
-            24) %
-          24,
+            24
+          ) % 24,
       );
     };
 
@@ -448,10 +498,11 @@ export default function AddSchedule() {
 
       setMinute(
         (current) =>
-          (current +
+          (
+            current +
             direction * 5 +
-            60) %
-          60,
+            60
+          ) % 60,
       );
     };
 
@@ -488,14 +539,13 @@ export default function AddSchedule() {
         )}:${toPersianDigits(
           pad(minute),
         )}`
-      : `${pad(
-          hour,
-        )}:${pad(minute)}`;
+      : `${pad(hour)}:${pad(
+          minute,
+        )}`;
 
-  /* ---------------------------------------------------------------------- */
-  /* REAL SAVE                                                              */
-  /* ---------------------------------------------------------------------- */
-
+  /*
+   * ذخیره فعالیت در Schedule
+   */
   const handleCreateSchedule =
     async () => {
       const cleanTitle =
@@ -504,7 +554,9 @@ export default function AddSchedule() {
       if (!cleanTitle) {
         Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Warning,
-        ).catch(() => {});
+        ).catch(
+          () => {},
+        );
 
         setTitleError(
           true,
@@ -529,7 +581,9 @@ export default function AddSchedule() {
       try {
         Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Success,
-        ).catch(() => {});
+        ).catch(
+          () => {},
+        );
 
         const stored =
           await AsyncStorage.getItem(
@@ -561,11 +615,13 @@ export default function AddSchedule() {
           }
         }
 
-        const newEvent: StoredScheduleEvent =
+        const newEvent:
+          StoredScheduleEvent =
           {
-            id: `custom-${Date.now()}-${Math.random()
-              .toString(36)
-              .slice(2, 8)}`,
+            id:
+              `custom-${Date.now()}-${Math.random()
+                .toString(36)
+                .slice(2, 8)}`,
 
             title:
               cleanTitle,
@@ -603,8 +659,11 @@ export default function AddSchedule() {
                   ? 'pill'
                   : 'heart',
 
+            /*
+             * رنگ ذخیره‌شده هم از Theme فعلی می‌آید.
+             */
             color:
-              selectedActivity.color,
+              colors.primary,
 
             reminderEnabled:
               reminderOn,
@@ -628,17 +687,16 @@ export default function AddSchedule() {
 
         Alert.alert(
           TEXTS.successTitle,
+
           `${cleanTitle} ${TEXTS.successMessage}`,
+
           [
             {
               text:
                 TEXTS.ok,
+
               onPress:
                 () => {
-                  /*
-                   * replace باعث می‌شود صفحه Add روی stack باقی نماند
-                   * و Schedule دوباره focus شود.
-                   */
                   router.replace(
                     '/(tabs)/schedule',
                   );
@@ -656,6 +714,7 @@ export default function AddSchedule() {
           isRTL
             ? 'خطا'
             : 'Error',
+
           isRTL
             ? 'ذخیره برنامه انجام نشد.'
             : 'The activity could not be saved.',
@@ -693,27 +752,35 @@ export default function AddSchedule() {
               : undefined
           }
         >
-          {/* ============================================================ */}
-          {/* HEADER                                                        */}
-          {/* ============================================================ */}
+
+          {/* ========================================================== */}
+          {/* HEADER                                                     */}
+          {/* ========================================================== */}
 
           <View
             style={[
               styles.header,
               {
+                /*
+                 * عمداً row-reverse نداریم.
+                 *
+                 * بنابراین Back همیشه سمت چپ می‌ماند.
+                 */
                 flexDirection:
-                  isRTL
-                    ? 'row-reverse'
-                    : 'row',
+                  'row',
               },
             ]}
           >
+
+            {/* BACK - ALWAYS LEFT */}
+
             <TouchableOpacity
               activeOpacity={
                 0.75
               }
               onPress={() => {
                 lightHaptic();
+
                 router.back();
               }}
               style={[
@@ -721,15 +788,18 @@ export default function AddSchedule() {
                 {
                   backgroundColor:
                     colors.surface,
+
                   borderColor:
                     colors.border,
                 },
               ]}
             >
               <ArrowLeft
-                size={20}
+                size={
+                  20
+                }
                 color={
-                  colors.text
+                  colors.primary
                 }
                 strokeWidth={
                   2.2
@@ -748,6 +818,11 @@ export default function AddSchedule() {
                   {
                     color:
                       colors.text,
+
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
                   },
                 ]}
               >
@@ -762,6 +837,11 @@ export default function AddSchedule() {
                   {
                     color:
                       colors.textSecondary,
+
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
                   },
                 ]}
               >
@@ -771,11 +851,14 @@ export default function AddSchedule() {
               </Text>
             </View>
 
+            {/* RIGHT BALANCE SPACE */}
+
             <View
               style={
                 styles.headerSpacer
               }
             />
+
           </View>
 
           <ScrollView
@@ -787,59 +870,74 @@ export default function AddSchedule() {
               styles.scrollContent
             }
           >
+
             {/* ======================================================== */}
-            {/* HERO                                                      */}
+            {/* HERO                                                     */}
             {/* ======================================================== */}
 
             <MotiView
               from={{
-                opacity: 0,
-                translateY: 12,
+                opacity:
+                  0,
+
+                translateY:
+                  12,
               }}
               animate={{
-                opacity: 1,
-                translateY: 0,
+                opacity:
+                  1,
+
+                translateY:
+                  0,
               }}
               transition={{
-                type: 'timing',
-                duration: 400,
+                type:
+                  'timing',
+
+                duration:
+                  400,
               }}
               style={[
                 styles.hero,
                 {
                   backgroundColor:
                     colors.surface,
+
                   borderColor:
                     colors.border,
                 },
               ]}
             >
-              <LinearGradient
-                colors={[
-                  selectedActivity.color,
-                  selectedActivity.color +
-                    'A8',
+
+              <View
+                style={[
+                  styles.heroIcon,
+                  {
+                    backgroundColor:
+                      colors.primary +
+                      '18',
+
+                    borderColor:
+                      colors.primary +
+                      '30',
+
+                    borderWidth:
+                      1,
+                  },
                 ]}
-                start={{
-                  x: 0,
-                  y: 0,
-                }}
-                end={{
-                  x: 1,
-                  y: 1,
-                }}
-                style={
-                  styles.heroIcon
-                }
               >
                 <Sparkles
-                  size={22}
-                  color="#FFFFFF"
+                  size={
+                    22
+                  }
+                  color={
+                    colors.primary
+                  }
                   strokeWidth={
                     2.2
                   }
                 />
-              </LinearGradient>
+              </View>
 
               <View
                 style={
@@ -852,6 +950,7 @@ export default function AddSchedule() {
                     {
                       color:
                         colors.text,
+
                       textAlign:
                         isRTL
                           ? 'right'
@@ -870,6 +969,7 @@ export default function AddSchedule() {
                     {
                       color:
                         colors.textSecondary,
+
                       textAlign:
                         isRTL
                           ? 'right'
@@ -882,10 +982,11 @@ export default function AddSchedule() {
                   }
                 </Text>
               </View>
+
             </MotiView>
 
             {/* ======================================================== */}
-            {/* TYPE                                                       */}
+            {/* ACTIVITY TYPE                                            */}
             {/* ======================================================== */}
 
             <View
@@ -893,12 +994,14 @@ export default function AddSchedule() {
                 styles.section
               }
             >
+
               <Text
                 style={[
                   styles.sectionTitle,
                   {
                     color:
                       colors.text,
+
                     textAlign:
                       isRTL
                         ? 'right'
@@ -922,6 +1025,7 @@ export default function AddSchedule() {
                   },
                 ]}
               >
+
                 {ACTIVITY_CONFIG.map(
                   (
                     activity,
@@ -945,16 +1049,19 @@ export default function AddSchedule() {
                         }
                         style={({ pressed }) => [
                           styles.typeCard,
+
                           {
                             backgroundColor:
                               selected
-                                ? activity.color +
+                                ? colors.primary +
                                   '12'
                                 : colors.surface,
+
                             borderColor:
                               selected
-                                ? activity.color
+                                ? colors.primary
                                 : colors.border,
+
                             transform: [
                               {
                                 scale:
@@ -966,13 +1073,14 @@ export default function AddSchedule() {
                           },
                         ]}
                       >
+
                         <View
                           style={[
                             styles.typeIcon,
                             {
                               backgroundColor:
-                                activity.color +
-                                '1A',
+                                colors.primary +
+                                '18',
                             },
                           ]}
                         >
@@ -981,7 +1089,7 @@ export default function AddSchedule() {
                               20
                             }
                             color={
-                              activity.color
+                              colors.primary
                             }
                             strokeWidth={
                               2.1
@@ -995,6 +1103,7 @@ export default function AddSchedule() {
                             {
                               color:
                                 colors.text,
+
                               textAlign:
                                 isRTL
                                   ? 'right'
@@ -1016,6 +1125,7 @@ export default function AddSchedule() {
                             {
                               color:
                                 colors.textSecondary,
+
                               textAlign:
                                 isRTL
                                   ? 'right'
@@ -1037,7 +1147,7 @@ export default function AddSchedule() {
                               styles.typeCheck,
                               {
                                 backgroundColor:
-                                  activity.color,
+                                  colors.primary,
                               },
                             ]}
                           >
@@ -1045,22 +1155,26 @@ export default function AddSchedule() {
                               size={
                                 11
                               }
-                              color="#FFFFFF"
+                              color={
+                                colors.background
+                              }
                               strokeWidth={
                                 3
                               }
                             />
                           </View>
                         )}
+
                       </Pressable>
                     );
                   },
                 )}
+
               </View>
             </View>
 
             {/* ======================================================== */}
-            {/* TITLE                                                      */}
+            {/* DETAILS                                                  */}
             {/* ======================================================== */}
 
             <View
@@ -1068,12 +1182,14 @@ export default function AddSchedule() {
                 styles.section
               }
             >
+
               <Text
                 style={[
                   styles.sectionTitle,
                   {
                     color:
                       colors.text,
+
                     textAlign:
                       isRTL
                         ? 'right'
@@ -1092,6 +1208,7 @@ export default function AddSchedule() {
                   {
                     color:
                       colors.text,
+
                     textAlign:
                       isRTL
                         ? 'right'
@@ -1125,18 +1242,21 @@ export default function AddSchedule() {
                   },
                 ]}
               >
+
                 <View
                   style={[
                     styles.inputIcon,
                     {
                       backgroundColor:
                         colors.primary +
-                        '14',
+                        '18',
                     },
                   ]}
                 >
                   <PenLine
-                    size={16}
+                    size={
+                      16
+                    }
                     color={
                       colors.primary
                     }
@@ -1147,7 +1267,9 @@ export default function AddSchedule() {
                 </View>
 
                 <TextInput
-                  value={title}
+                  value={
+                    title
+                  }
                   onChangeText={(
                     value,
                   ) => {
@@ -1184,6 +1306,7 @@ export default function AddSchedule() {
                     {
                       color:
                         colors.text,
+
                       textAlign:
                         isRTL
                           ? 'right'
@@ -1192,11 +1315,13 @@ export default function AddSchedule() {
                   ]}
                   returnKeyType="done"
                 />
+
               </View>
+
             </View>
 
             {/* ======================================================== */}
-            {/* TIME                                                       */}
+            {/* TIME                                                     */}
             {/* ======================================================== */}
 
             <View
@@ -1204,6 +1329,7 @@ export default function AddSchedule() {
                 styles.section
               }
             >
+
               <View
                 style={[
                   styles.sectionTitleRow,
@@ -1215,6 +1341,7 @@ export default function AddSchedule() {
                   },
                 ]}
               >
+
                 <Text
                   style={[
                     styles.sectionTitle,
@@ -1234,18 +1361,21 @@ export default function AddSchedule() {
                     styles.clockBadge,
                     {
                       backgroundColor:
-                        selectedActivity.color +
-                        '12',
+                        colors.primary +
+                        '15',
                     },
                   ]}
                 >
                   <Clock
-                    size={13}
+                    size={
+                      13
+                    }
                     color={
-                      selectedActivity.color
+                      colors.primary
                     }
                   />
                 </View>
+
               </View>
 
               <View
@@ -1254,16 +1384,19 @@ export default function AddSchedule() {
                   {
                     backgroundColor:
                       colors.surface,
+
                     borderColor:
                       colors.border,
                   },
                 ]}
               >
+
                 <View
                   style={
                     styles.timePart
                   }
                 >
+
                   <TouchableOpacity
                     activeOpacity={
                       0.7
@@ -1278,13 +1411,21 @@ export default function AddSchedule() {
                       {
                         backgroundColor:
                           colors.background,
+
+                        borderColor:
+                          colors.border,
+
+                        borderWidth:
+                          1,
                       },
                     ]}
                   >
                     <Plus
-                      size={17}
+                      size={
+                        17
+                      }
                       color={
-                        colors.text
+                        colors.primary
                       }
                     />
                   </TouchableOpacity>
@@ -1323,16 +1464,25 @@ export default function AddSchedule() {
                       {
                         backgroundColor:
                           colors.background,
+
+                        borderColor:
+                          colors.border,
+
+                        borderWidth:
+                          1,
                       },
                     ]}
                   >
                     <Minus
-                      size={17}
+                      size={
+                        17
+                      }
                       color={
-                        colors.text
+                        colors.primary
                       }
                     />
                   </TouchableOpacity>
+
                 </View>
 
                 <Text
@@ -1340,7 +1490,7 @@ export default function AddSchedule() {
                     styles.timeSeparator,
                     {
                       color:
-                        selectedActivity.color,
+                        colors.primary,
                     },
                   ]}
                 >
@@ -1352,6 +1502,7 @@ export default function AddSchedule() {
                     styles.timePart
                   }
                 >
+
                   <TouchableOpacity
                     activeOpacity={
                       0.7
@@ -1366,13 +1517,21 @@ export default function AddSchedule() {
                       {
                         backgroundColor:
                           colors.background,
+
+                        borderColor:
+                          colors.border,
+
+                        borderWidth:
+                          1,
                       },
                     ]}
                   >
                     <Plus
-                      size={17}
+                      size={
+                        17
+                      }
                       color={
-                        colors.text
+                        colors.primary
                       }
                     />
                   </TouchableOpacity>
@@ -1411,17 +1570,27 @@ export default function AddSchedule() {
                       {
                         backgroundColor:
                           colors.background,
+
+                        borderColor:
+                          colors.border,
+
+                        borderWidth:
+                          1,
                       },
                     ]}
                   >
                     <Minus
-                      size={17}
+                      size={
+                        17
+                      }
                       color={
-                        colors.text
+                        colors.primary
                       }
                     />
                   </TouchableOpacity>
+
                 </View>
+
               </View>
 
               <Text
@@ -1430,6 +1599,7 @@ export default function AddSchedule() {
                   {
                     color:
                       colors.textSecondary,
+
                     textAlign:
                       isRTL
                         ? 'right'
@@ -1453,6 +1623,7 @@ export default function AddSchedule() {
                   },
                 ]}
               >
+
                 {TIME_PRESETS.map(
                   (
                     preset,
@@ -1476,15 +1647,17 @@ export default function AddSchedule() {
                         }
                         style={[
                           styles.preset,
+
                           {
                             backgroundColor:
                               selected
-                                ? selectedActivity.color +
+                                ? colors.primary +
                                   '14'
                                 : colors.surface,
+
                             borderColor:
                               selected
-                                ? selectedActivity.color
+                                ? colors.primary
                                 : colors.border,
                           },
                         ]}
@@ -1495,7 +1668,7 @@ export default function AddSchedule() {
                             {
                               color:
                                 selected
-                                  ? selectedActivity.color
+                                  ? colors.primary
                                   : colors.textSecondary,
                             },
                           ]}
@@ -1508,11 +1681,13 @@ export default function AddSchedule() {
                     );
                   },
                 )}
+
               </View>
+
             </View>
 
             {/* ======================================================== */}
-            {/* REMINDER                                                    */}
+            {/* REMINDER                                                 */}
             {/* ======================================================== */}
 
             <Pressable
@@ -1521,14 +1696,17 @@ export default function AddSchedule() {
               }
               style={[
                 styles.reminderCard,
+
                 {
                   backgroundColor:
                     colors.surface,
+
                   borderColor:
                     reminderOn
-                      ? selectedActivity.color +
+                      ? colors.primary +
                         '45'
                       : colors.border,
+
                   flexDirection:
                     isRTL
                       ? 'row-reverse'
@@ -1536,13 +1714,14 @@ export default function AddSchedule() {
                 },
               ]}
             >
+
               <View
                 style={[
                   styles.reminderIcon,
                   {
                     backgroundColor:
                       reminderOn
-                        ? selectedActivity.color +
+                        ? colors.primary +
                           '15'
                         : colors.background,
                   },
@@ -1550,14 +1729,18 @@ export default function AddSchedule() {
               >
                 {reminderOn ? (
                   <Bell
-                    size={19}
+                    size={
+                      19
+                    }
                     color={
-                      selectedActivity.color
+                      colors.primary
                     }
                   />
                 ) : (
                   <BellOff
-                    size={19}
+                    size={
+                      19
+                    }
                     color={
                       colors.textSecondary
                     }
@@ -1570,12 +1753,14 @@ export default function AddSchedule() {
                   styles.reminderText
                 }
               >
+
                 <Text
                   style={[
                     styles.reminderTitle,
                     {
                       color:
                         colors.text,
+
                       textAlign:
                         isRTL
                           ? 'right'
@@ -1594,6 +1779,7 @@ export default function AddSchedule() {
                     {
                       color:
                         colors.textSecondary,
+
                       textAlign:
                         isRTL
                           ? 'right'
@@ -1605,15 +1791,17 @@ export default function AddSchedule() {
                     ? TEXTS.reminderOnText
                     : TEXTS.reminderOffText}
                 </Text>
+
               </View>
 
               <View
                 style={[
                   styles.switch,
+
                   {
                     backgroundColor:
                       reminderOn
-                        ? selectedActivity.color
+                        ? colors.primary
                         : colors.border,
                   },
                 ]}
@@ -1628,19 +1816,35 @@ export default function AddSchedule() {
                         : 0,
                   }}
                   transition={{
-                    type: 'spring',
-                    damping: 16,
-                    stiffness: 180,
+                    type:
+                      'spring',
+
+                    damping:
+                      16,
+
+                    stiffness:
+                      180,
                   }}
-                  style={
-                    styles.switchKnob
-                  }
+                  style={[
+                    styles.switchKnob,
+                    {
+                      backgroundColor:
+                        colors.background,
+
+                      borderColor:
+                        colors.border,
+
+                      borderWidth:
+                        1,
+                    },
+                  ]}
                 />
               </View>
+
             </Pressable>
 
             {/* ======================================================== */}
-            {/* PREVIEW                                                     */}
+            {/* PREVIEW                                                  */}
             {/* ======================================================== */}
 
             <View
@@ -1648,12 +1852,14 @@ export default function AddSchedule() {
                 styles.section
               }
             >
+
               <Text
                 style={[
                   styles.sectionTitle,
                   {
                     color:
                       colors.text,
+
                     textAlign:
                       isRTL
                         ? 'right'
@@ -1672,26 +1878,35 @@ export default function AddSchedule() {
                   {
                     backgroundColor:
                       colors.surface,
+
                     borderColor:
-                      selectedActivity.color +
+                      colors.primary +
                       '35',
+
+                    flexDirection:
+                      isRTL
+                        ? 'row-reverse'
+                        : 'row',
                   },
                 ]}
               >
+
                 <View
                   style={[
                     styles.previewIcon,
                     {
                       backgroundColor:
-                        selectedActivity.color +
+                        colors.primary +
                         '15',
                     },
                   ]}
                 >
                   <SelectedIcon
-                    size={22}
+                    size={
+                      22
+                    }
                     color={
-                      selectedActivity.color
+                      colors.primary
                     }
                   />
                 </View>
@@ -1701,6 +1916,7 @@ export default function AddSchedule() {
                     styles.previewBody
                   }
                 >
+
                   <Text
                     numberOfLines={
                       1
@@ -1710,6 +1926,7 @@ export default function AddSchedule() {
                       {
                         color:
                           colors.text,
+
                         textAlign:
                           isRTL
                             ? 'right'
@@ -1732,10 +1949,13 @@ export default function AddSchedule() {
                       },
                     ]}
                   >
+
                     <Clock
-                      size={12}
+                      size={
+                        12
+                      }
                       color={
-                        colors.textSecondary
+                        colors.primary
                       }
                     />
 
@@ -1788,6 +2008,7 @@ export default function AddSchedule() {
                             ? '۵ دقیقه'
                             : '5 min'}
                     </Text>
+
                   </View>
 
                   <View
@@ -1795,7 +2016,7 @@ export default function AddSchedule() {
                       styles.previewCategory,
                       {
                         backgroundColor:
-                          selectedActivity.color +
+                          colors.primary +
                           '12',
                       },
                     ]}
@@ -1805,7 +2026,7 @@ export default function AddSchedule() {
                         styles.previewCategoryText,
                         {
                           color:
-                            selectedActivity.color,
+                            colors.primary,
                         },
                       ]}
                     >
@@ -1814,28 +2035,41 @@ export default function AddSchedule() {
                       }
                     </Text>
                   </View>
+
                 </View>
+
               </View>
+
             </View>
 
             {/* ======================================================== */}
-            {/* SAVE BUTTON                                                 */}
+            {/* CREATE BUTTON                                            */}
             {/* ======================================================== */}
 
             <MotiView
               from={{
-                opacity: 0,
-                translateY: 10,
+                opacity:
+                  0,
+
+                translateY:
+                  10,
               }}
               animate={{
-                opacity: 1,
-                translateY: 0,
+                opacity:
+                  1,
+
+                translateY:
+                  0,
               }}
               transition={{
-                type: 'timing',
-                duration: 400,
+                type:
+                  'timing',
+
+                duration:
+                  400,
               }}
             >
+
               <TouchableOpacity
                 activeOpacity={
                   0.85
@@ -1845,31 +2079,43 @@ export default function AddSchedule() {
                 }
                 style={[
                   styles.createButton,
+
                   {
                     backgroundColor:
-                      selectedActivity.color,
+                      colors.primary,
+
                     shadowColor:
-                      selectedActivity.color,
+                      colors.primary,
                   },
                 ]}
               >
+
                 <Calendar
-                  size={19}
-                  color="#FFFFFF"
+                  size={
+                    19
+                  }
+                  color={
+                    colors.background
+                  }
                   strokeWidth={
                     2.2
                   }
                 />
 
                 <Text
-                  style={
-                    styles.createButtonText
-                  }
+                  style={[
+                    styles.createButtonText,
+                    {
+                      color:
+                        colors.background,
+                    },
+                  ]}
                 >
                   {
                     TEXTS.createButton
                   }
                 </Text>
+
               </TouchableOpacity>
 
               <Text
@@ -1885,8 +2131,11 @@ export default function AddSchedule() {
                   TEXTS.createHint
                 }
               </Text>
+
             </MotiView>
+
           </ScrollView>
+
         </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradient>
@@ -1894,7 +2143,7 @@ export default function AddSchedule() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Section                                                                     */
+/* Section Header                                                              */
 /* -------------------------------------------------------------------------- */
 
 function SectionHeader({
@@ -1913,6 +2162,7 @@ function SectionHeader({
         {
           color:
             colors.text,
+
           textAlign:
             isRTL
               ? 'right'
@@ -1920,7 +2170,9 @@ function SectionHeader({
         },
       ]}
     >
-      {title}
+      {
+        title
+      }
     </Text>
   );
 }
@@ -1931,6 +2183,7 @@ function SectionHeader({
 
 const styles =
   StyleSheet.create({
+
     container: {
       flex: 1,
     },
@@ -1943,34 +2196,61 @@ const styles =
       flex: 1,
     },
 
+    /*
+     * Header همیشه LTR layout دارد
+     * تا Back در سمت چپ باقی بماند.
+     */
     header: {
       minHeight: 66,
+
       paddingHorizontal: 18,
-      alignItems: 'center',
+
+      alignItems:
+        'center',
+
+      flexDirection:
+        'row',
     },
 
     backButton: {
       width: 43,
+
       height: 43,
+
       borderRadius: 14,
+
       borderWidth: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
     },
 
     headerCenter: {
       flex: 1,
-      alignItems: 'center',
+
+      alignItems:
+        'center',
+
+      marginHorizontal:
+        12,
     },
 
     headerTitle: {
       fontSize: 17,
-      fontWeight: '900',
+
+      fontWeight:
+        '900',
     },
 
     headerSubtitle: {
       fontSize: 9,
-      fontWeight: '600',
+
+      fontWeight:
+        '600',
+
       marginTop: 3,
     },
 
@@ -1980,25 +2260,41 @@ const styles =
 
     scrollContent: {
       paddingHorizontal: 18,
+
       paddingTop: 10,
+
       paddingBottom: 40,
     },
 
     hero: {
       borderWidth: 1,
+
       borderRadius: 23,
+
       padding: 15,
-      flexDirection: 'row',
-      alignItems: 'center',
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       marginBottom: 25,
     },
 
     heroIcon: {
       width: 48,
+
       height: 48,
+
       borderRadius: 16,
-      alignItems: 'center',
-      justifyContent: 'center',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
       marginRight: 12,
     },
 
@@ -2008,12 +2304,16 @@ const styles =
 
     heroTitle: {
       fontSize: 15,
-      fontWeight: '900',
+
+      fontWeight:
+        '900',
     },
 
     heroDescription: {
       fontSize: 10,
+
       lineHeight: 15,
+
       marginTop: 3,
     },
 
@@ -2023,21 +2323,33 @@ const styles =
 
     sectionTitle: {
       fontSize: 15,
-      fontWeight: '900',
+
+      fontWeight:
+        '900',
+
       marginBottom: 11,
     },
 
     sectionTitleRow: {
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      alignItems:
+        'center',
+
+      justifyContent:
+        'space-between',
     },
 
     clockBadge: {
       width: 28,
+
       height: 28,
+
       borderRadius: 9,
-      alignItems: 'center',
-      justifyContent: 'center',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
     },
 
     typeRow: {
@@ -2046,114 +2358,188 @@ const styles =
 
     typeCard: {
       flex: 1,
+
       minHeight: 142,
+
       borderRadius: 18,
+
       borderWidth: 1,
+
       padding: 10,
-      position: 'relative',
+
+      position:
+        'relative',
     },
 
     typeIcon: {
       width: 37,
+
       height: 37,
+
       borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
       marginBottom: 9,
     },
 
     typeName: {
       fontSize: 11,
-      fontWeight: '900',
+
+      fontWeight:
+        '900',
     },
 
     typeDescription: {
       fontSize: 8,
+
       lineHeight: 12,
+
       marginTop: 4,
     },
 
     typeCheck: {
-      position: 'absolute',
+      position:
+        'absolute',
+
       top: 9,
+
       right: 9,
+
       width: 18,
+
       height: 18,
+
       borderRadius: 9,
-      alignItems: 'center',
-      justifyContent: 'center',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
     },
 
     fieldLabel: {
       fontSize: 10,
-      fontWeight: '700',
+
+      fontWeight:
+        '700',
+
       marginBottom: 7,
     },
 
     inputContainer: {
       minHeight: 57,
+
       borderWidth: 1,
+
       borderRadius: 17,
-      alignItems: 'center',
+
+      alignItems:
+        'center',
+
       paddingHorizontal: 10,
     },
 
     inputIcon: {
       width: 35,
+
       height: 35,
+
       borderRadius: 11,
-      alignItems: 'center',
-      justifyContent: 'center',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
     },
 
     input: {
       flex: 1,
+
       fontSize: 12,
-      fontWeight: '600',
+
+      fontWeight:
+        '600',
+
       paddingHorizontal: 9,
+
       paddingVertical: 0,
+
       minHeight: 55,
     },
 
     timePicker: {
       minHeight: 145,
+
       borderWidth: 1,
+
       borderRadius: 21,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
       gap: 15,
     },
 
     timePart: {
-      alignItems: 'center',
+      alignItems:
+        'center',
+
       gap: 8,
     },
 
     stepButton: {
       width: 38,
+
       height: 32,
+
       borderRadius: 10,
-      alignItems: 'center',
-      justifyContent: 'center',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
     },
 
     timeNumber: {
       fontSize: 35,
-      fontWeight: '900',
+
+      fontWeight:
+        '900',
+
       letterSpacing: 1,
     },
 
     timeSeparator: {
       fontSize: 30,
-      fontWeight: '900',
+
+      fontWeight:
+        '900',
+
       marginTop: 4,
     },
 
     quickLabel: {
       fontSize: 9,
-      fontWeight: '700',
+
+      fontWeight:
+        '700',
+
       marginTop: 12,
+
       marginBottom: 7,
     },
 
@@ -2163,104 +2549,158 @@ const styles =
 
     preset: {
       flex: 1,
+
       minHeight: 35,
+
       borderRadius: 11,
+
       borderWidth: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
     },
 
     presetText: {
       fontSize: 9,
-      fontWeight: '800',
+
+      fontWeight:
+        '800',
     },
 
     reminderCard: {
       minHeight: 72,
+
       borderRadius: 19,
+
       borderWidth: 1,
+
       paddingHorizontal: 11,
+
       paddingVertical: 9,
-      alignItems: 'center',
+
+      alignItems:
+        'center',
+
       marginBottom: 24,
     },
 
     reminderIcon: {
       width: 42,
+
       height: 42,
+
       borderRadius: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
       marginHorizontal: 5,
     },
 
     reminderText: {
       flex: 1,
+
       marginHorizontal: 9,
     },
 
     reminderTitle: {
       fontSize: 12,
-      fontWeight: '900',
+
+      fontWeight:
+        '900',
     },
 
     reminderDescription: {
       fontSize: 8,
+
       lineHeight: 13,
+
       marginTop: 3,
     },
 
     switch: {
       width: 45,
+
       height: 26,
+
       borderRadius: 14,
+
       padding: 3,
-      justifyContent: 'center',
+
+      justifyContent:
+        'center',
     },
 
     switchKnob: {
       width: 20,
+
       height: 20,
+
       borderRadius: 10,
-      backgroundColor: '#FFFFFF',
     },
 
     previewCard: {
       minHeight: 88,
+
       borderWidth: 1,
+
       borderRadius: 21,
+
       padding: 12,
-      flexDirection: 'row',
-      alignItems: 'center',
+
+      alignItems:
+        'center',
     },
 
     previewIcon: {
       width: 46,
+
       height: 46,
+
       borderRadius: 15,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 10,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      marginHorizontal: 5,
     },
 
     previewBody: {
       flex: 1,
+
+      marginHorizontal: 5,
     },
 
     previewTitle: {
       fontSize: 13,
-      fontWeight: '900',
+
+      fontWeight:
+        '900',
     },
 
     previewMeta: {
-      alignItems: 'center',
+      alignItems:
+        'center',
+
       gap: 5,
+
       marginTop: 4,
     },
 
     previewMetaText: {
       fontSize: 9,
-      fontWeight: '600',
+
+      fontWeight:
+        '600',
     },
 
     previewDot: {
@@ -2268,46 +2708,70 @@ const styles =
     },
 
     previewCategory: {
-      alignSelf: 'flex-start',
+      alignSelf:
+        'flex-start',
+
       paddingHorizontal: 7,
+
       paddingVertical: 3,
+
       borderRadius: 7,
+
       marginTop: 5,
     },
 
     previewCategoryText: {
       fontSize: 8,
-      fontWeight: '800',
+
+      fontWeight:
+        '800',
     },
 
     createButton: {
       height: 57,
+
       borderRadius: 18,
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexDirection: 'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      flexDirection:
+        'row',
+
       gap: 8,
 
       shadowOffset: {
         width: 0,
+
         height: 7,
       },
 
       shadowOpacity: 0.25,
+
       shadowRadius: 14,
+
       elevation: 6,
     },
 
     createButtonText: {
-      color: '#FFFFFF',
       fontSize: 13,
-      fontWeight: '900',
+
+      fontWeight:
+        '900',
     },
 
     createHint: {
-      textAlign: 'center',
+      textAlign:
+        'center',
+
       fontSize: 8,
-      fontWeight: '500',
+
+      fontWeight:
+        '500',
+
       marginTop: 9,
     },
   });

@@ -619,6 +619,8 @@ timeRemaining: 'زمان باقی‌مانده',
 seconds: 'ثانیه',
 levelComplete: 'مرحله تکمیل شد',
 wellDone: 'آفرین',
+Protocol: 'پروتکل',
+Neurolia: 'نورولیا',
 
 // ===== Medication =====
 medicationDetails: 'جزئیات دارو',

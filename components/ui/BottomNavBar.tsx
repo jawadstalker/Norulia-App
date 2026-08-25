@@ -617,50 +617,30 @@ function BottomNavBarComponent({
      LABELS
   ============================================================== */
 
-  const getLabel =
-    useCallback(
-      (
-        id: NavItemId,
-      ): string => {
-
-        switch (id) {
-
-          case 'home':
-            return (
-              t.home ||
-              'Home'
-            );
-
-          case 'brain':
-            return (
-              t.brain ||
-              'Protocol'
-            );
-
-          case 'nova':
-            return t.language === 'fa'
-              ? 'نورولیا'
-              : 'Neurolia';
-
-          case 'calendar':
-            return (
-              t.plan ||
-              'Plan'
-            );
-
-          case 'profile':
-            return (
-              t.profile ||
-              'Profile'
-            );
-
-          default:
-            return '';
-        }
-
-      },
-      [t],
-    );
+  const getLabel = useCallback(
+    (id: NavItemId): string => {
+      switch (id) {
+        case 'home':
+          return t.home || 'Home';
+  
+        case 'brain':
+          return t.protocol || 'Protocol';
+  
+        case 'nova':
+          return t.Neurolia || 'Neurolia';
+  
+        case 'calendar':
+          return t.plan || 'Plan';
+  
+        case 'profile':
+          return t.profile || 'Profile';
+  
+        default:
+          return '';
+      }
+    },
+    [t],
+  );
 
   /* ==============================================================
      COLORS
