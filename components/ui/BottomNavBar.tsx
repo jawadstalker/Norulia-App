@@ -908,15 +908,6 @@ function BottomNavBarComponent({
       ]}
     >
 
-      {/* ========================================================
-          SHINE LAYER
-
-          این لایه کاملاً مستقل از Navigation است.
-
-          pointerEvents="none"
-          باعث می‌شود هیچ اختلالی در لمس ایجاد نکند.
-      ======================================================== */}
-
       <View
         pointerEvents="none"
         style={styles.shineClip}
@@ -938,10 +929,6 @@ function BottomNavBarComponent({
         />
 
       </View>
-
-      {/* ========================================================
-          NAVIGATION AREA
-      ======================================================== */}
 
       <View
         style={
@@ -1052,13 +1039,6 @@ const styles =
           }
         : {}),
     },
-
-    /* ============================================================
-       SHINE CLIP
-
-       Shine فقط داخل خود BottomNavbar دیده می‌شود.
-    ============================================================ */
-
     shineClip: {
 
       position:
@@ -1081,19 +1061,6 @@ const styles =
         'none',
     },
 
-    /* ============================================================
-       SHINE
-
-       باریکه‌ی نور.
-
-       left حذف شده است.
-
-       دلیل:
-       قبلاً left: '18%' باعث می‌شد
-       نقطه شروع روی بعضی صفحه‌ها وسط باشد.
-
-       حالا translateX خودش مسیر را کنترل می‌کند.
-    ============================================================ */
 
     shine: {
 
@@ -1115,13 +1082,6 @@ const styles =
       borderRadius:
         100,
 
-      /*
-       * این rotate پایه فقط برای
-       * سازگاری است.
-       *
-       * rotate اصلی توسط Reanimated
-       * اعمال می‌شود.
-       */
 
       shadowColor:
         '#FFFFFF',
@@ -1300,23 +1260,16 @@ const styles =
     ============================================================ */
 
     centerColumn: {
-
       flex: 1,
-
       height:
         CONTENT_HEIGHT,
-
       minWidth: 0,
-
       alignItems:
         'center',
-
       justifyContent:
         'center',
-
       zIndex:
         4,
-
       overflow:
         'visible',
     },
@@ -1326,7 +1279,7 @@ const styles =
     ============================================================ */
 
     centerButton: {
-
+marginBottom: 3,
       width:
         CENTER_BUTTON_SIZE,
 

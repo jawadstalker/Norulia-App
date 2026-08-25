@@ -305,8 +305,6 @@ export default function ScheduleScreen() {
   const { t, isRTL } = useLanguage();
   const router = useRouter();
 
-  const isLayoutRight = !isRTL;
-
   const softPurple = isDark
     ? '#8B78C7'
     : '#9B8BC7';
@@ -709,7 +707,7 @@ export default function ScheduleScreen() {
             <View
               style={[
                 styles.dateContent,
-                isLayoutRight
+                !isRTL
                   ? styles.dateContentRight
                   : styles.dateContentLeft,
               ]}
@@ -717,7 +715,7 @@ export default function ScheduleScreen() {
               <View
                 style={[
                   styles.dateLeft,
-                  isLayoutRight
+                  !isRTL
                     ? styles.dateLeftRight
                     : styles.dateLeftLeft,
                 ]}
@@ -729,7 +727,7 @@ export default function ScheduleScreen() {
 
                 <View
                   style={
-                    isLayoutRight
+                    !isRTL
                       ? styles.dateTextRight
                       : styles.dateTextLeft
                   }
@@ -741,7 +739,7 @@ export default function ScheduleScreen() {
                         color:
                           colors.text,
                       },
-                      isLayoutRight
+                      !isRTL
                         ? styles.textRight
                         : styles.textLeft,
                     ]}
@@ -844,24 +842,24 @@ export default function ScheduleScreen() {
                     : '#FFFFFF',
 
                 borderLeftWidth:
-                  isLayoutRight
+                  !isRTL
                     ? 0
                     : 4,
 
                 borderRightWidth:
-                  isLayoutRight
+                  !isRTL
                     ? 4
                     : 0,
 
                 borderLeftColor:
-                  !isLayoutRight
+                  isRTL
                     ? event.completed
                       ? '#10B981'
                       : event.color
                     : 'transparent',
 
                 borderRightColor:
-                  isLayoutRight
+                  !isRTL
                     ? event.completed
                       ? '#10B981'
                       : event.color
@@ -896,7 +894,7 @@ export default function ScheduleScreen() {
                   <View
                     style={[
                       styles.timelineItem,
-                      isLayoutRight
+                      !isRTL
                         ? styles.timelineItemRight
                         : styles.timelineItemLeft,
                     ]}
@@ -907,7 +905,7 @@ export default function ScheduleScreen() {
                       <View
                         style={[
                           styles.timelineLine,
-                          isLayoutRight
+                          !isRTL
                             ? styles.timelineLineRight
                             : styles.timelineLineLeft,
                           {
@@ -921,7 +919,7 @@ export default function ScheduleScreen() {
                     <View
                       style={[
                         styles.timelineDot,
-                        isLayoutRight
+                        !isRTL
                           ? styles.timelineDotRight
                           : styles.timelineDotLeft,
                         {
@@ -971,7 +969,7 @@ export default function ScheduleScreen() {
                         }
                         style={[
                           styles.eventContent,
-                          isLayoutRight
+                          !isRTL
                             ? styles.eventContentRight
                             : styles.eventContentLeft,
                         ]}
@@ -980,7 +978,7 @@ export default function ScheduleScreen() {
                         <View
                           style={[
                             styles.eventIconContainer,
-                            isLayoutRight
+                            !isRTL
                               ? styles.eventIconRight
                               : styles.eventIconLeft,
                             {
@@ -1005,7 +1003,7 @@ export default function ScheduleScreen() {
                           <View
                             style={[
                               styles.eventHeader,
-                              isLayoutRight
+                              !isRTL
                                 ? styles.eventHeaderRight
                                 : styles.eventHeaderLeft,
                             ]}
@@ -1025,7 +1023,7 @@ export default function ScheduleScreen() {
                                       ? 'line-through'
                                       : 'none',
                                 },
-                                isLayoutRight
+                                !isRTL
                                   ? styles.textRight
                                   : styles.textLeft,
                               ]}
@@ -1038,7 +1036,7 @@ export default function ScheduleScreen() {
                             <View
                               style={[
                                 styles.eventStatusIcon,
-                                isLayoutRight
+                                !isRTL
                                   ? styles.statusRight
                                   : styles.statusLeft,
                               ]}
@@ -1079,7 +1077,7 @@ export default function ScheduleScreen() {
                           <View
                             style={[
                               styles.eventDetails,
-                              isLayoutRight
+                              !isRTL
                                 ? styles.eventDetailsRight
                                 : styles.eventDetailsLeft,
                             ]}
@@ -1098,10 +1096,10 @@ export default function ScheduleScreen() {
                                   color:
                                     colors.textSecondary,
                                 },
-                                isLayoutRight
+                                !isRTL
                                   ? styles.textRight
                                   : styles.textLeft,
-                                isLayoutRight
+                                !isRTL
                                   ? styles.eventTimeRight
                                   : styles.eventTimeLeft,
                               ]}
@@ -1119,7 +1117,7 @@ export default function ScheduleScreen() {
                           <View
                             style={[
                               styles.eventCategory,
-                              isLayoutRight
+                              !isRTL
                                 ? styles.eventCategoryRight
                                 : styles.eventCategoryLeft,
                             ]}
@@ -1131,7 +1129,7 @@ export default function ScheduleScreen() {
                                   color:
                                     colors.textTertiary,
                                 },
-                                isLayoutRight
+                                !isRTL
                                   ? styles.textRight
                                   : styles.textLeft,
                               ]}
@@ -1154,172 +1152,295 @@ export default function ScheduleScreen() {
 
       <AnimatePresence>
         {isFabOpen && (
-          <View
-            style={[
-              styles.fabMenu,
-              isLayoutRight
-                ? styles.fabMenuLeft
-                : styles.fabMenuRight,
-            ]}
-          >
-            {fabOptions.map(
-              (option, index) => {
-                const OptionIcon =
-                  option.icon;
+          <>
+            <MotiView
+              from={{
+                opacity: 0,
+              }}
+              animate={{
+                opacity: 1,
+              }}
+              exit={{
+                opacity: 0,
+              }}
+              transition={{
+                type: 'timing',
+                duration: 180,
+              }}
+              pointerEvents="box-none"
+              style={styles.fabBackdrop}
+            >
+              <TouchableOpacity
+                style={styles.fabBackdropTouchable}
+                activeOpacity={1}
+                onPress={() =>
+                  setIsFabOpen(false)
+                }
+              />
+            </MotiView>
 
-                return (
-                  <MotiView
-                    key={option.id}
-                    from={{
-                      opacity: 0,
-                      scale: 0.5,
-                      translateY: 20,
-                    }}
-                    animate={{
-                      opacity: 1,
-                      scale: 1,
-                      translateY: 0,
-                    }}
-                    exit={{
-                      opacity: 0,
-                      scale: 0.5,
-                      translateY: 20,
-                    }}
-                    transition={{
-                      delay:
-                        index * 100,
-                      type: 'spring',
-                      damping: 15,
-                    }}
-                    style={[
-                      styles.fabOption,
-                      isLayoutRight
-                        ? styles.fabOptionLeft
-                        : styles.fabOptionRight,
-                    ]}
-                  >
-                    <TouchableOpacity
-                      style={[
-                        styles.fabOptionButton,
-                        {
-                          backgroundColor:
-                            option.color,
-                          overflow: 'hidden',
-                        },
-                      ]}
-                      onPress={() => {
-                        setIsFabOpen(
-                          false
-                        );
+            <View
+              pointerEvents="box-none"
+              style={[
+                styles.radialMenu,
+                isRTL
+                  ? styles.radialMenuLeft
+                  : styles.radialMenuRight,
+              ]}
+            >
+              {fabOptions.map(
+                (option, index) => {
+                  const OptionIcon =
+                    option.icon;
 
-                        if (
-                          option.id ===
-                          'task'
-                        ) {
-                          handleNavigate(
-                            '/schedule/add'
-                          );
-                        } else if (
-                          option.id ===
-                          'medication'
-                        ) {
-                          handleNavigate(
-                            '/medication/add'
-                          );
-                        } else if (
-                          option.id ===
-                          'consultation'
-                        ) {
-                          handleNavigate(
-                            '/consultation/add'
-                          );
-                        }
+                    const positions = isRTL
+                    ? [
+                        { x: 0, y: -85 },   
+                        { x: -60, y: -60 },   
+                        { x: -85, y: 0 },  
+                      ]
+                    : [
+                        { x: 0, y: -85 },   
+                        { x: 60, y: -60 },   
+                        { x: 85, y: 0 },     
+                      ];
+
+                  const position =
+                    positions[
+                      index
+                    ] || {
+                      x: 0,
+                      y: -115,
+                    };
+
+                  return (
+                    <MotiView
+                      key={option.id}
+                      from={{
+                        opacity: 0,
+                        scale: 0.15,
+                        translateX: 0,
+                        translateY: 0,
                       }}
-                      activeOpacity={0.8}
-                    >
-                      <ShineEffect
-                        color="#FFFFFF"
-                        delay={
-                          1300 +
-                          index * 250
-                        }
-                        duration={1600}
-                        opacity={0.16}
-                      />
-
-                      <OptionIcon
-                        size={24}
-                        color="#FFFFFF"
-                      />
-                    </TouchableOpacity>
-
-                    <Text
-                      style={[
-                        styles.fabOptionLabel,
-                        {
-                          color:
-                            '#FFFFFF',
-                        },
-                        isLayoutRight
-                          ? styles.textLeft
-                          : styles.textRight,
-                      ]}
-                    >
-                      {
-                        option.label
+                      animate={{
+                        opacity: 1,
+                        scale: 1,
+                        translateX:
+                          position.x,
+                        translateY:
+                          position.y,
+                      }}
+                      exit={{
+                        opacity: 0,
+                        scale: 0.15,
+                        translateX: 0,
+                        translateY: 0,
+                      }}
+                      transition={{
+                        type: 'spring',
+                        damping: 14,
+                        stiffness: 230,
+                        mass: 0.65,
+                        delay:
+                          index * 55,
+                      }}
+                      style={
+                        styles.radialOption
                       }
-                    </Text>
-                  </MotiView>
-                );
-              }
-            )}
-          </View>
+                    >
+                      <TouchableOpacity
+                        activeOpacity={
+                          0.82
+                        }
+                        style={[
+                          styles.fabOptionButton,
+                          {
+                            backgroundColor:
+                              option.color,
+                          },
+                        ]}
+                        onPress={() => {
+                          setIsFabOpen(
+                            false
+                          );
+
+                          if (
+                            option.id ===
+                            'task'
+                          ) {
+                            handleNavigate(
+                              '/schedule/add'
+                            );
+                          }
+
+                          if (
+                            option.id ===
+                            'medication'
+                          ) {
+                            handleNavigate(
+                              '/medication/add'
+                            );
+                          }
+
+                          if (
+                            option.id ===
+                            'consultation'
+                          ) {
+                            handleNavigate(
+                              '/consultation/add'
+                            );
+                          }
+                        }}
+                      >
+                        <ShineEffect
+                          color="#FFFFFF"
+                          delay={
+                            1300 +
+                            index * 220
+                          }
+                          duration={
+                            1550
+                          }
+                          opacity={
+                            0.15
+                          }
+                        />
+
+                        <OptionIcon
+                          size={23}
+                          color="#FFFFFF"
+                          strokeWidth={
+                            2
+                          }
+                        />
+                      </TouchableOpacity>
+
+                      <MotiView
+                        from={{
+                          opacity: 0,
+                          scale: 0.8,
+                        }}
+                        animate={{
+                          opacity: 1,
+                          scale: 1,
+                        }}
+                        exit={{
+                          opacity: 0,
+                          scale: 0.8,
+                        }}
+                        transition={{
+                          type: 'spring',
+                          damping: 16,
+                          stiffness: 220,
+                          delay:
+                            index *
+                              55 +
+                            80,
+                        }}
+                        style={[
+                          styles.radialLabel,
+                          index === 0
+                            ? styles.radialLabelTop
+                            : isRTL
+                            ? styles.radialLabelLeft
+                            : styles.radialLabelRight,
+                          {
+                            backgroundColor:
+                              isDark
+                                ? 'rgba(25,25,35,0.94)'
+                                : 'rgba(255,255,255,0.96)',
+                          },
+                        ]}
+                      >
+                        <Text
+                          numberOfLines={
+                            1
+                          }
+                          style={[
+                            styles.fabOptionLabel,
+                            {
+                              color:
+                                colors.text,
+                            },
+                          ]}
+                        >
+                          {
+                            option.label
+                          }
+                        </Text>
+                      </MotiView>
+                    </MotiView>
+                  );
+                }
+              )}
+            </View>
+          </>
         )}
       </AnimatePresence>
 
-      <TouchableOpacity
+      <MotiView
+        animate={{
+          scale: isFabOpen
+            ? 1.06
+            : 1,
+        }}
+        transition={{
+          type: 'spring',
+          damping: 13,
+          stiffness: 240,
+        }}
         style={[
-          styles.fab,
-          {
-            backgroundColor:
-              softPurple,
-            overflow: 'hidden',
-          },
-          isLayoutRight
+          styles.fabWrapper,
+          !isRTL
             ? styles.fabLeft
             : styles.fabRight,
         ]}
-        onPress={() =>
-          setIsFabOpen(
-            !isFabOpen
-          )
-        }
-        activeOpacity={0.8}
       >
-        <ShineEffect
-          color="#FFFFFF"
-          delay={1200}
-          duration={1500}
-          opacity={0.18}
-        />
-
-        <MotiView
-          animate={{
-            rotate: isFabOpen
-              ? '45deg'
-              : '0deg',
-          }}
-          transition={{
-            type: 'timing',
-            duration: 300,
-          }}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          style={[
+            styles.fab,
+            {
+              backgroundColor:
+                softPurple,
+            },
+          ]}
+          onPress={() =>
+            setIsFabOpen(
+              !isFabOpen
+            )
+          }
         >
-          <Plus
-            size={28}
+          <ShineEffect
             color="#FFFFFF"
+            delay={1100}
+            duration={1450}
+            opacity={0.18}
           />
-        </MotiView>
-      </TouchableOpacity>
+
+          <MotiView
+            animate={{
+              rotate: isFabOpen
+                ? '45deg'
+                : '0deg',
+              scale: isFabOpen
+                ? 0.9
+                : 1,
+            }}
+            transition={{
+              type: 'spring',
+              damping: 13,
+              stiffness: 230,
+            }}
+          >
+            <Plus
+              size={28}
+              color="#FFFFFF"
+              strokeWidth={2.3}
+            />
+          </MotiView>
+        </TouchableOpacity>
+      </MotiView>
     </LinearGradient>
   );
 }
@@ -1687,11 +1808,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
-  fab: {
+  fabWrapper: {
     position: 'absolute',
 
     bottom: 30,
 
+    width: 60,
+    height: 60,
+
+    zIndex: 30,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  fab: {
     width: 60,
     height: 60,
 
@@ -1704,15 +1835,15 @@ const styles = StyleSheet.create({
 
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 5,
     },
 
-    shadowOpacity: 0.22,
-    shadowRadius: 8,
+    shadowOpacity: 0.24,
+    shadowRadius: 10,
 
-    elevation: 6,
+    elevation: 8,
 
-    zIndex: 10,
+    overflow: 'hidden',
   },
 
   fabLeft: {
@@ -1725,42 +1856,99 @@ const styles = StyleSheet.create({
     left: 'auto',
   },
 
-  fabMenu: {
+  fabBackdrop: {
     position: 'absolute',
 
-    bottom: 100,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
 
-    zIndex: 5,
+    backgroundColor:
+      'rgba(0,0,0,0.10)',
+
+    zIndex: 15,
   },
 
-  fabMenuLeft: {
-    left: 20,
-    right: 'auto',
-    alignItems: 'flex-start',
+  fabBackdropTouchable: {
+    width: '100%',
+    height: '100%',
   },
 
-  fabMenuRight: {
-    right: 20,
-    left: 'auto',
-    alignItems: 'flex-end',
-  },
+  radialMenu: {
+    position: 'absolute',
 
-  fabOption: {
+    width: 300,
+    height: 300,
+
+    bottom: 0,
+
+    zIndex: 25,
+
     alignItems: 'center',
+    justifyContent: 'center',
 
-    marginBottom: 12,
-
-    flexDirection: 'row',
-
-    gap: 8,
+    pointerEvents: 'box-none',
   },
 
-  fabOptionLeft: {
-    flexDirection: 'row',
+  radialMenuLeft: {
+    left: -90,
+    right: 'auto',
   },
 
-  fabOptionRight: {
-    flexDirection: 'row-reverse',
+  radialMenuRight: {
+    right: -90,
+    left: 'auto',
+  },
+
+  radialOption: {
+    position: 'absolute',
+
+    width: 50,
+    height: 50,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    zIndex: 30,
+  },
+
+  radialLabel: {
+    position: 'absolute',
+
+    borderRadius: 10,
+
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+
+    minWidth: 70,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    shadowColor: '#000',
+
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+
+    shadowOpacity: 0.10,
+    shadowRadius: 5,
+
+    elevation: 3,
+  },
+
+  radialLabelTop: {
+    bottom: 56,
+  },
+
+  radialLabelLeft: {
+    right: 58,
+  },
+
+  radialLabelRight: {
+    left: 58,
   },
 
   fabOptionButton: {
@@ -1776,29 +1964,42 @@ const styles = StyleSheet.create({
 
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 3,
     },
 
     shadowOpacity: 0.20,
-    shadowRadius: 4,
+    shadowRadius: 7,
 
-    elevation: 4,
-  },
-
-  fabOptionLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-
-    backgroundColor:
-      'rgba(0,0,0,0.7)',
-
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-
-    borderRadius: 8,
+    elevation: 6,
 
     overflow: 'hidden',
   },
+
+  fabOptionLabel: {
+    fontSize: 13,
+
+    fontWeight: '600',
+
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+
+    borderRadius: 10,
+
+    overflow: 'hidden',
+
+    shadowColor: '#000',
+
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+
+    elevation: 2,
+  },
+
   timelineItem: {
     width: '100%',
   

@@ -2823,24 +2823,17 @@ const styles =
       backgroundColor:
         COLORS.accent,
     },
-
     statusLabel: {
       minWidth: 96,
-
       textAlign:
         'right',
-
       fontFamily:
         'JetBrainsMono_500Medium',
-
       fontSize: 10.5,
-
       letterSpacing:
         1.25,
-
       color:
         COLORS.muted,
-
       textTransform:
         'uppercase',
     },
