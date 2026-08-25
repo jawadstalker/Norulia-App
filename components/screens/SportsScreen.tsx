@@ -5,8 +5,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MotiView } from 'moti';
 import { useRouter } from 'expo-router';
 
 import {
@@ -30,6 +32,9 @@ import {
   BarChart3,
   CalendarDays,
   Sparkles,
+  X,
+  Lightbulb,
+  ListChecks,
 } from 'lucide-react-native';
 
 import { useTheme } from '../../context/ThemeContext';
@@ -59,6 +64,8 @@ const PALETTE = {
 
     border: '#E9E4F0',
     track: '#EDE9F2',
+
+    overlay: 'rgba(20,16,28,0.55)',
   },
 
   dark: {
@@ -80,6 +87,400 @@ const PALETTE = {
 
     border: 'rgba(255,255,255,0.075)',
     track: 'rgba(255,255,255,0.085)',
+
+    overlay: 'rgba(6,4,10,0.72)',
+  },
+};
+
+/* ================================================================
+   MOVEMENT FIGURE — animated illustration of the exercise motion
+   ================================================================ */
+
+type MovementType = 'stretch' | 'squat' | 'walk' | 'balance';
+
+function MovementFigure({
+  type,
+  color,
+  muted,
+}: {
+  type: MovementType;
+  color: string;
+  muted: string;
+}) {
+  const bodyPart = {
+    backgroundColor: color,
+  };
+
+  const limbPart = {
+    backgroundColor: muted,
+  };
+
+  if (type === 'squat') {
+    return (
+      <View style={figureStyles.stage}>
+        <MotiView
+          style={figureStyles.wholeFigure}
+          from={{ transform: [{ translateY: 0 }, { scaleY: 1 }] }}
+          animate={{ transform: [{ translateY: 16 }, { scaleY: 0.86 }] }}
+          transition={{ loop: true, repeatReverse: true, type: 'timing', duration: 750 }}
+        >
+          <View style={[figureStyles.head, bodyPart]} />
+          <View style={[figureStyles.torso, bodyPart]} />
+
+          <View style={figureStyles.armsRow}>
+            <View style={[figureStyles.arm, limbPart]} />
+            <View style={[figureStyles.arm, limbPart]} />
+          </View>
+
+          <View style={figureStyles.legsRow}>
+            <View style={[figureStyles.leg, limbPart]} />
+            <View style={[figureStyles.leg, limbPart]} />
+          </View>
+        </MotiView>
+      </View>
+    );
+  }
+
+  if (type === 'walk') {
+    return (
+      <View style={figureStyles.stage}>
+        <View style={figureStyles.wholeFigure}>
+          <View style={[figureStyles.head, bodyPart]} />
+          <View style={[figureStyles.torso, bodyPart]} />
+
+          <View style={figureStyles.pivotRow}>
+            <MotiView
+              style={figureStyles.limbPivot}
+              from={{ transform: [{ rotate: '20deg' }] }}
+              animate={{ transform: [{ rotate: '-20deg' }] }}
+              transition={{ loop: true, repeatReverse: true, type: 'timing', duration: 480 }}
+            >
+              <View style={[figureStyles.arm, figureStyles.hangingLimb, limbPart]} />
+            </MotiView>
+
+            <MotiView
+              style={figureStyles.limbPivot}
+              from={{ transform: [{ rotate: '-20deg' }] }}
+              animate={{ transform: [{ rotate: '20deg' }] }}
+              transition={{ loop: true, repeatReverse: true, type: 'timing', duration: 480 }}
+            >
+              <View style={[figureStyles.arm, figureStyles.hangingLimb, limbPart]} />
+            </MotiView>
+          </View>
+
+          <View style={figureStyles.pivotRowLegs}>
+            <MotiView
+              style={figureStyles.limbPivot}
+              from={{ transform: [{ rotate: '-24deg' }] }}
+              animate={{ transform: [{ rotate: '24deg' }] }}
+              transition={{ loop: true, repeatReverse: true, type: 'timing', duration: 480 }}
+            >
+              <View style={[figureStyles.leg, figureStyles.hangingLimb, bodyPart]} />
+            </MotiView>
+
+            <MotiView
+              style={figureStyles.limbPivot}
+              from={{ transform: [{ rotate: '24deg' }] }}
+              animate={{ transform: [{ rotate: '-24deg' }] }}
+              transition={{ loop: true, repeatReverse: true, type: 'timing', duration: 480 }}
+            >
+              <View style={[figureStyles.leg, figureStyles.hangingLimb, bodyPart]} />
+            </MotiView>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  if (type === 'balance') {
+    return (
+      <View style={figureStyles.stage}>
+        <MotiView
+          style={figureStyles.wholeFigure}
+          from={{ transform: [{ rotate: '-6deg' }] }}
+          animate={{ transform: [{ rotate: '6deg' }] }}
+          transition={{ loop: true, repeatReverse: true, type: 'timing', duration: 1300 }}
+        >
+          <View style={[figureStyles.head, bodyPart]} />
+          <View style={[figureStyles.torso, bodyPart]} />
+
+          <View style={figureStyles.pivotRow}>
+            <MotiView
+              style={figureStyles.limbPivot}
+              from={{ transform: [{ rotate: '-14deg' }] }}
+              animate={{ transform: [{ rotate: '14deg' }] }}
+              transition={{ loop: true, repeatReverse: true, type: 'timing', duration: 1300 }}
+            >
+              <View style={[figureStyles.arm, figureStyles.hangingLimb, limbPart]} />
+            </MotiView>
+
+            <MotiView
+              style={figureStyles.limbPivot}
+              from={{ transform: [{ rotate: '14deg' }] }}
+              animate={{ transform: [{ rotate: '-14deg' }] }}
+              transition={{ loop: true, repeatReverse: true, type: 'timing', duration: 1300 }}
+            >
+              <View style={[figureStyles.arm, figureStyles.hangingLimb, limbPart]} />
+            </MotiView>
+          </View>
+
+          <View style={figureStyles.legsRow}>
+            <View style={[figureStyles.leg, bodyPart]} />
+
+            <View
+              style={[
+                figureStyles.leg,
+                limbPart,
+                { transform: [{ rotate: '52deg' }, { translateX: -6 }] },
+              ]}
+            />
+          </View>
+        </MotiView>
+      </View>
+    );
+  }
+
+  return (
+    <View style={figureStyles.stage}>
+      <MotiView
+        style={figureStyles.wholeFigure}
+        from={{ transform: [{ scale: 1 }] }}
+        animate={{ transform: [{ scale: 1.05 }] }}
+        transition={{ loop: true, repeatReverse: true, type: 'timing', duration: 900 }}
+      >
+        <View style={[figureStyles.head, bodyPart]} />
+        <View style={[figureStyles.torso, bodyPart]} />
+
+        <View style={figureStyles.pivotRow}>
+          <MotiView
+            style={figureStyles.limbPivot}
+            from={{ transform: [{ rotate: '25deg' }] }}
+            animate={{ transform: [{ rotate: '-155deg' }] }}
+            transition={{ loop: true, repeatReverse: true, type: 'timing', duration: 1100 }}
+          >
+            <View style={[figureStyles.arm, figureStyles.hangingLimb, limbPart]} />
+          </MotiView>
+
+          <MotiView
+            style={figureStyles.limbPivot}
+            from={{ transform: [{ rotate: '-25deg' }] }}
+            animate={{ transform: [{ rotate: '155deg' }] }}
+            transition={{ loop: true, repeatReverse: true, type: 'timing', duration: 1100 }}
+          >
+            <View style={[figureStyles.arm, figureStyles.hangingLimb, limbPart]} />
+          </MotiView>
+        </View>
+
+        <View style={figureStyles.legsRow}>
+          <View style={[figureStyles.leg, limbPart]} />
+          <View style={[figureStyles.leg, limbPart]} />
+        </View>
+      </MotiView>
+    </View>
+  );
+}
+
+const figureStyles = StyleSheet.create({
+  stage: {
+    width: 150,
+    height: 176,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  wholeFigure: {
+    width: 90,
+    alignItems: 'center',
+  },
+
+  head: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+
+  torso: {
+    width: 20,
+    height: 54,
+    borderRadius: 10,
+    marginTop: 4,
+  },
+
+  armsRow: {
+    position: 'absolute',
+    top: 32,
+    width: 90,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+
+  legsRow: {
+    marginTop: 4,
+    width: 40,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+
+  arm: {
+    width: 10,
+    height: 42,
+    borderRadius: 5,
+  },
+
+  leg: {
+    width: 12,
+    height: 54,
+    borderRadius: 6,
+  },
+
+  pivotRow: {
+    position: 'absolute',
+    top: 34,
+    width: 96,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+
+  pivotRowLegs: {
+    marginTop: 4,
+    width: 44,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+
+  limbPivot: {
+    width: 10,
+    height: 10,
+    alignItems: 'center',
+  },
+
+  hangingLimb: {
+    marginTop: 0,
+  },
+});
+
+/* ================================================================
+   EXERCISE CONTENT (steps / tip / target / level per movement)
+   ================================================================ */
+
+const EXERCISE_CONTENT: Record<
+  string,
+  {
+    movement: MovementType;
+    target: { fa: string; en: string };
+    level: { fa: string; en: string };
+    steps: { fa: string[]; en: string[] };
+    tip: { fa: string; en: string };
+  }
+> = {
+  warmup: {
+    movement: 'stretch',
+    target: { fa: 'کل بدن', en: 'Full Body' },
+    level: { fa: 'آسان', en: 'Easy' },
+    steps: {
+      fa: [
+        'صاف بایستید و پاها را به اندازه عرض شانه باز کنید',
+        'بازوها را به‌آرامی بالای سر بکشید و نفس عمیق بکشید',
+        'گردن و شانه‌ها را چند بار به‌آرامی بچرخانید',
+      ],
+      en: [
+        'Stand tall with feet shoulder-width apart',
+        'Slowly reach both arms overhead while breathing deeply',
+        'Gently roll your neck and shoulders a few times',
+      ],
+    },
+    tip: {
+      fa: 'حرکات را آرام و کنترل‌شده انجام دهید؛ هدف گرم کردن است، نه فشار آوردن.',
+      en: 'Keep the movement slow and controlled — the goal is to warm up, not push hard.',
+    },
+  },
+
+  squat: {
+    movement: 'squat',
+    target: { fa: 'پایین‌تنه', en: 'Lower Body' },
+    level: { fa: 'متوسط', en: 'Moderate' },
+    steps: {
+      fa: [
+        'پاها را به اندازه عرض شانه باز کرده و نوک پا کمی رو به بیرون باشد',
+        'باسن را به سمت عقب و پایین ببرید، انگار می‌خواهید روی صندلی بنشینید',
+        'زانوها را از نوک پا عبور ندهید و سپس به آرامی بایستید',
+      ],
+      en: [
+        'Stand with feet shoulder-width apart, toes slightly out',
+        'Push your hips back and down as if sitting into a chair',
+        'Keep knees behind your toes, then stand back up with control',
+      ],
+    },
+    tip: {
+      fa: 'وزن بدن را روی پاشنه‌ها نگه دارید و کمر را صاف نگه دارید.',
+      en: 'Keep your weight in your heels and your back straight throughout.',
+    },
+  },
+
+  walk: {
+    movement: 'walk',
+    target: { fa: 'قلب و عروق', en: 'Cardio' },
+    level: { fa: 'آسان', en: 'Easy' },
+    steps: {
+      fa: [
+        'با گام‌های ثابت و ریتم منظم شروع به راه رفتن کنید',
+        'شانه‌ها را شل و بازوها را آزادانه همراه با گام‌ها تکان دهید',
+        'سرعت را به‌تدریج تا حدی که کمی نفس‌نفس بزنید افزایش دهید',
+      ],
+      en: [
+        'Start walking at a steady, comfortable pace',
+        'Keep shoulders relaxed and let your arms swing naturally',
+        'Gradually pick up the pace until your breathing quickens slightly',
+      ],
+    },
+    tip: {
+      fa: 'به جای طول قدم، روی سرعت و ریتم منظم گام‌ها تمرکز کنید.',
+      en: 'Focus on a quick, steady rhythm rather than long strides.',
+    },
+  },
+
+  balance: {
+    movement: 'balance',
+    target: { fa: 'مرکز بدن و تعادل', en: 'Core & Balance' },
+    level: { fa: 'متوسط', en: 'Moderate' },
+    steps: {
+      fa: [
+        'روی یک پا بایستید و زانوی پای دیگر را کمی بالا بیاورید',
+        'نگاه خود را به یک نقطه ثابت بدوزید تا تعادل بهتری داشته باشید',
+        'بازوها را کمی از بدن فاصله دهید تا پایداری بیشتری پیدا کنید',
+      ],
+      en: [
+        'Stand on one leg and lift the other knee slightly',
+        'Fix your gaze on a steady point ahead to help your balance',
+        'Hold your arms slightly out from your body for stability',
+      ],
+    },
+    tip: {
+      fa: 'اگر لازم شد برای حمایت به یک دیوار یا صندلی نزدیک بمانید.',
+      en: 'Stay near a wall or chair for light support if you need it.',
+    },
+  },
+
+  cooldown: {
+    movement: 'stretch',
+    target: { fa: 'کل بدن', en: 'Full Body' },
+    level: { fa: 'آسان', en: 'Easy' },
+    steps: {
+      fa: [
+        'نفس‌های عمیق و آرام بکشید تا ضربان قلب پایین بیاید',
+        'بازوها و پاها را به‌آرامی و بدون فشار کش دهید',
+        'چند ثانیه در سکوت بمانید و بدن را ریلکس کنید',
+      ],
+      en: [
+        'Take slow, deep breaths to bring your heart rate down',
+        'Gently stretch your arms and legs without forcing anything',
+        'Hold a few seconds of stillness and let your body relax',
+      ],
+    },
+    tip: {
+      fa: 'هرگز در کشش نپرید؛ حرکت باید آرام و پیوسته باشد.',
+      en: 'Never bounce into a stretch — keep the motion slow and steady.',
+    },
   },
 };
 
@@ -182,6 +583,13 @@ export default function SportsScreen() {
       noPressure: 'اگر امروز انرژی کمتری داری، شدت تمرین را کاهش بده.',
 
       safeTraining: 'حرکات را با فرم مناسب و در محدوده توانایی خود انجام دهید.',
+
+      tapToPreview: 'برای مشاهده حرکت لمس کنید',
+      targetArea: 'ناحیه هدف',
+      howTo: 'مراحل انجام حرکت',
+      formTip: 'نکته فرم صحیح',
+      markComplete: 'ثبت به‌عنوان انجام‌شده',
+      moveNumber: 'حرکت',
     },
 
     en: {
@@ -271,10 +679,18 @@ export default function SportsScreen() {
       noPressure: 'If your energy is lower today, reduce the workout intensity.',
 
       safeTraining: 'Perform movements with proper form and within your ability.',
+
+      tapToPreview: 'Tap to preview the movement',
+      targetArea: 'Target Area',
+      howTo: 'How to Perform',
+      formTip: 'Form Tip',
+      markComplete: 'Mark as Complete',
+      moveNumber: 'Move',
     },
   };
 
   const text = isRTL ? TEXTS.fa : TEXTS.en;
+  const lang = isRTL ? 'fa' : 'en';
 
   /* ================================================================
      STATE
@@ -282,6 +698,7 @@ export default function SportsScreen() {
 
   const [selectedMood, setSelectedMood] = useState('good');
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
+  const [activeExerciseId, setActiveExerciseId] = useState<string | null>(null);
 
   /* ================================================================
      MOODS
@@ -430,6 +847,32 @@ export default function SportsScreen() {
       }
       return [...current, exerciseId];
     });
+  };
+
+  /* ================================================================
+     ACTIVE EXERCISE (MODAL)
+  ================================================================ */
+
+  const activeExercise = exercises.find((item) => item.id === activeExerciseId) || null;
+  const activeContent = activeExerciseId ? EXERCISE_CONTENT[activeExerciseId] : null;
+  const activeIndex = activeExerciseId
+    ? exercises.findIndex((item) => item.id === activeExerciseId)
+    : -1;
+  const activeCompleted = activeExerciseId
+    ? completedExercises.includes(activeExerciseId)
+    : false;
+
+  const openExercise = (exerciseId: string) => {
+    setActiveExerciseId(exerciseId);
+  };
+
+  const closeExercise = () => {
+    setActiveExerciseId(null);
+  };
+
+  const startNextExercise = () => {
+    const next = exercises.find((item) => !completedExercises.includes(item.id));
+    setActiveExerciseId(next ? next.id : exercises[0].id);
   };
 
   /* ================================================================
@@ -912,11 +1355,7 @@ export default function SportsScreen() {
                 backgroundColor: palette.primary,
               },
             ]}
-            onPress={() => {
-              if (exercises.length > 0) {
-                toggleExercise(exercises[0].id);
-              }
-            }}
+            onPress={startNextExercise}
           >
             <Play size={17} color="#FFFFFF" fill="#FFFFFF" />
 
@@ -950,18 +1389,29 @@ export default function SportsScreen() {
           >
             {text.exercises}
           </Text>
+
+          <Text
+            style={[
+              styles.sectionSubtitle,
+              {
+                color: palette.textSecondary,
+                textAlign: isRTL ? 'right' : 'left',
+              },
+            ]}
+          >
+            {text.tapToPreview}
+          </Text>
         </View>
 
         <View style={styles.exerciseList}>
           {exercises.map((exercise, index) => {
             const Icon = exercise.icon;
             const completed = completedExercises.includes(exercise.id);
+            const ChevronIcon = isRTL ? ChevronLeft : ChevronRight;
 
             return (
-              <TouchableOpacity
+              <View
                 key={exercise.id}
-                activeOpacity={0.82}
-                onPress={() => toggleExercise(exercise.id)}
                 style={[
                   styles.exerciseCard,
                   {
@@ -971,9 +1421,10 @@ export default function SportsScreen() {
                   },
                 ]}
               >
-                {/* Number */}
-
-                <View
+                <TouchableOpacity
+                  activeOpacity={0.75}
+                  onPress={() => toggleExercise(exercise.id)}
+                  accessibilityRole="button"
                   style={[
                     styles.exerciseNumber,
                     {
@@ -995,122 +1446,129 @@ export default function SportsScreen() {
                       {index + 1}
                     </Text>
                   )}
-                </View>
+                </TouchableOpacity>
 
-                {/* Icon */}
-
-                <View
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => openExercise(exercise.id)}
                   style={[
-                    styles.exerciseIcon,
+                    styles.exerciseTouchArea,
                     {
-                      backgroundColor: palette.primarySoft,
-
-                      marginLeft: isRTL ? 12 : 0,
-
-                      marginRight: isRTL ? 0 : 12,
+                      flexDirection: isRTL ? 'row-reverse' : 'row',
                     },
                   ]}
                 >
-                  <Icon size={21} color={palette.primary} />
-                </View>
-
-                {/* Content */}
-
-                <View
-                  style={[
-                    styles.exerciseContent,
-                    {
-                      alignItems: isRTL ? 'flex-end' : 'flex-start',
-                    },
-                  ]}
-                >
-                  <Text
+                  <View
                     style={[
-                      styles.exerciseTitle,
+                      styles.exerciseIcon,
                       {
-                        color: palette.text,
-                        textAlign: isRTL ? 'right' : 'left',
-                        textDecorationLine: completed ? 'line-through' : 'none',
+                        backgroundColor: palette.primarySoft,
+
+                        marginLeft: isRTL ? 12 : 0,
+
+                        marginRight: isRTL ? 0 : 12,
                       },
                     ]}
                   >
-                    {exercise.title}
-                  </Text>
+                    <Icon size={21} color={palette.primary} />
+                  </View>
 
-                  <Text
+                  <View
                     style={[
-                      styles.exerciseSubtitle,
+                      styles.exerciseContent,
                       {
-                        color: palette.textSecondary,
-                        textAlign: isRTL ? 'right' : 'left',
+                        alignItems: isRTL ? 'flex-end' : 'flex-start',
                       },
                     ]}
                   >
-                    {exercise.subtitle}
-                  </Text>
-                </View>
+                    <Text
+                      style={[
+                        styles.exerciseTitle,
+                        {
+                          color: palette.text,
+                          textAlign: isRTL ? 'right' : 'left',
+                          textDecorationLine: completed ? 'line-through' : 'none',
+                        },
+                      ]}
+                    >
+                      {exercise.title}
+                    </Text>
 
-                {/* Stats */}
+                    <Text
+                      style={[
+                        styles.exerciseSubtitle,
+                        {
+                          color: palette.textSecondary,
+                          textAlign: isRTL ? 'right' : 'left',
+                        },
+                      ]}
+                    >
+                      {exercise.subtitle}
+                    </Text>
+                  </View>
 
-                <View
-                  style={[
-                    styles.exerciseStats,
-                    {
-                      alignItems: isRTL ? 'flex-start' : 'flex-end',
-                    },
-                  ]}
-                >
-                  {'reps' in exercise && exercise.reps ? (
-                    <>
-                      <Text
-                        style={[
-                          styles.exerciseStatValue,
-                          {
-                            color: palette.text,
-                          },
-                        ]}
-                      >
-                        {exercise.reps}
-                      </Text>
+                  <View
+                    style={[
+                      styles.exerciseStats,
+                      {
+                        alignItems: isRTL ? 'flex-start' : 'flex-end',
+                      },
+                    ]}
+                  >
+                    {'reps' in exercise && exercise.reps ? (
+                      <>
+                        <Text
+                          style={[
+                            styles.exerciseStatValue,
+                            {
+                              color: palette.text,
+                            },
+                          ]}
+                        >
+                          {exercise.reps}
+                        </Text>
 
-                      <Text
-                        style={[
-                          styles.exerciseStatLabel,
-                          {
-                            color: palette.textSecondary,
-                          },
-                        ]}
-                      >
-                        {text.reps}
-                      </Text>
-                    </>
-                  ) : (
-                    <>
-                      <Text
-                        style={[
-                          styles.exerciseStatValue,
-                          {
-                            color: palette.text,
-                          },
-                        ]}
-                      >
-                        {exercise.duration}
-                      </Text>
+                        <Text
+                          style={[
+                            styles.exerciseStatLabel,
+                            {
+                              color: palette.textSecondary,
+                            },
+                          ]}
+                        >
+                          {text.reps}
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <Text
+                          style={[
+                            styles.exerciseStatValue,
+                            {
+                              color: palette.text,
+                            },
+                          ]}
+                        >
+                          {exercise.duration}
+                        </Text>
 
-                      <Text
-                        style={[
-                          styles.exerciseStatLabel,
-                          {
-                            color: palette.textSecondary,
-                          },
-                        ]}
-                      >
-                        {exercise.id === 'balance' ? text.seconds : text.duration}
-                      </Text>
-                    </>
-                  )}
-                </View>
-              </TouchableOpacity>
+                        <Text
+                          style={[
+                            styles.exerciseStatLabel,
+                            {
+                              color: palette.textSecondary,
+                            },
+                          ]}
+                        >
+                          {exercise.id === 'balance' ? text.seconds : text.duration}
+                        </Text>
+                      </>
+                    )}
+                  </View>
+
+                  <ChevronIcon size={18} color={palette.textTertiary} />
+                </TouchableOpacity>
+              </View>
             );
           })}
         </View>
@@ -1357,6 +1815,11 @@ export default function SportsScreen() {
             );
           })}
         </View>
+
+        {/* ==========================================================
+            PERFORMANCE
+        ========================================================== */}
+
         <View
           style={[
             styles.performanceCard,
@@ -1520,6 +1983,9 @@ export default function SportsScreen() {
           </View>
         </View>
 
+        {/* ==========================================================
+            WEEKLY INSIGHT
+        ========================================================== */}
 
         <View
           style={[
@@ -1573,6 +2039,11 @@ export default function SportsScreen() {
             {text.weeklyInsightText}
           </Text>
         </View>
+
+        {/* ==========================================================
+            LOW ENERGY NOTE
+        ========================================================== */}
+
         <View
           style={[
             styles.noteCard,
@@ -1621,9 +2092,299 @@ export default function SportsScreen() {
 
         <View style={styles.bottomSpace} />
       </ScrollView>
+
+      {/* ==========================================================
+          EXERCISE DETAIL MODAL
+      ========================================================== */}
+
+      <Modal
+        visible={!!activeExercise}
+        animationType="slide"
+        transparent
+        onRequestClose={closeExercise}
+      >
+        <View style={[styles.modalOverlay, { backgroundColor: palette.overlay }]}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={closeExercise}
+          />
+
+          {activeExercise && activeContent && (
+            <View
+              style={[
+                styles.modalSheet,
+                {
+                  backgroundColor: palette.surface,
+                },
+              ]}
+            >
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.modalScrollContent}
+              >
+                <View style={styles.modalHandle} />
+
+                <View
+                  style={[
+                    styles.modalTopRow,
+                    {
+                      flexDirection: isRTL ? 'row-reverse' : 'row',
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.modalMoveBadge,
+                      {
+                        backgroundColor: palette.primaryFaint,
+                        flexDirection: isRTL ? 'row-reverse' : 'row',
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.modalMoveBadgeText, { color: palette.primary }]}>
+                      {text.moveNumber} {activeIndex + 1}/{exercises.length}
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    activeOpacity={0.75}
+                    onPress={closeExercise}
+                    style={[
+                      styles.modalCloseButton,
+                      {
+                        backgroundColor: palette.surfaceMuted,
+                      },
+                    ]}
+                  >
+                    <X size={18} color={palette.text} />
+                  </TouchableOpacity>
+                </View>
+
+                <LinearGradient
+                  colors={
+                    isDark
+                      ? ['#2B2438', '#211C2A']
+                      : ['#F0EAFE', '#FAF6FE']
+                  }
+                  style={[
+                    styles.demoStage,
+                    {
+                      borderColor: palette.border,
+                    },
+                  ]}
+                >
+                  <MovementFigure
+                    type={activeContent.movement}
+                    color={palette.primary}
+                    muted={isDark ? 'rgba(167,139,250,0.35)' : '#D8C7FA'}
+                  />
+                </LinearGradient>
+
+                <Text
+                  style={[
+                    styles.modalTitle,
+                    {
+                      color: palette.text,
+                      textAlign: isRTL ? 'right' : 'left',
+                    },
+                  ]}
+                >
+                  {activeExercise.title}
+                </Text>
+
+                <View
+                  style={[
+                    styles.modalChipsRow,
+                    {
+                      flexDirection: isRTL ? 'row-reverse' : 'row',
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.modalChip,
+                      {
+                        backgroundColor: palette.surfaceMuted,
+                      },
+                    ]}
+                  >
+                    <Target size={13} color={palette.primary} />
+
+                    <Text style={[styles.modalChipText, { color: palette.textSecondary }]}>
+                      {activeContent.target[lang]}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.modalChip,
+                      {
+                        backgroundColor: palette.surfaceMuted,
+                      },
+                    ]}
+                  >
+                    <Activity size={13} color={palette.primary} />
+
+                    <Text style={[styles.modalChipText, { color: palette.textSecondary }]}>
+                      {activeContent.level[lang]}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.modalChip,
+                      {
+                        backgroundColor: palette.surfaceMuted,
+                      },
+                    ]}
+                  >
+                    <Clock3 size={13} color={palette.primary} />
+
+                    <Text style={[styles.modalChipText, { color: palette.textSecondary }]}>
+                      {'reps' in activeExercise && activeExercise.reps
+                        ? `${activeExercise.reps} ${text.reps} × ${activeExercise.sets} ${text.sets}`
+                        : `${activeExercise.duration} ${
+                            activeExercise.id === 'balance' ? text.seconds : text.duration
+                          }`}
+                    </Text>
+                  </View>
+                </View>
+
+                <View
+                  style={[
+                    styles.modalSectionHeader,
+                    {
+                      flexDirection: isRTL ? 'row-reverse' : 'row',
+                    },
+                  ]}
+                >
+                  <ListChecks size={16} color={palette.primary} />
+
+                  <Text style={[styles.modalSectionTitle, { color: palette.text }]}>
+                    {text.howTo}
+                  </Text>
+                </View>
+
+                <View style={styles.stepsList}>
+                  {activeContent.steps[lang].map((step, stepIndex) => (
+                    <View
+                      key={stepIndex}
+                      style={[
+                        styles.stepRow,
+                        {
+                          flexDirection: isRTL ? 'row-reverse' : 'row',
+                        },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.stepNumber,
+                          {
+                            backgroundColor: palette.primarySoft,
+                          },
+                        ]}
+                      >
+                        <Text style={[styles.stepNumberText, { color: palette.primary }]}>
+                          {stepIndex + 1}
+                        </Text>
+                      </View>
+
+                      <Text
+                        style={[
+                          styles.stepText,
+                          {
+                            color: palette.textSecondary,
+                            textAlign: isRTL ? 'right' : 'left',
+                          },
+                        ]}
+                      >
+                        {step}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+
+                <View
+                  style={[
+                    styles.tipCard,
+                    {
+                      backgroundColor: palette.primaryFaint,
+                      flexDirection: isRTL ? 'row-reverse' : 'row',
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.tipIcon,
+                      {
+                        backgroundColor: palette.primarySoft,
+                      },
+                    ]}
+                  >
+                    <Lightbulb size={16} color={palette.primary} />
+                  </View>
+
+                  <View style={styles.tipTextWrap}>
+                    <Text style={[styles.tipLabel, { color: palette.primary }]}>
+                      {text.formTip}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.tipText,
+                        {
+                          color: palette.textSecondary,
+                          textAlign: isRTL ? 'right' : 'left',
+                        },
+                      ]}
+                    >
+                      {activeContent.tip[lang]}
+                    </Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  activeOpacity={0.86}
+                  onPress={() => toggleExercise(activeExercise.id)}
+                  style={[
+                    styles.modalCompleteButton,
+                    {
+                      backgroundColor: activeCompleted ? palette.surfaceMuted : palette.primary,
+                      borderWidth: activeCompleted ? 1 : 0,
+                      borderColor: palette.border,
+                    },
+                  ]}
+                >
+                  {activeCompleted ? (
+                    <Check size={18} color={palette.primary} strokeWidth={3} />
+                  ) : (
+                    <Check size={18} color="#FFFFFF" strokeWidth={3} />
+                  )}
+
+                  <Text
+                    style={[
+                      styles.modalCompleteButtonText,
+                      {
+                        color: activeCompleted ? palette.primary : '#FFFFFF',
+                      },
+                    ]}
+                  >
+                    {activeCompleted ? text.done : text.markComplete}
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
+          )}
+        </View>
+      </Modal>
     </LinearGradient>
   );
 }
+
+/* ================================================================
+   STYLES
+================================================================ */
 
 const styles = StyleSheet.create({
   container: {
@@ -1635,6 +2396,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
+
+  /* ==============================================================
+     HEADER
+  ============================================================== */
 
   header: {
     flexDirection: 'row',
@@ -1682,6 +2447,10 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
 
+  /* ==============================================================
+     PROGRESS
+  ============================================================== */
+
   progressCard: {
     borderRadius: 22,
     borderWidth: 1,
@@ -1725,20 +2494,28 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '900',
   },
+
   progressPercentLabel: {
     fontSize: 10,
     marginTop: 2,
   },
+
   progressTrack: {
     height: 7,
     borderRadius: 8,
     overflow: 'hidden',
     marginTop: 16,
   },
+
   progressFill: {
     height: '100%',
     borderRadius: 8,
   },
+
+  /* ==============================================================
+     SECTION
+  ============================================================== */
+
   sectionHeader: {
     marginBottom: 12,
   },
@@ -1886,6 +2663,12 @@ const styles = StyleSheet.create({
   exerciseNumberText: {
     fontSize: 11,
     fontWeight: '800',
+  },
+
+  exerciseTouchArea: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 6,
   },
 
   exerciseIcon: {
@@ -2178,5 +2961,184 @@ const styles = StyleSheet.create({
 
   bottomSpace: {
     height: 20,
+  },
+
+  /* ==============================================================
+     EXERCISE MODAL
+  ============================================================== */
+
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+
+  modalSheet: {
+    maxHeight: '90%',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden',
+  },
+
+  modalScrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 34,
+  },
+
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 3,
+    backgroundColor: 'rgba(140,130,150,0.35)',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+
+  modalTopRow: {
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+
+  modalMoveBadge: {
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+
+  modalMoveBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+
+  modalCloseButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  demoStage: {
+    borderRadius: 24,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+  },
+
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    marginTop: 18,
+    letterSpacing: -0.3,
+  },
+
+  modalChipsRow: {
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+
+  modalChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: 12,
+  },
+
+  modalChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  modalSectionHeader: {
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 26,
+    marginBottom: 12,
+  },
+
+  modalSectionTitle: {
+    fontSize: 15,
+    fontWeight: '900',
+  },
+
+  stepsList: {
+    gap: 12,
+  },
+
+  stepRow: {
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+
+  stepNumber: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+
+  stepNumberText: {
+    fontSize: 11,
+    fontWeight: '900',
+  },
+
+  stepText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 21,
+  },
+
+  tipCard: {
+    borderRadius: 18,
+    padding: 14,
+    marginTop: 20,
+    gap: 10,
+    alignItems: 'flex-start',
+  },
+
+  tipIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  tipTextWrap: {
+    flex: 1,
+  },
+
+  tipLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    marginBottom: 3,
+  },
+
+  tipText: {
+    fontSize: 12,
+    lineHeight: 19,
+  },
+
+  modalCompleteButton: {
+    height: 54,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 24,
+  },
+
+  modalCompleteButtonText: {
+    fontSize: 14,
+    fontWeight: '800',
   },
 });

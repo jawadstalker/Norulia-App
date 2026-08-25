@@ -7,75 +7,111 @@ import React, {
   useState,
   ReactNode,
 } from 'react';
-import { useColorScheme } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { Colors } from '../constants/theme';
-import { ThemeMode } from '../types';
+import {
+  useColorScheme,
+} from 'react-native';
+
+import AsyncStorage from
+  '@react-native-async-storage/async-storage';
+
+import {
+  Colors,
+} from '../constants/theme';
+
+import {
+  ThemeMode,
+} from '../types';
 
 interface ThemeContextType {
   theme: ThemeMode;
+
   isDark: boolean;
-  colors: typeof Colors.light;
+
+  isAthlete: boolean;
+
+  colors:
+    typeof Colors.light;
+
   toggleTheme: () => void;
-  setTheme: (theme: ThemeMode) => Promise<void>;
+
+  setTheme: (
+    theme: ThemeMode
+  ) => Promise<void>;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(
-  undefined
-);
+const ThemeContext =
+  createContext<
+    ThemeContextType | undefined
+  >(undefined);
 
-const THEME_KEY = '@neurolia_theme';
+const THEME_KEY =
+  '@neurolia_theme';
 
 export function ThemeProvider({
   children,
 }: {
   children: ReactNode;
 }) {
-  const systemColorScheme = useColorScheme();
+  const systemColorScheme =
+    useColorScheme();
 
-  const [theme, setThemeState] = useState<ThemeMode>('light');
+  const [
+    theme,
+    setThemeState,
+  ] = useState<ThemeMode>('light');
+
+  // =====================================================
+  // LOAD THEME
+  // =====================================================
 
   useEffect(() => {
     let mounted = true;
 
-    const loadTheme = async () => {
-      try {
-        const savedTheme =
-          await AsyncStorage.getItem(THEME_KEY);
+    const loadTheme =
+      async () => {
+        try {
+          const savedTheme =
+            await AsyncStorage.getItem(
+              THEME_KEY
+            );
 
-        if (!mounted) {
-          return;
-        }
+          if (!mounted) {
+            return;
+          }
 
-        if (
-          savedTheme === 'light' ||
-          savedTheme === 'dark'
-        ) {
-          setThemeState(savedTheme);
-          return;
-        }
+          if (
+            savedTheme === 'light' ||
+            savedTheme === 'dark' ||
+            savedTheme === 'athlete'
+          ) {
+            setThemeState(
+              savedTheme
+            );
 
-        setThemeState(
-          systemColorScheme === 'dark'
-            ? 'dark'
-            : 'light'
-        );
-      } catch (error) {
-        console.error(
-          '[THEME] Failed to load theme:',
-          error
-        );
+            return;
+          }
 
-        if (mounted) {
           setThemeState(
             systemColorScheme === 'dark'
               ? 'dark'
               : 'light'
           );
+        } catch (error) {
+          console.error(
+            '[THEME] Failed to load theme:',
+            error
+          );
+
+          if (mounted) {
+            setThemeState(
+              systemColorScheme === 'dark'
+                ? 'dark'
+                : 'light'
+            );
+          }
         }
-      }
-    };
+      };
 
     loadTheme();
 
@@ -84,83 +120,139 @@ export function ThemeProvider({
     };
   }, [systemColorScheme]);
 
-  const setTheme = useCallback(
-    async (newTheme: ThemeMode) => {
-      if (newTheme === theme) {
-        return;
-      }
+  // =====================================================
+  // SET THEME
+  // =====================================================
 
-      try {
-        setThemeState(newTheme);
+  const setTheme =
+    useCallback(
+      async (
+        newTheme: ThemeMode
+      ) => {
+        try {
+          setThemeState(
+            newTheme
+          );
 
-        await AsyncStorage.setItem(
-          THEME_KEY,
-          newTheme
+          await AsyncStorage.setItem(
+            THEME_KEY,
+            newTheme
+          );
+        } catch (error) {
+          console.error(
+            '[THEME] Failed to save theme:',
+            error
+          );
+        }
+      },
+      []
+    );
+
+  // =====================================================
+  // TOGGLE THEME
+  // =====================================================
+
+  const toggleTheme =
+    useCallback(
+      () => {
+        setThemeState(
+          (currentTheme) => {
+            let nextTheme: ThemeMode;
+
+            if (
+              currentTheme === 'light'
+            ) {
+              nextTheme = 'dark';
+            } else if (
+              currentTheme === 'dark'
+            ) {
+              nextTheme = 'athlete';
+            } else {
+              nextTheme = 'light';
+            }
+
+            AsyncStorage.setItem(
+              THEME_KEY,
+              nextTheme
+            ).catch((error) => {
+              console.error(
+                '[THEME] Failed to persist theme:',
+                error
+              );
+            });
+
+            return nextTheme;
+          }
         );
-      } catch (error) {
-        console.error(
-          '[THEME] Failed to save theme:',
-          error
-        );
-      }
-    },
-    [theme]
-  );
+      },
+      []
+    );
 
-  const toggleTheme = useCallback(() => {
-    setThemeState((currentTheme) => {
-      const nextTheme =
-        currentTheme === 'light'
-          ? 'dark'
-          : 'light';
+  // =====================================================
+  // DERIVED STATE
+  // =====================================================
 
-      AsyncStorage.setItem(
-        THEME_KEY,
-        nextTheme
-      ).catch((error) => {
-        console.error(
-          '[THEME] Failed to persist theme:',
-          error
-        );
-      });
+  const isDark =
+    theme === 'dark' ||
+    theme === 'athlete';
 
-      return nextTheme;
-    });
-  }, []);
+  const isAthlete =
+    theme === 'athlete';
 
-  const isDark = theme === 'dark';
+  const colors =
+    useMemo(
+      () => Colors[theme],
+      [theme]
+    );
 
-  const colors = useMemo(
-    () => Colors[theme],
-    [theme]
-  );
+  // =====================================================
+  // CONTEXT VALUE
+  // =====================================================
 
-  const value = useMemo<ThemeContextType>(
-    () => ({
-      theme,
-      isDark,
-      colors,
-      toggleTheme,
-      setTheme,
-    }),
-    [
-      theme,
-      isDark,
-      colors,
-      toggleTheme,
-      setTheme,
-    ]
-  );
+  const value =
+    useMemo<ThemeContextType>(
+      () => ({
+        theme,
+
+        isDark,
+
+        isAthlete,
+
+        colors,
+
+        toggleTheme,
+
+        setTheme,
+      }),
+      [
+        theme,
+        isDark,
+        isAthlete,
+        colors,
+        toggleTheme,
+        setTheme,
+      ]
+    );
 
   return (
-    <ThemeContext.Provider value={value}>
+    <ThemeContext.Provider
+      value={value}
+    >
       {children}
     </ThemeContext.Provider>
   );
 }
 
-export function useTheme(): ThemeContextType {
-  const context = useContext(ThemeContext);
+// =======================================================
+// HOOK
+// =======================================================
+
+export function useTheme():
+  ThemeContextType {
+  const context =
+    useContext(
+      ThemeContext
+    );
 
   if (!context) {
     throw new Error(

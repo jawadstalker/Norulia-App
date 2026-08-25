@@ -1,4 +1,6 @@
-// constants/theme.ts
+// =======================================================
+// NEUROLIA DESIGN SYSTEM
+// =======================================================
 
 export const Colors = {
   // =====================================================
@@ -6,36 +8,28 @@ export const Colors = {
   // =====================================================
 
   light: {
-    // Base
     background: '#F8F7FC',
     surface: '#FFFFFF',
     surfaceSecondary: '#F3F1F9',
 
-    // Primary
     primary: '#7C3AED',
     primaryLight: '#A78BFA',
     primaryDark: '#5B21B6',
 
-    // Accent
     accent: '#C4B5FD',
 
-    // Text
     text: '#1F2937',
     textSecondary: '#6B7280',
     textTertiary: '#9CA3AF',
 
-    // Border
     border: '#E5E7EB',
 
-    // Status
     success: '#10B981',
     warning: '#F59E0B',
     error: '#EF4444',
 
-    // Shadow
     cardShadow: 'rgba(124, 58, 237, 0.08)',
 
-    // Gradients
     gradientPrimary: [
       '#EEF2FF',
       '#FFFFFF',
@@ -43,8 +37,13 @@ export const Colors = {
     ],
 
     gradientCard: [
-      'rgba(255,255,255,0.95)',
-      'rgba(255,255,255,0.80)',
+      'rgba(255,255,255,0.98)',
+      'rgba(255,255,255,0.86)',
+    ],
+
+    gradientCardSolid: [
+      '#FFFFFF',
+      '#F3F1F9',
     ],
 
     gradientButton: [
@@ -58,7 +57,6 @@ export const Colors = {
       '#6D28D9',
     ],
 
-    // Glass
     glassBackground:
       'rgba(255,255,255,0.92)',
 
@@ -71,14 +69,12 @@ export const Colors = {
     glassBorderHover:
       'rgba(124,58,237,0.25)',
 
-    // Glow
     glow:
       'rgba(124,58,237,0.12)',
 
     glowStrong:
       'rgba(124,58,237,0.20)',
 
-    // Icon
     iconFilter:
       'brightness(0) saturate(100%)',
   },
@@ -88,10 +84,6 @@ export const Colors = {
   // =====================================================
 
   dark: {
-    // ===================================================
-    // BACKGROUND
-    // ===================================================
-
     background: '#0B1026',
 
     surface:
@@ -100,25 +92,13 @@ export const Colors = {
     surfaceSecondary:
       '#1A1645',
 
-    // ===================================================
-    // PRIMARY
-    // ===================================================
-
     primary: '#7B61FF',
 
     primaryLight: '#9A86FF',
 
     primaryDark: '#6348E8',
 
-    // ===================================================
-    // ACCENT
-    // ===================================================
-
     accent: '#7B61FF',
-
-    // ===================================================
-    // TEXT
-    // ===================================================
 
     text: '#FFFFFF',
 
@@ -126,16 +106,8 @@ export const Colors = {
 
     textTertiary: '#A9B1D6',
 
-    // ===================================================
-    // BORDER
-    // ===================================================
-
     border:
       'rgba(123, 97, 255, 0.20)',
-
-    // ===================================================
-    // STATUS
-    // ===================================================
 
     success: '#34D399',
 
@@ -143,16 +115,8 @@ export const Colors = {
 
     error: '#F87171',
 
-    // ===================================================
-    // SHADOW
-    // ===================================================
-
     cardShadow:
       'rgba(0, 0, 0, 0.50)',
-
-    // ===================================================
-    // GRADIENTS
-    // ===================================================
 
     gradientPrimary: [
       '#0B1026',
@@ -161,8 +125,8 @@ export const Colors = {
     ],
 
     gradientCard: [
-      'rgba(26, 29, 69, 0.60)',
-      'rgba(26, 29, 69, 0.60)',
+      'rgba(26, 29, 69, 0.72)',
+      'rgba(16, 27, 61, 0.72)',
     ],
 
     gradientCardSolid: [
@@ -181,10 +145,6 @@ export const Colors = {
       '#7B61FF',
     ],
 
-    // ===================================================
-    // GLASS
-    // ===================================================
-
     glassBackground:
       'rgba(26, 29, 69, 0.60)',
 
@@ -197,22 +157,146 @@ export const Colors = {
     glassBorderHover:
       'rgba(123, 97, 255, 0.40)',
 
-    // ===================================================
-    // GLOW
-    // ===================================================
-
     glow:
       'rgba(110, 90, 255, 0.18)',
 
     glowStrong:
       'rgba(110, 90, 255, 0.25)',
 
-    // ===================================================
-    // ICON
-    // ===================================================
-
     iconFilter:
       'brightness(0) invert(1)',
+  },
+
+  // =====================================================
+  // NEON ATHLETE
+  // Brain × Body × Performance
+  // =====================================================
+
+  athlete: {
+    // ---------------------------------------------------
+    // BACKGROUND
+    // ---------------------------------------------------
+
+    background: '#070908',
+
+    surface: '#0D120F',
+
+    surfaceSecondary: '#121A15',
+
+    // ---------------------------------------------------
+    // PRIMARY
+    // ---------------------------------------------------
+
+    primary: '#B8FF3D',
+
+    primaryLight: '#D0FF67',
+
+    primaryDark: '#72B52A',
+
+    // ---------------------------------------------------
+    // ACCENT
+    // ---------------------------------------------------
+
+    accent: '#B8FF3D',
+
+    // ---------------------------------------------------
+    // TEXT
+    // ---------------------------------------------------
+
+    text: '#F4F7F2',
+
+    textSecondary: '#9AA69D',
+
+    textTertiary: '#657168',
+
+    // ---------------------------------------------------
+    // BORDER
+    // ---------------------------------------------------
+
+    border:
+      'rgba(184, 255, 61, 0.16)',
+
+    // ---------------------------------------------------
+    // STATUS
+    // ---------------------------------------------------
+
+    success: '#B8FF3D',
+
+    warning: '#FFC857',
+
+    error: '#FF5C5C',
+
+    // ---------------------------------------------------
+    // SHADOW
+    // ---------------------------------------------------
+
+    cardShadow:
+      'rgba(0, 0, 0, 0.65)',
+
+    // ---------------------------------------------------
+    // GRADIENTS
+    // ---------------------------------------------------
+
+    gradientPrimary: [
+      '#070908',
+      '#0D1710',
+      '#101B12',
+    ],
+
+    gradientCard: [
+      'rgba(18, 26, 21, 0.96)',
+      'rgba(10, 15, 12, 0.96)',
+    ],
+
+    gradientCardSolid: [
+      '#121A15',
+      '#0A0F0C',
+    ],
+
+    gradientButton: [
+      '#D0FF67',
+      '#B8FF3D',
+      '#7FBC2B',
+    ],
+
+    gradientHeader: [
+      '#0B120D',
+      '#172414',
+      '#B8FF3D',
+    ],
+
+    // ---------------------------------------------------
+    // GLASS
+    // ---------------------------------------------------
+
+    glassBackground:
+      'rgba(13, 18, 15, 0.86)',
+
+    glassHover:
+      'rgba(18, 26, 21, 0.96)',
+
+    glassBorder:
+      'rgba(184, 255, 61, 0.14)',
+
+    glassBorderHover:
+      'rgba(184, 255, 61, 0.34)',
+
+    // ---------------------------------------------------
+    // GLOW
+    // ---------------------------------------------------
+
+    glow:
+      'rgba(184, 255, 61, 0.10)',
+
+    glowStrong:
+      'rgba(184, 255, 61, 0.22)',
+
+    // ---------------------------------------------------
+    // ICON
+    // ---------------------------------------------------
+
+    iconFilter:
+      'brightness(0) saturate(100%)',
   },
 };
 
@@ -253,8 +337,11 @@ export const BorderRadius = {
 };
 
 // =======================================================
-// GRADIENT HELPER
+// THEME HELPERS
 // =======================================================
+
+export type ThemeColors =
+  typeof Colors.light;
 
 export const getGradient = (
   type:
@@ -263,44 +350,65 @@ export const getGradient = (
     | 'cardSolid'
     | 'button'
     | 'header',
-  isDark: boolean,
+  theme:
+    | 'light'
+    | 'dark'
+    | 'athlete',
 ) => {
-  const theme = isDark
-    ? Colors.dark
-    : Colors.light;
+  const selectedTheme =
+    Colors[theme];
 
   switch (type) {
     case 'primary':
-      return theme.gradientPrimary;
+      return selectedTheme.gradientPrimary;
 
     case 'card':
-      return theme.gradientCard;
+      return selectedTheme.gradientCard;
 
     case 'cardSolid':
-      return isDark
-        ? Colors.dark.gradientCardSolid
-        : Colors.light.gradientCard;
+      return selectedTheme.gradientCardSolid;
 
     case 'button':
-      return theme.gradientButton;
+      return selectedTheme.gradientButton;
 
     case 'header':
-      return theme.gradientHeader;
+      return selectedTheme.gradientHeader;
 
     default:
-      return theme.gradientPrimary;
+      return selectedTheme.gradientPrimary;
   }
 };
 
 // =======================================================
-// GLASS STYLE
+// GLASS
 // =======================================================
 
 export const getGlassStyle = (
-  isDark: boolean,
+  theme:
+    | 'light'
+    | 'dark'
+    | 'athlete',
   opacity: number = 0.08,
 ) => {
-  if (isDark) {
+  const selectedTheme =
+    Colors[theme];
+
+  if (theme === 'athlete') {
+    return {
+      backgroundColor:
+        `rgba(13, 18, 15, ${Math.min(
+          opacity + 0.75,
+          0.96,
+        )})`,
+
+      borderColor:
+        selectedTheme.glassBorder,
+
+      borderWidth: 1,
+    };
+  }
+
+  if (theme === 'dark') {
     return {
       backgroundColor:
         `rgba(26, 29, 69, ${Math.min(
@@ -309,7 +417,7 @@ export const getGlassStyle = (
         )})`,
 
       borderColor:
-        'rgba(123, 97, 255, 0.20)',
+        selectedTheme.glassBorder,
 
       borderWidth: 1,
     };
@@ -323,41 +431,67 @@ export const getGlassStyle = (
       )})`,
 
     borderColor:
-      'rgba(124, 58, 237, 0.12)',
+      selectedTheme.glassBorder,
 
     borderWidth: 1,
   };
 };
 
 // =======================================================
-// HOVER GLASS STYLE
+// GLASS HOVER
 // =======================================================
 
 export const getGlassHoverStyle = (
-  isDark: boolean,
+  theme:
+    | 'light'
+    | 'dark'
+    | 'athlete',
 ) => {
-  return {
-    backgroundColor: isDark
-      ? 'rgba(26, 29, 69, 0.80)'
-      : 'rgba(255, 255, 255, 0.98)',
+  const selectedTheme =
+    Colors[theme];
 
-    borderColor: isDark
-      ? 'rgba(123, 97, 255, 0.40)'
-      : 'rgba(124, 58, 237, 0.25)',
+  return {
+    backgroundColor:
+      selectedTheme.glassHover,
+
+    borderColor:
+      selectedTheme.glassBorderHover,
 
     borderWidth: 1,
   };
 };
 
 // =======================================================
-// SHADOW STYLE
+// SHADOW
 // =======================================================
 
 export const getShadowStyle = (
-  isDark: boolean,
+  theme:
+    | 'light'
+    | 'dark'
+    | 'athlete',
   intensity: number = 1,
 ) => {
-  if (isDark) {
+  if (theme === 'athlete') {
+    return {
+      shadowColor: '#000000',
+
+      shadowOffset: {
+        width: 0,
+        height: 8 * intensity,
+      },
+
+      shadowOpacity: 0.65,
+
+      shadowRadius:
+        24 * intensity,
+
+      elevation:
+        10 * intensity,
+    };
+  }
+
+  if (theme === 'dark') {
     return {
       shadowColor:
         'rgba(110, 90, 255, 0.25)',
@@ -401,9 +535,29 @@ export const getShadowStyle = (
 // =======================================================
 
 export const getCardShadowStyle = (
-  isDark: boolean,
+  theme:
+    | 'light'
+    | 'dark'
+    | 'athlete',
 ) => {
-  if (isDark) {
+  if (theme === 'athlete') {
+    return {
+      shadowColor: '#000000',
+
+      shadowOffset: {
+        width: 0,
+        height: 12,
+      },
+
+      shadowOpacity: 0.65,
+
+      shadowRadius: 30,
+
+      elevation: 12,
+    };
+  }
+
+  if (theme === 'dark') {
     return {
       shadowColor:
         'rgba(0, 0, 0, 0.50)',
@@ -438,15 +592,7 @@ export const getCardShadowStyle = (
   };
 };
 
-// =======================================================
-// THEME TYPE
-// =======================================================
-
 export type AppColors =
   typeof Colors.light;
-
-// =======================================================
-// DEFAULT EXPORT
-// =======================================================
 
 export default Colors;

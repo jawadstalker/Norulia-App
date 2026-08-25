@@ -1,16 +1,32 @@
-import React from 'react';
+import React, {
+  useEffect,
+  useRef,
+} from 'react';
+
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Animated,
 } from 'react-native';
 
-import { useTheme } from '../../context/ThemeContext';
-import { useLanguage } from '../../context/LanguageContext';
-import { useAuth } from '../../context/AuthContext';
-import { Card } from '../ui/Card';
+import {
+  useTheme,
+} from '../../context/ThemeContext';
+
+import {
+  useLanguage,
+} from '../../context/LanguageContext';
+
+import {
+  useAuth,
+} from '../../context/AuthContext';
+
+import {
+  Card,
+} from '../ui/Card';
 
 import {
   Spacing,
@@ -20,8 +36,306 @@ import {
 import {
   Sun,
   Moon,
+  Dumbbell,
+  Check,
+  Sparkles,
   LogOut,
+  Palette,
 } from 'lucide-react-native';
+
+import {
+  LinearGradient,
+} from 'expo-linear-gradient';
+
+import {
+  ThemeMode,
+} from '../../types';
+
+// =======================================================
+// THEME OPTION
+// =======================================================
+
+interface ThemeOptionProps {
+  mode: ThemeMode;
+
+  title: string;
+
+  subtitle: string;
+
+  icon: React.ReactNode;
+
+  previewColors: string[];
+
+  selected: boolean;
+
+  onPress: () => void;
+
+  isRTL: boolean;
+}
+
+function ThemeOption({
+  title,
+  subtitle,
+  icon,
+  previewColors,
+  selected,
+  onPress,
+  isRTL,
+}: ThemeOptionProps) {
+  const scale =
+    useRef(
+      new Animated.Value(
+        selected ? 1 : 0.98
+      )
+    ).current;
+
+  const glow =
+    useRef(
+      new Animated.Value(
+        selected ? 1 : 0
+      )
+    ).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(
+        scale,
+        {
+          toValue:
+            selected
+              ? 1
+              : 0.98,
+
+          useNativeDriver: true,
+
+          damping: 16,
+
+          stiffness: 180,
+        }
+      ),
+
+      Animated.timing(
+        glow,
+        {
+          toValue:
+            selected
+              ? 1
+              : 0,
+
+          duration: 220,
+
+          useNativeDriver: false,
+        }
+      ),
+    ]).start();
+  }, [
+    selected,
+    scale,
+    glow,
+  ]);
+
+  const borderColor =
+    glow.interpolate({
+      inputRange: [0, 1],
+      outputRange: [
+        'rgba(128,128,128,0.12)',
+        previewColors[1],
+      ],
+    });
+
+  return (
+    <Animated.View
+      style={[
+        styles.themeOptionWrapper,
+        {
+          transform: [
+            {
+              scale,
+            },
+          ],
+        },
+      ]}
+    >
+      <TouchableOpacity
+        activeOpacity={0.88}
+        onPress={onPress}
+        accessibilityRole="button"
+        style={[
+          styles.themeOption,
+
+        ]}
+      >
+
+        <View
+          style={[
+            styles.themePreview,
+            {
+              backgroundColor:
+                previewColors[0],
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.previewTop,
+              {
+                backgroundColor:
+                  previewColors[2],
+              },
+            ]}
+          />
+
+          <View
+            style={[
+              styles.previewContent,
+              {
+                backgroundColor:
+                  previewColors[0],
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.previewLine,
+                {
+                  backgroundColor:
+                    previewColors[3],
+                },
+              ]}
+            />
+
+            <View
+              style={[
+                styles.previewLineShort,
+                {
+                  backgroundColor:
+                    previewColors[3],
+                },
+              ]}
+            />
+
+            <View
+              style={[
+                styles.previewCard,
+                {
+                  backgroundColor:
+                    previewColors[2],
+                },
+              ]}
+            />
+
+            <View
+              style={[
+                styles.previewAccent,
+                {
+                  backgroundColor:
+                    previewColors[1],
+                },
+              ]}
+            />
+          </View>
+        </View>
+
+        {/* =================================================
+            INFO
+        ================================================= */}
+
+        <View
+          style={[
+            styles.themeInfo,
+            {
+              alignItems: isRTL
+                ? 'flex-end'
+                : 'flex-start',
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.themeTitleRow,
+              {
+                flexDirection:
+                  isRTL
+                    ? 'row-reverse'
+                    : 'row',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.themeIcon,
+                {
+                  backgroundColor:
+                    selected
+                      ? previewColors[1]
+                      : 'rgba(128,128,128,0.10)',
+                },
+              ]}
+            >
+              {icon}
+            </View>
+
+            <Text
+              style={[
+                styles.themeTitle,
+                {
+                  color:
+                    selected
+                      ? previewColors[1]
+                      : '#FFFFFF',
+                },
+              ]}
+            >
+              {title}
+            </Text>
+          </View>
+
+          <Text
+            style={[
+              styles.themeSubtitle,
+              {
+                textAlign:
+                  isRTL
+                    ? 'right'
+                    : 'left',
+              },
+            ]}
+          >
+            {subtitle}
+          </Text>
+        </View>
+
+        {/* =================================================
+            CHECK
+        ================================================= */}
+
+        {selected && (
+          <View
+            style={[
+              styles.checkBadge,
+              {
+                backgroundColor:
+                  previewColors[1],
+              },
+            ]}
+          >
+            <Check
+              size={15}
+              color={
+                previewColors[0]
+              }
+              strokeWidth={3}
+            />
+          </View>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
+// =======================================================
+// SETTINGS SCREEN
+// =======================================================
 
 export function SettingsScreen() {
   const {
@@ -37,214 +351,510 @@ export function SettingsScreen() {
     isRTL,
   } = useLanguage();
 
-  const { logout } = useAuth();
+  const {
+    logout,
+  } = useAuth();
+
+  // =====================================================
+  // THEME DATA
+  // =====================================================
+
+  const themeOptions = [
+    {
+      mode: 'light' as ThemeMode,
+
+      title:
+        isRTL
+          ? 'روشن'
+          : 'Light',
+
+      subtitle:
+        isRTL
+          ? 'تم روشن و مینیمال'
+          : 'Clean & minimal',
+
+      icon: (
+        <Sun
+          size={18}
+          color={
+            theme === 'light'
+              ? '#FFFFFF'
+              : colors.textSecondary
+          }
+        />
+      ),
+
+      previewColors: [
+        '#F8F7FC',
+        '#7C3AED',
+        '#FFFFFF',
+        '#D7D2E8',
+      ],
+    },
+
+    {
+      mode: 'dark' as ThemeMode,
+
+      title:
+        isRTL
+          ? 'تاریک'
+          : 'Dark',
+
+      subtitle:
+        isRTL
+          ? 'تیره و آرام برای شب'
+          : 'Deep & comfortable',
+
+      icon: (
+        <Moon
+          size={18}
+          color={
+            theme === 'dark'
+              ? '#FFFFFF'
+              : colors.textSecondary
+          }
+        />
+      ),
+
+      previewColors: [
+        '#0B1026',
+        '#7B61FF',
+        '#1A1645',
+        '#6F75A8',
+      ],
+    },
+
+    {
+      mode: 'athlete' as ThemeMode,
+
+      title:
+        'Neon Athlete',
+
+      subtitle:
+        isRTL
+          ? 'Brain × Body × Performance'
+          : 'Brain × Body × Performance',
+
+      icon: (
+        <Dumbbell
+          size={18}
+          color={
+            theme === 'athlete'
+              ? '#071006'
+              : '#B8FF3D'
+          }
+          strokeWidth={2.5}
+        />
+      ),
+
+      previewColors: [
+        '#070908',
+        '#B8FF3D',
+        '#121A15',
+        '#4D5C50',
+      ],
+    },
+  ];
+
+  // =====================================================
+  // RENDER
+  // =====================================================
 
   return (
     <ScrollView
-      style={{
-        ...styles.container,
-        backgroundColor: colors.background,
-      }}
-      contentContainerStyle={{
-        ...styles.content,
-        direction: isRTL ? 'rtl' : 'ltr',
-      }}
+      style={[
+        styles.container,
+        {
+          backgroundColor:
+            colors.background,
+        },
+      ]}
+      contentContainerStyle={[
+        styles.content,
+        {
+          direction:
+            isRTL
+              ? 'rtl'
+              : 'ltr',
+        },
+      ]}
       showsVerticalScrollIndicator={false}
     >
-      {/* =========================================
-          TITLE
-      ========================================= */}
+      {/* =================================================
+          HERO
+      ================================================= */}
 
-      <Text
-        style={{
-          ...styles.title,
-          color: colors.text,
-          textAlign: isRTL ? 'right' : 'left',
-          writingDirection: isRTL ? 'rtl' : 'ltr',
-        }}
+      <View
+        style={[
+          styles.hero,
+          {
+            alignItems:
+              isRTL
+                ? 'flex-end'
+                : 'flex-start',
+          },
+        ]}
       >
-        {t.settings}
-      </Text>
-
-      {/* =========================================
-          THEME SECTION
-      ========================================= */}
-
-      <Card
-        style={{
-          ...styles.section,
-          backgroundColor: colors.surface,
-          borderColor: colors.border,
-        }}
-      >
-        <Text
-          style={{
-            ...styles.sectionTitle,
-            color: colors.textSecondary,
-            textAlign: isRTL ? 'right' : 'left',
-            writingDirection: isRTL ? 'rtl' : 'ltr',
-          }}
+        <View
+          style={[
+            styles.heroIcon,
+            {
+              backgroundColor:
+                colors.primary + '18',
+              borderColor:
+                colors.primary + '35',
+            },
+          ]}
         >
-          {t.theme}
+          <Palette
+            size={22}
+            color={
+              colors.primary
+            }
+            strokeWidth={2.2}
+          />
+        </View>
+
+        <Text
+          style={[
+            styles.title,
+            {
+              color:
+                colors.text,
+
+              textAlign:
+                isRTL
+                  ? 'right'
+                  : 'left',
+            },
+          ]}
+        >
+          {t.settings}
         </Text>
 
-        <View
-          style={{
-            ...styles.optionsRow,
-            flexDirection: isRTL ? 'row-reverse' : 'row',
-          }}
+        <Text
+          style={[
+            styles.heroSubtitle,
+            {
+              color:
+                colors.textSecondary,
+
+              textAlign:
+                isRTL
+                  ? 'right'
+                  : 'left',
+            },
+          ]}
         >
-          {/* LIGHT */}
+          {isRTL
+            ? 'ظاهر Neurolia را برای خودت شخصی‌سازی کن'
+            : 'Customize your Neurolia experience'}
+        </Text>
+      </View>
 
-          <TouchableOpacity
-            activeOpacity={0.75}
-            onPress={() => setTheme('light')}
-            accessibilityRole="button"
-            accessibilityLabel={t.lightMode}
-            style={{
-              ...styles.option,
-              backgroundColor: colors.surfaceSecondary,
-              borderColor:
-                theme === 'light'
-                  ? colors.primary
-                  : colors.border,
-              borderWidth: theme === 'light' ? 2 : 1,
-            }}
-          >
-            <Sun
-              size={22}
-              color={
-                theme === 'light'
-                  ? colors.primary
-                  : colors.textSecondary
-              }
-              strokeWidth={2}
-            />
-
-            <Text
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-              style={{
-                ...styles.optionText,
-                color:
-                  theme === 'light'
-                    ? colors.primary
-                    : colors.text,
-                writingDirection: isRTL ? 'rtl' : 'ltr',
-              }}
-            >
-              {t.lightMode}
-            </Text>
-          </TouchableOpacity>
-
-          {/* DARK */}
-
-          <TouchableOpacity
-            activeOpacity={0.75}
-            onPress={() => setTheme('dark')}
-            accessibilityRole="button"
-            accessibilityLabel={t.darkMode}
-            style={{
-              ...styles.option,
-              backgroundColor: colors.surfaceSecondary,
-              borderColor:
-                theme === 'dark'
-                  ? colors.primary
-                  : colors.border,
-              borderWidth: theme === 'dark' ? 2 : 1,
-            }}
-          >
-            <Moon
-              size={22}
-              color={
-                theme === 'dark'
-                  ? colors.primary
-                  : colors.textSecondary
-              }
-              strokeWidth={2}
-            />
-
-            <Text
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-              style={{
-                ...styles.optionText,
-                color:
-                  theme === 'dark'
-                    ? colors.primary
-                    : colors.text,
-                writingDirection: isRTL ? 'rtl' : 'ltr',
-              }}
-            >
-              {t.darkMode}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </Card>
-
-      {/* =========================================
-          LANGUAGE SECTION
-      ========================================= */}
+      {/* =================================================
+          APPEARANCE
+      ================================================= */}
 
       <Card
-        style={{
-          ...styles.section,
-          backgroundColor: colors.surface,
-          borderColor: colors.border,
-        }}
+        style={[
+          styles.section,
+          {
+            backgroundColor:
+              colors.surface,
+
+            borderColor:
+              colors.border,
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.sectionHeader,
+            {
+              flexDirection:
+                isRTL
+                  ? 'row-reverse'
+                  : 'row',
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.sectionIcon,
+              {
+                backgroundColor:
+                  colors.primary + '14',
+              },
+            ]}
+          >
+            <Sparkles
+              size={18}
+              color={
+                colors.primary
+              }
+            />
+          </View>
+
+          <View
+            style={[
+              styles.sectionHeaderText,
+              {
+                alignItems:
+                  isRTL
+                    ? 'flex-end'
+                    : 'flex-start',
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.sectionTitle,
+                {
+                  color:
+                    colors.text,
+                },
+              ]}
+            >
+              {isRTL
+                ? 'ظاهر برنامه'
+                : 'Appearance'}
+            </Text>
+
+            <Text
+              style={[
+                styles.sectionDescription,
+                {
+                  color:
+                    colors.textSecondary,
+
+                  textAlign:
+                    isRTL
+                      ? 'right'
+                      : 'left',
+                },
+              ]}
+            >
+              {isRTL
+                ? 'تم مورد علاقه خود را انتخاب کن'
+                : 'Choose your preferred experience'}
+            </Text>
+          </View>
+        </View>
+
+        {/* =================================================
+            THEME OPTIONS
+        ================================================= */}
+
+        <View
+          style={
+            styles.themeList
+          }
+        >
+          {themeOptions.map(
+            (option) => (
+              <ThemeOption
+                key={
+                  option.mode
+                }
+                mode={
+                  option.mode
+                }
+                title={
+                  option.title
+                }
+                subtitle={
+                  option.subtitle
+                }
+                icon={
+                  option.icon
+                }
+                previewColors={
+                  option.previewColors
+                }
+                selected={
+                  theme ===
+                  option.mode
+                }
+                onPress={() =>
+                  setTheme(
+                    option.mode
+                  )
+                }
+                isRTL={
+                  isRTL
+                }
+              />
+            )
+          )}
+        </View>
+
+        {/* =================================================
+            ATHLETE CALLOUT
+        ================================================= */}
+
+        {theme ===
+          'athlete' && (
+          <LinearGradient
+            colors={[
+              'rgba(184,255,61,0.14)',
+              'rgba(184,255,61,0.03)',
+              'rgba(184,255,61,0.10)',
+            ]}
+            start={{
+              x: 0,
+              y: 0,
+            }}
+            end={{
+              x: 1,
+              y: 1,
+            }}
+            style={[
+              styles.athleteCallout,
+              {
+                borderColor:
+                  'rgba(184,255,61,0.20)',
+              },
+            ]}
+          >
+            <Dumbbell
+              size={19}
+              color="#B8FF3D"
+              strokeWidth={2.4}
+            />
+
+            <View
+              style={[
+                styles.calloutContent,
+                {
+                  alignItems:
+                    isRTL
+                      ? 'flex-end'
+                      : 'flex-start',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.calloutTitle,
+                  {
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                Neon Athlete Mode
+              </Text>
+
+              <Text
+                style={[
+                  styles.calloutText,
+                  {
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {isRTL
+                  ? 'تم طراحی‌شده برای Brain × Body × Performance'
+                  : 'Designed for Brain × Body × Performance'}
+              </Text>
+            </View>
+          </LinearGradient>
+        )}
+      </Card>
+
+      {/* =================================================
+          LANGUAGE
+      ================================================= */}
+
+      <Card
+        style={[
+          styles.section,
+          {
+            backgroundColor:
+              colors.surface,
+
+            borderColor:
+              colors.border,
+          },
+        ]}
       >
         <Text
-          style={{
-            ...styles.sectionTitle,
-            color: colors.textSecondary,
-            textAlign: isRTL ? 'right' : 'left',
-            writingDirection: isRTL ? 'rtl' : 'ltr',
-          }}
+          style={[
+            styles.sectionTitle,
+            {
+              color:
+                colors.textSecondary,
+
+              textAlign:
+                isRTL
+                  ? 'right'
+                  : 'left',
+            },
+          ]}
         >
           {t.language}
         </Text>
 
         <View
-          style={{
-            ...styles.optionsRow,
-            flexDirection: isRTL ? 'row-reverse' : 'row',
-          }}
+          style={[
+            styles.optionsRow,
+            {
+              flexDirection:
+                isRTL
+                  ? 'row-reverse'
+                  : 'row',
+            },
+          ]}
         >
           {/* PERSIAN */}
 
           <TouchableOpacity
-            activeOpacity={0.75}
-            onPress={() => setLanguage('fa')}
-            accessibilityRole="button"
-            accessibilityLabel={t.persian}
-            style={{
-              ...styles.option,
-              backgroundColor: colors.surfaceSecondary,
-              borderColor:
-                language === 'fa'
-                  ? colors.primary
-                  : colors.border,
-              borderWidth: language === 'fa' ? 2 : 1,
-            }}
+            activeOpacity={0.78}
+            onPress={() =>
+              setLanguage('fa')
+            }
+            style={[
+              styles.languageOption,
+              {
+                backgroundColor:
+                  colors.surfaceSecondary,
+
+                borderColor:
+                  language === 'fa'
+                    ? colors.primary
+                    : colors.border,
+
+                borderWidth:
+                  language === 'fa'
+                    ? 2
+                    : 1,
+              },
+            ]}
           >
-            <Text style={styles.flag}>
+            <Text
+              style={
+                styles.flag
+              }
+            >
               🇮🇷
             </Text>
 
             <Text
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-              style={{
-                ...styles.optionText,
-                color:
-                  language === 'fa'
-                    ? colors.primary
-                    : colors.text,
-                writingDirection: isRTL ? 'rtl' : 'ltr',
-              }}
+              style={[
+                styles.optionText,
+                {
+                  color:
+                    language === 'fa'
+                      ? colors.primary
+                      : colors.text,
+                },
+              ]}
             >
               {t.persian}
             </Text>
@@ -253,36 +863,46 @@ export function SettingsScreen() {
           {/* ENGLISH */}
 
           <TouchableOpacity
-            activeOpacity={0.75}
-            onPress={() => setLanguage('en')}
-            accessibilityRole="button"
-            accessibilityLabel={t.english}
-            style={{
-              ...styles.option,
-              backgroundColor: colors.surfaceSecondary,
-              borderColor:
-                language === 'en'
-                  ? colors.primary
-                  : colors.border,
-              borderWidth: language === 'en' ? 2 : 1,
-            }}
+            activeOpacity={0.78}
+            onPress={() =>
+              setLanguage('en')
+            }
+            style={[
+              styles.languageOption,
+              {
+                backgroundColor:
+                  colors.surfaceSecondary,
+
+                borderColor:
+                  language === 'en'
+                    ? colors.primary
+                    : colors.border,
+
+                borderWidth:
+                  language === 'en'
+                    ? 2
+                    : 1,
+              },
+            ]}
           >
-            <Text style={styles.flag}>
+            <Text
+              style={
+                styles.flag
+              }
+            >
               🇬🇧
             </Text>
 
             <Text
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-              style={{
-                ...styles.optionText,
-                color:
-                  language === 'en'
-                    ? colors.primary
-                    : colors.text,
-                writingDirection: isRTL ? 'rtl' : 'ltr',
-              }}
+              style={[
+                styles.optionText,
+                {
+                  color:
+                    language === 'en'
+                      ? colors.primary
+                      : colors.text,
+                },
+              ]}
             >
               {t.english}
             </Text>
@@ -290,161 +910,587 @@ export function SettingsScreen() {
         </View>
       </Card>
 
-      {/* =========================================
+      {/* =================================================
           LOGOUT
-      ========================================= */}
+      ================================================= */}
 
       <TouchableOpacity
-        activeOpacity={0.75}
+        activeOpacity={0.78}
         onPress={logout}
         accessibilityRole="button"
-        accessibilityLabel={t.logout}
-        style={{
-          ...styles.logoutButton,
-          backgroundColor: colors.error + '15',
-          borderColor: colors.error + '30',
-        }}
+        accessibilityLabel={
+          t.logout
+        }
+        style={[
+          styles.logoutButton,
+          {
+            backgroundColor:
+              colors.error + '12',
+
+            borderColor:
+              colors.error + '30',
+          },
+        ]}
       >
         <LogOut
           size={20}
-          color={colors.error}
+          color={
+            colors.error
+          }
           strokeWidth={2}
         />
 
         <Text
-          style={{
-            ...styles.logoutText,
-            color: colors.error,
-            writingDirection: isRTL ? 'rtl' : 'ltr',
-          }}
+          style={[
+            styles.logoutText,
+            {
+              color:
+                colors.error,
+            },
+          ]}
         >
           {t.logout}
         </Text>
       </TouchableOpacity>
 
-      <View style={styles.bottomSpace} />
+      <View
+        style={
+          styles.bottomSpace
+        }
+      />
     </ScrollView>
   );
 }
 
-/* =========================================================
-   STYLES
-========================================================= */
+// =======================================================
+// STYLES
+// =======================================================
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
 
-  content: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: 40,
-    width: '100%',
-  },
+    content: {
+      paddingHorizontal:
+        Spacing.lg,
 
-  /* =========================================
-     TITLE
-  ========================================= */
+      paddingTop:
+        Spacing.md,
 
-  title: {
-    width: '100%',
-    fontSize: 28,
-    lineHeight: 36,
-    fontWeight: '700',
-    marginBottom: Spacing.lg,
-    includeFontPadding: false,
-  },
+      paddingBottom:
+        50,
 
-  /* =========================================
-     SECTION
-  ========================================= */
+      width: '100%',
+    },
 
-  section: {
-    width: '100%',
-    marginBottom: Spacing.lg,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-  },
+    // ===================================================
+    // HERO
+    // ===================================================
 
-  sectionTitle: {
-    width: '100%',
-    fontSize: 13,
-    lineHeight: 19,
-    fontWeight: '600',
-    marginBottom: Spacing.md,
-    letterSpacing: 0.4,
-    includeFontPadding: false,
-  },
+    hero: {
+      width: '100%',
+      marginBottom:
+        Spacing.lg,
+    },
 
-  /* =========================================
-     OPTIONS
-  ========================================= */
+    heroIcon: {
+      width: 48,
+      height: 48,
 
-  optionsRow: {
-    width: '100%',
-    alignItems: 'stretch',
-    gap: Spacing.sm,
-  },
+      borderRadius:
+        BorderRadius.md,
 
-  option: {
-    flex: 1,
-    minWidth: 0,
-    minHeight: 58,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    overflow: 'hidden',
-  },
+      alignItems:
+        'center',
 
-  optionText: {
-    flexShrink: 1,
-    minWidth: 0,
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '600',
-    textAlign: 'center',
-    includeFontPadding: false,
-  },
+      justifyContent:
+        'center',
 
-  flag: {
-    fontSize: 21,
-    lineHeight: 25,
-    flexShrink: 0,
-  },
+      borderWidth: 1,
 
-  /* =========================================
-     LOGOUT
-  ========================================= */
+      marginBottom:
+        Spacing.md,
+    },
 
-  logoutButton: {
-    width: '100%',
-    minHeight: 56,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    gap: Spacing.sm,
-    overflow: 'hidden',
-  },
+    title: {
+      width: '100%',
 
-  logoutText: {
-    fontSize: 15,
-    lineHeight: 21,
-    fontWeight: '600',
-    includeFontPadding: false,
-  },
+      fontSize: 30,
 
-  bottomSpace: {
-    height: 30,
-  },
-});
+      lineHeight: 38,
+
+      fontWeight: '800',
+
+      letterSpacing: -0.6,
+
+      includeFontPadding:
+        false,
+    },
+
+    heroSubtitle: {
+      width: '100%',
+
+      fontSize: 14,
+
+      lineHeight: 21,
+
+      marginTop: 6,
+
+      includeFontPadding:
+        false,
+    },
+
+    // ===================================================
+    // SECTION
+    // ===================================================
+
+    section: {
+      width: '100%',
+
+      marginBottom:
+        Spacing.lg,
+
+      padding:
+        Spacing.md,
+
+      borderWidth: 1,
+
+      borderRadius:
+        BorderRadius.xl,
+
+      overflow: 'hidden',
+    },
+
+    sectionHeader: {
+      width: '100%',
+
+      alignItems:
+        'center',
+
+      gap: Spacing.sm,
+
+      marginBottom:
+        Spacing.lg,
+    },
+
+    sectionIcon: {
+      width: 40,
+      height: 40,
+
+      borderRadius:
+        BorderRadius.md,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      flexShrink: 0,
+    },
+
+    sectionHeaderText: {
+      flex: 1,
+
+      minWidth: 0,
+    },
+
+    sectionTitle: {
+      width: '100%',
+
+      fontSize: 15,
+
+      lineHeight: 21,
+
+      fontWeight: '700',
+
+      includeFontPadding:
+        false,
+    },
+
+    sectionDescription: {
+      width: '100%',
+
+      fontSize: 12,
+
+      lineHeight: 18,
+
+      marginTop: 2,
+
+      includeFontPadding:
+        false,
+    },
+
+    // ===================================================
+    // THEMES
+    // ===================================================
+
+    themeList: {
+      width: '100%',
+
+      gap: Spacing.sm,
+    },
+
+    themeOptionWrapper: {
+      width: '100%',
+    },
+
+    themeOption: {
+      width: '100%',
+
+      minHeight: 112,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      borderWidth: 1,
+
+      padding: 10,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      position: 'relative',
+
+      overflow: 'hidden',
+
+      backgroundColor:
+        'rgba(128,128,128,0.035)',
+    },
+
+    // ===================================================
+    // PREVIEW
+    // ===================================================
+
+    themePreview: {
+      width: 84,
+      height: 88,
+
+      borderRadius:
+        BorderRadius.md,
+
+      overflow: 'hidden',
+
+      flexShrink: 0,
+    },
+
+    previewTop: {
+      height: 17,
+
+      width: '100%',
+    },
+
+    previewContent: {
+      flex: 1,
+
+      padding: 9,
+
+      position: 'relative',
+    },
+
+    previewLine: {
+      height: 5,
+
+      width: '68%',
+
+      borderRadius: 4,
+
+      opacity: 0.7,
+
+      marginBottom: 5,
+    },
+
+    previewLineShort: {
+      height: 4,
+
+      width: '42%',
+
+      borderRadius: 4,
+
+      opacity: 0.4,
+    },
+
+    previewCard: {
+      height: 29,
+
+      width: '100%',
+
+      borderRadius: 6,
+
+      marginTop: 8,
+    },
+
+    previewAccent: {
+      position: 'absolute',
+
+      width: 20,
+
+      height: 20,
+
+      borderRadius: 10,
+
+      right: 7,
+
+      bottom: 7,
+    },
+
+    // ===================================================
+    // INFO
+    // ===================================================
+
+    themeInfo: {
+      flex: 1,
+
+      minWidth: 0,
+
+      paddingHorizontal:
+        Spacing.sm,
+    },
+
+    themeTitleRow: {
+      alignItems:
+        'center',
+
+      gap: 8,
+
+      marginBottom: 5,
+    },
+
+    themeIcon: {
+      width: 30,
+      height: 30,
+
+      borderRadius: 9,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    themeTitle: {
+      fontSize: 15,
+
+      lineHeight: 20,
+
+      fontWeight: '700',
+
+      includeFontPadding:
+        false,
+    },
+
+    themeSubtitle: {
+      color:
+        '#89948C',
+
+      fontSize: 12,
+
+      lineHeight: 18,
+
+      includeFontPadding:
+        false,
+    },
+
+    // ===================================================
+    // CHECK
+    // ===================================================
+
+    checkBadge: {
+      position: 'absolute',
+
+      top: 9,
+
+      right: 9,
+
+      width: 26,
+
+      height: 26,
+
+      borderRadius: 13,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    // ===================================================
+    // ATHLETE CALLOUT
+    // ===================================================
+
+    athleteCallout: {
+      width: '100%',
+
+      marginTop:
+        Spacing.md,
+
+      minHeight: 66,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      borderWidth: 1,
+
+      paddingHorizontal:
+        Spacing.md,
+
+      paddingVertical:
+        Spacing.sm,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      gap: Spacing.sm,
+    },
+
+    calloutContent: {
+      flex: 1,
+
+      minWidth: 0,
+    },
+
+    calloutTitle: {
+      color: '#B8FF3D',
+
+      fontSize: 13,
+
+      lineHeight: 18,
+
+      fontWeight: '800',
+
+      includeFontPadding:
+        false,
+    },
+
+    calloutText: {
+      color: '#849087',
+
+      fontSize: 11,
+
+      lineHeight: 17,
+
+      marginTop: 2,
+
+      includeFontPadding:
+        false,
+    },
+
+    // ===================================================
+    // LANGUAGE
+    // ===================================================
+
+    optionsRow: {
+      width: '100%',
+
+      alignItems:
+        'stretch',
+
+      gap: Spacing.sm,
+    },
+
+    languageOption: {
+      flex: 1,
+
+      minWidth: 0,
+
+      minHeight: 58,
+
+      borderRadius:
+        BorderRadius.md,
+
+      paddingHorizontal:
+        Spacing.sm,
+
+      paddingVertical: 10,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      justifyContent:
+        'center',
+
+      gap: 8,
+
+      overflow: 'hidden',
+    },
+
+    flag: {
+      fontSize: 21,
+
+      lineHeight: 25,
+
+      flexShrink: 0,
+    },
+
+    optionText: {
+      flexShrink: 1,
+
+      minWidth: 0,
+
+      fontSize: 14,
+
+      lineHeight: 20,
+
+      fontWeight: '600',
+
+      textAlign: 'center',
+
+      includeFontPadding:
+        false,
+    },
+
+    // ===================================================
+    // LOGOUT
+    // ===================================================
+
+    logoutButton: {
+      width: '100%',
+
+      minHeight: 56,
+
+      borderRadius:
+        BorderRadius.lg,
+
+      borderWidth: 1,
+
+      flexDirection: 'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      paddingHorizontal:
+        Spacing.lg,
+
+      paddingVertical:
+        Spacing.md,
+
+      gap: Spacing.sm,
+
+      overflow: 'hidden',
+    },
+
+    logoutText: {
+      fontSize: 15,
+
+      lineHeight: 21,
+
+      fontWeight: '600',
+
+      includeFontPadding:
+        false,
+    },
+
+    bottomSpace: {
+      height: 30,
+    },
+  });

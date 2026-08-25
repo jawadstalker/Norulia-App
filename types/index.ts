@@ -1,4 +1,7 @@
-export type ThemeMode = 'light' | 'dark';
+export type ThemeMode =
+  | 'light'
+  | 'dark'
+  | 'athlete';
 
 export type Language = 'fa' | 'en';
 
