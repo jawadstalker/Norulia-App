@@ -9,6 +9,7 @@ import {
   Dimensions,
   SafeAreaView,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -1065,119 +1066,343 @@ export default function ProtocolScreen() {
               fa ? 'برنامه روزانه شما' : 'Your daily program',
             )}
 
-            <View
+            <MotiView
+              from={{
+                opacity: 0,
+                translateY: 18,
+                scale: 0.97,
+              }}
+              animate={{
+                opacity: 1,
+                translateY: 0,
+                scale: 1,
+              }}
+              transition={{
+                type: 'timing',
+                duration: 550,
+              }}
               style={[
                 styles.heroCard,
                 {
                   backgroundColor: accent,
+                  borderColor: accentStrong + '55',
                 },
               ]}
             >
-              <View style={styles.heroGlowOne} />
-              <View style={styles.heroGlowTwo} />
+              {/* Decorative glow */}
+              <View
+                pointerEvents="none"
+                style={[
+                  styles.heroGlowOne,
+                  {
+                    backgroundColor: isDark
+                      ? 'rgba(255,255,255,0.10)'
+                      : 'rgba(255,255,255,0.20)',
+                  },
+                ]}
+              />
+
+              <View
+                pointerEvents="none"
+                style={[
+                  styles.heroGlowTwo,
+                  {
+                    backgroundColor: isDark
+                      ? 'rgba(255,255,255,0.07)'
+                      : 'rgba(255,255,255,0.14)',
+                  },
+                ]}
+              />
 
               <View
                 style={[
-                  styles.heroContent,
+                  styles.heroTopRow,
                   {
-                    alignItems: contentAlign,
+                    flexDirection: rowDirection,
+                  },
+                ]}
+              >
+                {/* Avatar */}
+                <MotiView
+                  from={{
+                    opacity: 0,
+                    scale: 0.75,
+                    translateY: 8,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    scale: 1,
+                    translateY: 0,
+                  }}
+                  transition={{
+                    type: 'spring',
+                    damping: 14,
+                    stiffness: 120,
+                    delay: 120,
+                  }}
+                  style={styles.heroAvatarWrapper}
+                >
+                  <Image
+                    source={require('../../assets/avatars/model8.png')}
+                    style={styles.heroAvatar}
+                    resizeMode="contain"
+                  />
+                </MotiView>
+
+                {/* Hero text */}
+                <View
+                  style={[
+                    styles.heroTextBlock,
+                    {
+                      alignItems: contentAlign,
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.heroBadge,
+                      {
+                        backgroundColor: 'rgba(255,255,255,0.15)',
+                        flexDirection: rowDirection,
+                      },
+                    ]}
+                  >
+                    <Sparkles
+                      size={14}
+                      color="rgba(255,255,255,0.95)"
+                      strokeWidth={2.2}
+                    />
+
+                    <Text
+                      style={[
+                        styles.heroBadgeText,
+                        {
+                          color: 'rgba(255,255,255,0.95)',
+                          textAlign,
+                          writingDirection: textDirection,
+                        },
+                      ]}
+                    >
+                      {fa ? 'مسیر شما' : 'Your journey'}
+                    </Text>
+                  </View>
+
+                  <Text
+                    style={[
+                      styles.heroTitle,
+                      {
+                        color: '#FFFFFF',
+                        textAlign,
+                        writingDirection: textDirection,
+                      },
+                    ]}
+                  >
+                    {getModeTitle(mode)}
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.heroDescription,
+                      {
+                        color: 'rgba(255,255,255,0.82)',
+                        textAlign,
+                        writingDirection: textDirection,
+                      },
+                    ]}
+                  >
+                    {getModeDescription(mode)}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Progress panel */}
+              <View
+                style={[
+                  styles.heroProgressPanel,
+                  {
+                    backgroundColor: isDark
+                      ? 'rgba(0,0,0,0.18)'
+                      : 'rgba(255,255,255,0.13)',
+                    borderColor: 'rgba(255,255,255,0.18)',
                   },
                 ]}
               >
                 <View
                   style={[
-                    styles.heroIcon,
-                    {
-                      backgroundColor: 'rgba(255,255,255,0.15)',
-                    },
-                  ]}
-                >
-                  <Brain size={25} color={colors.background} strokeWidth={2} />
-                </View>
-
-                <Text
-                  style={[
-                    styles.heroTitle,
-                    {
-                      textAlign,
-                      writingDirection: textDirection,
-                      color: colors.background,
-                    },
-                  ]}
-                >
-                  {getModeTitle(mode)}
-                </Text>
-
-                <Text
-                  style={[
-                    styles.heroDescription,
-                    {
-                      textAlign,
-                      writingDirection: textDirection,
-                      color: 'rgba(255,255,255,0.75)',
-                    },
-                  ]}
-                >
-                  {getModeDescription(mode)}
-                </Text>
-
-                <View
-                  style={[
-                    styles.heroProgressRow,
+                    styles.heroProgressHeader,
                     {
                       flexDirection: rowDirection,
                     },
                   ]}
                 >
                   <View
-                    style={[
-                      styles.heroProgressInfo,
-                      {
-                        alignItems: contentAlign,
-                      },
-                    ]}
+                    style={{
+                      alignItems: contentAlign,
+                      flex: 1,
+                    }}
                   >
                     <Text
                       style={[
                         styles.heroProgressLabel,
                         {
+                          color: 'rgba(255,255,255,0.70)',
                           textAlign,
                           writingDirection: textDirection,
-                          color: 'rgba(255,255,255,0.65)',
                         },
                       ]}
                     >
-                      {fa ? 'پیشرفت کلی' : 'Overall progress'}
+                      {fa ? 'پیشرفت کلی برنامه' : 'Overall progress'}
                     </Text>
 
                     <Text
                       style={[
-                        styles.heroProgressValue,
+                        styles.heroProgressHint,
                         {
+                          color: 'rgba(255,255,255,0.55)',
                           textAlign,
                           writingDirection: textDirection,
-                          color: colors.background,
                         },
                       ]}
                     >
-                      {overallPercent}%
+                      {fa
+                        ? `${completedDays} از ${totalDays} روز تکمیل شده`
+                        : `${completedDays} of ${totalDays} days completed`}
                     </Text>
                   </View>
 
-                  <View style={styles.heroProgressTrack}>
-                    <View
+                  <Text
+                    style={[
+                      styles.heroProgressValue,
+                      {
+                        color: '#FFFFFF',
+                      },
+                    ]}
+                  >
+                    {overallPercent}%
+                  </Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.heroProgressTrack,
+                    {
+                      backgroundColor: 'rgba(255,255,255,0.18)',
+                    },
+                  ]}
+                >
+                  <MotiView
+                    from={{
+                      width: '0%',
+                    }}
+                    animate={{
+                      width: `${overallPercent}%`,
+                    }}
+                    transition={{
+                      type: 'timing',
+                      duration: 800,
+                    }}
+                    style={[
+                      styles.heroProgressFill,
+                      {
+                        backgroundColor: '#FFFFFF',
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+
+              {/* Bottom stats */}
+              <View
+                style={[
+                  styles.heroStats,
+                  {
+                    flexDirection: rowDirection,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.heroStat,
+                    {
+                      borderColor: 'rgba(255,255,255,0.14)',
+                    },
+                  ]}
+                >
+                  <Target
+                    size={17}
+                    color="rgba(255,255,255,0.88)"
+                    strokeWidth={2}
+                  />
+
+                  <View style={{ alignItems: contentAlign }}>
+                    <Text
                       style={[
-                        styles.heroProgressFill,
+                        styles.heroStatValue,
                         {
-                          width: `${overallPercent}%`,
-                          backgroundColor: colors.background,
+                          color: '#FFFFFF',
                         },
                       ]}
-                    />
+                    >
+                      {totalDays}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.heroStatLabel,
+                        {
+                          color: 'rgba(255,255,255,0.58)',
+                          textAlign,
+                          writingDirection: textDirection,
+                        },
+                      ]}
+                    >
+                      {fa ? 'روز برنامه' : 'Program days'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View
+                  style={[
+                    styles.heroStat,
+                    {
+                      borderColor: 'rgba(255,255,255,0.14)',
+                    },
+                  ]}
+                >
+                  <CheckCircle2
+                    size={17}
+                    color="rgba(255,255,255,0.88)"
+                    strokeWidth={2}
+                  />
+
+                  <View style={{ alignItems: contentAlign }}>
+                    <Text
+                      style={[
+                        styles.heroStatValue,
+                        {
+                          color: '#FFFFFF',
+                        },
+                      ]}
+                    >
+                      {completedDays}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.heroStatLabel,
+                        {
+                          color: 'rgba(255,255,255,0.58)',
+                          textAlign,
+                          writingDirection: textDirection,
+                        },
+                      ]}
+                    >
+                      {fa ? 'تکمیل شده' : 'Completed'}
+                    </Text>
                   </View>
                 </View>
               </View>
-            </View>
+            </MotiView>
 
             <View style={styles.section}>
               <Text
@@ -2491,20 +2716,28 @@ const styles = StyleSheet.create({
   heroCard: {
     marginHorizontal: 16,
     marginTop: 8,
-    borderRadius: 24,
-    padding: 20,
+    marginBottom: 22,
+    borderRadius: 28,
+    padding: 18,
     overflow: 'hidden',
-    position: 'relative',
+    borderWidth: 1,
+    minHeight: 245,
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.18,
+    shadowRadius: 22,
+    elevation: 7,
   },
 
   heroGlowOne: {
     position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    right: -80,
-    top: -80,
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    top: -85,
+    right: -55,
   },
 
   heroGlowTwo: {
@@ -2512,69 +2745,125 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     borderRadius: 75,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    left: -60,
-    bottom: -60,
+    bottom: -80,
+    left: -55,
   },
 
-  heroContent: {
-    flex: 1,
-    width: '100%',
+  heroTopRow: {
+    alignItems: 'center',
+    gap: 16,
   },
 
-  heroIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+  heroAvatarWrapper: {
+    width: 80,
+    height: 80,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+  },
+
+  heroAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+
+  heroTextBlock: {
+    flex: 1,
+    gap: 6,
+  },
+
+  heroBadge: {
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    gap: 5,
+    marginBottom: 2,
+  },
+
+  heroBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
 
   heroTitle: {
-    width: '100%',
-    fontSize: 24,
+    fontSize: 23,
     fontWeight: '800',
-    marginBottom: 4,
+    letterSpacing: -0.3,
   },
 
   heroDescription: {
-    width: '100%',
     fontSize: 13,
-    lineHeight: 21,
-    marginBottom: 18,
+    lineHeight: 20,
+    fontWeight: '500',
   },
 
-  heroProgressRow: {
-    width: '100%',
+  heroProgressPanel: {
+    marginTop: 18,
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+  },
+
+  heroProgressHeader: {
     alignItems: 'center',
     gap: 12,
   },
 
-  heroProgressInfo: {
-    flex: 1,
-  },
-
   heroProgressLabel: {
-    fontSize: 11,
-  },
-
-  heroProgressValue: {
-    fontSize: 20,
+    fontSize: 13,
     fontWeight: '700',
   },
 
+  heroProgressHint: {
+    fontSize: 11,
+    marginTop: 3,
+  },
+
+  heroProgressValue: {
+    fontSize: 27,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+
   heroProgressTrack: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    height: 7,
+    width: '100%',
+    borderRadius: 99,
     overflow: 'hidden',
+    marginTop: 12,
   },
 
   heroProgressFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 99,
+  },
+
+  heroStats: {
+    marginTop: 13,
+    gap: 10,
+  },
+
+  heroStat: {
+    flex: 1,
+    minHeight: 48,
+    borderWidth: 1,
+    borderRadius: 15,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  heroStatValue: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+
+  heroStatLabel: {
+    fontSize: 10,
+    marginTop: 1,
   },
 
   section: {
