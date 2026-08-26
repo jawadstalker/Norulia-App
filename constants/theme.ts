@@ -18,6 +18,13 @@ export const Colors = {
 
     accent: '#C4B5FD',
 
+    // ===================================================
+    // ICON + PROGRESS ACCENT
+    // ===================================================
+
+    iconAccent: '#7C3AED',
+    progressAccent: '#7C3AED',
+
     text: '#1F2937',
     textSecondary: '#6B7280',
     textTertiary: '#9CA3AF',
@@ -99,6 +106,16 @@ export const Colors = {
     primaryDark: '#6348E8',
 
     accent: '#7B61FF',
+
+    // ===================================================
+    // ICON + PROGRESS ACCENT
+    // ===================================================
+
+    iconAccent:
+      'rgba(73, 194, 226, 1)',
+
+    progressAccent:
+      'rgba(73, 194, 226, 1)',
 
     text: '#FFFFFF',
 
@@ -198,6 +215,14 @@ export const Colors = {
     // ---------------------------------------------------
 
     accent: '#B8FF3D',
+
+    // ===================================================
+    // ICON + PROGRESS ACCENT
+    // ===================================================
+
+    iconAccent: '#B8FF3D',
+
+    progressAccent: '#B8FF3D',
 
     // ---------------------------------------------------
     // TEXT
@@ -350,6 +375,7 @@ export const getGradient = (
     | 'cardSolid'
     | 'button'
     | 'header',
+
   theme:
     | 'light'
     | 'dark'
@@ -388,6 +414,7 @@ export const getGlassStyle = (
     | 'light'
     | 'dark'
     | 'athlete',
+
   opacity: number = 0.08,
 ) => {
   const selectedTheme =
@@ -470,6 +497,7 @@ export const getShadowStyle = (
     | 'light'
     | 'dark'
     | 'athlete',
+
   intensity: number = 1,
 ) => {
   if (theme === 'athlete') {
