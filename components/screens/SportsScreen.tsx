@@ -535,7 +535,7 @@ export default function SportsScreen() {
     const accent = CATEGORY_ACCENTS[exercise.category];
 
     if (media) {
-      return <Image source={media.source} style={styles.exerciseThumbImage} resizeMode="cover" />;
+      return <Image source={media.source} style={styles.exerciseThumbImage} resizeMode="contain" />;
     }
 
     return (
@@ -559,7 +559,7 @@ export default function SportsScreen() {
       );
     }
 
-    return <Image source={activeMedia.source} style={styles.modalMedia} resizeMode="cover" />;
+    return <Image source={activeMedia.source} style={styles.modalMedia} resizeMode="contain" />;
   };
 
   /* ================================================================
@@ -1093,7 +1093,7 @@ const styles = StyleSheet.create({
   exerciseNumberText: { fontSize: 11, fontWeight: '800' },
   exerciseTapArea: { flex: 1, alignItems: 'center', marginHorizontal: 10 },
   exerciseThumb: { width: 30, height: 30, borderRadius: 14, overflow: 'visible' },
-  exerciseThumbImage: { width: 30, height: 30, borderRadius: 14 },
+  exerciseThumbImage: { width: 10, height: 10, borderRadius: 14 },
   exerciseThumbFallback: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   playBadge: {
     position: 'absolute',
