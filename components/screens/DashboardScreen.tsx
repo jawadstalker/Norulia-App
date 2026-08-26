@@ -303,25 +303,6 @@ function GlowLayer({
 }
 
 /* ================================================================
-   GREETING
-================================================================ */
-
-function getGreeting(t: any) {
-  const hour =
-    new Date().getHours();
-
-  if (hour < 12) {
-    return t.goodMorning;
-  }
-
-  if (hour < 18) {
-    return t.goodAfternoon;
-  }
-
-  return t.goodEvening;
-}
-
-/* ================================================================
    DASHBOARD
 ================================================================ */
 
@@ -355,28 +336,8 @@ export function DashboardScreen() {
       > | null
     >(null);
 
-  const isSmallScreen =
-    width < 380;
-
   const isVerySmallScreen =
     width < 350;
-
-  /* ==============================================================
-     HERO GRADIENT
-  ============================================================== */
-
-  const heroGradient: [
-    string,
-    string,
-  ] = isDark
-    ? [
-        '#3D2E70',
-        '#261268',
-      ]
-    : [
-        '#F0ECFA',
-        '#E3DCF5',
-      ];
 
   /* ==============================================================
      REFRESH
@@ -630,112 +591,6 @@ export function DashboardScreen() {
         }
       >
         {/* ======================================================
-           HEADER
-        ====================================================== */}
-
-        <MotiView
-          from={{
-            opacity: 0,
-            translateY: -20,
-          }}
-          animate={{
-            opacity: 1,
-            translateY: 0,
-          }}
-          transition={{
-            type: 'timing',
-            duration: 400,
-          }}
-          style={[
-            styles.header,
-            {
-              alignItems:
-                isRTL
-                  ? 'flex-end'
-                  : 'flex-start',
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.greetingChip,
-              {
-                backgroundColor:
-                  isDark
-                    ? 'rgba(123,97,255,0.12)'
-                    : 'rgba(107,90,166,0.09)',
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.greetingText,
-                {
-                  color:
-                    colors.primary,
-
-                  textAlign:
-                    isRTL
-                      ? 'right'
-                      : 'left',
-
-                  writingDirection:
-                    isRTL
-                      ? 'rtl'
-                      : 'ltr',
-                },
-              ]}
-            >
-              {getGreeting(t)}
-            </Text>
-          </View>
-
-          <Text
-            style={[
-              styles.dashboardTitle,
-              {
-                color:
-                  colors.text,
-
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
-
-                writingDirection:
-                  isRTL
-                    ? 'rtl'
-                    : 'ltr',
-              },
-            ]}
-          >
-            {t.dashboardNeuroTitle}
-          </Text>
-
-          <Text
-            style={[
-              styles.dashboardSubtitle,
-              {
-                color:
-                  colors.textSecondary,
-
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
-
-                writingDirection:
-                  isRTL
-                    ? 'rtl'
-                    : 'ltr',
-              },
-            ]}
-          >
-            {t.dashboardSubtitle}
-          </Text>
-        </MotiView>
-
-        {/* ======================================================
            HERO CARD
         ====================================================== */}
 
@@ -756,80 +611,11 @@ export function DashboardScreen() {
             delay: 100,
           }}
         >
-          <LinearGradient
-            colors={
-              heroGradient
+          <View
+            style={
+              styles.characterCard
             }
-            start={{
-              x: 0,
-              y: 0,
-            }}
-            end={{
-              x: 1,
-              y: 1,
-            }}
-            style={[
-              styles.characterCard,
-              {
-                borderColor:
-                  isDark
-                    ? 'rgba(255,255,255,0.10)'
-                    : 'rgba(107,90,166,0.06)',
-
-                shadowColor:
-                  isDark
-                    ? '#000000'
-                    : '#6B5AA6',
-
-                shadowOpacity:
-                  isDark
-                    ? 0.20
-                    : 0.08,
-
-                elevation:
-                  isDark
-                    ? 8
-                    : 3,
-
-                minHeight:
-                  isSmallScreen
-                    ? 190
-                    : 215,
-              },
-            ]}
           >
-
-
-            {/* ==================================================
-               DECORATIVE BLOBS
-            ================================================== */}
-
-            <View
-              pointerEvents="none"
-              style={[
-                styles.heroBlobA,
-                {
-                  backgroundColor:
-                    isDark
-                      ? '#FFFFFF'
-                      : '#6B5AA6',
-                },
-              ]}
-            />
-
-            <View
-              pointerEvents="none"
-              style={[
-                styles.heroBlobB,
-                {
-                  backgroundColor:
-                    isDark
-                      ? '#FFFFFF'
-                      : '#6B5AA6',
-                },
-              ]}
-            />
-
             {/* ==================================================
                CHARACTER
             ================================================== */}
@@ -841,15 +627,83 @@ export function DashboardScreen() {
             >
               <View
                 style={
-                  styles.avatarContainer
+                  styles.avatarRow
                 }
               >
-                <Image
-                  source={require('../../assets/avatars/model.png')}
+                <View
                   style={
-                    styles.avatar
+                    styles.avatarContainer
                   }
-                />
+                >
+                  <Image
+                    source={require('../../assets/avatars/model.png')}
+                    style={
+                      styles.avatar
+                    }
+                  />
+                </View>
+
+                {/* ================================================
+                   SPEECH BUBBLE
+                ================================================ */}
+
+                <View
+                  style={[
+                    styles.speechBubble,
+                    {
+                      backgroundColor:
+                        colors.surface,
+
+                      borderColor:
+                        colors.border,
+
+                      shadowColor:
+                        isDark
+                          ? '#000000'
+                          : '#6B5AA6',
+                    },
+                  ]}
+                >
+                  <View
+                    pointerEvents="none"
+                    style={[
+                      styles.speechBubbleTail,
+                      {
+                        backgroundColor:
+                          colors.surface,
+
+                        borderColor:
+                          colors.border,
+                      },
+                    ]}
+                  />
+
+                  <Text
+                    style={[
+                      styles.speechBubbleText,
+                      {
+                        color:
+                          isDark
+                            ? '#FFFFFF'
+                            : '#2F2850',
+
+                        textAlign:
+                          isRTL
+                            ? 'right'
+                            : 'left',
+
+                        writingDirection:
+                          isRTL
+                            ? 'rtl'
+                            : 'ltr',
+                      },
+                    ]}
+                  >
+                    {
+                      t.dashboardWelcomeBubble
+                    }
+                  </Text>
+                </View>
               </View>
 
               <Text
@@ -904,7 +758,7 @@ export function DashboardScreen() {
                 }
               </Text>
             </View>
-          </LinearGradient>
+          </View>
         </MotiView>
 
         {/* ======================================================
@@ -1240,59 +1094,6 @@ const styles =
     },
 
     /* ============================================================
-       HEADER
-    ============================================================ */
-
-    header: {
-      width: '100%',
-
-      marginBottom:
-        Spacing.lg,
-    },
-
-    greetingChip: {
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      paddingHorizontal: 11,
-
-      paddingVertical: 6,
-
-      borderRadius: 14,
-
-      marginBottom: 9,
-    },
-
-    greetingText: {
-      fontSize: 11,
-
-      fontWeight: '700',
-    },
-
-    dashboardTitle: {
-      width: '100%',
-
-      fontSize: 30,
-
-      lineHeight: 37,
-
-      fontWeight: '800',
-    },
-
-    dashboardSubtitle: {
-      width: '100%',
-
-      fontSize: 15,
-
-      lineHeight: 22,
-
-      marginTop: 6,
-    },
-
-    /* ============================================================
        GENERIC SHINE
     ============================================================ */
 
@@ -1340,56 +1141,11 @@ const styles =
       marginBottom:
         Spacing.lg,
 
-      borderRadius:
-        BorderRadius.lg,
-
       paddingHorizontal:
-        Spacing.md,
+        Spacing.sm,
 
       paddingVertical:
         Spacing.md,
-
-      borderWidth: 1,
-
-      overflow:
-        'hidden',
-
-      position:
-        'relative',
-    },
-
-    heroBlobA: {
-      position:
-        'absolute',
-
-      width: 200,
-
-      height: 160,
-
-      borderRadius: 80,
-
-      opacity: 0.07,
-
-      top: -50,
-
-      right: -40,
-    },
-
-    heroBlobB: {
-      position:
-        'absolute',
-
-      width: 110,
-
-      height: 110,
-
-      borderRadius: 55,
-
-      opacity: 0.06,
-
-      bottom: -30,
-
-      left: -30,
     },
 
     characterWrapper: {
@@ -1400,10 +1156,87 @@ const styles =
         Spacing.md,
     },
 
-    avatarContainer: {
-      width: 121,
+    avatarRow: {
+      width: '100%',
 
-      height: 121,
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      gap: 26,
+    },
+
+    speechBubble: {
+      flexShrink: 1,
+
+      maxWidth: 176,
+
+      borderRadius: 20,
+
+      borderWidth: 1,
+
+      paddingHorizontal: 16,
+
+      paddingVertical: 12,
+
+      position:
+        'relative',
+
+      shadowOffset: {
+        width: 0,
+        height: 6,
+      },
+
+      shadowOpacity: 0.12,
+
+      shadowRadius: 14,
+
+      elevation: 4,
+    },
+
+    speechBubbleText: {
+      fontSize: 13.5,
+
+      lineHeight: 20,
+
+      fontWeight: '700',
+
+      letterSpacing:
+        0.1,
+    },
+
+    speechBubbleTail: {
+      position:
+        'absolute',
+
+      left: -6,
+
+      top: 24,
+
+      width: 16,
+
+      height: 16,
+
+      borderRadius: 4,
+
+      borderWidth: 1,
+
+      transform: [
+        {
+          rotate: '45deg',
+        },
+      ],
+    },
+
+    avatarContainer: {
+      width: 150,
+
+      height: 150,
 
       alignItems:
         'center',
@@ -1415,7 +1248,7 @@ const styles =
     avatar: {
       width: 180,
 
-      height: 180,
+      height: 200,
 
       resizeMode:
         'contain',

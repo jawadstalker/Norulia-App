@@ -51,51 +51,17 @@ import { useLanguage } from '../../context/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-/* ================================================================
-   ATHLETE / GREEN THEME
-================================================================ */
-
-const ATHLETE = {
-  primary: '#B8FF3D',
-  primaryLight: '#D0FF67',
-  primaryDark: '#8FCF32',
-
-  background: '#070908',
-  surface: '#0D120F',
-  surfaceSecondary: '#121A15',
-
-  text: '#F4F8F2',
-  textSecondary: '#AAB6A6',
-  textTertiary: '#687467',
-
-  border: 'rgba(184,255,61,0.14)',
-  borderStrong: 'rgba(184,255,61,0.28)',
-
-  glow: 'rgba(184,255,61,0.10)',
-  glowStrong: 'rgba(184,255,61,0.18)',
-
-  progressTrack: '#1A241A',
-  progressTrackLight: '#E8F2DD',
-} as const;
-
-/* ================================================================
-   MODES
-================================================================ */
-
 const MODES = {
   single: {
     icon: UserRound,
-    accent: ATHLETE.primary,
   },
 
   dyad: {
     icon: Users,
-    accent: ATHLETE.primaryLight,
   },
 
   group: {
-    icon: Users,
-    accent: ATHLETE.primaryDark,
+    icon: UsersRound,
   },
 } as const;
 
@@ -131,10 +97,6 @@ interface TaskProgress {
 
 type DayProgress = TaskProgress[];
 type Progress = Record<number, DayProgress>;
-
-/* ================================================================
-   AYAHS
-================================================================ */
 
 const AYAHS: { text: string; ref: string }[] = [
   {
@@ -201,10 +163,6 @@ const AYAHS: { text: string; ref: string }[] = [
   },
 ];
 
-/* ================================================================
-   POEMS
-================================================================ */
-
 const POEMS: { text: string; poet: string }[] = [
   {
     text:
@@ -237,10 +195,6 @@ const POEMS: { text: string; poet: string }[] = [
     poet: 'سعدی',
   },
 ];
-
-/* ================================================================
-   TASKS
-================================================================ */
 
 const SINGLE_TASKS: Task[] = [
   {
@@ -279,10 +233,6 @@ const SINGLE_TASKS: Task[] = [
     type: 'checkbox',
   },
 ];
-
-/* ================================================================
-   DATA
-================================================================ */
 
 function buildSingleData(): DayEntry[] {
   const result: DayEntry[] = [];
@@ -443,10 +393,6 @@ function freshDayProgress(tasks: Task[]): DayProgress {
   }));
 }
 
-/* ================================================================
-   SCREEN
-================================================================ */
-
 export default function ProtocolScreen() {
   const router = useRouter();
 
@@ -458,182 +404,103 @@ export default function ProtocolScreen() {
   const textDirection = fa ? 'rtl' : 'ltr';
   const textAlign = fa ? 'right' : 'left';
   const rowDirection = fa ? 'row-reverse' : 'row';
-  const contentAlign = fa
-    ? 'flex-end'
-    : 'flex-start';
+  const contentAlign = fa ? 'flex-end' : 'flex-start';
 
-  /* ==============================================================
-     GREEN ATHLETE THEME
-  ============================================================== */
+  const accent = colors.primary;
+  const accentStrong = colors.primaryDark || colors.primary;
 
-  const accent = ATHLETE.primary;
-  const accentStrong = ATHLETE.primaryDark;
-
-  const background = ATHLETE.background;
-  const card = ATHLETE.surface;
-  const cardSecondary = ATHLETE.surfaceSecondary;
+  const background = colors.background;
+  const card = colors.surface;
+  const cardSecondary = colors.surfaceSecondary;
 
   const softAccent = isDark
-    ? ATHLETE.glow
-    : 'rgba(184,255,61,0.08)';
+    ? colors.primary + '18'
+    : colors.primary + '12';
 
   const softAccentStrong = isDark
-    ? ATHLETE.glowStrong
-    : 'rgba(184,255,61,0.14)';
+    ? colors.primary + '28'
+    : colors.primary + '18';
 
   const softBorder = isDark
-    ? ATHLETE.border
-    : 'rgba(116,160,54,0.22)';
+    ? colors.border || 'rgba(255,255,255,0.08)'
+    : 'rgba(0,0,0,0.08)';
 
   const progressTrack = isDark
-    ? ATHLETE.progressTrack
-    : ATHLETE.progressTrackLight;
+    ? colors.border || 'rgba(255,255,255,0.08)'
+    : 'rgba(0,0,0,0.06)';
 
-  /* ==============================================================
-     STATE
-  ============================================================== */
+  const [mode, setMode] = useState<ProtocolMode>('single');
+  const [view, setView] = useState<ViewMode>('home');
+  const [currentDay, setCurrentDay] = useState(0);
+  const [progress, setProgress] = useState<Progress>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedTask, setSelectedTask] = useState<number | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
 
-  const [mode, setMode] =
-    useState<ProtocolMode>('single');
+  const data = useMemo(() => getData(mode), [mode]);
+  const totalDays = getTotalDays(mode);
+  const currentEntry = data[currentDay];
 
-  const [view, setView] =
-    useState<ViewMode>('home');
-
-  const [currentDay, setCurrentDay] =
-    useState(0);
-
-  const [progress, setProgress] =
-    useState<Progress>({});
-
-  const [isLoading, setIsLoading] =
-    useState(true);
-
-  const [selectedTask, setSelectedTask] =
-    useState<number | null>(null);
-
-  const [showCelebration, setShowCelebration] =
-    useState(false);
-
-  const data = useMemo(
-    () => getData(mode),
-    [mode],
+  const getDayProgress = useCallback(
+    (dayIndex: number): DayProgress => {
+      return (
+        progress[dayIndex] ??
+        freshDayProgress(data[dayIndex]?.tasks ?? [])
+      );
+    },
+    [progress, data],
   );
 
-  const totalDays =
-    getTotalDays(mode);
+  const getCompletedTasks = useCallback(
+    (dayIndex: number): number => {
+      const dayProgress = getDayProgress(dayIndex);
+      return dayProgress.filter(item => isTaskDone(item)).length;
+    },
+    [getDayProgress],
+  );
 
-  const currentEntry =
-    data[currentDay];
+  const getDayPercent = useCallback(
+    (dayIndex: number): number => {
+      const tasks = data[dayIndex]?.tasks ?? [];
+      if (!tasks.length) return 0;
+      const completed = getCompletedTasks(dayIndex);
+      return Math.round((completed / tasks.length) * 100);
+    },
+    [data, getCompletedTasks],
+  );
 
-  const getDayProgress =
-    useCallback(
-      (
-        dayIndex: number,
-      ): DayProgress => {
-        return (
-          progress[dayIndex] ??
-          freshDayProgress(
-            data[dayIndex]?.tasks ?? [],
-          )
-        );
-      },
-      [progress, data],
-    );
+  const completedDays = useMemo(() => {
+    return Array.from(
+      { length: totalDays },
+      (_, index) => getDayPercent(index) === 100
+    ).filter(Boolean).length;
+  }, [totalDays, getDayPercent]);
 
-  const getCompletedTasks =
-    useCallback(
-      (
-        dayIndex: number,
-      ): number => {
-        const dayProgress =
-          getDayProgress(dayIndex);
-
-        return dayProgress.filter(
-          item => isTaskDone(item),
-        ).length;
-      },
-      [getDayProgress],
-    );
-
-  const getDayPercent =
-    useCallback(
-      (
-        dayIndex: number,
-      ): number => {
-        const tasks =
-          data[dayIndex]?.tasks ?? [];
-
-        if (!tasks.length) return 0;
-
-        const completed =
-          getCompletedTasks(dayIndex);
-
-        return Math.round(
-          (completed / tasks.length) * 100,
-        );
-      },
-      [data, getCompletedTasks],
-    );
-
-  const completedDays =
-    useMemo(() => {
-      return Array.from(
-        {
-          length: totalDays,
-        },
-        (_, index) =>
-          getDayPercent(index) === 100,
-      ).filter(Boolean).length;
-    }, [
-      totalDays,
-      getDayPercent,
-    ]);
-
-  const overallPercent =
-    totalDays > 0
-      ? Math.round(
-          (completedDays / totalDays) * 100,
-        )
-      : 0;
-
-  /* ==============================================================
-     STORAGE
-  ============================================================== */
+  const overallPercent = totalDays > 0
+    ? Math.round((completedDays / totalDays) * 100)
+    : 0;
 
   useEffect(() => {
     let mounted = true;
 
-    const loadProgress =
-      async () => {
-        try {
-          setIsLoading(true);
-
-          const raw =
-            await AsyncStorage.getItem(
-              STORAGE_KEY(mode),
-            );
-
-          if (raw && mounted) {
-            const parsed =
-              JSON.parse(raw);
-
-            setProgress(
-              parsed || {},
-            );
-          } else if (mounted) {
-            setProgress({});
-          }
-        } catch (error) {
-          console.log(
-            '[Protocol] Failed to load progress:',
-            error,
-          );
-        } finally {
-          if (mounted) {
-            setIsLoading(false);
-          }
+    const loadProgress = async () => {
+      try {
+        setIsLoading(true);
+        const raw = await AsyncStorage.getItem(STORAGE_KEY(mode));
+        if (raw && mounted) {
+          const parsed = JSON.parse(raw);
+          setProgress(parsed || {});
+        } else if (mounted) {
+          setProgress({});
         }
-      };
+      } catch (error) {
+        console.log('[Protocol] Failed to load progress:', error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
 
     loadProgress();
 
@@ -644,104 +511,53 @@ export default function ProtocolScreen() {
 
   useEffect(() => {
     if (isLoading) return;
-
-    AsyncStorage.setItem(
-      STORAGE_KEY(mode),
-      JSON.stringify(progress),
-    ).catch(error => {
-      console.log(
-        '[Protocol] Failed to save progress:',
-        error,
-      );
+    AsyncStorage.setItem(STORAGE_KEY(mode), JSON.stringify(progress)).catch(error => {
+      console.log('[Protocol] Failed to save progress:', error);
     });
-  }, [
-    progress,
-    mode,
-    isLoading,
-  ]);
-
-  /* ==============================================================
-     ACTIONS
-  ============================================================== */
+  }, [progress, mode, isLoading]);
 
   const lightHaptic = () => {
-    Haptics.impactAsync(
-      Haptics.ImpactFeedbackStyle.Light,
-    ).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   };
 
   const successHaptic = () => {
-    Haptics.notificationAsync(
-      Haptics.NotificationFeedbackType.Success,
-    ).catch(() => {});
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   };
 
   const handleBack = () => {
     lightHaptic();
-
-    if (
-      view === 'day' ||
-      view === 'report'
-    ) {
+    if (view === 'day' || view === 'report') {
       setView('home');
       return;
     }
-
     router.back();
   };
 
-  const changeMode = (
-    nextMode: ProtocolMode,
-  ) => {
+  const changeMode = (nextMode: ProtocolMode) => {
     if (nextMode === mode) return;
-
     lightHaptic();
-
     setMode(nextMode);
     setView('home');
     setCurrentDay(0);
     setSelectedTask(null);
   };
 
-  const openDay = (
-    dayIndex: number,
-  ) => {
+  const openDay = (dayIndex: number) => {
     lightHaptic();
-
-    setCurrentDay(
-      Math.max(
-        0,
-        Math.min(
-          dayIndex,
-          totalDays - 1,
-        ),
-      ),
-    );
-
+    setCurrentDay(Math.max(0, Math.min(dayIndex, totalDays - 1)));
     setView('day');
     setSelectedTask(null);
   };
 
-  const toggleTask = (
-    taskIndex: number,
-  ) => {
+  const toggleTask = (taskIndex: number) => {
     lightHaptic();
-
     setProgress(prev => {
-      const current =
-        prev[currentDay] ??
-        freshDayProgress(
-          currentEntry?.tasks ?? [],
-        );
-
+      const current = prev[currentDay] ?? freshDayProgress(currentEntry?.tasks ?? []);
       const updated = [...current];
-
       updated[taskIndex] = {
         ...updated[taskIndex],
-        done:
-          !updated[taskIndex]?.done,
+        done: !updated[taskIndex]?.done,
       };
-
       return {
         ...prev,
         [currentDay]: updated,
@@ -749,26 +565,15 @@ export default function ProtocolScreen() {
     });
   };
 
-  const updateTextTask = (
-    taskIndex: number,
-    value: string,
-  ) => {
+  const updateTextTask = (taskIndex: number, value: string) => {
     setProgress(prev => {
-      const current =
-        prev[currentDay] ??
-        freshDayProgress(
-          currentEntry?.tasks ?? [],
-        );
-
+      const current = prev[currentDay] ?? freshDayProgress(currentEntry?.tasks ?? []);
       const updated = [...current];
-
       updated[taskIndex] = {
         ...updated[taskIndex],
         value,
-        done:
-          value.trim().length > 0,
+        done: value.trim().length > 0,
       };
-
       return {
         ...prev,
         [currentDay]: updated,
@@ -777,37 +582,23 @@ export default function ProtocolScreen() {
   };
 
   const completeDay = () => {
-    const tasks =
-      currentEntry?.tasks ?? [];
-
+    const tasks = currentEntry?.tasks ?? [];
     if (!tasks.length) return;
-
-    const current =
-      getDayProgress(currentDay);
-
-    const allDone =
-      current.every(item =>
-        isTaskDone(item),
-      );
-
+    const current = getDayProgress(currentDay);
+    const allDone = current.every(item => isTaskDone(item));
     if (!allDone) {
       lightHaptic();
       return;
     }
-
     successHaptic();
-
     setProgress(prev => ({
       ...prev,
-      [currentDay]:
-        current.map(item => ({
-          ...item,
-          done: true,
-        })),
+      [currentDay]: current.map(item => ({
+        ...item,
+        done: true,
+      })),
     }));
-
     setShowCelebration(true);
-
     setTimeout(() => {
       setShowCelebration(false);
     }, 2200);
@@ -815,184 +606,83 @@ export default function ProtocolScreen() {
 
   const previousDay = () => {
     if (currentDay <= 0) return;
-
     lightHaptic();
-
-    setCurrentDay(
-      currentDay - 1,
-    );
-
+    setCurrentDay(currentDay - 1);
     setSelectedTask(null);
   };
 
   const nextDay = () => {
-    if (
-      currentDay >=
-      totalDays - 1
-    ) {
-      return;
-    }
-
+    if (currentDay >= totalDays - 1) return;
     lightHaptic();
-
-    setCurrentDay(
-      currentDay + 1,
-    );
-
+    setCurrentDay(currentDay + 1);
     setSelectedTask(null);
   };
 
-  const resetProtocol =
-    async () => {
-      lightHaptic();
+  const resetProtocol = async () => {
+    lightHaptic();
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEY(mode));
+      setProgress({});
+      setCurrentDay(0);
+      setView('home');
+      setSelectedTask(null);
+    } catch (error) {
+      console.log('[Protocol] Failed to reset:', error);
+    }
+  };
 
-      try {
-        await AsyncStorage.removeItem(
-          STORAGE_KEY(mode),
-        );
-
-        setProgress({});
-        setCurrentDay(0);
-        setView('home');
-        setSelectedTask(null);
-      } catch (error) {
-        console.log(
-          '[Protocol] Failed to reset:',
-          error,
-        );
-      }
-    };
-
-  /* ==============================================================
-     HELPERS
-  ============================================================== */
-
-  const tr = (
-    value?: Bilingual,
-  ) => {
+  const tr = (value?: Bilingual) => {
     if (!value) return '';
-
-    return fa
-      ? value.fa
-      : value.en;
+    return fa ? value.fa : value.en;
   };
 
-  const getModeTitle = (
-    protocolMode: ProtocolMode,
-  ) => {
-    if (
-      protocolMode ===
-      'single'
-    ) {
-      return fa
-        ? 'برنامه فردی'
-        : 'Individual';
+  const getModeTitle = (protocolMode: ProtocolMode) => {
+    if (protocolMode === 'single') {
+      return fa ? 'برنامه فردی' : 'Individual';
     }
-
-    if (
-      protocolMode ===
-      'dyad'
-    ) {
-      return fa
-        ? 'برنامه دونفره'
-        : 'Two-person';
+    if (protocolMode === 'dyad') {
+      return fa ? 'برنامه دونفره' : 'Two-person';
     }
-
-    return fa
-      ? 'برنامه گروهی'
-      : 'Group';
+    return fa ? 'برنامه گروهی' : 'Group';
   };
 
-  const getModeDescription = (
-    protocolMode: ProtocolMode,
-  ) => {
-    if (
-      protocolMode ===
-      'single'
-    ) {
+  const getModeDescription = (protocolMode: ProtocolMode) => {
+    if (protocolMode === 'single') {
       return fa
         ? 'تمرین‌های روزانه برای رشد و آرامش ذهن'
         : 'Daily exercises for cognitive and emotional growth';
     }
-
-    if (
-      protocolMode ===
-      'dyad'
-    ) {
-      return fa
-        ? 'تمرین‌های مشترک برای دو نفر'
-        : 'Shared exercises for two people';
+    if (protocolMode === 'dyad') {
+      return fa ? 'تمرین‌های مشترک برای دو نفر' : 'Shared exercises for two people';
     }
-
     return fa
       ? 'تمرین‌های مشارکتی برای یک گروه'
       : 'Collaborative exercises for a group';
   };
 
-  const getModeIcon = (
-    protocolMode: ProtocolMode,
-  ) => {
-    if (
-      protocolMode ===
-      'single'
-    ) {
-      return Brain;
-    }
-
-    if (
-      protocolMode ===
-      'dyad'
-    ) {
-      return Users;
-    }
-
+  const getModeIcon = (protocolMode: ProtocolMode) => {
+    if (protocolMode === 'single') return Brain;
+    if (protocolMode === 'dyad') return Users;
     return UsersRound;
   };
 
-  const getDayLabel = (
-    index: number,
-  ) => {
-    if (
-      mode === 'single'
-    ) {
-      return fa
-        ? `روز ${index + 1}`
-        : `Day ${index + 1}`;
+  const getDayLabel = (index: number) => {
+    if (mode === 'single') {
+      return fa ? `روز ${index + 1}` : `Day ${index + 1}`;
     }
-
-    return fa
-      ? `جلسه ${index + 1}`
-      : `Session ${index + 1}`;
+    return fa ? `جلسه ${index + 1}` : `Session ${index + 1}`;
   };
 
-  const currentDayPercent =
-    getDayPercent(
-      currentDay,
-    );
+  const currentDayPercent = getDayPercent(currentDay);
+  const currentCompletedTasks = getCompletedTasks(currentDay);
+  const currentTotalTasks = currentEntry?.tasks?.length ?? 0;
 
-  const currentCompletedTasks =
-    getCompletedTasks(
-      currentDay,
-    );
-
-  const currentTotalTasks =
-    currentEntry?.tasks
-      ?.length ?? 0;
-
-  /* ==============================================================
-     PAGE HEADER
-  ============================================================== */
-
-  const renderPageHeader = (
-    title: string,
-    subtitle: string,
-  ) => (
+  const renderPageHeader = (title: string, subtitle: string) => (
     <View
       style={[
         styles.pageHeader,
         {
-          backgroundColor:
-            background,
+          backgroundColor: background,
         },
       ]}
     >
@@ -1000,44 +690,26 @@ export default function ProtocolScreen() {
         onPress={handleBack}
         activeOpacity={0.75}
         accessibilityRole="button"
-        accessibilityLabel={
-          fa
-            ? 'بازگشت'
-            : 'Back'
-        }
+        accessibilityLabel={fa ? 'بازگشت' : 'Back'}
         style={[
           styles.headerBackButton,
           {
-            backgroundColor:
-              card,
-            borderColor:
-              softBorder,
+            backgroundColor: card,
+            borderColor: softBorder,
           },
         ]}
       >
-        <ArrowLeft
-          size={21}
-          color={
-            ATHLETE.text
-          }
-          strokeWidth={2.2}
-        />
+        <ArrowLeft size={21} color={colors.text} strokeWidth={2.2} />
       </TouchableOpacity>
 
-      <View
-        style={
-          styles.headerTitleContainer
-        }
-      >
+      <View style={styles.headerTitleContainer}>
         <Text
           style={[
             styles.headerTitle,
             {
-              color:
-                ATHLETE.text,
+              color: colors.text,
               textAlign,
-              writingDirection:
-                textDirection,
+              writingDirection: textDirection,
             },
           ]}
         >
@@ -1048,11 +720,9 @@ export default function ProtocolScreen() {
           style={[
             styles.headerSubtitle,
             {
-              color:
-                ATHLETE.textSecondary,
+              color: colors.textSecondary || colors.text + '80',
               textAlign,
-              writingDirection:
-                textDirection,
+              writingDirection: textDirection,
             },
           ]}
         >
@@ -1060,71 +730,43 @@ export default function ProtocolScreen() {
         </Text>
       </View>
 
-      <View
-        style={
-          styles.headerSidePlaceholder
-        }
-      />
+      <View style={styles.headerSidePlaceholder} />
     </View>
   );
-
-  /* ==============================================================
-     DAY NAVIGATION
-  ============================================================== */
 
   const renderDayNavigation = () => (
     <View
       style={[
         styles.dayNavigation,
         {
-          flexDirection:
-            rowDirection,
+          flexDirection: rowDirection,
         },
       ]}
     >
       <TouchableOpacity
         onPress={previousDay}
-        disabled={
-          currentDay === 0
-        }
+        disabled={currentDay === 0}
         activeOpacity={0.75}
         accessibilityRole="button"
-        accessibilityLabel={
-          fa
-            ? 'روز قبلی'
-            : 'Previous day'
-        }
+        accessibilityLabel={fa ? 'روز قبلی' : 'Previous day'}
         style={[
           styles.dayNavButton,
           {
-            backgroundColor:
-              card,
-            borderColor:
-              softBorder,
-            opacity:
-              currentDay === 0
-                ? 0.35
-                : 1,
+            backgroundColor: card,
+            borderColor: softBorder,
+            opacity: currentDay === 0 ? 0.35 : 1,
           },
         ]}
       >
-        <ChevronLeft
-          size={22}
-          color={
-            ATHLETE.text
-          }
-          strokeWidth={2.2}
-        />
+        <ChevronLeft size={22} color={colors.text} strokeWidth={2.2} />
       </TouchableOpacity>
 
       <View
         style={[
           styles.dayIndicator,
           {
-            backgroundColor:
-              softAccent,
-            borderColor:
-              softBorder,
+            backgroundColor: softAccent,
+            borderColor: softBorder,
           },
         ]}
       >
@@ -1134,96 +776,49 @@ export default function ProtocolScreen() {
             {
               color: accent,
               textAlign,
-              writingDirection:
-                textDirection,
+              writingDirection: textDirection,
             },
           ]}
         >
-          {getDayLabel(
-            currentDay,
-          )}
+          {getDayLabel(currentDay)}
         </Text>
       </View>
 
       <TouchableOpacity
         onPress={nextDay}
-        disabled={
-          currentDay >=
-          totalDays - 1
-        }
+        disabled={currentDay >= totalDays - 1}
         activeOpacity={0.75}
         accessibilityRole="button"
-        accessibilityLabel={
-          fa
-            ? 'روز بعدی'
-            : 'Next day'
-        }
+        accessibilityLabel={fa ? 'روز بعدی' : 'Next day'}
         style={[
           styles.dayNavButton,
           {
-            backgroundColor:
-              card,
-            borderColor:
-              softBorder,
-            opacity:
-              currentDay >=
-              totalDays - 1
-                ? 0.35
-                : 1,
+            backgroundColor: card,
+            borderColor: softBorder,
+            opacity: currentDay >= totalDays - 1 ? 0.35 : 1,
           },
         ]}
       >
-        <ChevronRight
-          size={22}
-          color={
-            ATHLETE.text
-          }
-          strokeWidth={2.2}
-        />
+        <ChevronRight size={22} color={colors.text} strokeWidth={2.2} />
       </TouchableOpacity>
     </View>
   );
 
-  /* ==============================================================
-     MODE CARD
-  ============================================================== */
-
-  const renderModeCard = (
-    protocolMode: ProtocolMode,
-  ) => {
-    const Icon =
-      getModeIcon(
-        protocolMode,
-      );
-
-    const active =
-      mode === protocolMode;
-
-    const modeAccent =
-      MODES[protocolMode]
-        .accent;
+  const renderModeCard = (protocolMode: ProtocolMode) => {
+    const Icon = getModeIcon(protocolMode);
+    const active = mode === protocolMode;
+    const modeAccent = colors.primary;
 
     return (
       <TouchableOpacity
         key={protocolMode}
         activeOpacity={0.82}
-        onPress={() =>
-          changeMode(
-            protocolMode,
-          )
-        }
+        onPress={() => changeMode(protocolMode)}
         style={[
           styles.modeCard,
           {
-            backgroundColor:
-              active
-                ? softAccentStrong
-                : card,
-
-            borderColor:
-              active
-                ? modeAccent
-                : softBorder,
+            backgroundColor: active ? softAccentStrong : card,
+            borderColor: active ? modeAccent : softBorder,
           },
         ]}
       >
@@ -1231,20 +826,13 @@ export default function ProtocolScreen() {
           style={[
             styles.modeIcon,
             {
-              backgroundColor:
-                active
-                  ? modeAccent
-                  : cardSecondary,
+              backgroundColor: active ? modeAccent : cardSecondary,
             },
           ]}
         >
           <Icon
             size={21}
-            color={
-              active
-                ? ATHLETE.background
-                : modeAccent
-            }
+            color={active ? colors.background : modeAccent}
             strokeWidth={2.1}
           />
         </View>
@@ -1253,35 +841,27 @@ export default function ProtocolScreen() {
           style={[
             styles.modeTitle,
             {
-              color:
-                ATHLETE.text,
+              color: colors.text,
               textAlign,
-              writingDirection:
-                textDirection,
+              writingDirection: textDirection,
             },
           ]}
         >
-          {getModeTitle(
-            protocolMode,
-          )}
+          {getModeTitle(protocolMode)}
         </Text>
 
         <Text
           style={[
             styles.modeDescription,
             {
-              color:
-                ATHLETE.textSecondary,
+              color: colors.textSecondary || colors.text + '80',
               textAlign,
-              writingDirection:
-                textDirection,
+              writingDirection: textDirection,
             },
           ]}
           numberOfLines={2}
         >
-          {getModeDescription(
-            protocolMode,
-          )}
+          {getModeDescription(protocolMode)}
         </Text>
 
         {active && (
@@ -1289,62 +869,33 @@ export default function ProtocolScreen() {
             style={[
               styles.modeActiveIndicator,
               {
-                backgroundColor:
-                  modeAccent,
+                backgroundColor: modeAccent,
               },
             ]}
           >
-            <Check
-              size={12}
-              color={
-                ATHLETE.background
-              }
-              strokeWidth={3}
-            />
+            <Check size={12} color={colors.background} strokeWidth={3} />
           </View>
         )}
       </TouchableOpacity>
     );
   };
 
-  /* ==============================================================
-     DAY CARD
-  ============================================================== */
-
-  const renderDayCard = (
-    dayIndex: number,
-  ) => {
-    const percent =
-      getDayPercent(
-        dayIndex,
-      );
-
-    const completed =
-      getCompletedTasks(
-        dayIndex,
-      );
-
-    const total =
-      data[dayIndex]?.tasks
-        ?.length ?? 0;
-
-    const completedDay =
-      percent === 100;
+  const renderDayCard = (dayIndex: number) => {
+    const percent = getDayPercent(dayIndex);
+    const completed = getCompletedTasks(dayIndex);
+    const total = data[dayIndex]?.tasks?.length ?? 0;
+    const completedDay = percent === 100;
 
     return (
       <TouchableOpacity
         key={`day-${dayIndex}`}
         activeOpacity={0.82}
-        onPress={() =>
-          openDay(dayIndex)
-        }
+        onPress={() => openDay(dayIndex)}
         style={[
           styles.dayCard,
           {
-            backgroundColor:
-              card,
-            borderColor:
-              softBorder,
+            backgroundColor: card,
+            borderColor: softBorder,
           },
         ]}
       >
@@ -1352,8 +903,7 @@ export default function ProtocolScreen() {
           style={[
             styles.dayCardTop,
             {
-              flexDirection:
-                rowDirection,
+              flexDirection: rowDirection,
             },
           ]}
         >
@@ -1361,28 +911,18 @@ export default function ProtocolScreen() {
             style={[
               styles.dayNumber,
               {
-                backgroundColor:
-                  completedDay
-                    ? accent
-                    : softAccent,
+                backgroundColor: completedDay ? accent : softAccent,
               },
             ]}
           >
             {completedDay ? (
-              <Check
-                size={18}
-                color={
-                  ATHLETE.background
-                }
-                strokeWidth={2.8}
-              />
+              <Check size={18} color={colors.background} strokeWidth={2.8} />
             ) : (
               <Text
                 style={[
                   styles.dayNumberText,
                   {
-                    color:
-                      accent,
+                    color: accent,
                   },
                 ]}
               >
@@ -1395,8 +935,7 @@ export default function ProtocolScreen() {
             style={[
               styles.dayCardInfo,
               {
-                alignItems:
-                  contentAlign,
+                alignItems: contentAlign,
               },
             ]}
           >
@@ -1404,28 +943,22 @@ export default function ProtocolScreen() {
               style={[
                 styles.dayTitle,
                 {
-                  color:
-                    ATHLETE.text,
+                  color: colors.text,
                   textAlign,
-                  writingDirection:
-                    textDirection,
+                  writingDirection: textDirection,
                 },
               ]}
             >
-              {getDayLabel(
-                dayIndex,
-              )}
+              {getDayLabel(dayIndex)}
             </Text>
 
             <Text
               style={[
                 styles.dayTasksText,
                 {
-                  color:
-                    ATHLETE.textSecondary,
+                  color: colors.textSecondary || colors.text + '80',
                   textAlign,
-                  writingDirection:
-                    textDirection,
+                  writingDirection: textDirection,
                 },
               ]}
             >
@@ -1439,10 +972,7 @@ export default function ProtocolScreen() {
             style={[
               styles.dayPercent,
               {
-                backgroundColor:
-                  percent === 100
-                    ? softAccentStrong
-                    : cardSecondary,
+                backgroundColor: percent === 100 ? softAccentStrong : cardSecondary,
               },
             ]}
           >
@@ -1450,10 +980,7 @@ export default function ProtocolScreen() {
               style={[
                 styles.dayPercentText,
                 {
-                  color:
-                    percent === 100
-                      ? accent
-                      : ATHLETE.textSecondary,
+                  color: percent === 100 ? accent : colors.textSecondary || colors.text + '60',
                 },
               ]}
             >
@@ -1466,8 +993,7 @@ export default function ProtocolScreen() {
           style={[
             styles.progressTrack,
             {
-              backgroundColor:
-                progressTrack,
+              backgroundColor: progressTrack,
             },
           ]}
         >
@@ -1476,8 +1002,7 @@ export default function ProtocolScreen() {
               styles.progressFill,
               {
                 width: `${percent}%`,
-                backgroundColor:
-                  accent,
+                backgroundColor: accent,
               },
             ]}
           />
@@ -1486,57 +1011,39 @@ export default function ProtocolScreen() {
     );
   };
 
-  /* ==============================================================
-     LOADING
-  ============================================================== */
-
   if (isLoading) {
     return (
       <View
         style={[
           styles.loadingContainer,
           {
-            backgroundColor:
-              background,
+            backgroundColor: background,
           },
         ]}
       >
-        <ActivityIndicator
-          size="large"
-          color={accent}
-        />
-
+        <ActivityIndicator size="large" color={accent} />
         <Text
           style={[
             styles.loadingText,
             {
-              color:
-                ATHLETE.textSecondary,
+              color: colors.textSecondary || colors.text + '80',
               textAlign,
-              writingDirection:
-                textDirection,
+              writingDirection: textDirection,
             },
           ]}
         >
-          {fa
-            ? 'در حال بارگذاری...'
-            : 'Loading...'}
+          {fa ? 'در حال بارگذاری...' : 'Loading...'}
         </Text>
       </View>
     );
   }
-
-  /* ==============================================================
-     RENDER
-  ============================================================== */
 
   return (
     <SafeAreaView
       style={[
         styles.safeArea,
         {
-          backgroundColor:
-            background,
+          backgroundColor: background,
         },
       ]}
     >
@@ -1544,62 +1051,36 @@ export default function ProtocolScreen() {
         style={[
           styles.root,
           {
-            backgroundColor:
-              background,
+            backgroundColor: background,
           },
         ]}
       >
-        {/* ======================================================
-            HOME
-        ====================================================== */}
-
         {view === 'home' && (
           <ScrollView
-            showsVerticalScrollIndicator={
-              false
-            }
-            contentContainerStyle={
-              styles.scrollContent
-            }
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
           >
             {renderPageHeader(
-              fa
-                ? 'پروتکل'
-                : 'Protocol',
-              fa
-                ? 'برنامه روزانه شما'
-                : 'Your daily program',
+              fa ? 'پروتکل' : 'Protocol',
+              fa ? 'برنامه روزانه شما' : 'Your daily program',
             )}
-
-            {/* HERO */}
 
             <View
               style={[
                 styles.heroCard,
                 {
-                  backgroundColor:
-                    accent,
+                  backgroundColor: accent,
                 },
               ]}
             >
-              <View
-                style={
-                  styles.heroGlowOne
-                }
-              />
-
-              <View
-                style={
-                  styles.heroGlowTwo
-                }
-              />
+              <View style={styles.heroGlowOne} />
+              <View style={styles.heroGlowTwo} />
 
               <View
                 style={[
                   styles.heroContent,
                   {
-                    alignItems:
-                      contentAlign,
+                    alignItems: contentAlign,
                   },
                 ]}
               >
@@ -1607,18 +1088,11 @@ export default function ProtocolScreen() {
                   style={[
                     styles.heroIcon,
                     {
-                      backgroundColor:
-                        'rgba(7,9,8,0.14)',
+                      backgroundColor: 'rgba(255,255,255,0.15)',
                     },
                   ]}
                 >
-                  <Brain
-                    size={25}
-                    color={
-                      ATHLETE.background
-                    }
-                    strokeWidth={2}
-                  />
+                  <Brain size={25} color={colors.background} strokeWidth={2} />
                 </View>
 
                 <Text
@@ -1626,16 +1100,12 @@ export default function ProtocolScreen() {
                     styles.heroTitle,
                     {
                       textAlign,
-                      writingDirection:
-                        textDirection,
-                      color:
-                        ATHLETE.background,
+                      writingDirection: textDirection,
+                      color: colors.background,
                     },
                   ]}
                 >
-                  {getModeTitle(
-                    mode,
-                  )}
+                  {getModeTitle(mode)}
                 </Text>
 
                 <Text
@@ -1643,24 +1113,19 @@ export default function ProtocolScreen() {
                     styles.heroDescription,
                     {
                       textAlign,
-                      writingDirection:
-                        textDirection,
-                      color:
-                        'rgba(7,9,8,0.72)',
+                      writingDirection: textDirection,
+                      color: 'rgba(255,255,255,0.75)',
                     },
                   ]}
                 >
-                  {getModeDescription(
-                    mode,
-                  )}
+                  {getModeDescription(mode)}
                 </Text>
 
                 <View
                   style={[
                     styles.heroProgressRow,
                     {
-                      flexDirection:
-                        rowDirection,
+                      flexDirection: rowDirection,
                     },
                   ]}
                 >
@@ -1668,8 +1133,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.heroProgressInfo,
                       {
-                        alignItems:
-                          contentAlign,
+                        alignItems: contentAlign,
                       },
                     ]}
                   >
@@ -1678,16 +1142,12 @@ export default function ProtocolScreen() {
                         styles.heroProgressLabel,
                         {
                           textAlign,
-                          writingDirection:
-                            textDirection,
-                          color:
-                            'rgba(7,9,8,0.62)',
+                          writingDirection: textDirection,
+                          color: 'rgba(255,255,255,0.65)',
                         },
                       ]}
                     >
-                      {fa
-                        ? 'پیشرفت کلی'
-                        : 'Overall progress'}
+                      {fa ? 'پیشرفت کلی' : 'Overall progress'}
                     </Text>
 
                     <Text
@@ -1695,10 +1155,8 @@ export default function ProtocolScreen() {
                         styles.heroProgressValue,
                         {
                           textAlign,
-                          writingDirection:
-                            textDirection,
-                          color:
-                            ATHLETE.background,
+                          writingDirection: textDirection,
+                          color: colors.background,
                         },
                       ]}
                     >
@@ -1706,18 +1164,13 @@ export default function ProtocolScreen() {
                     </Text>
                   </View>
 
-                  <View
-                    style={
-                      styles.heroProgressTrack
-                    }
-                  >
+                  <View style={styles.heroProgressTrack}>
                     <View
                       style={[
                         styles.heroProgressFill,
                         {
                           width: `${overallPercent}%`,
-                          backgroundColor:
-                            ATHLETE.background,
+                          backgroundColor: colors.background,
                         },
                       ]}
                     />
@@ -1726,103 +1179,72 @@ export default function ProtocolScreen() {
               </View>
             </View>
 
-            {/* PROTOCOL TYPE */}
-
-            <View
-              style={styles.section}
-            >
+            <View style={styles.section}>
               <Text
                 style={[
                   styles.sectionTitle,
                   {
-                    color:
-                      ATHLETE.text,
+                    color: colors.text,
                     textAlign,
-                    writingDirection:
-                      textDirection,
+                    writingDirection: textDirection,
                   },
                 ]}
               >
-                {fa
-                  ? 'نوع پروتکل'
-                  : 'Protocol type'}
+                {fa ? 'نوع پروتکل' : 'Protocol type'}
               </Text>
 
               <View
                 style={[
                   styles.modeGrid,
                   {
-                    flexDirection:
-                      rowDirection,
+                    flexDirection: rowDirection,
                   },
                 ]}
               >
-                {renderModeCard(
-                  'single',
-                )}
-
-                {renderModeCard(
-                  'dyad',
-                )}
-
-                {renderModeCard(
-                  'group',
-                )}
+                {renderModeCard('single')}
+                {renderModeCard('dyad')}
+                {renderModeCard('group')}
               </View>
             </View>
 
-            {/* TODAY REPORT */}
-
-            <View
-              style={styles.section}
-            >
+            <View style={styles.section}>
               <View
                 style={[
                   styles.sectionHeader,
                   {
-                    flexDirection:
-                      rowDirection,
+                    flexDirection: rowDirection,
                   },
                 ]}
               >
                 <View
                   style={{
-                    alignItems:
-                      contentAlign,
+                    alignItems: contentAlign,
                   }}
                 >
                   <Text
                     style={[
                       styles.sectionTitle,
                       {
-                        color:
-                          ATHLETE.text,
+                        color: colors.text,
                         textAlign,
-                        writingDirection:
-                          textDirection,
+                        writingDirection: textDirection,
                       },
                     ]}
                   >
-                    {fa
-                      ? 'گزارش امروز'
-                      : "Today's report"}
+                    {fa ? 'گزارش امروز' : "Today's report"}
                   </Text>
 
                   <Text
                     style={[
                       styles.sectionSubtitle,
                       {
-                        color:
-                          ATHLETE.textSecondary,
+                        color: colors.textSecondary || colors.text + '80',
                         textAlign,
-                        writingDirection:
-                          textDirection,
+                        writingDirection: textDirection,
                       },
                     ]}
                   >
-                    {getDayLabel(
-                      currentDay,
-                    )}
+                    {getDayLabel(currentDay)}
                   </Text>
                 </View>
 
@@ -1830,41 +1252,28 @@ export default function ProtocolScreen() {
                   activeOpacity={0.75}
                   onPress={() => {
                     lightHaptic();
-                    setView(
-                      'report',
-                    );
+                    setView('report');
                   }}
                   style={[
                     styles.reportButton,
                     {
-                      backgroundColor:
-                        softAccent,
-                      flexDirection:
-                        rowDirection,
+                      backgroundColor: softAccent,
+                      flexDirection: rowDirection,
                     },
                   ]}
                 >
-                  <BarChart3
-                    size={17}
-                    color={accent}
-                    strokeWidth={2}
-                  />
-
+                  <BarChart3 size={17} color={accent} strokeWidth={2} />
                   <Text
                     style={[
                       styles.reportButtonText,
                       {
-                        color:
-                          accent,
+                        color: accent,
                         textAlign,
-                        writingDirection:
-                          textDirection,
+                        writingDirection: textDirection,
                       },
                     ]}
                   >
-                    {fa
-                      ? 'گزارش کامل'
-                      : 'Full report'}
+                    {fa ? 'گزارش کامل' : 'Full report'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -1873,10 +1282,8 @@ export default function ProtocolScreen() {
                 style={[
                   styles.reportCard,
                   {
-                    backgroundColor:
-                      card,
-                    borderColor:
-                      softBorder,
+                    backgroundColor: card,
+                    borderColor: softBorder,
                   },
                 ]}
               >
@@ -1884,24 +1291,17 @@ export default function ProtocolScreen() {
                   style={[
                     styles.reportMain,
                     {
-                      flexDirection:
-                        rowDirection,
+                      flexDirection: rowDirection,
                     },
                   ]}
                 >
-                  <View
-                    style={
-                      styles.circularProgress
-                    }
-                  >
+                  <View style={styles.circularProgress}>
                     <Text
                       style={[
                         styles.circularProgressText,
                         {
-                          color:
-                            accent,
-                          textAlign:
-                            'center',
+                          color: accent,
+                          textAlign: 'center',
                         },
                       ]}
                     >
@@ -1912,18 +1312,13 @@ export default function ProtocolScreen() {
                       style={[
                         styles.circularProgressLabel,
                         {
-                          color:
-                            ATHLETE.textSecondary,
-                          textAlign:
-                            'center',
-                          writingDirection:
-                            textDirection,
+                          color: colors.textSecondary || colors.text + '80',
+                          textAlign: 'center',
+                          writingDirection: textDirection,
                         },
                       ]}
                     >
-                      {fa
-                        ? 'امروز'
-                        : 'Today'}
+                      {fa ? 'امروز' : 'Today'}
                     </Text>
                   </View>
 
@@ -1931,8 +1326,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.reportStats,
                       {
-                        alignItems:
-                          contentAlign,
+                        alignItems: contentAlign,
                       },
                     ]}
                   >
@@ -1940,28 +1334,22 @@ export default function ProtocolScreen() {
                       style={[
                         styles.reportStatsTitle,
                         {
-                          color:
-                            ATHLETE.text,
+                          color: colors.text,
                           textAlign,
-                          writingDirection:
-                            textDirection,
+                          writingDirection: textDirection,
                         },
                       ]}
                     >
-                      {fa
-                        ? 'وضعیت فعالیت‌ها'
-                        : 'Activity status'}
+                      {fa ? 'وضعیت فعالیت‌ها' : 'Activity status'}
                     </Text>
 
                     <Text
                       style={[
                         styles.reportStatsValue,
                         {
-                          color:
-                            ATHLETE.textSecondary,
+                          color: colors.textSecondary || colors.text + '80',
                           textAlign,
-                          writingDirection:
-                            textDirection,
+                          writingDirection: textDirection,
                         },
                       ]}
                     >
@@ -1974,8 +1362,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.progressTrack,
                         {
-                          backgroundColor:
-                            progressTrack,
+                          backgroundColor: progressTrack,
                         },
                       ]}
                     >
@@ -1984,8 +1371,7 @@ export default function ProtocolScreen() {
                           styles.progressFill,
                           {
                             width: `${currentDayPercent}%`,
-                            backgroundColor:
-                              accent,
+                            backgroundColor: accent,
                           },
                         ]}
                       />
@@ -1995,962 +1381,597 @@ export default function ProtocolScreen() {
               </View>
             </View>
 
-            {/* TODAY TASKS */}
-
-            <View
-              style={styles.section}
-            >
+            <View style={styles.section}>
               <View
                 style={[
                   styles.sectionHeader,
                   {
-                    flexDirection:
-                      rowDirection,
+                    flexDirection: rowDirection,
                   },
                 ]}
               >
                 <View
                   style={{
-                    alignItems:
-                      contentAlign,
+                    alignItems: contentAlign,
                   }}
                 >
                   <Text
                     style={[
                       styles.sectionTitle,
                       {
-                        color:
-                          ATHLETE.text,
+                        color: colors.text,
                         textAlign,
-                        writingDirection:
-                          textDirection,
+                        writingDirection: textDirection,
                       },
                     ]}
                   >
-                    {fa
-                      ? 'فعالیت‌های امروز'
-                      : "Today's activities"}
+                    {fa ? 'فعالیت‌های امروز' : "Today's activities"}
                   </Text>
 
                   <Text
                     style={[
                       styles.sectionSubtitle,
                       {
-                        color:
-                          ATHLETE.textSecondary,
+                        color: colors.textSecondary || colors.text + '80',
                         textAlign,
-                        writingDirection:
-                          textDirection,
+                        writingDirection: textDirection,
                       },
                     ]}
                   >
-                    {fa
-                      ? 'برای ادامه روی یک فعالیت بزنید'
-                      : 'Tap an activity to continue'}
+                    {fa ? 'برای ادامه روی یک فعالیت بزنید' : 'Tap an activity to continue'}
                   </Text>
                 </View>
               </View>
 
-              {currentEntry?.tasks?.map(
-                (
-                  task,
-                  index,
-                ) => {
-                  const taskProgress =
-                    getDayProgress(
-                      currentDay,
-                    )[index];
+              {currentEntry?.tasks?.map((task, index) => {
+                const taskProgress = getDayProgress(currentDay)[index];
+                const done = isTaskDone(taskProgress);
 
-                  const done =
-                    isTaskDone(
-                      taskProgress,
-                    );
-
-                  return (
-                    <TouchableOpacity
-                      key={`today-task-${index}`}
-                      activeOpacity={0.8}
-                      onPress={() => {
-                        openDay(
-                          currentDay,
-                        );
-
-                        setTimeout(
-                          () =>
-                            setSelectedTask(
-                              index,
-                            ),
-                          50,
-                        );
-                      }}
+                return (
+                  <TouchableOpacity
+                    key={`today-task-${index}`}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      openDay(currentDay);
+                      setTimeout(() => setSelectedTask(index), 50);
+                    }}
+                    style={[
+                      styles.todayTaskCard,
+                      {
+                        backgroundColor: card,
+                        borderColor: done ? accent : softBorder,
+                        flexDirection: rowDirection,
+                      },
+                    ]}
+                  >
+                    <View
                       style={[
-                        styles.todayTaskCard,
+                        styles.todayTaskIcon,
                         {
-                          backgroundColor:
-                            card,
+                          backgroundColor: done ? accent : softAccent,
+                        },
+                      ]}
+                    >
+                      {done ? (
+                        <Check size={17} color={colors.background} strokeWidth={2.7} />
+                      ) : (
+                        <CheckCircle2 size={17} color={accent} strokeWidth={2} />
+                      )}
+                    </View>
 
-                          borderColor:
-                            done
-                              ? accent
-                              : softBorder,
+                    <Text
+                      style={[
+                        styles.todayTaskText,
+                        {
+                          color: done
+                            ? colors.textSecondary || colors.text + '80'
+                            : colors.text,
+                          textAlign,
+                          writingDirection: textDirection,
+                          textDecorationLine: done ? 'line-through' : 'none',
+                        },
+                      ]}
+                    >
+                      {tr(task.text)}
+                    </Text>
 
-                          flexDirection:
-                            rowDirection,
+                    <ChevronLeft
+                      size={18}
+                      color={colors.textTertiary || colors.text + '40'}
+                      style={{
+                        transform: [
+                          {
+                            rotate: fa ? '0deg' : '180deg',
+                          },
+                        ],
+                      }}
+                    />
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <View style={styles.section}>
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  {
+                    color: colors.text,
+                    textAlign,
+                    writingDirection: textDirection,
+                  },
+                ]}
+              >
+                {mode === 'single'
+                  ? fa ? 'روزهای پروتکل' : 'Protocol days'
+                  : fa ? 'جلسات پروتکل' : 'Protocol sessions'}
+              </Text>
+
+              {data.map((_, index) => renderDayCard(index))}
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={resetProtocol}
+              style={[
+                styles.resetButton,
+                {
+                  borderColor: softBorder,
+                  backgroundColor: card,
+                  flexDirection: rowDirection,
+                },
+              ]}
+            >
+              <RotateCcw size={17} color={colors.textSecondary || colors.text + '60'} strokeWidth={2} />
+              <Text
+                style={[
+                  styles.resetButtonText,
+                  {
+                    color: colors.textSecondary || colors.text + '60',
+                    textAlign,
+                    writingDirection: textDirection,
+                  },
+                ]}
+              >
+                {fa ? 'شروع مجدد پروتکل' : 'Reset protocol'}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.bottomSpace} />
+          </ScrollView>
+        )}
+
+        {view === 'day' && currentEntry && (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+          >
+            {renderPageHeader(
+              getDayLabel(currentDay),
+              getModeTitle(mode),
+            )}
+
+            <View
+              style={[
+                styles.dayProgressCard,
+                {
+                  backgroundColor: card,
+                  borderColor: softBorder,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.dayProgressHeader,
+                  {
+                    flexDirection: rowDirection,
+                  },
+                ]}
+              >
+                <View
+                  style={{
+                    alignItems: contentAlign,
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.dayProgressTitle,
+                      {
+                        color: colors.text,
+                        textAlign,
+                        writingDirection: textDirection,
+                      },
+                    ]}
+                  >
+                    {fa ? 'پیشرفت امروز' : "Today's progress"}
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.dayProgressSubtitle,
+                      {
+                        color: colors.textSecondary || colors.text + '80',
+                        textAlign,
+                        writingDirection: textDirection,
+                      },
+                    ]}
+                  >
+                    {fa
+                      ? `${currentCompletedTasks} از ${currentTotalTasks} فعالیت`
+                      : `${currentCompletedTasks} of ${currentTotalTasks} activities`}
+                  </Text>
+                </View>
+
+                <Text
+                  style={[
+                    styles.dayProgressPercent,
+                    {
+                      color: accent,
+                      textAlign: 'center',
+                    },
+                  ]}
+                >
+                  {currentDayPercent}%
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.progressTrack,
+                  {
+                    backgroundColor: progressTrack,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${currentDayPercent}%`,
+                      backgroundColor: accent,
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+
+            {renderDayNavigation()}
+
+            {currentEntry.ayah && (
+              <View
+                style={[
+                  styles.quoteCard,
+                  {
+                    backgroundColor: softAccent,
+                    borderColor: softBorder,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.quoteIcon,
+                    {
+                      backgroundColor: accent,
+                    },
+                  ]}
+                >
+                  <BookOpen size={18} color={colors.background} strokeWidth={2} />
+                </View>
+
+                <Text
+                  style={[
+                    styles.quoteText,
+                    {
+                      color: colors.text,
+                      textAlign,
+                      writingDirection: textDirection,
+                    },
+                  ]}
+                >
+                  {currentEntry.ayah}
+                </Text>
+
+                {currentEntry.ayahRef && (
+                  <Text
+                    style={[
+                      styles.quoteReference,
+                      {
+                        color: accent,
+                        textAlign,
+                        writingDirection: textDirection,
+                      },
+                    ]}
+                  >
+                    {currentEntry.ayahRef}
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {currentEntry.poem && (
+              <View
+                style={[
+                  styles.poemCard,
+                  {
+                    backgroundColor: card,
+                    borderColor: softBorder,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.poemHeader,
+                    {
+                      flexDirection: rowDirection,
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.poemIcon,
+                      {
+                        backgroundColor: softAccent,
+                      },
+                    ]}
+                  >
+                    <Feather size={18} color={accent} strokeWidth={2} />
+                  </View>
+
+                  <View
+                    style={{
+                      alignItems: contentAlign,
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.poemTitle,
+                        {
+                          color: colors.text,
+                          textAlign,
+                          writingDirection: textDirection,
+                        },
+                      ]}
+                    >
+                      {fa ? 'شعر امروز' : "Today's poem"}
+                    </Text>
+
+                    {currentEntry.poemPoet && (
+                      <Text
+                        style={[
+                          styles.poemPoet,
+                          {
+                            color: colors.textSecondary || colors.text + '80',
+                            textAlign,
+                            writingDirection: textDirection,
+                          },
+                        ]}
+                      >
+                        {currentEntry.poemPoet}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+
+                <Text
+                  style={[
+                    styles.poemText,
+                    {
+                      color: colors.text,
+                      textAlign,
+                      writingDirection: textDirection,
+                    },
+                  ]}
+                >
+                  {currentEntry.poem}
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.tasksSection}>
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  {
+                    color: colors.text,
+                    textAlign,
+                    writingDirection: textDirection,
+                  },
+                ]}
+              >
+                {fa ? 'فعالیت‌های این روز' : "Today's tasks"}
+              </Text>
+
+              {currentEntry.tasks.map((task, index) => {
+                const taskProgress = getDayProgress(currentDay)[index];
+                const done = isTaskDone(taskProgress);
+                const selected = selectedTask === index;
+
+                return (
+                  <View
+                    key={`task-${index}`}
+                    style={[
+                      styles.taskCard,
+                      {
+                        backgroundColor: card,
+                        borderColor: selected || done ? accent : softBorder,
+                      },
+                    ]}
+                  >
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => setSelectedTask(selected ? null : index)}
+                      style={[
+                        styles.taskHeader,
+                        {
+                          flexDirection: rowDirection,
                         },
                       ]}
                     >
                       <View
                         style={[
-                          styles.todayTaskIcon,
+                          styles.taskCheckbox,
                           {
-                            backgroundColor:
-                              done
-                                ? accent
-                                : softAccent,
+                            backgroundColor: done ? accent : 'transparent',
+                            borderColor: done ? accent : softBorder,
                           },
                         ]}
                       >
-                        {done ? (
-                          <Check
-                            size={17}
-                            color={
-                              ATHLETE.background
-                            }
-                            strokeWidth={2.7}
-                          />
-                        ) : (
-                          <CheckCircle2
-                            size={17}
-                            color={
-                              accent
-                            }
-                            strokeWidth={2}
-                          />
-                        )}
+                        {done && <Check size={16} color={colors.background} strokeWidth={2.8} />}
                       </View>
 
                       <Text
                         style={[
-                          styles.todayTaskText,
+                          styles.taskText,
                           {
-                            color:
-                              done
-                                ? ATHLETE.textSecondary
-                                : ATHLETE.text,
-
+                            color: colors.text,
                             textAlign,
-                            writingDirection:
-                              textDirection,
-
-                            textDecorationLine:
-                              done
-                                ? 'line-through'
-                                : 'none',
+                            writingDirection: textDirection,
+                            textDecorationLine: done ? 'line-through' : 'none',
                           },
                         ]}
                       >
-                        {tr(
-                          task.text,
-                        )}
+                        {tr(task.text)}
                       </Text>
 
-                      <ChevronLeft
+                      <ChevronDown
                         size={18}
-                        color={
-                          ATHLETE.textTertiary
-                        }
+                        color={colors.textSecondary || colors.text + '60'}
                         style={{
                           transform: [
                             {
-                              rotate:
-                                fa
-                                  ? '0deg'
-                                  : '180deg',
+                              rotate: selected ? '180deg' : '0deg',
                             },
                           ],
                         }}
                       />
                     </TouchableOpacity>
-                  );
-                },
-              )}
+
+                    {selected && (
+                      <View
+                        style={[
+                          styles.taskExpanded,
+                          {
+                            borderTopColor: softBorder,
+                          },
+                        ]}
+                      >
+                        {task.type === 'text' ? (
+                          <TextInput
+                            value={taskProgress?.value ?? ''}
+                            onChangeText={value => updateTextTask(index, value)}
+                            placeholder={fa ? 'پاسخ خود را بنویسید...' : 'Write your response...'}
+                            placeholderTextColor={colors.textTertiary || colors.text + '40'}
+                            multiline
+                            style={[
+                              styles.taskInput,
+                              {
+                                color: colors.text,
+                                backgroundColor: cardSecondary,
+                                borderColor: softBorder,
+                                textAlign,
+                                writingDirection: textDirection,
+                              },
+                            ]}
+                          />
+                        ) : (
+                          <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => toggleTask(index)}
+                            style={[
+                              styles.taskActionButton,
+                              {
+                                backgroundColor: done ? softAccent : accent,
+                                flexDirection: rowDirection,
+                              },
+                            ]}
+                          >
+                            <Check
+                              size={17}
+                              color={done ? accent : colors.background}
+                              strokeWidth={2.5}
+                            />
+
+                            <Text
+                              style={[
+                                styles.taskActionText,
+                                {
+                                  color: done ? accent : colors.background,
+                                  textAlign,
+                                  writingDirection: textDirection,
+                                },
+                              ]}
+                            >
+                              {done
+                                ? fa ? 'انجام شد' : 'Completed'
+                                : fa ? 'انجام دادم' : 'Mark complete'}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
             </View>
-
-            {/* PROTOCOL DAYS */}
-
-            <View
-              style={styles.section}
-            >
-              <Text
-                style={[
-                  styles.sectionTitle,
-                  {
-                    color:
-                      ATHLETE.text,
-                    textAlign,
-                    writingDirection:
-                      textDirection,
-                  },
-                ]}
-              >
-                {mode ===
-                'single'
-                  ? fa
-                    ? 'روزهای پروتکل'
-                    : 'Protocol days'
-                  : fa
-                  ? 'جلسات پروتکل'
-                  : 'Protocol sessions'}
-              </Text>
-
-              {data.map(
-                (_, index) =>
-                  renderDayCard(
-                    index,
-                  ),
-              )}
-            </View>
-
-            {/* RESET */}
 
             <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={
-                resetProtocol
-              }
+              activeOpacity={0.82}
+              disabled={currentDayPercent !== 100}
+              onPress={completeDay}
               style={[
-                styles.resetButton,
+                styles.completeDayButton,
                 {
-                  borderColor:
-                    softBorder,
-                  backgroundColor:
-                    card,
-                  flexDirection:
-                    rowDirection,
+                  backgroundColor: currentDayPercent === 100 ? accent : cardSecondary,
+                  borderColor: currentDayPercent === 100 ? accent : softBorder,
+                  opacity: currentDayPercent === 100 ? 1 : 0.75,
+                  flexDirection: rowDirection,
                 },
               ]}
             >
-              <RotateCcw
-                size={17}
-                color={
-                  ATHLETE.textSecondary
-                }
-                strokeWidth={2}
-              />
+              {currentDayPercent === 100 ? (
+                <CheckCircle2 size={21} color={colors.background} strokeWidth={2.3} />
+              ) : (
+                <Lock size={19} color={colors.textSecondary || colors.text + '60'} strokeWidth={2} />
+              )}
 
               <Text
                 style={[
-                  styles.resetButtonText,
+                  styles.completeDayText,
                   {
-                    color:
-                      ATHLETE.textSecondary,
+                    color: currentDayPercent === 100
+                      ? colors.background
+                      : colors.textSecondary || colors.text + '60',
                     textAlign,
-                    writingDirection:
-                      textDirection,
+                    writingDirection: textDirection,
                   },
                 ]}
               >
-                {fa
-                  ? 'شروع مجدد پروتکل'
-                  : 'Reset protocol'}
+                {currentDayPercent === 100
+                  ? fa ? 'تکمیل روز' : 'Complete day'
+                  : fa ? 'تمام فعالیت‌ها را انجام دهید' : 'Complete all tasks first'}
               </Text>
             </TouchableOpacity>
 
-            <View
-              style={
-                styles.bottomSpace
-              }
-            />
+            <View style={styles.bottomSpace} />
           </ScrollView>
         )}
 
-        {/* ======================================================
-            DAY
-        ====================================================== */}
-
-        {view === 'day' &&
-          currentEntry && (
-            <ScrollView
-              showsVerticalScrollIndicator={
-                false
-              }
-              contentContainerStyle={
-                styles.scrollContent
-              }
-            >
-              {renderPageHeader(
-                getDayLabel(
-                  currentDay,
-                ),
-                getModeTitle(
-                  mode,
-                ),
-              )}
-
-              {/* DAY PROGRESS */}
-
-              <View
-                style={[
-                  styles.dayProgressCard,
-                  {
-                    backgroundColor:
-                      card,
-                    borderColor:
-                      softBorder,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.dayProgressHeader,
-                    {
-                      flexDirection:
-                        rowDirection,
-                    },
-                  ]}
-                >
-                  <View
-                    style={{
-                      alignItems:
-                        contentAlign,
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.dayProgressTitle,
-                        {
-                          color:
-                            ATHLETE.text,
-                          textAlign,
-                          writingDirection:
-                            textDirection,
-                        },
-                      ]}
-                    >
-                      {fa
-                        ? 'پیشرفت امروز'
-                        : "Today's progress"}
-                    </Text>
-
-                    <Text
-                      style={[
-                        styles.dayProgressSubtitle,
-                        {
-                          color:
-                            ATHLETE.textSecondary,
-                          textAlign,
-                          writingDirection:
-                            textDirection,
-                        },
-                      ]}
-                    >
-                      {fa
-                        ? `${currentCompletedTasks} از ${currentTotalTasks} فعالیت`
-                        : `${currentCompletedTasks} of ${currentTotalTasks} activities`}
-                    </Text>
-                  </View>
-
-                  <Text
-                    style={[
-                      styles.dayProgressPercent,
-                      {
-                        color:
-                          accent,
-                        textAlign:
-                          'center',
-                      },
-                    ]}
-                  >
-                    {currentDayPercent}%
-                  </Text>
-                </View>
-
-                <View
-                  style={[
-                    styles.progressTrack,
-                    {
-                      backgroundColor:
-                        progressTrack,
-                    },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.progressFill,
-                      {
-                        width: `${currentDayPercent}%`,
-                        backgroundColor:
-                          accent,
-                      },
-                    ]}
-                  />
-                </View>
-              </View>
-
-              {renderDayNavigation()}
-
-              {/* AYAH */}
-
-              {currentEntry.ayah && (
-                <View
-                  style={[
-                    styles.quoteCard,
-                    {
-                      backgroundColor:
-                        softAccent,
-                      borderColor:
-                        softBorder,
-                    },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.quoteIcon,
-                      {
-                        backgroundColor:
-                          accent,
-                      },
-                    ]}
-                  >
-                    <BookOpen
-                      size={18}
-                      color={
-                        ATHLETE.background
-                      }
-                      strokeWidth={2}
-                    />
-                  </View>
-
-                  <Text
-                    style={[
-                      styles.quoteText,
-                      {
-                        color:
-                          ATHLETE.text,
-                        textAlign,
-                        writingDirection:
-                          textDirection,
-                      },
-                    ]}
-                  >
-                    {currentEntry.ayah}
-                  </Text>
-
-                  {currentEntry.ayahRef && (
-                    <Text
-                      style={[
-                        styles.quoteReference,
-                        {
-                          color:
-                            accent,
-                          textAlign,
-                          writingDirection:
-                            textDirection,
-                        },
-                      ]}
-                    >
-                      {
-                        currentEntry.ayahRef
-                      }
-                    </Text>
-                  )}
-                </View>
-              )}
-
-              {/* POEM */}
-
-              {currentEntry.poem && (
-                <View
-                  style={[
-                    styles.poemCard,
-                    {
-                      backgroundColor:
-                        card,
-                      borderColor:
-                        softBorder,
-                    },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.poemHeader,
-                      {
-                        flexDirection:
-                          rowDirection,
-                      },
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.poemIcon,
-                        {
-                          backgroundColor:
-                            softAccent,
-                        },
-                      ]}
-                    >
-                      <Feather
-                        size={18}
-                        color={
-                          accent
-                        }
-                        strokeWidth={2}
-                      />
-                    </View>
-
-                    <View
-                      style={{
-                        alignItems:
-                          contentAlign,
-                      }}
-                    >
-                      <Text
-                        style={[
-                          styles.poemTitle,
-                          {
-                            color:
-                              ATHLETE.text,
-                            textAlign,
-                            writingDirection:
-                              textDirection,
-                          },
-                        ]}
-                      >
-                        {fa
-                          ? 'شعر امروز'
-                          : "Today's poem"}
-                      </Text>
-
-                      {currentEntry.poemPoet && (
-                        <Text
-                          style={[
-                            styles.poemPoet,
-                            {
-                              color:
-                                ATHLETE.textSecondary,
-                              textAlign,
-                              writingDirection:
-                                textDirection,
-                            },
-                          ]}
-                        >
-                          {
-                            currentEntry.poemPoet
-                          }
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-
-                  <Text
-                    style={[
-                      styles.poemText,
-                      {
-                        color:
-                          ATHLETE.text,
-                        textAlign,
-                        writingDirection:
-                          textDirection,
-                      },
-                    ]}
-                  >
-                    {currentEntry.poem}
-                  </Text>
-                </View>
-              )}
-
-              {/* TASKS */}
-
-              <View
-                style={
-                  styles.tasksSection
-                }
-              >
-                <Text
-                  style={[
-                    styles.sectionTitle,
-                    {
-                      color:
-                        ATHLETE.text,
-                      textAlign,
-                      writingDirection:
-                        textDirection,
-                    },
-                  ]}
-                >
-                  {fa
-                    ? 'فعالیت‌های این روز'
-                    : "Today's tasks"}
-                </Text>
-
-                {currentEntry.tasks.map(
-                  (
-                    task,
-                    index,
-                  ) => {
-                    const taskProgress =
-                      getDayProgress(
-                        currentDay,
-                      )[index];
-
-                    const done =
-                      isTaskDone(
-                        taskProgress,
-                      );
-
-                    const selected =
-                      selectedTask ===
-                      index;
-
-                    return (
-                      <View
-                        key={`task-${index}`}
-                        style={[
-                          styles.taskCard,
-                          {
-                            backgroundColor:
-                              card,
-
-                            borderColor:
-                              selected ||
-                              done
-                                ? accent
-                                : softBorder,
-                          },
-                        ]}
-                      >
-                        <TouchableOpacity
-                          activeOpacity={
-                            0.8
-                          }
-                          onPress={() =>
-                            setSelectedTask(
-                              selected
-                                ? null
-                                : index,
-                            )
-                          }
-                          style={[
-                            styles.taskHeader,
-                            {
-                              flexDirection:
-                                rowDirection,
-                            },
-                          ]}
-                        >
-                          <View
-                            style={[
-                              styles.taskCheckbox,
-                              {
-                                backgroundColor:
-                                  done
-                                    ? accent
-                                    : 'transparent',
-
-                                borderColor:
-                                  done
-                                    ? accent
-                                    : softBorder,
-                              },
-                            ]}
-                          >
-                            {done && (
-                              <Check
-                                size={
-                                  16
-                                }
-                                color={
-                                  ATHLETE.background
-                                }
-                                strokeWidth={
-                                  2.8
-                                }
-                              />
-                            )}
-                          </View>
-
-                          <Text
-                            style={[
-                              styles.taskText,
-                              {
-                                color:
-                                  ATHLETE.text,
-
-                                textAlign,
-                                writingDirection:
-                                  textDirection,
-
-                                textDecorationLine:
-                                  done
-                                    ? 'line-through'
-                                    : 'none',
-                              },
-                            ]}
-                          >
-                            {tr(
-                              task.text,
-                            )}
-                          </Text>
-
-                          <ChevronDown
-                            size={18}
-                            color={
-                              ATHLETE.textSecondary
-                            }
-                            style={{
-                              transform: [
-                                {
-                                  rotate:
-                                    selected
-                                      ? '180deg'
-                                      : '0deg',
-                                },
-                              ],
-                            }}
-                          />
-                        </TouchableOpacity>
-
-                        {selected && (
-                          <View
-                            style={[
-                              styles.taskExpanded,
-                              {
-                                borderTopColor:
-                                  softBorder,
-                              },
-                            ]}
-                          >
-                            {task.type ===
-                            'text' ? (
-                              <TextInput
-                                value={
-                                  taskProgress?.value ??
-                                  ''
-                                }
-                                onChangeText={value =>
-                                  updateTextTask(
-                                    index,
-                                    value,
-                                  )
-                                }
-                                placeholder={
-                                  fa
-                                    ? 'پاسخ خود را بنویسید...'
-                                    : 'Write your response...'
-                                }
-                                placeholderTextColor={
-                                  ATHLETE.textTertiary
-                                }
-                                multiline
-                                style={[
-                                  styles.taskInput,
-                                  {
-                                    color:
-                                      ATHLETE.text,
-
-                                    backgroundColor:
-                                      cardSecondary,
-
-                                    borderColor:
-                                      softBorder,
-
-                                    textAlign,
-                                    writingDirection:
-                                      textDirection,
-                                  },
-                                ]}
-                              />
-                            ) : (
-                              <TouchableOpacity
-                                activeOpacity={
-                                  0.8
-                                }
-                                onPress={() =>
-                                  toggleTask(
-                                    index,
-                                  )
-                                }
-                                style={[
-                                  styles.taskActionButton,
-                                  {
-                                    backgroundColor:
-                                      done
-                                        ? softAccent
-                                        : accent,
-
-                                    flexDirection:
-                                      rowDirection,
-                                  },
-                                ]}
-                              >
-                                <Check
-                                  size={
-                                    17
-                                  }
-                                  color={
-                                    done
-                                      ? accent
-                                      : ATHLETE.background
-                                  }
-                                  strokeWidth={
-                                    2.5
-                                  }
-                                />
-
-                                <Text
-                                  style={[
-                                    styles.taskActionText,
-                                    {
-                                      color:
-                                        done
-                                          ? accent
-                                          : ATHLETE.background,
-
-                                      textAlign,
-                                      writingDirection:
-                                        textDirection,
-                                    },
-                                  ]}
-                                >
-                                  {done
-                                    ? fa
-                                      ? 'انجام شد'
-                                      : 'Completed'
-                                    : fa
-                                    ? 'انجام دادم'
-                                    : 'Mark complete'}
-                                </Text>
-                              </TouchableOpacity>
-                            )}
-                          </View>
-                        )}
-                      </View>
-                    );
-                  },
-                )}
-              </View>
-
-              {/* COMPLETE */}
-
-              <TouchableOpacity
-                activeOpacity={0.82}
-                disabled={
-                  currentDayPercent !==
-                  100
-                }
-                onPress={
-                  completeDay
-                }
-                style={[
-                  styles.completeDayButton,
-                  {
-                    backgroundColor:
-                      currentDayPercent ===
-                      100
-                        ? accent
-                        : cardSecondary,
-
-                    borderColor:
-                      currentDayPercent ===
-                      100
-                        ? accent
-                        : softBorder,
-
-                    opacity:
-                      currentDayPercent ===
-                      100
-                        ? 1
-                        : 0.75,
-
-                    flexDirection:
-                      rowDirection,
-                  },
-                ]}
-              >
-                {currentDayPercent ===
-                100 ? (
-                  <CheckCircle2
-                    size={21}
-                    color={
-                      ATHLETE.background
-                    }
-                    strokeWidth={2.3}
-                  />
-                ) : (
-                  <Lock
-                    size={19}
-                    color={
-                      ATHLETE.textSecondary
-                    }
-                    strokeWidth={2}
-                  />
-                )}
-
-                <Text
-                  style={[
-                    styles.completeDayText,
-                    {
-                      color:
-                        currentDayPercent ===
-                        100
-                          ? ATHLETE.background
-                          : ATHLETE.textSecondary,
-
-                      textAlign,
-                      writingDirection:
-                        textDirection,
-                    },
-                  ]}
-                >
-                  {currentDayPercent ===
-                  100
-                    ? fa
-                      ? 'تکمیل روز'
-                      : 'Complete day'
-                    : fa
-                    ? 'تمام فعالیت‌ها را انجام دهید'
-                    : 'Complete all tasks first'}
-                </Text>
-              </TouchableOpacity>
-
-              <View
-                style={
-                  styles.bottomSpace
-                }
-              />
-            </ScrollView>
-          )}
-
-        {/* ======================================================
-            REPORT
-        ====================================================== */}
-
         {view === 'report' && (
           <ScrollView
-            showsVerticalScrollIndicator={
-              false
-            }
-            contentContainerStyle={
-              styles.scrollContent
-            }
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
           >
             {renderPageHeader(
-              fa
-                ? 'گزارش پروتکل'
-                : 'Protocol report',
-              getModeTitle(
-                mode,
-              ),
+              fa ? 'گزارش پروتکل' : 'Protocol report',
+              getModeTitle(mode),
             )}
 
             <View
               style={[
                 styles.reportHero,
                 {
-                  backgroundColor:
-                    card,
-                  borderColor:
-                    softBorder,
+                  backgroundColor: card,
+                  borderColor: softBorder,
                 },
               ]}
             >
@@ -2958,8 +1979,7 @@ export default function ProtocolScreen() {
                 style={[
                   styles.reportCircle,
                   {
-                    borderColor:
-                      accent,
+                    borderColor: accent,
                   },
                 ]}
               >
@@ -2967,10 +1987,8 @@ export default function ProtocolScreen() {
                   style={[
                     styles.reportCircleValue,
                     {
-                      color:
-                        accent,
-                      textAlign:
-                        'center',
+                      color: accent,
+                      textAlign: 'center',
                     },
                   ]}
                 >
@@ -2981,18 +1999,13 @@ export default function ProtocolScreen() {
                   style={[
                     styles.reportCircleLabel,
                     {
-                      color:
-                        ATHLETE.textSecondary,
-                      textAlign:
-                        'center',
-                      writingDirection:
-                        textDirection,
+                      color: colors.textSecondary || colors.text + '80',
+                      textAlign: 'center',
+                      writingDirection: textDirection,
                     },
                   ]}
                 >
-                  {fa
-                    ? 'پیشرفت'
-                    : 'Progress'}
+                  {fa ? 'پیشرفت' : 'Progress'}
                 </Text>
               </View>
 
@@ -3000,28 +2013,22 @@ export default function ProtocolScreen() {
                 style={[
                   styles.reportHeroTitle,
                   {
-                    color:
-                      ATHLETE.text,
+                    color: colors.text,
                     textAlign,
-                    writingDirection:
-                      textDirection,
+                    writingDirection: textDirection,
                   },
                 ]}
               >
-                {fa
-                  ? 'پیشرفت کلی شما'
-                  : 'Your overall progress'}
+                {fa ? 'پیشرفت کلی شما' : 'Your overall progress'}
               </Text>
 
               <Text
                 style={[
                   styles.reportHeroSubtitle,
                   {
-                    color:
-                      ATHLETE.textSecondary,
+                    color: colors.textSecondary || colors.text + '80',
                     textAlign,
-                    writingDirection:
-                      textDirection,
+                    writingDirection: textDirection,
                   },
                 ]}
               >
@@ -3035,8 +2042,7 @@ export default function ProtocolScreen() {
               style={[
                 styles.reportStatsGrid,
                 {
-                  flexDirection:
-                    rowDirection,
+                  flexDirection: rowDirection,
                 },
               ]}
             >
@@ -3044,10 +2050,8 @@ export default function ProtocolScreen() {
                 style={[
                   styles.reportStatCard,
                   {
-                    backgroundColor:
-                      card,
-                    borderColor:
-                      softBorder,
+                    backgroundColor: card,
+                    borderColor: softBorder,
                   },
                 ]}
               >
@@ -3055,28 +2059,19 @@ export default function ProtocolScreen() {
                   style={[
                     styles.reportStatIcon,
                     {
-                      backgroundColor:
-                        softAccent,
+                      backgroundColor: softAccent,
                     },
                   ]}
                 >
-                  <CalendarDays
-                    size={19}
-                    color={
-                      accent
-                    }
-                    strokeWidth={2}
-                  />
+                  <CalendarDays size={19} color={accent} strokeWidth={2} />
                 </View>
 
                 <Text
                   style={[
                     styles.reportStatValue,
                     {
-                      color:
-                        ATHLETE.text,
-                      textAlign:
-                        'center',
+                      color: colors.text,
+                      textAlign: 'center',
                     },
                   ]}
                 >
@@ -3087,18 +2082,13 @@ export default function ProtocolScreen() {
                   style={[
                     styles.reportStatLabel,
                     {
-                      color:
-                        ATHLETE.textSecondary,
-                      textAlign:
-                        'center',
-                      writingDirection:
-                        textDirection,
+                      color: colors.textSecondary || colors.text + '80',
+                      textAlign: 'center',
+                      writingDirection: textDirection,
                     },
                   ]}
                 >
-                  {fa
-                    ? 'روز کامل‌شده'
-                    : 'Days completed'}
+                  {fa ? 'روز کامل‌شده' : 'Days completed'}
                 </Text>
               </View>
 
@@ -3106,10 +2096,8 @@ export default function ProtocolScreen() {
                 style={[
                   styles.reportStatCard,
                   {
-                    backgroundColor:
-                      card,
-                    borderColor:
-                      softBorder,
+                    backgroundColor: card,
+                    borderColor: softBorder,
                   },
                 ]}
               >
@@ -3117,61 +2105,36 @@ export default function ProtocolScreen() {
                   style={[
                     styles.reportStatIcon,
                     {
-                      backgroundColor:
-                        softAccent,
+                      backgroundColor: softAccent,
                     },
                   ]}
                 >
-                  <CheckCircle2
-                    size={19}
-                    color={
-                      accent
-                    }
-                    strokeWidth={2}
-                  />
+                  <CheckCircle2 size={19} color={accent} strokeWidth={2} />
                 </View>
 
                 <Text
                   style={[
                     styles.reportStatValue,
                     {
-                      color:
-                        ATHLETE.text,
-                      textAlign:
-                        'center',
+                      color: colors.text,
+                      textAlign: 'center',
                     },
                   ]}
                 >
-                  {data.reduce(
-                    (
-                      sum,
-                      _,
-                      i,
-                    ) =>
-                      sum +
-                      getCompletedTasks(
-                        i,
-                      ),
-                    0,
-                  )}
+                  {data.reduce((sum, _, i) => sum + getCompletedTasks(i), 0)}
                 </Text>
 
                 <Text
                   style={[
                     styles.reportStatLabel,
                     {
-                      color:
-                        ATHLETE.textSecondary,
-                      textAlign:
-                        'center',
-                      writingDirection:
-                        textDirection,
+                      color: colors.textSecondary || colors.text + '80',
+                      textAlign: 'center',
+                      writingDirection: textDirection,
                     },
                   ]}
                 >
-                  {fa
-                    ? 'فعالیت انجام‌شده'
-                    : 'Tasks completed'}
+                  {fa ? 'فعالیت انجام‌شده' : 'Tasks completed'}
                 </Text>
               </View>
 
@@ -3179,10 +2142,8 @@ export default function ProtocolScreen() {
                 style={[
                   styles.reportStatCard,
                   {
-                    backgroundColor:
-                      card,
-                    borderColor:
-                      softBorder,
+                    backgroundColor: card,
+                    borderColor: softBorder,
                   },
                 ]}
               >
@@ -3190,67 +2151,26 @@ export default function ProtocolScreen() {
                   style={[
                     styles.reportStatIcon,
                     {
-                      backgroundColor:
-                        softAccent,
+                      backgroundColor: softAccent,
                     },
                   ]}
                 >
-                  <Target
-                    size={19}
-                    color={
-                      accent
-                    }
-                    strokeWidth={2}
-                  />
+                  <Target size={19} color={accent} strokeWidth={2} />
                 </View>
 
                 <Text
                   style={[
                     styles.reportStatValue,
                     {
-                      color:
-                        ATHLETE.text,
-                      textAlign:
-                        'center',
+                      color: colors.text,
+                      textAlign: 'center',
                     },
                   ]}
                 >
-                  {data.reduce(
-                    (
-                      sum,
-                      item,
-                    ) =>
-                      sum +
-                      (item.tasks
-                        ?.length ??
-                        0),
-                    0,
-                  ) > 0
+                  {data.reduce((sum, item) => sum + (item.tasks?.length ?? 0), 0) > 0
                     ? Math.round(
-                        (data.reduce(
-                          (
-                            sum,
-                            _,
-                            i,
-                          ) =>
-                            sum +
-                            getCompletedTasks(
-                              i,
-                            ),
-                          0,
-                        ) /
-                          data.reduce(
-                            (
-                              sum,
-                              item,
-                            ) =>
-                              sum +
-                              (item
-                                .tasks
-                                ?.length ??
-                                0),
-                            0,
-                          )) *
+                        (data.reduce((sum, _, i) => sum + getCompletedTasks(i), 0) /
+                          data.reduce((sum, item) => sum + (item.tasks?.length ?? 0), 0)) *
                           100,
                       )
                     : 0}
@@ -3261,32 +2181,23 @@ export default function ProtocolScreen() {
                   style={[
                     styles.reportStatLabel,
                     {
-                      color:
-                        ATHLETE.textSecondary,
-                      textAlign:
-                        'center',
-                      writingDirection:
-                        textDirection,
+                      color: colors.textSecondary || colors.text + '80',
+                      textAlign: 'center',
+                      writingDirection: textDirection,
                     },
                   ]}
                 >
-                  {fa
-                    ? 'تکمیل فعالیت‌ها'
-                    : 'Task completion'}
+                  {fa ? 'تکمیل فعالیت‌ها' : 'Task completion'}
                 </Text>
               </View>
             </View>
-
-            {/* DAILY REPORT */}
 
             <View
               style={[
                 styles.reportProgressCard,
                 {
-                  backgroundColor:
-                    card,
-                  borderColor:
-                    softBorder,
+                  backgroundColor: card,
+                  borderColor: softBorder,
                 },
               ]}
             >
@@ -3294,8 +2205,7 @@ export default function ProtocolScreen() {
                 style={[
                   styles.sectionHeader,
                   {
-                    flexDirection:
-                      rowDirection,
+                    flexDirection: rowDirection,
                   },
                 ]}
               >
@@ -3303,118 +2213,72 @@ export default function ProtocolScreen() {
                   style={[
                     styles.sectionTitle,
                     {
-                      color:
-                        ATHLETE.text,
+                      color: colors.text,
                       textAlign,
-                      writingDirection:
-                        textDirection,
+                      writingDirection: textDirection,
                     },
                   ]}
                 >
-                  {fa
-                    ? 'پیشرفت روزانه'
-                    : 'Daily progress'}
+                  {fa ? 'پیشرفت روزانه' : 'Daily progress'}
                 </Text>
 
-                <BarChart3
-                  size={19}
-                  color={
-                    accent
-                  }
-                  strokeWidth={2}
-                />
+                <BarChart3 size={19} color={accent} strokeWidth={2} />
               </View>
 
-              <View
-                style={
-                  styles.reportDays
-                }
-              >
-                {data.map(
-                  (
-                    _,
-                    index,
-                  ) => {
-                    const percent =
-                      getDayPercent(
-                        index,
-                      );
+              <View style={styles.reportDays}>
+                {data.map((_, index) => {
+                  const percent = getDayPercent(index);
 
-                    return (
-                      <TouchableOpacity
-                        key={`report-day-${index}`}
-                        activeOpacity={
-                          0.8
-                        }
-                        onPress={() =>
-                          openDay(
-                            index,
-                          )
-                        }
-                        style={
-                          styles.reportDay
-                        }
+                  return (
+                    <TouchableOpacity
+                      key={`report-day-${index}`}
+                      activeOpacity={0.8}
+                      onPress={() => openDay(index)}
+                      style={styles.reportDay}
+                    >
+                      <View
+                        style={[
+                          styles.reportDayBarTrack,
+                          {
+                            backgroundColor: progressTrack,
+                          },
+                        ]}
                       >
                         <View
                           style={[
-                            styles.reportDayBarTrack,
+                            styles.reportDayBar,
                             {
-                              backgroundColor:
-                                progressTrack,
+                              height: `${Math.max(percent, 5)}%`,
+                              backgroundColor: percent === 100 ? accent : accentStrong,
                             },
                           ]}
-                        >
-                          <View
-                            style={[
-                              styles.reportDayBar,
-                              {
-                                height: `${Math.max(
-                                  percent,
-                                  5,
-                                )}%`,
+                        />
+                      </View>
 
-                                backgroundColor:
-                                  percent ===
-                                  100
-                                    ? accent
-                                    : accentStrong,
-                              },
-                            ]}
-                          />
-                        </View>
-
-                        <Text
-                          style={[
-                            styles.reportDayLabel,
-                            {
-                              color:
-                                ATHLETE.textSecondary,
-                              textAlign:
-                                'center',
-                            },
-                          ]}
-                        >
-                          {index + 1}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  },
-                )}
+                      <Text
+                        style={[
+                          styles.reportDayLabel,
+                          {
+                            color: colors.textSecondary || colors.text + '80',
+                            textAlign: 'center',
+                          },
+                        ]}
+                      >
+                        {index + 1}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
-
-            {/* SUMMARY */}
 
             <View
               style={[
                 styles.summaryCard,
                 {
-                  backgroundColor:
-                    softAccent,
-                  borderColor:
-                    softBorder,
-                  flexDirection:
-                    rowDirection,
+                  backgroundColor: softAccent,
+                  borderColor: softBorder,
+                  flexDirection: rowDirection,
                 },
               ]}
             >
@@ -3422,26 +2286,18 @@ export default function ProtocolScreen() {
                 style={[
                   styles.summaryIcon,
                   {
-                    backgroundColor:
-                      accent,
+                    backgroundColor: accent,
                   },
                 ]}
               >
-                <Sparkles
-                  size={19}
-                  color={
-                    ATHLETE.background
-                  }
-                  strokeWidth={2}
-                />
+                <Sparkles size={19} color={colors.background} strokeWidth={2} />
               </View>
 
               <View
                 style={[
                   styles.summaryContent,
                   {
-                    alignItems:
-                      contentAlign,
+                    alignItems: contentAlign,
                   },
                 ]}
               >
@@ -3449,38 +2305,28 @@ export default function ProtocolScreen() {
                   style={[
                     styles.summaryTitle,
                     {
-                      color:
-                        ATHLETE.text,
+                      color: colors.text,
                       textAlign,
-                      writingDirection:
-                        textDirection,
+                      writingDirection: textDirection,
                     },
                   ]}
                 >
-                  {overallPercent ===
-                  100
-                    ? fa
-                      ? 'پروتکل را کامل کرده‌اید'
-                      : 'You completed the protocol'
-                    : fa
-                    ? 'به مسیر خود ادامه دهید'
-                    : 'Keep moving forward'}
+                  {overallPercent === 100
+                    ? fa ? 'پروتکل را کامل کرده‌اید' : 'You completed the protocol'
+                    : fa ? 'به مسیر خود ادامه دهید' : 'Keep moving forward'}
                 </Text>
 
                 <Text
                   style={[
                     styles.summaryText,
                     {
-                      color:
-                        ATHLETE.textSecondary,
+                      color: colors.textSecondary || colors.text + '80',
                       textAlign,
-                      writingDirection:
-                        textDirection,
+                      writingDirection: textDirection,
                     },
                   ]}
                 >
-                  {overallPercent ===
-                  100
+                  {overallPercent === 100
                     ? fa
                       ? 'تمام فعالیت‌های این پروتکل با موفقیت انجام شده‌اند.'
                       : 'All activities in this protocol have been completed.'
@@ -3491,17 +2337,9 @@ export default function ProtocolScreen() {
               </View>
             </View>
 
-            <View
-              style={
-                styles.bottomSpace
-              }
-            />
+            <View style={styles.bottomSpace} />
           </ScrollView>
         )}
-
-        {/* ======================================================
-            CELEBRATION
-        ====================================================== */}
 
         {showCelebration && (
           <MotiView
@@ -3516,8 +2354,7 @@ export default function ProtocolScreen() {
             style={[
               styles.celebrationOverlay,
               {
-                backgroundColor:
-                  'rgba(0,0,0,0.78)',
+                backgroundColor: 'rgba(0,0,0,0.78)',
               },
             ]}
           >
@@ -3533,10 +2370,8 @@ export default function ProtocolScreen() {
               style={[
                 styles.celebrationCard,
                 {
-                  backgroundColor:
-                    card,
-                  borderColor:
-                    softBorder,
+                  backgroundColor: card,
+                  borderColor: softBorder,
                 },
               ]}
             >
@@ -3544,52 +2379,37 @@ export default function ProtocolScreen() {
                 style={[
                   styles.celebrationIcon,
                   {
-                    backgroundColor:
-                      accent,
+                    backgroundColor: accent,
                   },
                 ]}
               >
-                <CheckCircle2
-                  size={35}
-                  color={
-                    ATHLETE.background
-                  }
-                  strokeWidth={2}
-                />
+                <CheckCircle2 size={35} color={colors.background} strokeWidth={2} />
               </View>
 
               <Text
                 style={[
                   styles.celebrationTitle,
                   {
-                    color:
-                      ATHLETE.text,
+                    color: colors.text,
                     textAlign,
-                    writingDirection:
-                      textDirection,
+                    writingDirection: textDirection,
                   },
                 ]}
               >
-                {fa
-                  ? 'روز کامل شد'
-                  : 'Day completed'}
+                {fa ? 'روز کامل شد' : 'Day completed'}
               </Text>
 
               <Text
                 style={[
                   styles.celebrationText,
                   {
-                    color:
-                      ATHLETE.textSecondary,
+                    color: colors.textSecondary || colors.text + '80',
                     textAlign,
-                    writingDirection:
-                      textDirection,
+                    writingDirection: textDirection,
                   },
                 ]}
               >
-                {fa
-                  ? 'آفرین! یک قدم دیگر به جلو رفتید.'
-                  : 'Great job! You took another step forward.'}
+                {fa ? 'آفرین! یک قدم دیگر به جلو رفتید.' : 'Great job! You took another step forward.'}
               </Text>
             </MotiView>
           </MotiView>
@@ -3598,10 +2418,6 @@ export default function ProtocolScreen() {
     </SafeAreaView>
   );
 }
-
-/* =================================================================
-   STYLES
-================================================================= */
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -3626,10 +2442,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 40,
   },
-
-  /* ===============================================================
-     HEADER
-  =============================================================== */
 
   pageHeader: {
     width: '100%',
@@ -3676,10 +2488,6 @@ const styles = StyleSheet.create({
     height: 42,
   },
 
-  /* ===============================================================
-     HERO
-  =============================================================== */
-
   heroCard: {
     marginHorizontal: 16,
     marginTop: 8,
@@ -3694,8 +2502,7 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor:
-      'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     right: -80,
     top: -80,
   },
@@ -3705,8 +2512,7 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     borderRadius: 75,
-    backgroundColor:
-      'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     left: -60,
     bottom: -60,
   },
@@ -3762,8 +2568,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 6,
     borderRadius: 3,
-    backgroundColor:
-      'rgba(7,9,8,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.18)',
     overflow: 'hidden',
   },
 
@@ -3771,10 +2576,6 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 3,
   },
-
-  /* ===============================================================
-     SECTIONS
-  =============================================================== */
 
   section: {
     paddingHorizontal: 16,
@@ -3798,10 +2599,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-
-  /* ===============================================================
-     MODES
-  =============================================================== */
 
   modeGrid: {
     gap: 10,
@@ -3847,10 +2644,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  /* ===============================================================
-     REPORT
-  =============================================================== */
 
   reportButton: {
     alignItems: 'center',
@@ -3917,10 +2710,6 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
 
-  /* ===============================================================
-     TODAY TASK
-  =============================================================== */
-
   todayTaskCard: {
     alignItems: 'center',
     padding: 12,
@@ -3942,10 +2731,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
   },
-
-  /* ===============================================================
-     DAY CARD
-  =============================================================== */
 
   dayCard: {
     padding: 14,
@@ -3997,10 +2782,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  /* ===============================================================
-     RESET
-  =============================================================== */
-
   resetButton: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -4019,10 +2800,6 @@ const styles = StyleSheet.create({
   bottomSpace: {
     height: 30,
   },
-
-  /* ===============================================================
-     DAY PROGRESS
-  =============================================================== */
 
   dayProgressCard: {
     marginHorizontal: 16,
@@ -4051,10 +2828,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
   },
-
-  /* ===============================================================
-     DAY NAVIGATION
-  =============================================================== */
 
   dayNavigation: {
     alignItems: 'center',
@@ -4088,10 +2861,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  /* ===============================================================
-     QUOTE
-  =============================================================== */
-
   quoteCard: {
     marginHorizontal: 16,
     marginTop: 12,
@@ -4119,10 +2888,6 @@ const styles = StyleSheet.create({
   quoteReference: {
     fontSize: 12,
   },
-
-  /* ===============================================================
-     POEM
-  =============================================================== */
 
   poemCard: {
     marginHorizontal: 16,
@@ -4161,10 +2926,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontStyle: 'italic',
   },
-
-  /* ===============================================================
-     TASKS
-  =============================================================== */
 
   tasksSection: {
     paddingHorizontal: 16,
@@ -4240,10 +3001,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  /* ===============================================================
-     REPORT HERO
-  =============================================================== */
-
   reportHero: {
     marginHorizontal: 16,
     marginTop: 8,
@@ -4318,10 +3075,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  /* ===============================================================
-     REPORT PROGRESS
-  =============================================================== */
-
   reportProgressCard: {
     marginHorizontal: 16,
     marginTop: 12,
@@ -4362,10 +3115,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
 
-  /* ===============================================================
-     SUMMARY
-  =============================================================== */
-
   summaryCard: {
     alignItems: 'center',
     marginHorizontal: 16,
@@ -4398,10 +3147,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.7,
   },
-
-  /* ===============================================================
-     CELEBRATION
-  =============================================================== */
 
   celebrationOverlay: {
     position: 'absolute',

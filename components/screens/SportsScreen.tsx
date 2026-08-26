@@ -35,9 +35,7 @@ import {
   ImageOff,
 } from 'lucide-react-native';
 import { useLanguage } from '../../context/LanguageContext';
-import { Colors } from '../../constants/theme';
-
-const athlete = Colors.athlete;
+import { useTheme } from '../../context/ThemeContext';
 
 type ExerciseMediaType = 'image' | 'gif';
 
@@ -83,22 +81,23 @@ interface Exercise {
   instructions: string[];
 }
 
-const CATEGORY_ACCENTS: Record<Category, string> = {
-  mobility: athlete.primaryLight,
-  strength: athlete.primary,
-  cardio: '#A8E84A',
-  balance: '#8FCF32',
-  recovery: athlete.primaryDark,
-};
-
 export default function SportsScreen() {
   const router = useRouter();
   const { isRTL } = useLanguage();
+  const { colors, isDark } = useTheme();
 
   const [selectedMood, setSelectedMood] = useState('good');
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<'all' | Category>('all');
   const [activeExerciseId, setActiveExerciseId] = useState<string | null>(null);
+
+  const CATEGORY_ACCENTS: Record<Category, string> = {
+    mobility: colors.primaryLight || colors.primary,
+    strength: colors.primary,
+    cardio: colors.success || colors.primary,
+    balance: colors.primaryDark || colors.primary,
+    recovery: colors.primaryDark || colors.primary,
+  };
 
   const TEXTS = {
     fa: {
@@ -402,7 +401,7 @@ export default function SportsScreen() {
 
   const activeExercise = exercises.find((exercise) => exercise.id === activeExerciseId) || null;
   const activeMedia = activeExerciseId ? EXERCISE_MEDIA[activeExerciseId] : undefined;
-  const activeAccent = activeExercise ? CATEGORY_ACCENTS[activeExercise.category] : athlete.primary;
+  const activeAccent = activeExercise ? CATEGORY_ACCENTS[activeExercise.category] : colors.primary;
   const activeCompleted = activeExerciseId ? completedExercises.includes(activeExerciseId) : false;
 
   const statValueFor = (exercise: Exercise) => {
@@ -428,7 +427,7 @@ export default function SportsScreen() {
     return (
       <View style={[styles.exerciseThumbFallback, { backgroundColor: `${accent}18` }]}>
         <Icon size={25} color={accent} />
-        <ImageOff size={11} color={athlete.textTertiary} style={styles.missingIcon} />
+        <ImageOff size={11} color={colors.textTertiary || colors.textSecondary} style={styles.missingIcon} />
       </View>
     );
   };
@@ -439,8 +438,8 @@ export default function SportsScreen() {
       return (
         <View style={[styles.modalFallback, { backgroundColor: `${activeAccent}12` }]}>
           <Icon size={42} color={activeAccent} />
-          <Text style={[styles.modalFallbackTitle, { color: athlete.text }]}>{text.noMediaTitle}</Text>
-          <Text style={[styles.modalFallbackText, { color: athlete.textSecondary }]}>{text.noMediaSubtitle}</Text>
+          <Text style={[styles.modalFallbackTitle, { color: colors.text }]}>{text.noMediaTitle}</Text>
+          <Text style={[styles.modalFallbackText, { color: colors.textSecondary }]}>{text.noMediaSubtitle}</Text>
         </View>
       );
     }
@@ -448,20 +447,23 @@ export default function SportsScreen() {
     return <Image source={activeMedia.source} style={styles.modalImage} resizeMode="contain" />;
   };
 
+  const gradientColors: readonly [string, string] = isDark
+    ? [colors.primary, colors.primaryDark || colors.primary] as const
+    : [colors.primary, colors.primaryLight || colors.primary] as const;
+
   return (
-    <View style={[styles.container, { backgroundColor: athlete.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* HEADER */}
         <View style={[styles.header, { flexDirection: 'row' }]}>
           <TouchableOpacity
             activeOpacity={0.75}
             onPress={() => router.back()}
-            style={[styles.backButton, { marginRight: 10 }]}
+            style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
           >
-            <ArrowLeft size={20} color={athlete.text} />
+            <ArrowLeft size={20} color={colors.text} />
           </TouchableOpacity>
 
           <View style={[styles.headerContent, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
@@ -469,61 +471,59 @@ export default function SportsScreen() {
               style={[
                 styles.athleteBadge,
                 {
-                  backgroundColor: athlete.glow,
-                  borderColor: athlete.border,
+                  backgroundColor: `${colors.primary}18`,
+                  borderColor: colors.border,
                   flexDirection: isRTL ? 'row-reverse' : 'row',
                 },
               ]}
             >
-              <View style={[styles.liveDot, { backgroundColor: athlete.primary }]} />
-              <Text style={[styles.badgeText, { color: athlete.primary }]}>{text.badge}</Text>
+              <View style={[styles.liveDot, { backgroundColor: colors.primary }]} />
+              <Text style={[styles.badgeText, { color: colors.primary }]}>{text.badge}</Text>
             </View>
 
-            <Text style={[styles.title, { color: athlete.text, textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text style={[styles.title, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
               {text.title}
             </Text>
 
-            <Text style={[styles.subtitle, { color: athlete.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text style={[styles.subtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
               {text.subtitle}
             </Text>
           </View>
         </View>
 
-        {/* TODAY PROGRESS */}
-        <View style={[styles.todayCard, { backgroundColor: athlete.surface, borderColor: athlete.border }]}>
+        <View style={[styles.todayCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={[styles.todayTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <View style={[styles.todayIcon, { backgroundColor: athlete.glow }]}>
-              <Activity size={23} color={athlete.primary} />
+            <View style={[styles.todayIcon, { backgroundColor: `${colors.primary}18` }]}>
+              <Activity size={23} color={colors.primary} />
             </View>
             <View style={[styles.todayInfo, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-              <Text style={[styles.todayLabel, { color: athlete.textSecondary }]}>{text.todayPlan}</Text>
-              <Text style={[styles.todayValue, { color: athlete.text }]}>
+              <Text style={[styles.todayLabel, { color: colors.textSecondary }]}>{text.todayPlan}</Text>
+              <Text style={[styles.todayValue, { color: colors.text }]}>
                 {completedCount} / {exercises.length} {text.exercises}
               </Text>
             </View>
-            <Text style={[styles.todayPercent, { color: athlete.primary }]}>{progress}%</Text>
+            <Text style={[styles.todayPercent, { color: colors.primary }]}>{progress}%</Text>
           </View>
 
-          <View style={[styles.progressTrack, { backgroundColor: athlete.surfaceSecondary }]}>
-            <View style={[styles.progressFill, { width: `${Math.max(progress, 2)}%`, backgroundColor: athlete.primary }]} />
+          <View style={[styles.progressTrack, { backgroundColor: colors.surfaceSecondary }]}>
+            <View style={[styles.progressFill, { width: `${Math.max(progress, 2)}%`, backgroundColor: colors.primary }]} />
           </View>
 
           <View style={[styles.todayBottom, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.smallText, { color: athlete.textSecondary }]}>
+            <Text style={[styles.smallText, { color: colors.textSecondary }]}>
               {text.completed}: {completedCount}
             </Text>
-            <Text style={[styles.smallText, { color: athlete.textSecondary }]}>
+            <Text style={[styles.smallText, { color: colors.textSecondary }]}>
               {text.remaining}: {exercises.length - completedCount}
             </Text>
           </View>
         </View>
 
-        {/* MOOD */}
         <View style={[styles.sectionHeader, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-          <Text style={[styles.sectionTitle, { color: athlete.text, textAlign: isRTL ? 'right' : 'left' }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
             {text.yourMood}
           </Text>
-          <Text style={[styles.sectionSubtitle, { color: athlete.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+          <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
             {text.moodSubtitle}
           </Text>
         </View>
@@ -544,8 +544,8 @@ export default function SportsScreen() {
                 style={[
                   styles.moodCard,
                   {
-                    backgroundColor: selected ? athlete.glow : athlete.surface,
-                    borderColor: selected ? athlete.primary : athlete.border,
+                    backgroundColor: selected ? `${colors.primary}18` : colors.surface,
+                    borderColor: selected ? colors.primary : colors.border,
                   },
                 ]}
               >
@@ -553,45 +553,43 @@ export default function SportsScreen() {
                   style={[
                     styles.moodIcon,
                     {
-                      backgroundColor: selected ? athlete.primary : athlete.surfaceSecondary,
+                      backgroundColor: selected ? colors.primary : colors.surfaceSecondary,
                     },
                   ]}
                 >
-                  <Icon size={19} color={selected ? athlete.background : athlete.primary} strokeWidth={selected ? 2.5 : 2} />
+                  <Icon size={19} color={selected ? colors.background : colors.primary} strokeWidth={selected ? 2.5 : 2} />
                 </View>
-                <Text style={[styles.moodText, { color: selected ? athlete.primary : athlete.text }]}>{mood.label}</Text>
+                <Text style={[styles.moodText, { color: selected ? colors.primary : colors.text }]}>{mood.label}</Text>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
 
-        {/* TODAY'S WORKOUT */}
         <View style={[styles.sectionHeader, { marginTop: 30, alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-          <Text style={[styles.sectionTitle, { color: athlete.text, textAlign: isRTL ? 'right' : 'left' }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
             {text.todaysWorkout}
           </Text>
-          <Text style={[styles.sectionSubtitle, { color: athlete.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+          <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
             {text.recommendedForYou}
           </Text>
         </View>
 
-        {/* WORKOUT HERO */}
         <LinearGradient
-          colors={[athlete.surfaceSecondary, athlete.surface] as const}
+          colors={[colors.surfaceSecondary, colors.surface]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[styles.workoutHero, { borderColor: athlete.border }]}
+          style={[styles.workoutHero, { borderColor: colors.border }]}
         >
-          <View style={[styles.workoutHeroGlow, { backgroundColor: athlete.glowStrong }]} />
+          <View style={[styles.workoutHeroGlow, { backgroundColor: `${colors.primary}18` }]} />
           <View style={[styles.workoutHeroTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <View style={[styles.workoutHeroIcon, { backgroundColor: athlete.primary }]}>
-              <Dumbbell size={27} color={athlete.background} />
+            <View style={[styles.workoutHeroIcon, { backgroundColor: colors.primary }]}>
+              <Dumbbell size={27} color={colors.background} />
             </View>
             <View style={[styles.workoutHeroInfo, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-              <Text style={[styles.workoutHeroTitle, { color: athlete.text, textAlign: isRTL ? 'right' : 'left' }]}>
+              <Text style={[styles.workoutHeroTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
                 {isRTL ? 'تمرین ترکیبی امروز' : 'Full Body Session'}
               </Text>
-              <Text style={[styles.workoutHeroSubtitle, { color: athlete.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+              <Text style={[styles.workoutHeroSubtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
                 {text.strength} • {text.mobility} • {text.cardio}
               </Text>
             </View>
@@ -599,18 +597,18 @@ export default function SportsScreen() {
 
           <View style={[styles.workoutMeta, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <View style={styles.metaItem}>
-              <Clock3 size={15} color={athlete.primary} />
-              <Text style={[styles.metaText, { color: athlete.textSecondary }]}>30 {text.duration}</Text>
+              <Clock3 size={15} color={colors.primary} />
+              <Text style={[styles.metaText, { color: colors.textSecondary }]}>30 {text.duration}</Text>
             </View>
             <View style={styles.metaItem}>
-              <Target size={15} color={athlete.primary} />
-              <Text style={[styles.metaText, { color: athlete.textSecondary }]}>
+              <Target size={15} color={colors.primary} />
+              <Text style={[styles.metaText, { color: colors.textSecondary }]}>
                 {exercises.length} {text.exercises}
               </Text>
             </View>
             <View style={styles.metaItem}>
-              <Activity size={15} color={athlete.primary} />
-              <Text style={[styles.metaText, { color: athlete.textSecondary }]}>{text.moderate}</Text>
+              <Activity size={15} color={colors.primary} />
+              <Text style={[styles.metaText, { color: colors.textSecondary }]}>{text.moderate}</Text>
             </View>
           </View>
 
@@ -623,27 +621,25 @@ export default function SportsScreen() {
             }}
           >
             <LinearGradient
-              colors={athlete.gradientButton as const}
+              colors={gradientColors}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.startButton}
             >
-              <Play size={17} color={athlete.background} fill={athlete.background} />
-              <Text style={[styles.startButtonText, { color: athlete.background }]}>
+              <Play size={17} color={colors.background} fill={colors.background} />
+              <Text style={[styles.startButtonText, { color: colors.background }]}>
                 {completedCount > 0 ? text.continueWorkout : text.startWorkout}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
         </LinearGradient>
 
-        {/* EXERCISES */}
         <View style={[styles.sectionHeader, { marginTop: 30, alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-          <Text style={[styles.sectionTitle, { color: athlete.text, textAlign: isRTL ? 'right' : 'left' }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
             {text.exercises}
           </Text>
         </View>
 
-        {/* FILTERS */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -651,7 +647,7 @@ export default function SportsScreen() {
         >
           {(isRTL ? [...categoryFilters].reverse() : categoryFilters).map((filter) => {
             const active = selectedCategory === filter.id;
-            const accent = filter.id === 'all' ? athlete.primary : CATEGORY_ACCENTS[filter.id as Category];
+            const accent = filter.id === 'all' ? colors.primary : CATEGORY_ACCENTS[filter.id as Category];
             return (
               <TouchableOpacity
                 key={filter.id}
@@ -660,12 +656,12 @@ export default function SportsScreen() {
                 style={[
                   styles.filterChip,
                   {
-                    backgroundColor: active ? accent : athlete.surface,
-                    borderColor: active ? accent : athlete.border,
+                    backgroundColor: active ? accent : colors.surface,
+                    borderColor: active ? accent : colors.border,
                   },
                 ]}
               >
-                <Text style={[styles.filterChipText, { color: active ? athlete.background : athlete.textSecondary }]}>
+                <Text style={[styles.filterChipText, { color: active ? colors.background : colors.textSecondary }]}>
                   {filter.label}
                 </Text>
               </TouchableOpacity>
@@ -673,7 +669,6 @@ export default function SportsScreen() {
           })}
         </ScrollView>
 
-        {/* EXERCISE LIST */}
         <View style={styles.exerciseList}>
           {filteredExercises.map((exercise, index) => {
             const completed = completedExercises.includes(exercise.id);
@@ -686,8 +681,8 @@ export default function SportsScreen() {
                 style={[
                   styles.exerciseCard,
                   {
-                    backgroundColor: completed ? 'rgba(184,255,61,0.045)' : athlete.surface,
-                    borderColor: completed ? accent : athlete.border,
+                    backgroundColor: completed ? `${colors.primary}0B` : colors.surface,
+                    borderColor: completed ? accent : colors.border,
                     flexDirection: isRTL ? 'row-reverse' : 'row',
                   },
                 ]}
@@ -698,14 +693,14 @@ export default function SportsScreen() {
                   style={[
                     styles.exerciseNumber,
                     {
-                      backgroundColor: completed ? accent : athlete.surfaceSecondary,
+                      backgroundColor: completed ? accent : colors.surfaceSecondary,
                     },
                   ]}
                 >
                   {completed ? (
-                    <Check size={16} color={athlete.background} strokeWidth={3} />
+                    <Check size={16} color={colors.background} strokeWidth={3} />
                   ) : (
-                    <Text style={[styles.exerciseNumberText, { color: athlete.textSecondary }]}>{index + 1}</Text>
+                    <Text style={[styles.exerciseNumberText, { color: colors.textSecondary }]}>{index + 1}</Text>
                   )}
                 </TouchableOpacity>
 
@@ -714,7 +709,7 @@ export default function SportsScreen() {
                   onPress={() => setActiveExerciseId(exercise.id)}
                   style={[styles.exerciseTapArea, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
                 >
-                  <View style={[styles.exerciseThumb, { backgroundColor: athlete.surfaceSecondary }]}>
+                  <View style={[styles.exerciseThumb, { backgroundColor: colors.surfaceSecondary }]}>
                     {renderThumb(exercise)}
                     <View
                       style={[
@@ -723,7 +718,7 @@ export default function SportsScreen() {
                         isRTL ? { left: -3 } : { right: -3 },
                       ]}
                     >
-                      <PlayCircle size={14} color={athlete.background} fill={hasMedia ? athlete.background : 'transparent'} />
+                      <PlayCircle size={14} color={colors.background} fill={hasMedia ? colors.background : 'transparent'} />
                     </View>
                   </View>
 
@@ -733,7 +728,7 @@ export default function SportsScreen() {
                       style={[
                         styles.exerciseTitle,
                         {
-                          color: athlete.text,
+                          color: colors.text,
                           textAlign: isRTL ? 'right' : 'left',
                           textDecorationLine: completed ? 'line-through' : 'none',
                         },
@@ -743,35 +738,36 @@ export default function SportsScreen() {
                     </Text>
                     <View style={[styles.categoryBadgeRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                       <View style={[styles.categoryDot, { backgroundColor: accent }]} />
-                      <Text style={[styles.exerciseSubtitle, { color: athlete.textSecondary }]}>
+                      <Text style={[styles.exerciseSubtitle, { color: colors.textSecondary }]}>
                         {text[exercise.category]}
                       </Text>
                       {exercise.sets ? (
-                        <Text style={[styles.exerciseSubtitle, { color: athlete.textTertiary }]}>
+                        <Text style={[styles.exerciseSubtitle, { color: colors.textTertiary || colors.textSecondary }]}>
                           {' '}
                           • {exercise.sets} {text.sets}
                         </Text>
                       ) : null}
                     </View>
-                    <Text style={[styles.demoHint, { color: athlete.textTertiary }]}>{text.tapToViewDemo}</Text>
+                    <Text style={[styles.demoHint, { color: colors.textTertiary || colors.textSecondary }]}>
+                      {text.tapToViewDemo}
+                    </Text>
                   </View>
                 </TouchableOpacity>
 
                 <View style={[styles.exerciseStats, { alignItems: isRTL ? 'flex-start' : 'flex-end' }]}>
-                  <Text style={[styles.exerciseStatValue, { color: athlete.text }]}>{statValueFor(exercise)}</Text>
-                  <Text style={[styles.exerciseStatLabel, { color: athlete.textSecondary }]}>{statLabelFor(exercise)}</Text>
+                  <Text style={[styles.exerciseStatValue, { color: colors.text }]}>{statValueFor(exercise)}</Text>
+                  <Text style={[styles.exerciseStatLabel, { color: colors.textSecondary }]}>{statLabelFor(exercise)}</Text>
                 </View>
               </View>
             );
           })}
         </View>
 
-        {/* WEEKLY PLAN */}
         <View style={[styles.sectionHeader, { marginTop: 32, alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-          <Text style={[styles.sectionTitle, { color: athlete.text, textAlign: isRTL ? 'right' : 'left' }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
             {text.weeklyPlan}
           </Text>
-          <Text style={[styles.sectionSubtitle, { color: athlete.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+          <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
             {text.weekProgress}
           </Text>
         </View>
@@ -787,51 +783,50 @@ export default function SportsScreen() {
               style={[
                 styles.dayCard,
                 {
-                  backgroundColor: day.today ? athlete.glow : athlete.surface,
-                  borderColor: day.today ? athlete.primary : athlete.border,
+                  backgroundColor: day.today ? `${colors.primary}18` : colors.surface,
+                  borderColor: day.today ? colors.primary : colors.border,
                 },
               ]}
             >
-              <Text style={[styles.dayName, { color: athlete.textSecondary }]}>{day.day}</Text>
+              <Text style={[styles.dayName, { color: colors.textSecondary }]}>{day.day}</Text>
               <View
                 style={[
                   styles.dayCircle,
                   {
-                    backgroundColor: day.completed || day.today ? athlete.primary : athlete.surfaceSecondary,
+                    backgroundColor: day.completed || day.today ? colors.primary : colors.surfaceSecondary,
                   },
                 ]}
               >
                 {day.completed ? (
-                  <Check size={17} color={athlete.background} strokeWidth={3} />
+                  <Check size={17} color={colors.background} strokeWidth={3} />
                 ) : (
-                  <Text style={[styles.dayLetter, { color: day.today ? athlete.background : athlete.textSecondary }]}>
+                  <Text style={[styles.dayLetter, { color: day.today ? colors.background : colors.textSecondary }]}>
                     {day.short}
                   </Text>
                 )}
               </View>
-              <Text style={[styles.dayType, { color: athlete.text }]} numberOfLines={1}>
+              <Text style={[styles.dayType, { color: colors.text }]} numberOfLines={1}>
                 {day.type}
               </Text>
-              <Text style={[styles.dayDuration, { color: athlete.textSecondary }]}>
+              <Text style={[styles.dayDuration, { color: colors.textSecondary }]}>
                 {day.duration} {text.duration}
               </Text>
               {day.today && (
-                <View style={[styles.todayBadge, { backgroundColor: athlete.primary }]}>
-                  <Text style={[styles.todayBadgeText, { color: athlete.background }]}>{text.todayShort}</Text>
+                <View style={[styles.todayBadge, { backgroundColor: colors.primary }]}>
+                  <Text style={[styles.todayBadgeText, { color: colors.background }]}>{text.todayShort}</Text>
                 </View>
               )}
             </View>
           ))}
         </ScrollView>
 
-        {/* WEEKLY REPORT */}
         <View style={[styles.reportHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <View style={[styles.reportTitleContainer, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-            <Text style={[styles.sectionTitle, { color: athlete.text }]}>{text.weeklyReport}</Text>
-            <Text style={[styles.sectionSubtitle, { color: athlete.textSecondary }]}>{text.weekProgress}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{text.weeklyReport}</Text>
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>{text.weekProgress}</Text>
           </View>
-          <View style={[styles.reportIcon, { backgroundColor: athlete.glow }]}>
-            <BarChart3 size={21} color={athlete.primary} />
+          <View style={[styles.reportIcon, { backgroundColor: `${colors.primary}18` }]}>
+            <BarChart3 size={21} color={colors.primary} />
           </View>
         </View>
 
@@ -839,12 +834,12 @@ export default function SportsScreen() {
           {weeklyStats.map((stat) => {
             const Icon = stat.icon;
             return (
-              <View key={stat.label} style={[styles.statCard, { backgroundColor: athlete.surface, borderColor: athlete.border }]}>
-                <View style={[styles.statIcon, { backgroundColor: athlete.glow }]}>
-                  <Icon size={17} color={athlete.primary} />
+              <View key={stat.label} style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={[styles.statIcon, { backgroundColor: `${colors.primary}18` }]}>
+                  <Icon size={17} color={colors.primary} />
                 </View>
-                <Text style={[styles.statValue, { color: athlete.text }]}>{stat.value}</Text>
-                <Text style={[styles.statLabel, { color: athlete.textSecondary }]} numberOfLines={2}>
+                <Text style={[styles.statValue, { color: colors.text }]}>{stat.value}</Text>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]} numberOfLines={2}>
                   {stat.label}
                 </Text>
               </View>
@@ -852,60 +847,56 @@ export default function SportsScreen() {
           })}
         </View>
 
-        {/* PERFORMANCE */}
-        <View style={[styles.performanceCard, { backgroundColor: athlete.surface, borderColor: athlete.border }]}>
+        <View style={[styles.performanceCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={[styles.performanceHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <View style={[styles.performanceIcon, { backgroundColor: athlete.glow }]}>
-              <Brain size={20} color={athlete.primary} />
+            <View style={[styles.performanceIcon, { backgroundColor: `${colors.primary}18` }]}>
+              <Brain size={20} color={colors.primary} />
             </View>
-            <Text style={[styles.performanceTitle, { color: athlete.text }]}>{text.performance}</Text>
+            <Text style={[styles.performanceTitle, { color: colors.text }]}>{text.performance}</Text>
           </View>
           <View style={[styles.performanceRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.performanceLabel, { color: athlete.text }]}>{text.bodyPerformance}</Text>
-            <View style={[styles.performanceBar, { backgroundColor: athlete.surfaceSecondary }]}>
-              <View style={[styles.performanceFill, { width: '72%', backgroundColor: athlete.primary }]} />
+            <Text style={[styles.performanceLabel, { color: colors.text }]}>{text.bodyPerformance}</Text>
+            <View style={[styles.performanceBar, { backgroundColor: colors.surfaceSecondary }]}>
+              <View style={[styles.performanceFill, { width: '72%', backgroundColor: colors.primary }]} />
             </View>
-            <Text style={[styles.performanceValue, { color: athlete.primary }]}>72%</Text>
+            <Text style={[styles.performanceValue, { color: colors.primary }]}>72%</Text>
           </View>
           <View style={[styles.performanceRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.performanceLabel, { color: athlete.text }]}>{text.mentalPerformance}</Text>
-            <View style={[styles.performanceBar, { backgroundColor: athlete.surfaceSecondary }]}>
-              <View style={[styles.performanceFill, { width: '84%', backgroundColor: athlete.primaryLight }]} />
+            <Text style={[styles.performanceLabel, { color: colors.text }]}>{text.mentalPerformance}</Text>
+            <View style={[styles.performanceBar, { backgroundColor: colors.surfaceSecondary }]}>
+              <View style={[styles.performanceFill, { width: '84%', backgroundColor: colors.primaryLight || colors.primary }]} />
             </View>
-            <Text style={[styles.performanceValue, { color: athlete.primary }]}>84%</Text>
+            <Text style={[styles.performanceValue, { color: colors.primary }]}>84%</Text>
           </View>
         </View>
 
-        {/* INSIGHT */}
-        <View style={[styles.insightCard, { backgroundColor: athlete.glow, borderColor: athlete.border }]}>
+        <View style={[styles.insightCard, { backgroundColor: `${colors.primary}18`, borderColor: colors.border }]}>
           <View style={[styles.insightTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <View style={[styles.insightIcon, { backgroundColor: athlete.primary }]}>
-              <Sparkles size={17} color={athlete.background} />
+            <View style={[styles.insightIcon, { backgroundColor: colors.primary }]}>
+              <Sparkles size={17} color={colors.background} />
             </View>
-            <Text style={[styles.insightTitle, { color: athlete.primary }]}>{text.weeklyInsight}</Text>
+            <Text style={[styles.insightTitle, { color: colors.primary }]}>{text.weeklyInsight}</Text>
           </View>
-          <Text style={[styles.insightText, { color: athlete.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+          <Text style={[styles.insightText, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
             {text.weeklyInsightText}
           </Text>
         </View>
 
-        {/* NOTE */}
-        <View style={[styles.noteCard, { backgroundColor: athlete.surface, borderColor: athlete.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          <View style={[styles.noteIcon, { backgroundColor: athlete.glow }]}>
-            <HeartPulse size={17} color={athlete.primary} />
+        <View style={[styles.noteCard, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <View style={[styles.noteIcon, { backgroundColor: `${colors.primary}18` }]}>
+            <HeartPulse size={17} color={colors.primary} />
           </View>
-          <Text style={[styles.noteText, { color: athlete.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+          <Text style={[styles.noteText, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
             {text.noPressure}
           </Text>
         </View>
 
-        <Text style={[styles.safeTraining, { color: athlete.textTertiary, textAlign: isRTL ? 'right' : 'left' }]}>
+        <Text style={[styles.safeTraining, { color: colors.textTertiary || colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
           {text.safeTraining}
         </Text>
         <View style={styles.bottomSpace} />
       </ScrollView>
 
-      {/* MODAL */}
       <Modal
         visible={!!activeExercise}
         animationType="slide"
@@ -914,22 +905,22 @@ export default function SportsScreen() {
       >
         <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.78)' }]}>
           {activeExercise && (
-            <View style={[styles.modalCard, { backgroundColor: athlete.surface, borderColor: athlete.border }]}>
+            <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={[styles.modalHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <View style={[styles.modalTitleContainer, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-                  <Text style={[styles.modalTitle, { color: athlete.text, textAlign: isRTL ? 'right' : 'left' }]}>
+                  <Text style={[styles.modalTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
                     {activeExercise.title}
                   </Text>
-                  <Text style={[styles.modalSubtitle, { color: athlete.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                  <Text style={[styles.modalSubtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
                     {text.howToPerform}
                   </Text>
                 </View>
                 <TouchableOpacity
                   activeOpacity={0.75}
                   onPress={() => setActiveExerciseId(null)}
-                  style={[styles.closeButton, { backgroundColor: athlete.surfaceSecondary }]}
+                  style={[styles.closeButton, { backgroundColor: colors.surfaceSecondary }]}
                 >
-                  <X size={19} color={athlete.text} />
+                  <X size={19} color={colors.text} />
                 </TouchableOpacity>
               </View>
 
@@ -937,8 +928,8 @@ export default function SportsScreen() {
                 style={[
                   styles.modalMediaContainer,
                   {
-                    backgroundColor: athlete.surfaceSecondary,
-                    borderColor: athlete.border,
+                    backgroundColor: colors.surfaceSecondary,
+                    borderColor: colors.border,
                   },
                 ]}
               >
@@ -946,16 +937,16 @@ export default function SportsScreen() {
               </View>
 
               <View style={[styles.modalMeta, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                <View style={[styles.modalMetaItem, { backgroundColor: athlete.glow }]}>
-                  <Clock3 size={14} color={athlete.primary} />
-                  <Text style={[styles.modalMetaText, { color: athlete.textSecondary }]}>
+                <View style={[styles.modalMetaItem, { backgroundColor: `${colors.primary}18` }]}>
+                  <Clock3 size={14} color={colors.primary} />
+                  <Text style={[styles.modalMetaText, { color: colors.textSecondary }]}>
                     {statValueFor(activeExercise)} {statLabelFor(activeExercise)}
                   </Text>
                 </View>
                 {activeExercise.sets ? (
-                  <View style={[styles.modalMetaItem, { backgroundColor: athlete.glow }]}>
-                    <Flame size={14} color={athlete.primary} />
-                    <Text style={[styles.modalMetaText, { color: athlete.textSecondary }]}>
+                  <View style={[styles.modalMetaItem, { backgroundColor: `${colors.primary}18` }]}>
+                    <Flame size={14} color={colors.primary} />
+                    <Text style={[styles.modalMetaText, { color: colors.textSecondary }]}>
                       {activeExercise.sets} {text.sets}
                     </Text>
                   </View>
@@ -966,10 +957,10 @@ export default function SportsScreen() {
                 <View style={styles.instructions}>
                   {activeExercise.instructions.map((instruction, index) => (
                     <View key={index} style={[styles.instructionRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                      <View style={[styles.instructionNumber, { backgroundColor: athlete.primary }]}>
-                        <Text style={[styles.instructionNumberText, { color: athlete.background }]}>{index + 1}</Text>
+                      <View style={[styles.instructionNumber, { backgroundColor: colors.primary }]}>
+                        <Text style={[styles.instructionNumberText, { color: colors.background }]}>{index + 1}</Text>
                       </View>
-                      <Text style={[styles.instructionText, { color: athlete.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                      <Text style={[styles.instructionText, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
                         {instruction}
                       </Text>
                     </View>
@@ -985,13 +976,13 @@ export default function SportsScreen() {
                 }}
               >
                 <LinearGradient
-                  colors={athlete.gradientButton as const}
+                  colors={gradientColors}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.modalAction}
                 >
-                  <Check size={18} color={athlete.background} />
-                  <Text style={[styles.modalActionText, { color: athlete.background }]}>
+                  <Check size={18} color={colors.background} />
+                  <Text style={[styles.modalActionText, { color: colors.background }]}>
                     {activeCompleted ? text.markUndone : text.markDone}
                   </Text>
                 </LinearGradient>
@@ -1024,9 +1015,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: athlete.surface,
     borderWidth: 1,
-    borderColor: athlete.border,
   },
   headerContent: {
     flex: 1,
@@ -1290,7 +1279,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: athlete.surface,
   },
   exerciseContent: {
     flex: 1,
