@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -33,264 +34,143 @@ export default function PlusScreen() {
       subtitle: 'مسیر یادگیری مورد علاقه‌ات را انتخاب کن',
       comingSoon: 'به‌زودی',
       back: 'بازگشت',
-
       quranTitle: 'حفظ قرآن',
-      quranDescription:
-        'حفظ آیات و سوره‌ها با تمرین هوشمند',
-
+      quranDescription: 'حفظ آیات و سوره‌ها با تمرین هوشمند',
       gamesTitle: 'بازی‌های دوزبانه',
-      gamesDescription:
-        'یادگیری و تقویت ذهن با بازی‌های جذاب',
-
+      gamesDescription: 'یادگیری و تقویت ذهن با بازی‌های جذاب',
       poemsTitle: 'حفظ اشعار',
-      poemsDescription:
-        'حافظه، ادبیات و درک معنا را تقویت کن',
-
+      poemsDescription: 'حافظه، ادبیات و درک معنا را تقویت کن',
       sportsTitle: 'ورزش',
-      sportsDescription:
-        'تقویت عملکرد مغز و بدن با تمرین‌های ورزشی',
+      sportsDescription: 'تقویت عملکرد مغز و بدن با تمرین‌های ورزشی',
     },
-
     en: {
       badge: 'Smart Learning',
       title: 'Modules',
       subtitle: 'Choose your favorite learning path',
       comingSoon: 'Coming Soon',
       back: 'Back',
-
       quranTitle: 'Quran Memorization',
-      quranDescription:
-        'Memorize verses and surahs with smart practice',
-
+      quranDescription: 'Memorize verses and surahs with smart practice',
       gamesTitle: 'Bilingual Games',
-      gamesDescription:
-        'Learn and train your mind with fun games',
-
+      gamesDescription: 'Learn and train your mind with fun games',
       poemsTitle: 'Poem Memorization',
-      poemsDescription:
-        'Improve memory, literature and understanding',
-
+      poemsDescription: 'Improve memory, literature and understanding',
       sportsTitle: 'Sports',
-      sportsDescription:
-        'Improve brain and body performance through sports training',
+      sportsDescription: 'Improve brain and body performance through sports training',
     },
   };
 
-  const text = isRTL
-    ? TEXTS.fa
-    : TEXTS.en;
-
-  /*
-   * ============================================================
-   * MODULES
-   * ============================================================
-   */
+  const text = isRTL ? TEXTS.fa : TEXTS.en;
+  const iconColor = isDark ? 'rgba(73, 194, 226, 1)' : undefined;
 
   const modules = [
     {
       id: 'quran',
-
       title: text.quranTitle,
-
       description: text.quranDescription,
-
       icon: BookOpen,
-
-      iconColor: '#22C55E',
-
+      iconColor: isDark ? 'rgba(73, 194, 226, 1)' : '#22C55E',
       backgroundLight: '#F0FDF4',
-
-      backgroundDark:
-        'rgba(34,197,94,0.13)',
-
+      backgroundDark: 'rgba(73, 194, 226, 0.15)',
       enabled: true,
-
       route: '/quran',
     },
-
     {
       id: 'games',
-
       title: text.gamesTitle,
-
       description: text.gamesDescription,
-
       icon: Gamepad2,
-
-      iconColor: '#F59E0B',
-
+      iconColor: isDark ? 'rgba(73, 194, 226, 1)' : '#F59E0B',
       backgroundLight: '#FFF7DD',
-
-      backgroundDark:
-        'rgba(245,158,11,0.13)',
-
+      backgroundDark: 'rgba(73, 194, 226, 0.15)',
       enabled: true,
-
       route: '/bilingual-games',
     },
-
     {
       id: 'poems',
-
       title: text.poemsTitle,
-
       description: text.poemsDescription,
-
       icon: Feather,
-
-      iconColor: '#7C3AED',
-
+      iconColor: isDark ? 'rgba(73, 194, 226, 1)' : '#7C3AED',
       backgroundLight: '#F0EAFE',
-
-      backgroundDark:
-        'rgba(124,58,237,0.15)',
-
+      backgroundDark: 'rgba(73, 194, 226, 0.15)',
       enabled: true,
-
       route: '/poems',
     },
-
-
     {
       id: 'sports',
-    
       title: text.sportsTitle,
-    
       description: text.sportsDescription,
-    
       icon: Dumbbell,
-    
-      iconColor: '#2563EB',
-    
+      iconColor: isDark ? 'rgba(73, 194, 226, 1)' : '#2563EB',
       backgroundLight: '#EFF6FF',
-    
-      backgroundDark:
-        'rgba(37,99,235,0.14)',
-    
+      backgroundDark: 'rgba(73, 194, 226, 0.15)',
       enabled: true,
-    
       route: '/sports',
     },
   ];
 
+  const ArrowIcon = isRTL ? ChevronLeft : ChevronRight;
+  const sparkleColor = isDark ? 'rgba(73, 194, 226, 1)' : colors.primary;
+  const arrowBgColor = isDark ? 'rgba(73, 194, 226, 0.15)' : '#F0EAFE';
+  const arrowColor = isDark ? 'rgba(73, 194, 226, 1)' : colors.primary;
 
-
-  const ArrowIcon = isRTL
-    ? ChevronLeft
-    : ChevronRight;
-
-
-
-  const handleModulePress = (
-    module: (typeof modules)[number]
-  ) => {
-
-    if (!module.enabled) {
-      return;
-    }
-
-    if (!module.route) {
-      return;
-    }
-
+  const handleModulePress = (module: (typeof modules)[number]) => {
+    if (!module.enabled || !module.route) return;
     router.push(module.route as any);
   };
+
   return (
     <LinearGradient
       colors={
         isDark
-          ? [
-              '#171329',
-              '#211A3A',
-              '#2B2350',
-            ]
-          : [
-              '#F8F7FC',
-              '#FFFFFF',
-            ]
+          ? ['#171329', '#211A3A', '#2B2350']
+          : ['#F8F7FC', '#FFFFFF']
       }
       style={styles.container}
     >
       <View style={styles.screen}>
-
-        {/* ======================================================
-            HEADER
-        ====================================================== */}
-
         <View style={styles.header}>
           <View style={styles.headerRow}>
-
-            {/* --------------------------------------------------
-                BACK BUTTON
-            -------------------------------------------------- */}
-
             <TouchableOpacity
               activeOpacity={0.75}
               onPress={() => router.back()}
               accessibilityRole="button"
               accessibilityLabel={text.back}
-              hitSlop={{
-                top: 10,
-                bottom: 10,
-                left: 10,
-                right: 10,
-              }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               style={[
                 styles.backButton,
                 {
-                  backgroundColor: isDark
-                    ? 'rgba(255,255,255,0.08)'
-                    : '#FFFFFF',
-
-                  borderColor:
-                    colors.border,
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#FFFFFF',
+                  borderColor: colors.border,
                 },
               ]}
             >
-              <ArrowLeft
-                size={22}
-                strokeWidth={2.4}
-                color={colors.text}
-              />
+              <ArrowLeft size={22} strokeWidth={2.4} color={colors.text} />
             </TouchableOpacity>
-
 
             <View
               style={[
                 styles.headerText,
-
                 {
-                  alignItems: isRTL
-                    ? 'flex-end'
-                    : 'flex-start',
+                  alignItems: isRTL ? 'flex-end' : 'flex-start',
                 },
               ]}
             >
-
-              {/* Badge */}
-
               <View
                 style={[
                   styles.badge,
-
                   {
-                    flexDirection: isRTL
-                      ? 'row-reverse'
-                      : 'row',
+                    flexDirection: isRTL ? 'row-reverse' : 'row',
                   },
                 ]}
               >
-                <Sparkles
-                  size={15}
-                  color={colors.primary}
-                />
-
+                <Sparkles size={15} color={sparkleColor} />
                 <Text
                   style={[
                     styles.badgeText,
                     {
-                      color:
-                        colors.primary,
+                      color: sparkleColor,
                     },
                   ]}
                 >
@@ -298,422 +178,231 @@ export default function PlusScreen() {
                 </Text>
               </View>
 
-              {/* Title */}
-
               <Text
                 style={[
                   styles.title,
-
                   {
                     color: colors.text,
-
-                    textAlign: isRTL
-                      ? 'right'
-                      : 'left',
+                    textAlign: isRTL ? 'right' : 'left',
                   },
                 ]}
               >
                 {text.title}
               </Text>
 
-              {/* Subtitle */}
-
               <Text
                 style={[
                   styles.subtitle,
-
                   {
-                    color:
-                      colors.textSecondary,
-
-                    textAlign: isRTL
-                      ? 'right'
-                      : 'left',
+                    color: colors.textSecondary,
+                    textAlign: isRTL ? 'right' : 'left',
                   },
                 ]}
               >
                 {text.subtitle}
               </Text>
-
             </View>
           </View>
         </View>
 
-        {/* ======================================================
-            MODULE LIST
-        ====================================================== */}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <View style={styles.modules}>
+            {modules.map((module) => {
+              const Icon = module.icon;
 
-        <View style={styles.modules}>
-
-          {modules.map((module) => {
-            const Icon = module.icon;
-
-            return (
-              <TouchableOpacity
-                key={module.id}
-                activeOpacity={
-                  module.enabled
-                    ? 0.85
-                    : 1
-                }
-                disabled={!module.enabled}
-                onPress={() =>
-                  handleModulePress(module)
-                }
-                style={[
-                  styles.moduleCard,
-
-                  {
-                    backgroundColor:
-                      isDark
-                        ? 'rgba(255,255,255,0.055)'
-                        : '#FFFFFF',
-
-                    borderColor:
-                      colors.border,
-
-                    opacity:
-                      module.enabled
-                        ? 1
-                        : 0.62,
-
-                    flexDirection:
-                      isRTL
-                        ? 'row-reverse'
-                        : 'row',
-                  },
-                ]}
-              >
-
-                {/* =================================================
-                    MODULE ICON
-                ================================================= */}
-
-                <View
+              return (
+                <TouchableOpacity
+                  key={module.id}
+                  activeOpacity={module.enabled ? 0.85 : 1}
+                  disabled={!module.enabled}
+                  onPress={() => handleModulePress(module)}
                   style={[
-                    styles.moduleIcon,
-
+                    styles.moduleCard,
                     {
-                      backgroundColor:
-                        isDark
-                          ? module.backgroundDark
-                          : module.backgroundLight,
-
-                      marginLeft:
-                        isRTL
-                          ? 13
-                          : 0,
-
-                      marginRight:
-                        isRTL
-                          ? 0
-                          : 13,
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.055)' : '#FFFFFF',
+                      borderColor: colors.border,
+                      opacity: module.enabled ? 1 : 0.62,
+                      flexDirection: isRTL ? 'row-reverse' : 'row',
                     },
                   ]}
                 >
-                  <Icon
-                    size={25}
-                    color={
-                      module.iconColor
-                    }
-                  />
-                </View>
-
-                {/* =================================================
-                    MODULE CONTENT
-                ================================================= */}
-
-                <View
-                  style={[
-                    styles.moduleContent,
-
-                    {
-                      alignItems:
-                        isRTL
-                          ? 'flex-end'
-                          : 'flex-start',
-                    },
-                  ]}
-                >
-
-                  {/* Module title */}
-
-                  <Text
+                  <View
                     style={[
-                      styles.moduleTitle,
-
+                      styles.moduleIcon,
                       {
-                        color:
-                          colors.text,
-
-                        textAlign:
-                          isRTL
-                            ? 'right'
-                            : 'left',
+                        backgroundColor: isDark ? module.backgroundDark : module.backgroundLight,
+                        marginLeft: isRTL ? 13 : 0,
+                        marginRight: isRTL ? 0 : 13,
                       },
                     ]}
                   >
-                    {module.title}
-                  </Text>
+                    <Icon size={25} color={module.iconColor} />
+                  </View>
 
-                  {/* Module description */}
-
-                  <Text
+                  <View
                     style={[
-                      styles.moduleDescription,
-
+                      styles.moduleContent,
                       {
-                        color:
-                          colors.textSecondary,
-
-                        textAlign:
-                          isRTL
-                            ? 'right'
-                            : 'left',
+                        alignItems: isRTL ? 'flex-end' : 'flex-start',
                       },
                     ]}
                   >
-                    {
-                      module.description
-                    }
-                  </Text>
-
-                  {/* Coming Soon */}
-
-                  {!module.enabled && (
                     <Text
                       style={[
-                        styles.comingSoon,
-
+                        styles.moduleTitle,
                         {
-                          color:
-                            colors.textTertiary,
-
-                          textAlign:
-                            isRTL
-                              ? 'right'
-                              : 'left',
+                          color: colors.text,
+                          textAlign: isRTL ? 'right' : 'left',
                         },
                       ]}
                     >
-                      {text.comingSoon}
+                      {module.title}
                     </Text>
-                  )}
 
-                </View>
+                    <Text
+                      style={[
+                        styles.moduleDescription,
+                        {
+                          color: colors.textSecondary,
+                          textAlign: isRTL ? 'right' : 'left',
+                        },
+                      ]}
+                    >
+                      {module.description}
+                    </Text>
 
-                {/* =================================================
-                    ARROW
-                ================================================= */}
-
-                {module.enabled && (
-                  <View
-                    style={[
-                      styles.arrowCircle,
-
-                      {
-                        backgroundColor:
-                          isDark
-                            ? 'rgba(124,58,237,0.14)'
-                            : '#F0EAFE',
-
-                        marginRight:
-                          isRTL
-                            ? 10
-                            : 0,
-
-                        marginLeft:
-                          isRTL
-                            ? 0
-                            : 10,
-                      },
-                    ]}
-                  >
-                    <ArrowIcon
-                      size={19}
-                      color={
-                        colors.primary
-                      }
-                    />
+                    {!module.enabled && (
+                      <Text
+                        style={[
+                          styles.comingSoon,
+                          {
+                            color: colors.textTertiary,
+                            textAlign: isRTL ? 'right' : 'left',
+                          },
+                        ]}
+                      >
+                        {text.comingSoon}
+                      </Text>
+                    )}
                   </View>
-                )}
 
-              </TouchableOpacity>
-            );
-          })}
-
-        </View>
+                  {module.enabled && (
+                    <View
+                      style={[
+                        styles.arrowCircle,
+                        {
+                          backgroundColor: arrowBgColor,
+                          marginRight: isRTL ? 10 : 0,
+                          marginLeft: isRTL ? 0 : 10,
+                        },
+                      ]}
+                    >
+                      <ArrowIcon size={19} color={arrowColor} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </ScrollView>
       </View>
     </LinearGradient>
   );
 }
 
-/*
- * ================================================================
- * STYLES
- * ================================================================
- */
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-
   screen: {
     flex: 1,
-
-    paddingTop: 80,
-
+    paddingTop: 40,
     paddingHorizontal: 20,
   },
-
-  /*
-   * --------------------------------------------------------------
-   * HEADER
-   * --------------------------------------------------------------
-   */
-
+  scrollContent: {
+    paddingBottom: 40,
+  },
   header: {
     marginBottom: 28,
   },
-
   headerRow: {
     flexDirection: 'row',
-
     alignItems: 'center',
-
-    justifyContent:
-      'space-between',
+    justifyContent: 'space-between',
   },
-
   backButton: {
     width: 44,
-
     height: 44,
-
     borderRadius: 22,
-
     borderWidth: 1,
-
     alignItems: 'center',
-
-    justifyContent:
-      'center',
-
+    justifyContent: 'center',
     flexShrink: 0,
-
     marginRight: 14,
   },
-
   headerText: {
     flex: 1,
   },
-
   badge: {
     alignItems: 'center',
-
     gap: 6,
-
     marginBottom: 6,
   },
-
   badgeText: {
     fontSize: 12,
-
     fontWeight: '700',
   },
-
   title: {
     fontSize: 30,
-
     fontWeight: '900',
   },
-
   subtitle: {
     fontSize: 14,
-
     lineHeight: 23,
-
     marginTop: 7,
   },
-
-  /*
-   * --------------------------------------------------------------
-   * MODULES
-   * --------------------------------------------------------------
-   */
-
   modules: {
     gap: 13,
   },
-
   moduleCard: {
     minHeight: 112,
-
     borderRadius: 22,
-
     borderWidth: 1,
-
     padding: 17,
-
     alignItems: 'center',
   },
-
   moduleIcon: {
     width: 52,
-
     height: 52,
-
     borderRadius: 16,
-
     alignItems: 'center',
-
-    justifyContent:
-      'center',
+    justifyContent: 'center',
   },
-
   moduleContent: {
     flex: 1,
   },
-
   moduleTitle: {
     fontSize: 17,
-
     fontWeight: '800',
   },
-
   moduleDescription: {
     fontSize: 12,
-
     lineHeight: 20,
-
     marginTop: 4,
   },
-
   comingSoon: {
     fontSize: 10,
-
     fontWeight: '700',
-
     marginTop: 5,
   },
-
-  /*
-   * --------------------------------------------------------------
-   * ARROW
-   * --------------------------------------------------------------
-   */
-
   arrowCircle: {
     width: 34,
-
     height: 34,
-
     borderRadius: 11,
-
     alignItems: 'center',
-
-    justifyContent:
-      'center',
+    justifyContent: 'center',
   },
 });

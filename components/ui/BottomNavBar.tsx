@@ -4,7 +4,6 @@ import React, {
   useEffect,
   useMemo,
 } from 'react';
-
 import {
   View,
   Text,
@@ -12,11 +11,9 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
-
 import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -25,10 +22,8 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-
 import {
   Home,
   Brain,
@@ -36,10 +31,6 @@ import {
   User,
   Sparkles,
 } from 'lucide-react-native';
-
-/* ================================================================
-   TYPES
-================================================================ */
 
 type NavItemId =
   | 'home'
@@ -65,28 +56,16 @@ interface AnimatedNavItemProps {
   active: boolean;
   colors: any;
   isDark: boolean;
+  isAthlete: boolean;
   inactiveColor: string;
   activeColor: string;
   label: string;
   onPress: () => void;
 }
 
-/* ================================================================
-   CONSTANTS
-================================================================ */
-
 const BAR_HEIGHT = 82;
 const CONTENT_HEIGHT = 68;
 const CENTER_BUTTON_SIZE = 58;
-
-/*
- * Shine
- *
- * Shine از خارج سمت چپ وارد می‌شود،
- * از کل نوبار عبور می‌کند و از سمت راست خارج می‌شود.
- *
- * مقدار rotate باعث می‌شود نور کمی مورب باشد.
- */
 
 const SHINE_WIDTH = 70;
 const SHINE_HEIGHT = 190;
@@ -99,36 +78,28 @@ const SHINE_IN_DURATION = 220;
 const SHINE_MOVE_DURATION = 2100;
 const SHINE_OUT_DURATION = 220;
 
-/* ================================================================
-   NAVIGATION ITEMS
-================================================================ */
-
 const NAV_ITEMS: readonly NavItem[] = [
   {
     id: 'home',
     icon: Home,
     route: '/(tabs)',
   },
-
   {
     id: 'brain',
     icon: Brain,
     route: '/(tabs)/protocol',
   },
-
   {
     id: 'nova',
     icon: Sparkles,
     route: '/(tabs)/assistant',
     isCenter: true,
   },
-
   {
     id: 'calendar',
     icon: Calendar,
     route: '/(tabs)/schedule',
   },
-
   {
     id: 'profile',
     icon: User,
@@ -136,79 +107,65 @@ const NAV_ITEMS: readonly NavItem[] = [
   },
 ];
 
-/* ================================================================
-   ROUTE NORMALIZATION
-================================================================ */
-
 function normalizeRoute(path: string): string {
   if (!path) {
     return '/';
   }
-
   let result = path
     .replace(/\/\([^)]+\)/g, '')
     .replace(/\/{2,}/g, '/');
-
   if (
     result.length > 1 &&
     result.endsWith('/')
   ) {
     result = result.slice(0, -1);
   }
-
   return result || '/';
 }
-
-/* ================================================================
-   ACTIVE ROUTE
-================================================================ */
 
 function getActiveItem(
   route: string,
 ): NavItemId | null {
   const normalized = normalizeRoute(route);
-
   if (
     normalized === '/' ||
     normalized === '/index'
   ) {
     return 'home';
   }
-
   if (
     normalized === '/protocol' ||
     normalized.startsWith('/protocol/')
   ) {
     return 'brain';
   }
-
   if (
     normalized === '/assistant' ||
     normalized.startsWith('/assistant/')
   ) {
     return 'nova';
   }
-
   if (
     normalized === '/schedule' ||
     normalized.startsWith('/schedule/')
   ) {
     return 'calendar';
   }
-
   if (
     normalized === '/profile' ||
     normalized.startsWith('/profile/')
   ) {
     return 'profile';
   }
-
   return null;
 }
 
-/* ================================================================
-   ANIMATED NAV ITEM
-================================================================ */
+// تابع برای دریافت رنگ فعال بر اساس تم
+const getActiveThemeColor = (isAthlete: boolean, isDark: boolean, colors: any) => {
+  if (isAthlete) return '#22C55E';
+  if (isDark) return 'rgba(73, 194, 226, 1)';
+  return colors.primary;
+};
 
 const AnimatedNavItem = memo(
   function AnimatedNavItem({
@@ -216,21 +173,18 @@ const AnimatedNavItem = memo(
     active,
     colors,
     isDark,
+    isAthlete,
     inactiveColor,
     activeColor,
     label,
     onPress,
   }: AnimatedNavItemProps) {
     const Icon = item.icon;
-
-    /* ============================================================
-       ICON ANIMATION
-    ============================================================ */
+    const themeColor = getActiveThemeColor(isAthlete, isDark, colors);
 
     const scale = useSharedValue(
       active ? 1 : 0.94,
     );
-
     const opacity = useSharedValue(
       active ? 1 : 0.72,
     );
@@ -244,7 +198,6 @@ const AnimatedNavItem = memo(
           mass: 0.7,
         },
       );
-
       opacity.value = withTiming(
         active ? 1 : 0.72,
         {
@@ -264,19 +217,13 @@ const AnimatedNavItem = memo(
             scale: scale.value,
           },
         ],
-
         opacity:
           opacity.value,
       }));
 
-    /* ============================================================
-       CENTER NEUROLIA BUTTON
-    ============================================================ */
-
     if (item.isCenter) {
       return (
         <View style={styles.centerColumn}>
-
           <Pressable
             onPress={onPress}
             accessibilityRole="button"
@@ -285,22 +232,18 @@ const AnimatedNavItem = memo(
             android_ripple={null}
             style={({ pressed }) => [
               styles.centerButton,
-
               {
                 backgroundColor: active
-                  ? colors.primary
+                  ? themeColor
                   : isDark
                     ? '#2A2433'
                     : '#F2EFF7',
-
                 borderColor: isDark
                   ? '#17131F'
                   : '#FFFFFF',
-
                 shadowColor: active
-                  ? colors.primary
+                  ? themeColor
                   : '#000000',
-
                 shadowOpacity: active
                   ? isDark
                     ? 0.32
@@ -308,20 +251,16 @@ const AnimatedNavItem = memo(
                   : isDark
                     ? 0.14
                     : 0.07,
-
                 shadowRadius: active
                   ? 13
                   : 9,
-
                 shadowOffset: {
                   width: 0,
                   height: 4,
                 },
-
                 elevation: active
                   ? 9
                   : 5,
-
                 transform: [
                   {
                     scale: pressed
@@ -350,7 +289,6 @@ const AnimatedNavItem = memo(
               />
             </Animated.View>
           </Pressable>
-
           <Text
             numberOfLines={1}
             style={[
@@ -364,18 +302,12 @@ const AnimatedNavItem = memo(
           >
             {label}
           </Text>
-
         </View>
       );
     }
 
-    /* ============================================================
-       NORMAL NAVIGATION ITEM
-    ============================================================ */
-
     return (
       <View style={styles.navColumn}>
-
         <Pressable
           onPress={onPress}
           accessibilityRole="button"
@@ -384,7 +316,6 @@ const AnimatedNavItem = memo(
           android_ripple={null}
           style={({ pressed }) => [
             styles.navButton,
-
             {
               opacity:
                 pressed
@@ -393,77 +324,61 @@ const AnimatedNavItem = memo(
             },
           ]}
         >
-
-          {/* ------------------------------------------------------
-             ACTIVE HIGHLIGHT
-
-             این قسمت عمداً باقی مانده است.
-
-             وقتی آیتم فعال باشد،
-             فقط پشت آیکون یک highlight نرم قرار می‌گیرد.
-          ------------------------------------------------------ */}
-
           <Animated.View
             style={[
               styles.iconWrapper,
-
               animatedIconStyle,
-
               {
                 backgroundColor:
                   active
-                    ? isDark
-                      ? `${colors.primary}24`
+                    ? isAthlete
+                      ? 'rgba(34,197,94,0.20)'
+                      : isDark
+                      ? 'rgba(73, 194, 226, 0.20)'
                       : `${colors.primary}12`
                     : 'transparent',
-
                 borderWidth:
                   active
                     ? 1
                     : 0,
-
                 borderColor:
                   active
-                    ? isDark
-                      ? `${colors.primary}38`
+                    ? isAthlete
+                      ? 'rgba(34,197,94,0.35)'
+                      : isDark
+                      ? 'rgba(73, 194, 226, 0.35)'
                       : `${colors.primary}20`
                     : 'transparent',
-
                 shadowColor:
                   active
-                    ? colors.primary
+                    ? themeColor
                     : 'transparent',
-
                 shadowOpacity:
                   active
-                    ? isDark
-                      ? 0.18
+                    ? isDark || isAthlete
+                      ? 0.25
                       : 0.10
                     : 0,
-
                 shadowRadius:
                   active
-                    ? 8
+                    ? 10
                     : 0,
-
                 shadowOffset: {
                   width: 0,
                   height: 2,
                 },
-
                 elevation:
                   active
-                    ? 2
+                    ? 3
                     : 0,
               },
             ]}
           >
-
             <Icon
               size={21}
               color={
                 active
-                  ? activeColor
+                  ? themeColor
                   : inactiveColor
               }
               strokeWidth={
@@ -472,24 +387,17 @@ const AnimatedNavItem = memo(
                   : 1.85
               }
             />
-
           </Animated.View>
-
-          {/* ------------------------------------------------------
-             LABEL
-          ------------------------------------------------------ */}
 
           <Text
             numberOfLines={1}
             style={[
               styles.navLabel,
-
               {
                 color:
                   active
-                    ? activeColor
+                    ? themeColor
                     : inactiveColor,
-
                 fontWeight:
                   active
                     ? '800'
@@ -500,70 +408,49 @@ const AnimatedNavItem = memo(
             {label}
           </Text>
 
-          {/* ------------------------------------------------------
-             ACTIVE DOT
-          ------------------------------------------------------ */}
-
           {active && (
             <View
               style={[
                 styles.activeDot,
                 {
                   backgroundColor:
-                    activeColor,
-
+                    themeColor,
                   shadowColor:
-                    activeColor,
-
+                    themeColor,
                   shadowOpacity:
                     0.45,
-
                   shadowRadius:
                     4,
-
                   shadowOffset: {
                     width: 0,
                     height: 1,
                   },
-
                   elevation: 2,
                 },
               ]}
             />
           )}
-
         </Pressable>
-
       </View>
     );
   },
 );
 
-/* ================================================================
-   MAIN COMPONENT
-================================================================ */
-
 function BottomNavBarComponent({
   currentRoute,
   onNavigate,
 }: BottomNavBarProps) {
-
   const {
     colors,
     isDark,
+    isAthlete,
   } = useTheme();
-
   const {
     t,
     language,
   } = useLanguage();
-
   const insets =
     useSafeAreaInsets();
-
-  /* ==============================================================
-     ROUTE
-  ============================================================== */
 
   const normalizedRoute =
     useMemo(
@@ -574,10 +461,6 @@ function BottomNavBarComponent({
       [currentRoute],
     );
 
-  /* ==============================================================
-     ACTIVE ITEM
-  ============================================================== */
-
   const activeItem =
     useMemo(
       () =>
@@ -587,67 +470,46 @@ function BottomNavBarComponent({
       [normalizedRoute],
     );
 
-  /* ==============================================================
-     NAVIGATION
-  ============================================================== */
-
   const handleNavigate =
     useCallback(
       (route: string) => {
-
         const target =
           normalizeRoute(route);
-
         if (
           target ===
           normalizedRoute
         ) {
           return;
         }
-
         onNavigate(route);
       },
-
       [
         normalizedRoute,
         onNavigate,
       ],
     );
 
-  /* ==============================================================
-     LABELS
-  ============================================================== */
-
   const getLabel = useCallback(
     (id: NavItemId): string => {
       switch (id) {
         case 'home':
           return t.home || 'Home';
-
         case 'brain':
           return t.protocol || 'Protocol';
-
         case 'nova':
           return language === 'fa'
             ? 'نورولیا'
             : 'Neurolia';
-
         case 'calendar':
           return t.plan || 'Plan';
-
         case 'profile':
           return t.profile || 'Profile';
-
         default:
           return '';
       }
     },
     [t, language],
   );
-
-  /* ==============================================================
-     COLORS
-  ============================================================== */
 
   const backgroundColor =
     isDark
@@ -665,46 +527,28 @@ function BottomNavBarComponent({
       : colors.textTertiary;
 
   const activeColor =
-    colors.primary;
-
-  /* ==============================================================
-     SHINE ANIMATION
-
-     نکته مهم:
-
-     قبلاً Shine با left: 18% شروع می‌شد.
-     بنابراین روی بعضی دستگاه‌ها به نظر می‌رسید
-     از وسط نوبار شروع شده.
-
-     حالا translateX از -150 شروع می‌شود
-     و کاملاً از بیرون سمت چپ وارد می‌شود.
-  ============================================================== */
+    isAthlete
+      ? '#22C55E'
+      : isDark
+      ? 'rgba(73, 194, 226, 1)'
+      : colors.primary;
 
   const shineX =
     useSharedValue(
       SHINE_START,
     );
-
   const shineOpacity =
     useSharedValue(0);
 
   useEffect(() => {
-
     shineX.value =
       SHINE_START;
-
     shineOpacity.value =
       0;
-
-    /* ------------------------------------------------------------
-       MOVEMENT
-    ------------------------------------------------------------ */
 
     shineX.value =
       withRepeat(
         withSequence(
-
-          /* انتظار قبل از شروع */
           withTiming(
             SHINE_START,
             {
@@ -712,8 +556,6 @@ function BottomNavBarComponent({
                 SHINE_DELAY,
             },
           ),
-
-          /* ورود نرم */
           withTiming(
             SHINE_START + 35,
             {
@@ -721,8 +563,6 @@ function BottomNavBarComponent({
                 SHINE_IN_DURATION,
             },
           ),
-
-          /* حرکت اصلی */
           withTiming(
             SHINE_END,
             {
@@ -730,8 +570,6 @@ function BottomNavBarComponent({
                 SHINE_MOVE_DURATION,
             },
           ),
-
-          /* خروج */
           withTiming(
             SHINE_END + 70,
             {
@@ -739,8 +577,6 @@ function BottomNavBarComponent({
                 SHINE_OUT_DURATION,
             },
           ),
-
-          /* فاصله */
           withTiming(
             SHINE_END + 70,
             {
@@ -749,20 +585,13 @@ function BottomNavBarComponent({
             },
           ),
         ),
-
         -1,
         false,
       );
 
-    /* ------------------------------------------------------------
-       OPACITY
-    ------------------------------------------------------------ */
-
     shineOpacity.value =
       withRepeat(
         withSequence(
-
-          /* مخفی */
           withTiming(
             0,
             {
@@ -770,8 +599,6 @@ function BottomNavBarComponent({
                 SHINE_DELAY,
             },
           ),
-
-          /* ظاهر شدن */
           withTiming(
             0.95,
             {
@@ -779,8 +606,6 @@ function BottomNavBarComponent({
                 SHINE_IN_DURATION,
             },
           ),
-
-          /* عبور */
           withTiming(
             0.95,
             {
@@ -788,8 +613,6 @@ function BottomNavBarComponent({
                 SHINE_MOVE_DURATION,
             },
           ),
-
-          /* محو شدن */
           withTiming(
             0,
             {
@@ -797,8 +620,6 @@ function BottomNavBarComponent({
                 SHINE_OUT_DURATION,
             },
           ),
-
-          /* فاصله */
           withTiming(
             0,
             {
@@ -807,19 +628,13 @@ function BottomNavBarComponent({
             },
           ),
         ),
-
         -1,
         false,
       );
-
   }, [
     shineX,
     shineOpacity,
   ]);
-
-  /* ==============================================================
-     SHINE STYLE
-  ============================================================== */
 
   const shineStyle =
     useAnimatedStyle(
@@ -829,79 +644,56 @@ function BottomNavBarComponent({
             translateX:
               shineX.value,
           },
-
-          /*
-           * Shine کمی مورب است.
-           *
-           * مقدار مثبت یعنی به سمت پایین
-           * در هنگام حرکت.
-           */
           {
             rotate:
               '18deg',
           },
         ],
-
         opacity:
           shineOpacity.value,
       }),
     );
 
-  /* ==============================================================
-     RENDER
-  ============================================================== */
-
   return (
     <View
       style={[
         styles.container,
-
         {
           backgroundColor,
-
           borderTopColor:
             borderColor,
-
           paddingBottom:
             Math.max(
               insets.bottom,
               0,
             ) + 5,
-
           shadowColor:
             '#000000',
-
           shadowOpacity:
             isDark
               ? 0.28
               : 0.055,
-
           shadowRadius:
             isDark
               ? 18
               : 12,
-
           shadowOffset: {
             width: 0,
             height: -4,
           },
-
           elevation: 14,
         },
       ]}
     >
-
       <View
         pointerEvents="none"
         style={styles.shineClip}
       >
-
         <Animated.View
           pointerEvents="none"
           style={[
             styles.shine,
             shineStyle,
-
             {
               backgroundColor:
                 isDark
@@ -910,7 +702,6 @@ function BottomNavBarComponent({
             },
           ]}
         />
-
       </View>
 
       <View
@@ -918,61 +709,47 @@ function BottomNavBarComponent({
           styles.navigationArea
         }
       >
-
         {NAV_ITEMS.map(
           (item) => (
-
             <AnimatedNavItem
               key={item.id}
-
               item={item}
-
               active={
                 activeItem ===
                 item.id
               }
-
               colors={
                 colors
               }
-
               isDark={
                 isDark
               }
-
+              isAthlete={
+                isAthlete
+              }
               inactiveColor={
                 inactiveColor
               }
-
               activeColor={
                 activeColor
               }
-
               label={
                 getLabel(
                   item.id,
                 )
               }
-
               onPress={() =>
                 handleNavigate(
                   item.route,
                 )
               }
             />
-
           ),
         )}
-
       </View>
-
     </View>
   );
 }
-
-/* ================================================================
-   EXPORT
-================================================================ */
 
 export const BottomNavBar =
   memo(
@@ -981,37 +758,20 @@ export const BottomNavBar =
 
 export default BottomNavBar;
 
-/* ================================================================
-   STYLES
-================================================================ */
-
 const styles =
   StyleSheet.create({
-
-    /* ============================================================
-       CONTAINER
-    ============================================================ */
-
     container: {
-
       width: '100%',
-
       minHeight:
         BAR_HEIGHT,
-
       height:
         BAR_HEIGHT,
-
       borderTopWidth:
         StyleSheet.hairlineWidth,
-
       overflow:
         'visible',
-
       zIndex: 100,
-
       elevation: 14,
-
       ...(Platform.OS ===
         'ios'
         ? {
@@ -1023,225 +783,129 @@ const styles =
         : {}),
     },
     shineClip: {
-
       position:
         'absolute',
-
       top: 0,
-
       left: 0,
-
       right: 0,
-
       bottom: 0,
-
       overflow:
         'hidden',
-
       zIndex: 50,
-
       pointerEvents:
         'none',
     },
-
-
     shine: {
-
       position:
         'absolute',
-
       top:
         -55,
-
       left:
         0,
-
       width:
         SHINE_WIDTH,
-
       height:
         SHINE_HEIGHT,
-
       borderRadius:
         100,
-
-
       shadowColor:
         '#FFFFFF',
-
       shadowOpacity:
         0.85,
-
       shadowRadius:
         20,
-
       shadowOffset: {
         width: 0,
         height: 0,
       },
-
       elevation: 8,
-
       pointerEvents:
         'none',
     },
-
-    /* ============================================================
-       NAVIGATION AREA
-    ============================================================ */
-
     navigationArea: {
-
       position:
         'relative',
-
       width:
         '100%',
-
       height:
         CONTENT_HEIGHT,
-
       minHeight:
         CONTENT_HEIGHT,
-
       flexDirection:
         'row',
-
       alignItems:
         'center',
-
       justifyContent:
         'space-between',
-
       paddingHorizontal:
         4,
-
       paddingTop:
         1,
-
       zIndex: 2,
     },
-
-    /* ============================================================
-       NORMAL COLUMN
-    ============================================================ */
-
     navColumn: {
-
       flex: 1,
-
       height:
         CONTENT_HEIGHT,
-
       minWidth: 0,
-
       alignItems:
         'center',
-
       justifyContent:
         'center',
-
       zIndex: 2,
     },
-
-    /* ============================================================
-       NORMAL BUTTON
-    ============================================================ */
-
     navButton: {
-
       width:
         '100%',
-
       height:
         CONTENT_HEIGHT,
-
       alignItems:
         'center',
-
       justifyContent:
         'center',
-
       position:
         'relative',
-
       paddingTop:
         2,
-
       backgroundColor:
         'transparent',
     },
-
-    /* ============================================================
-       ACTIVE ICON WRAPPER
-    ============================================================ */
-
     iconWrapper: {
-
       width:
         38,
-
       height:
         32,
-
       borderRadius:
         12,
-
       alignItems:
         'center',
-
       justifyContent:
         'center',
-
       marginBottom:
         2,
     },
-
-    /* ============================================================
-       LABEL
-    ============================================================ */
-
     navLabel: {
-
       fontSize:
         9.5,
-
       lineHeight:
         13,
-
       textAlign:
         'center',
-
       maxWidth:
         66,
     },
-
-    /* ============================================================
-       ACTIVE DOT
-    ============================================================ */
-
     activeDot: {
-
       position:
         'absolute',
-
       bottom:
         3,
-
       width:
         4,
-
       height:
         4,
-
       borderRadius:
         2,
     },
-
-    /* ============================================================
-       CENTER NEUROLIA COLUMN
-    ============================================================ */
-
     centerColumn: {
       flex: 1,
       height:
@@ -1256,58 +920,35 @@ const styles =
       overflow:
         'visible',
     },
-
-    /* ============================================================
-       CENTER BUTTON
-    ============================================================ */
-
     centerButton: {
-marginBottom: 3,
+      marginBottom: 3,
       width:
         CENTER_BUTTON_SIZE,
-
       height:
         CENTER_BUTTON_SIZE,
-
       borderRadius:
         CENTER_BUTTON_SIZE / 2,
-
       borderWidth:
         3,
-
       alignItems:
         'center',
-
       justifyContent:
         'center',
-
       marginTop:
         -10,
     },
-
-    /* ============================================================
-       CENTER LABEL
-    ============================================================ */
-
     centerLabel: {
-
       fontSize:
         9.5,
-
       lineHeight:
         13,
-
       fontWeight:
         '800',
-
       textAlign:
         'center',
-
       marginTop:
         -4,
-
       maxWidth:
         66,
     },
-
   });

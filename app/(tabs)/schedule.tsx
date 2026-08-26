@@ -388,6 +388,7 @@ export default function ScheduleScreen() {
   const {
     colors,
     isDark,
+    isAthlete,
   } = useTheme();
 
   const {
@@ -400,18 +401,15 @@ export default function ScheduleScreen() {
 
   const { user } = useAuth();
 
-  const primary =
-    colors.primary;
+  // فقط رنگ آیکون‌ها بر اساس تم
+  const iconColor = isAthlete
+    ? '#22C55E'
+    : isDark
+    ? 'rgba(73, 194, 226, 1)'
+    : colors.primary;
 
-  const softPurple =
-    isDark
-      ? '#9B87D4'
-      : primary;
-
-  const softPurpleStrong =
-    isDark
-      ? '#8069C2'
-      : primary;
+  // دکمه FAB از رنگ primary استفاده می‌کند (دست نمی‌زنیم)
+  const primary = colors.primary;
 
   const green =
     isDark
@@ -514,8 +512,7 @@ export default function ScheduleScreen() {
             `20 ${t.minutes || 'min'}`,
           completed: false,
           icon: Brain,
-          color:
-            softPurple,
+          color: iconColor,
           isCustom: false,
         },
 
@@ -532,8 +529,7 @@ export default function ScheduleScreen() {
             `5 ${t.minutes || 'min'}`,
           completed: false,
           icon: Pill,
-          color:
-            green,
+          color: green,
           isCustom: false,
         },
 
@@ -550,8 +546,7 @@ export default function ScheduleScreen() {
             `45 ${t.minutes || 'min'}`,
           completed: false,
           icon: Heart,
-          color:
-            pink,
+          color: pink,
           isCustom: false,
         },
 
@@ -568,15 +563,13 @@ export default function ScheduleScreen() {
             `30 ${t.minutes || 'min'}`,
           completed: false,
           icon: Moon,
-          color:
-            softPurpleStrong,
+          color: iconColor,
           isCustom: false,
         },
       ],
       [
         t,
-        softPurple,
-        softPurpleStrong,
+        iconColor,
         green,
         pink,
       ],
@@ -623,13 +616,13 @@ export default function ScheduleScreen() {
               ),
             color:
               event.color ||
-              softPurple,
+              iconColor,
             isCustom: true,
           }),
         ),
       [
         customEvents,
-        softPurple,
+        iconColor,
       ],
     );
 
@@ -843,8 +836,7 @@ export default function ScheduleScreen() {
       icon:
         Sparkles,
 
-      color:
-        softPurple,
+      color: iconColor,
 
       route:
         '/schedule/add',
@@ -866,8 +858,7 @@ export default function ScheduleScreen() {
       icon:
         Pill,
 
-      color:
-        green,
+      color: green,
 
       route:
         '/medication/add',
@@ -889,8 +880,7 @@ export default function ScheduleScreen() {
       icon:
         Heart,
 
-      color:
-        pink,
+      color: pink,
 
       route:
         '/consultation',
@@ -1070,9 +1060,7 @@ export default function ScheduleScreen() {
                 style={[
                   styles.scheduleHeroAccentDot,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(255,255,255,0.85)'
-                      : 'rgba(41,33,63,0.60)',
+                    backgroundColor: iconColor,
                   },
                 ]}
               />
@@ -1113,16 +1101,15 @@ export default function ScheduleScreen() {
               styles.dateIcon,
               {
                 backgroundColor:
-                  softPurple +
-                  '14',
+                  isDark
+                    ? 'rgba(255,255,255,0.08)'
+                    : iconColor + '14',
               },
             ]}
           >
             <Calendar
               size={20}
-              color={
-                softPurple
-              }
+              color={iconColor}
             />
           </View>
 
@@ -1175,8 +1162,7 @@ export default function ScheduleScreen() {
               style={[
                 styles.progressNumber,
                 {
-                  color:
-                    softPurple,
+                  color: iconColor,
                 },
               ]}
             >
@@ -1224,8 +1210,7 @@ export default function ScheduleScreen() {
             style={[
               styles.progressFill,
               {
-                backgroundColor:
-                  softPurple,
+                backgroundColor: iconColor,
               },
             ]}
           />
@@ -1287,24 +1272,22 @@ export default function ScheduleScreen() {
                 styles.newBadge,
                 {
                   backgroundColor:
-                    softPurple +
-                    '15',
+                    isDark
+                      ? 'rgba(255,255,255,0.08)'
+                      : iconColor + '15',
                 },
               ]}
             >
               <Sparkles
                 size={13}
-                color={
-                  softPurple
-                }
+                color={iconColor}
               />
 
               <Text
                 style={[
                   styles.newBadgeText,
                   {
-                    color:
-                      softPurple,
+                    color: iconColor,
                   },
                 ]}
               >
@@ -1337,9 +1320,7 @@ export default function ScheduleScreen() {
             >
               <Sparkles
                 size={25}
-                color={
-                  softPurple
-                }
+                color={iconColor}
               />
             </MotiView>
           </View>
@@ -1422,8 +1403,10 @@ export default function ScheduleScreen() {
                           styles.eventIcon,
                           {
                             backgroundColor:
-                              event.color +
-                              '15',
+                              isDark
+                                ? 'rgba(255,255,255,0.08)'
+                                : event.color +
+                                '15',
                           },
                         ]}
                       >
@@ -1489,8 +1472,10 @@ export default function ScheduleScreen() {
                                 styles.userBadge,
                                 {
                                   backgroundColor:
-                                    event.color +
-                                    '14',
+                                    isDark
+                                      ? 'rgba(255,255,255,0.08)'
+                                      : event.color +
+                                      '14',
                                 },
                               ]}
                             >
@@ -1570,8 +1555,10 @@ export default function ScheduleScreen() {
                             styles.categoryBadge,
                             {
                               backgroundColor:
-                                event.color +
-                                '12',
+                                isDark
+                                  ? 'rgba(255,255,255,0.08)'
+                                  : event.color +
+                                  '12',
                             },
                           ]}
                         >
@@ -1694,11 +1681,15 @@ export default function ScheduleScreen() {
               styles.tipCard,
               {
                 backgroundColor:
-                  softPurple +
-                  '0B',
+                  isDark
+                    ? 'rgba(255,255,255,0.05)'
+                    : iconColor +
+                    '0B',
                 borderColor:
-                  softPurple +
-                  '20',
+                  isDark
+                    ? 'rgba(255,255,255,0.10)'
+                    : iconColor +
+                    '20',
               },
             ]}
           >
@@ -1707,16 +1698,16 @@ export default function ScheduleScreen() {
                 styles.tipIcon,
                 {
                   backgroundColor:
-                    softPurple +
-                    '16',
+                    isDark
+                      ? 'rgba(255,255,255,0.08)'
+                      : iconColor +
+                      '16',
                 },
               ]}
             >
               <Plus
                 size={18}
-                color={
-                  softPurple
-                }
+                color={iconColor}
               />
             </View>
 
@@ -1917,8 +1908,10 @@ export default function ScheduleScreen() {
                             styles.actionIcon,
                             {
                               backgroundColor:
-                                option.color +
-                                '16',
+                                isDark
+                                  ? 'rgba(255,255,255,0.08)'
+                                  : option.color +
+                                  '16',
                             },
                           ]}
                         >

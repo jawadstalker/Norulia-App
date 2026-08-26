@@ -35,25 +35,30 @@ import {
 import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, isAthlete, theme } = useTheme();
   const { t, isRTL } = useLanguage();
   const { user, logout } = useAuth();
   const router = useRouter();
 
-  const ChevronIcon = isRTL
-    ? ChevronLeft
-    : ChevronRight;
-
+  const ChevronIcon = isRTL ? ChevronLeft : ChevronRight;
 
   const heroGradient: [string, string] = isDark
     ? ['#342660', '#21104F']
     : ['#F2EEFF', '#D8CEFA'];
 
+  // رنگ آیکون‌ها بر اساس تم
+  const iconColor = isAthlete
+    ? '#22C55E' // تم ورزشکار (سبز)
+    : isDark
+    ? 'rgba(73, 194, 226, 1)' // تم تاریک (آبی)
+    : '#6B5AA6'; // تم روشن (بنفش)
 
-
-  const iconColor = isDark
-    ? '#CFC6FF'
-    : '#6B5AA6';
+  // رنگ پس‌زمینه آیکون‌ها بر اساس تم
+  const bgColor = isAthlete
+    ? 'rgba(34,197,94,0.10)' // تم ورزشکار (سبز)
+    : isDark
+    ? 'rgba(73, 194, 226, 0.15)' // تم تاریک (آبی)
+    : 'rgba(107,90,166,0.10)'; // تم روشن (بنفش)
 
   const stats = [
     {
@@ -84,60 +89,23 @@ export default function ProfileScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* =====================================================
-          PROFILE HERO
-      ===================================================== */}
-
-<LinearGradient
-  colors={heroGradient}
-  start={{ x: 0, y: 0 }}
-  end={{ x: 1, y: 1 }}
-  style={[
-    styles.hero,
-    {
-      borderColor: isDark
-        ? 'rgba(255,255,255,0.10)'
-        : 'rgba(107,90,166,0.06)',
-
-      shadowColor: isDark
-        ? '#000000'
-        : '#6B5AA6',
-
-      shadowOpacity: isDark
-        ? 0.20
-        : 0.08,
-
-      elevation: isDark
-        ? 8
-        : 3,
-    },
-  ]}
->
-
-
+      <LinearGradient
+        colors={heroGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[
+          styles.hero,
+          {
+            borderColor: isDark
+              ? 'rgba(255,255,255,0.10)'
+              : 'rgba(107,90,166,0.06)',
+            shadowColor: isDark ? '#000000' : '#6B5AA6',
+            shadowOpacity: isDark ? 0.20 : 0.08,
+            elevation: isDark ? 8 : 3,
+          },
+        ]}
+      >
         <View style={styles.characterStage}>
-
-          {/* Soft ambient light */}
-
-          <MotiView
-            pointerEvents="none"
-            from={{
-              opacity: 0,
-              scale: 0.7,
-            }}
-            animate={{
-              opacity: 0.18,
-              scale: 1,
-            }}
-            transition={{
-              type: 'timing',
-              duration: 900,
-            }}
-            style={styles.characterAmbientLight}
-          />
-
-          {/* Character */}
-
           <MotiView
             from={{
               opacity: 0,
@@ -158,15 +126,11 @@ export default function ProfileScreen() {
             style={styles.characterWrapper}
           >
             <Image
-              source={require('../../assets/avatars/Head.png')}
+              source={require('../../assets/avatars/blue.png')}
               style={styles.characterHead}
             />
           </MotiView>
         </View>
-
-        {/* =================================================
-            USER INFORMATION
-        ================================================= */}
 
         <MotiView
           from={{
@@ -188,9 +152,7 @@ export default function ProfileScreen() {
             style={[
               styles.userName,
               {
-                color: isDark
-                  ? '#FFFFFF'
-                  : '#29213F',
+                color: isDark ? '#FFFFFF' : '#29213F',
               },
             ]}
           >
@@ -210,8 +172,6 @@ export default function ProfileScreen() {
             {user?.email || 'user@neurolia.app'}
           </Text>
 
-          {/* Small profile accent */}
-
           <View
             style={[
               styles.profileAccent,
@@ -226,19 +186,13 @@ export default function ProfileScreen() {
               style={[
                 styles.profileAccentDot,
                 {
-                  backgroundColor: isDark
-                    ? 'rgba(255,255,255,0.85)'
-                    : 'rgba(41,33,63,0.60)',
+                  backgroundColor: iconColor,
                 },
               ]}
             />
           </View>
         </MotiView>
       </LinearGradient>
-
-      {/* =====================================================
-          BODY
-      ===================================================== */}
 
       <View
         style={[
@@ -248,10 +202,6 @@ export default function ProfileScreen() {
           },
         ]}
       >
-        {/* ===================================================
-            STATISTICS
-        =================================================== */}
-
         <View style={styles.statsRow}>
           {stats.map((stat, index) => {
             const StatIcon = stat.icon;
@@ -284,9 +234,7 @@ export default function ProfileScreen() {
                     style={[
                       styles.statIconWrap,
                       {
-                        backgroundColor: isDark
-                          ? 'rgba(207,198,255,0.10)'
-                          : 'rgba(107,90,166,0.10)',
+                        backgroundColor: bgColor,
                       },
                     ]}
                   >
@@ -323,10 +271,6 @@ export default function ProfileScreen() {
           })}
         </View>
 
-        {/* ===================================================
-            MENU
-        =================================================== */}
-
         <MotiView
           from={{
             opacity: 0,
@@ -343,9 +287,6 @@ export default function ProfileScreen() {
           }}
         >
           <Card style={styles.menuCard}>
-
-            {/* Settings */}
-
             <TouchableOpacity
               onPress={() => router.push('/settings')}
               style={styles.menuItem}
@@ -355,9 +296,7 @@ export default function ProfileScreen() {
                 style={[
                   styles.menuIconWrap,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(207,198,255,0.10)'
-                      : 'rgba(107,90,166,0.10)',
+                    backgroundColor: bgColor,
                   },
                 ]}
               >
@@ -384,8 +323,6 @@ export default function ProfileScreen() {
               />
             </TouchableOpacity>
 
-            {/* Divider */}
-
             <View
               style={[
                 styles.menuDivider,
@@ -395,16 +332,12 @@ export default function ProfileScreen() {
               ]}
             />
 
-            {/* Privacy */}
-
             <View style={styles.menuItem}>
               <View
                 style={[
                   styles.menuIconWrap,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(207,198,255,0.10)'
-                      : 'rgba(107,90,166,0.10)',
+                    backgroundColor: bgColor,
                   },
                 ]}
               >
@@ -433,10 +366,6 @@ export default function ProfileScreen() {
           </Card>
         </MotiView>
 
-        {/* ===================================================
-            LOGOUT
-        =================================================== */}
-
         <MotiView
           from={{
             opacity: 0,
@@ -457,22 +386,30 @@ export default function ProfileScreen() {
             style={[
               styles.logoutButton,
               {
-                backgroundColor: colors.error + '12',
-                borderColor: colors.error + '30',
+                backgroundColor: isAthlete
+                  ? 'rgba(34,197,94,0.12)'
+                  : isDark
+                  ? 'rgba(73, 194, 226, 0.12)'
+                  : colors.error + '12',
+                borderColor: isAthlete
+                  ? 'rgba(34,197,94,0.30)'
+                  : isDark
+                  ? 'rgba(73, 194, 226, 0.30)'
+                  : colors.error + '30',
               },
             ]}
             activeOpacity={0.75}
           >
             <LogOut
               size={19}
-              color={colors.error}
+              color={isAthlete ? '#22C55E' : isDark ? 'rgba(73, 194, 226, 1)' : colors.error}
             />
 
             <Text
               style={[
                 styles.logoutText,
                 {
-                  color: colors.error,
+                  color: isAthlete ? '#22C55E' : isDark ? 'rgba(73, 194, 226, 1)' : colors.error,
                 },
               ]}
             >
@@ -485,10 +422,6 @@ export default function ProfileScreen() {
   );
 }
 
-/* =========================================================
-   STYLES
-========================================================= */
-
 const styles = StyleSheet.create({
   container: {
     paddingTop: 40,
@@ -499,101 +432,48 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
 
-  /* =======================================================
-     HERO
-  ======================================================= */
-
   hero: {
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.lg,
-
     paddingTop: 20,
     paddingBottom: 34,
     paddingHorizontal: Spacing.lg,
-
     alignItems: 'center',
-
     borderRadius: 32,
     overflow: 'hidden',
-
     borderWidth: 1,
-
     borderColor: 'rgba(255,255,255,0.14)',
-
     shadowColor: '#000',
-
     shadowOffset: {
       width: 0,
       height: 10,
     },
-
     shadowOpacity: 0.15,
     shadowRadius: 20,
-
     elevation: 8,
   },
-
-  /* =======================================================
-     CHARACTER STAGE
-  ======================================================= */
 
   characterStage: {
     width: 190,
     height: 175,
-
     alignItems: 'center',
     justifyContent: 'center',
-
     position: 'relative',
   },
-
-  /* =======================================================
-     SOFT AMBIENT LIGHT
-  ======================================================= */
-
-  characterAmbientLight: {
-    position: 'absolute',
-
-    width: 150,
-    height: 100,
-
-    borderRadius: 75,
-
-    backgroundColor: '#FFFFFF',
-
-    opacity: 0.15,
-
-    transform: [
-      {
-        scaleY: 0.75,
-      },
-    ],
-  },
-
-  /* =======================================================
-     CHARACTER
-  ======================================================= */
 
   characterWrapper: {
     width: 175,
     height: 175,
-
     alignItems: 'center',
     justifyContent: 'center',
-
     zIndex: 2,
   },
 
   characterHead: {
     width: 175,
     height: 175,
-
     resizeMode: 'contain',
   },
-
-  /* =======================================================
-     USER INFO
-  ======================================================= */
 
   userInfo: {
     alignItems: 'center',
@@ -602,94 +482,64 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 22,
     fontWeight: '700',
-
     textAlign: 'center',
-
     marginTop: Spacing.sm,
   },
 
   email: {
     fontSize: 13,
-
     textAlign: 'center',
-
     marginTop: 4,
   },
-
-  /* =======================================================
-     PROFILE ACCENT
-  ======================================================= */
 
   profileAccent: {
     width: 42,
     height: 2,
-
     marginTop: 12,
-
     borderRadius: 2,
-
     alignItems: 'flex-end',
   },
 
   profileAccentDot: {
     width: 10,
     height: 2,
-
     borderRadius: 2,
   },
-
-  /* =======================================================
-     BODY
-  ======================================================= */
 
   body: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
   },
 
-  /* =======================================================
-     STATS
-  ======================================================= */
-
   statsRow: {
     flexDirection: 'row',
-
     justifyContent: 'space-between',
-
     marginBottom: Spacing.lg,
   },
 
   statWrap: {
     flex: 1,
-
     marginHorizontal: 4,
   },
 
   statCard: {
     alignItems: 'center',
-
     shadowColor: '#000',
-
     shadowOffset: {
       width: 0,
       height: 3,
     },
-
     shadowOpacity: 0.05,
     shadowRadius: 8,
-
     elevation: 2,
   },
 
   statIconWrap: {
     width: 36,
     height: 36,
-
     borderRadius: 18,
-
     alignItems: 'center',
     justifyContent: 'center',
-
     marginBottom: 6,
   },
 
@@ -700,86 +550,59 @@ const styles = StyleSheet.create({
 
   statLabel: {
     fontSize: 11,
-
     marginTop: 2,
   },
 
-  /* =======================================================
-     MENU
-  ======================================================= */
-
   menuCard: {
     marginBottom: Spacing.lg,
-
     shadowColor: '#000',
-
     shadowOffset: {
       width: 0,
       height: 4,
     },
-
     shadowOpacity: 0.05,
     shadowRadius: 10,
-
     elevation: 2,
   },
 
   menuItem: {
     flexDirection: 'row',
-
     alignItems: 'center',
-
     paddingVertical: Spacing.sm,
-
     gap: Spacing.md,
   },
 
   menuIconWrap: {
     width: 36,
     height: 36,
-
     borderRadius: 12,
-
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   menuText: {
     flex: 1,
-
     fontSize: 15,
-
     fontWeight: '500',
   },
 
   menuDivider: {
     height: 1,
-
     marginVertical: 4,
   },
 
-  /* =======================================================
-     LOGOUT
-  ======================================================= */
-
   logoutButton: {
     flexDirection: 'row',
-
     alignItems: 'center',
     justifyContent: 'center',
-
     padding: Spacing.lg,
-
     borderRadius: BorderRadius.lg,
-
     borderWidth: 1,
-
     gap: Spacing.sm,
   },
 
   logoutText: {
     fontSize: 15,
-
     fontWeight: '600',
   },
 });

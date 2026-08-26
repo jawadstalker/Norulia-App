@@ -1,1517 +1,631 @@
-import React from 'react';
-
+import React, { useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
   Image,
+  Animated,
+  Easing,
   TouchableOpacity,
-  Pressable,
-  useWindowDimensions,
+  StyleSheet,
+  Dimensions,
+  AccessibilityInfo,
+  ImageSourcePropType,
+  ViewStyle,
+  TextStyle,
+  DimensionValue,
+  Platform,
 } from 'react-native';
 
-import { MotiView } from 'moti';
+// Expo/react-native-web does not support the native animation driver, and
+// combining it with Animated.add/multiply (used below to blend entrance and
+// exit animations) throws at runtime on web. Native driver is safe — and
+// still gives smooth, off-thread animation — on iOS/Android.
+const NATIVE_DRIVER = Platform.OS !== 'web';
 
+// RN's style typings require every object inside a `transform` array to name
+// exactly one transform key (with the rest typed as `never`), which makes it
+// impossible to type an array mixing differently-shaped animated transform
+// objects built dynamically. Casting each computed style to this alias keeps
+// the component body readable without sprinkling `as any` everywhere.
+type AnimatedStyle = Animated.WithAnimatedValue<ViewStyle & TextStyle>;
 import { LinearGradient } from 'expo-linear-gradient';
 
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
+// ---------------------------------------------------------------------------
+// Content — matches the original HTML 1:1.
+// NOTE: the source HTML's second wordmark literally spells "Neurolia"
+// (aria-label="Neurolia", 8 letters N-e-u-r-o-l-i-a), while the alt text on
+// the image says "Neurolia logo" too. Your app/repo is "Norulia". I kept the
+// text exactly as given for a faithful port — change WORD_2 below to
+// 'Norulia' if that was a typo in the source file.
+// ---------------------------------------------------------------------------
+const WORD_1 = 'IPS';
+const SUBTITLE_1 = 'Iliya Pardazesh Shargh';
+const WORD_2 = 'Neurolia';
+const TAGLINE = 'Mind, beautifully calibrated.';
 
-import { useTheme } from '../../context/ThemeContext';
-import { useLanguage } from '../../context/LanguageContext';
+const COLORS = {
+  bgDeep: '#151020',
+  bg: '#24142F',
+  bgOuter: '#0c0814',
+  fg: '#F3EEF9',
+  muted: '#B3A7BE',
+  accent: '#C39BEF',
+  accentHi: '#E6D8F8',
+  accentLo: '#8758C8',
+} as const;
 
-import { Card } from '../ui/Card';
+// letter rotation values, taken from the CSS custom properties
+const ROT_2: number[] = [-12, 12, -12, 12, -12, 12, -12, 12]; // N e u r o l i a
 
-import { useRouter } from 'expo-router';
+interface Spark {
+  top?: DimensionValue;
+  left?: DimensionValue;
+  right?: DimensionValue;
+  bottom?: DimensionValue;
+  size: number;
+  color: string;
+  delay: number;
+  duration: number;
+}
 
-import {
-  Spacing,
-  BorderRadius,
-} from '../../constants/theme';
-
-import {
-  BrainCircuit,
-  BookOpen,
-  Sparkles,
-  Pill,
-  Stethoscope,
-  SlidersHorizontal,
-  TrendingUp,
-  LayoutGrid,
-} from 'lucide-react-native';
-
-/* ================================================================
-   MENU ITEMS
-================================================================ */
-
-const menuItems = [
-  {
-    id: 'psycho',
-    titleKey: 'psychoPhysical',
-    icon: BrainCircuit,
-    route: '/psycho',
-  },
-
-  {
-    id: 'cultural',
-    titleKey: 'culturalInterventions',
-    icon: BookOpen,
-    route: '/cultural',
-  },
-
-  {
-    id: 'plus',
-    titleKey: 'plusModule',
-    icon: Sparkles,
-    route: '/(tabs)/plus',
-  },
-
-  {
-    id: 'medication',
-    titleKey: 'medicationManagement',
-    icon: Pill,
-    route: '/medication',
-  },
-
-  {
-    id: 'consultation',
-    titleKey: 'consultation',
-    icon: Stethoscope,
-    route: '/consultation',
-  },
-
-  {
-    id: 'settings',
-    titleKey: 'settings',
-    icon: SlidersHorizontal,
-    route: '/(tabs)/profile',
-  },
+const SPARKS: Spark[] = [
+  { top: '22%', left: '20%', size: 22, color: COLORS.accentHi, delay: 900, duration: 2400 },
+  { top: '30%', right: '18%', size: 14, color: COLORS.accent, delay: 1300, duration: 2800 },
+  { bottom: '30%', left: '26%', size: 16, color: COLORS.accentHi, delay: 1600, duration: 2100 },
+  { bottom: '26%', right: '24%', size: 20, color: COLORS.accentHi, delay: 1100, duration: 2600 },
+  { top: '46%', left: '12%', size: 12, color: COLORS.accent, delay: 1900, duration: 3100 },
 ];
 
-interface ShineEffectProps {
-  color?: string;
-  delay?: number;
-  duration?: number;
-  opacity?: number;
+// timeline, in ms — mirrors the setTimeout schedule in the original <script>
+const T = {
+  ACT1_EXIT: 1350,
+  ACT2_ENTER: 1900,
+  ACT1_GONE: 2100,
+  AMBIENT_START: 3600, // when floaty/breathe loops kick in, relative to ACT2_ENTER
+  END: 4600,
+  OUTDONE: 4900,
+};
+
+const EASE_IN = Easing.bezier(0.2, 0, 0, 1);
+const EASE_OUT = Easing.bezier(0.5, 0, 0.75, 0);
+
+function mkVal(v = 0): Animated.Value {
+  return new Animated.Value(v);
 }
 
-function ShineEffect({
-  color = '#FFFFFF',
-  delay = 1600,
-  duration = 1900,
-  opacity = 0.16,
-}: ShineEffectProps) {
-  const shineX = useSharedValue(-180);
-
-  const shineOpacity = useSharedValue(0);
-
-  React.useEffect(() => {
-    shineX.value = -180;
-    shineOpacity.value = 0;
-
-    shineX.value = withRepeat(
-      withSequence(
-        /* --------------------------------------------------------
-           WAIT
-        -------------------------------------------------------- */
-
-        withTiming(
-          -180,
-          {
-            duration: delay,
-          },
-        ),
-
-        /* --------------------------------------------------------
-           FADE IN
-        -------------------------------------------------------- */
-
-        withTiming(
-          -145,
-          {
-            duration: 180,
-          },
-        ),
-
-        /* --------------------------------------------------------
-           MAIN MOVEMENT
-        -------------------------------------------------------- */
-
-        withTiming(
-          430,
-          {
-            duration,
-          },
-        ),
-
-        /* --------------------------------------------------------
-           FADE OUT / EXIT
-        -------------------------------------------------------- */
-
-        withTiming(
-          500,
-          {
-            duration: 220,
-          },
-        ),
-
-        /* --------------------------------------------------------
-           SMALL GAP
-        -------------------------------------------------------- */
-
-        withTiming(
-          500,
-          {
-            duration: 350,
-          },
-        ),
-      ),
-      -1,
-      false,
-    );
-
-    shineOpacity.value = withRepeat(
-      withSequence(
-        withTiming(
-          0,
-          {
-            duration: delay,
-          },
-        ),
-
-        withTiming(
-          opacity,
-          {
-            duration: 180,
-          },
-        ),
-
-        withTiming(
-          opacity,
-          {
-            duration,
-          },
-        ),
-
-        withTiming(
-          0,
-          {
-            duration: 220,
-          },
-        ),
-
-        withTiming(
-          0,
-          {
-            duration: 350,
-          },
-        ),
-      ),
-      -1,
-      false,
-    );
-  }, [
-    delay,
-    duration,
-    opacity,
-    shineOpacity,
-    shineX,
-  ]);
-
-  const animatedStyle =
-    useAnimatedStyle(() => ({
-      transform: [
-        {
-          translateX:
-            shineX.value,
-        },
-        {
-          rotate: '20deg',
-        },
-      ],
-
-      opacity:
-        shineOpacity.value,
-    }));
-
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={[
-        styles.shineContainer,
-        animatedStyle,
-      ]}
-    >
-      <LinearGradient
-        colors={[
-          'transparent',
-          `${color}10`,
-          `${color}45`,
-          `${color}10`,
-          'transparent',
-        ]}
-        locations={[
-          0,
-          0.28,
-          0.5,
-          0.72,
-          1,
-        ]}
-        start={{
-          x: 0,
-          y: 0.5,
-        }}
-        end={{
-          x: 1,
-          y: 0.5,
-        }}
-        style={styles.shineGradient}
-      />
-    </Animated.View>
-  );
+export interface SplashScreenProps {
+  /** Called once the entrance animation finishes and the replay button appears. */
+  onFinish?: () => void;
+  /** First logo (IPS act). Defaults to ./assets/logo1.png */
+  logo1?: ImageSourcePropType;
+  /** Second logo (brand act). Defaults to ./assets/logo.png */
+  logo2?: ImageSourcePropType;
 }
 
+export default function SplashScreen({
+  onFinish,
+  logo1 = require('../../assets/logo1.png'),
+  logo2 = require('../../assets/logo2.png'),
+}: SplashScreenProps): React.JSX.Element {
+  const reduceMotion = useRef<boolean>(false);
 
-interface GlowLayerProps {
-  color: string;
-  opacity?: number;
-}
+  // ---- shared / background --------------------------------------------
+  const bgOpacity = useRef(mkVal(0)).current;
+  const sparkVals = useRef<Animated.Value[]>(SPARKS.map(() => mkVal(0))).current;
+  const sparkLoops = useRef<Animated.CompositeAnimation[]>([]);
 
-function GlowLayer({
-  color,
-  opacity = 0.10,
-}: GlowLayerProps) {
-  return (
-    <View
-      pointerEvents="none"
-      style={[
-        styles.glowLayer,
-        {
-          borderColor: color,
-          opacity,
-        },
-      ]}
-    />
-  );
-}
+  // ---- act 1 (IPS) ----------------------------------------------------
+  const act1Glow = useRef(mkVal(0)).current;
+  const act1Logo = useRef(mkVal(0)).current; // 0..1 progress for logoIn
+  const act1LogoOut = useRef(mkVal(0)).current; // 0..1 progress for logoOutClassic
+  const act1Letters = useRef<Animated.Value[]>(WORD_1.split('').map(() => mkVal(0))).current; // softFade in
+  const act1LettersOut = useRef<Animated.Value[]>(WORD_1.split('').map(() => mkVal(0))).current; // fadeOutOnly
+  const act1Subtitle = useRef(mkVal(0)).current;
+  const act1SubtitleOut = useRef(mkVal(0)).current;
+  const act1Visible = useRef(mkVal(1)).current; // hides act1 entirely once gone
 
-/* ================================================================
-   DASHBOARD
-================================================================ */
+  // ---- act 2 (Neurolia) -------------------------------------------------
+  const act2Glow = useRef(mkVal(0)).current; // bloom progress
+  const act2GlowBreathe = useRef(mkVal(0)).current; // ambient loop
+  const act2Logo = useRef(mkVal(0)).current;
+  const act2Letters = useRef<Animated.Value[]>(WORD_2.split('').map(() => mkVal(0))).current;
+  const act2Tagline = useRef(mkVal(0)).current;
+  const act2Floaty = useRef(mkVal(0)).current; // ambient loop
 
-export function DashboardScreen() {
-  const {
-    colors,
-    isDark,
-  } = useTheme();
+  // ---- chrome -----------------------------------------------------------
+  const sparksEnd = useRef(mkVal(1)).current; // 1 -> visible, animates to 0 at END
+  const replayOpacity = useRef(mkVal(0)).current;
 
-  const {
-    t,
-    isRTL,
-  } = useLanguage();
-
-  const router =
-    useRouter();
-
-  const {
-    width,
-  } = useWindowDimensions();
-
-  const [
-    refreshing,
-    setRefreshing,
-  ] = React.useState(false);
-
-  const refreshTimerRef =
-    React.useRef<
-      ReturnType<
-        typeof setTimeout
-      > | null
-    >(null);
-
-  const isVerySmallScreen =
-    width < 350;
-
-  /* ==============================================================
-     REFRESH
-  ============================================================== */
-
-  const onRefresh =
-    React.useCallback(() => {
-      setRefreshing(true);
-
-      refreshTimerRef.current =
-        setTimeout(() => {
-          setRefreshing(false);
-
-          refreshTimerRef.current =
-            null;
-        }, 1500);
-    }, []);
-
-  React.useEffect(() => {
-    return () => {
-      if (
-        refreshTimerRef.current
-      ) {
-        clearTimeout(
-          refreshTimerRef.current,
-        );
-      }
-    };
-  }, []);
-
-  /* ==============================================================
-     MENU CARD
-  ============================================================== */
-
-  const renderMenuCard = (
-    item: (typeof menuItems)[number],
-    index: number,
-  ) => {
-    const IconComponent =
-      item.icon;
-
-    const title =
-      t[
-        item.titleKey as keyof typeof t
-      ] ||
-      item.titleKey;
-
-    return (
-      <MotiView
-        key={item.id}
-        from={{
-          opacity: 0,
-          translateY: 20,
-          scale: 0.94,
-        }}
-        animate={{
-          opacity: 1,
-          translateY: 0,
-          scale: 1,
-        }}
-        transition={{
-          type: 'timing',
-          duration: 380,
-          delay:
-            320 +
-            index * 70,
-        }}
-        style={[
-          styles.menuCardWrapper,
-          {
-            width:
-              isVerySmallScreen
-                ? '31.2%'
-                : '31.7%',
-          },
-        ]}
-      >
-        <TouchableOpacity
-          activeOpacity={0.82}
-          onPress={() =>
-            router.push(
-              item.route as any,
-            )
-          }
-          accessibilityRole="button"
-          accessibilityLabel={title}
-          style={[
-            styles.menuCard,
-            {
-              backgroundColor:
-                colors.surface,
-
-              borderColor:
-                colors.border,
-
-              minHeight:
-                isVerySmallScreen
-                  ? 118
-                  : 132,
-            },
-          ]}
-        >
-          {/* =====================================================
-             SHINE
-          ===================================================== */}
-
-          <ShineEffect
-            color={
-              isDark
-                ? '#FFFFFF'
-                : colors.primary
-            }
-            delay={
-              1500 +
-              index * 260
-            }
-            duration={1750}
-            opacity={
-              isDark
-                ? 0.15
-                : 0.12
-            }
-          />
-
-          <GlowLayer
-            color={
-              colors.primary
-            }
-            opacity={
-              isDark
-                ? 0.08
-                : 0.045
-            }
-          />
-
-          {/* =====================================================
-             ICON
-          ===================================================== */}
-
-          <View
-            style={[
-              styles.menuIconContainer,
-              {
-                backgroundColor:
-                  isDark
-                    ? 'rgba(255,255,255,0.06)'
-                    : 'rgba(107,90,166,0.07)',
-
-                width:
-                  isVerySmallScreen
-                    ? 43
-                    : 48,
-
-                height:
-                  isVerySmallScreen
-                    ? 43
-                    : 48,
-              },
-            ]}
-          >
-            <IconComponent
-              size={
-                isVerySmallScreen
-                  ? 21
-                  : 24
-              }
-              color={
-                colors.primary
-              }
-              strokeWidth={1.9}
-            />
-          </View>
-
-          {/* =====================================================
-             TITLE
-          ===================================================== */}
-
-          <Text
-            numberOfLines={2}
-            ellipsizeMode="tail"
-            style={[
-              styles.menuCardTitle,
-              {
-                color:
-                  colors.text,
-
-                textAlign:
-                  'center',
-
-                writingDirection:
-                  isRTL
-                    ? 'rtl'
-                    : 'ltr',
-
-                fontSize:
-                  isVerySmallScreen
-                    ? 11
-                    : 12,
-              },
-            ]}
-          >
-            {title}
-          </Text>
-        </TouchableOpacity>
-      </MotiView>
-    );
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const clearTimers = () => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    sparkLoops.current.forEach((l) => l && l.stop());
+    sparkLoops.current = [];
   };
 
-  /* ==============================================================
-     RENDER
-  ============================================================== */
+  const play = useCallback(() => {
+    clearTimers();
+
+    const dur = reduceMotion.current ? 0.001 : 1; // scale factor if reduced motion
+
+    // reset everything
+    [
+      bgOpacity, act1Glow, act1Logo, act1LogoOut, act1Subtitle, act1SubtitleOut,
+      act2Glow, act2GlowBreathe, act2Logo, act2Tagline, act2Floaty, sparksEnd,
+      replayOpacity,
+    ].forEach((v) => v.setValue(0));
+    act1Visible.setValue(1);
+    sparksEnd.setValue(1);
+    act1Letters.forEach((v) => v.setValue(0));
+    act1LettersOut.forEach((v) => v.setValue(0));
+    act2Letters.forEach((v) => v.setValue(0));
+    sparkVals.forEach((v) => v.setValue(0));
+
+    // background fade in (bgIn .7s)
+    Animated.timing(bgOpacity, {
+      toValue: 1,
+      duration: 700 * dur,
+      easing: Easing.linear,
+      useNativeDriver: NATIVE_DRIVER,
+    }).start();
+
+    // ambient sparkle twinkle loops
+    SPARKS.forEach((s, i) => {
+      const t = setTimeout(() => {
+        const loop = Animated.loop(
+          Animated.sequence([
+            Animated.timing(sparkVals[i], {
+              toValue: 1,
+              duration: (s.duration / 2) * dur,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: NATIVE_DRIVER,
+            }),
+            Animated.timing(sparkVals[i], {
+              toValue: 0,
+              duration: (s.duration / 2) * dur,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: NATIVE_DRIVER,
+            }),
+          ])
+        );
+        sparkLoops.current.push(loop);
+        loop.start();
+      }, s.delay * dur);
+      timers.current.push(t);
+    });
+
+    // ---- ACT 1 in ----
+    Animated.timing(act1Glow, {
+      toValue: 1,
+      duration: 1200 * dur,
+      delay: 100 * dur,
+      easing: EASE_IN,
+      useNativeDriver: NATIVE_DRIVER,
+    }).start();
+
+    Animated.timing(act1Logo, {
+      toValue: 1,
+      duration: 1000 * dur,
+      delay: 50 * dur,
+      easing: EASE_IN,
+      useNativeDriver: NATIVE_DRIVER,
+    }).start();
+
+    act1Letters.forEach((v, i) => {
+      Animated.timing(v, {
+        toValue: 1,
+        duration: 800 * dur,
+        delay: (50 + i * 30) * dur,
+        easing: EASE_IN,
+        useNativeDriver: NATIVE_DRIVER,
+      }).start();
+    });
+
+    Animated.timing(act1Subtitle, {
+      toValue: 1,
+      duration: 800 * dur,
+      delay: 150 * dur,
+      easing: EASE_IN,
+      useNativeDriver: NATIVE_DRIVER,
+    }).start();
+
+    // ---- ACT 1 out (dissolve) ----
+    timers.current.push(
+      setTimeout(() => {
+        Animated.timing(act1LogoOut, {
+          toValue: 1,
+          duration: 750 * dur,
+          easing: EASE_OUT,
+          useNativeDriver: NATIVE_DRIVER,
+        }).start();
+        act1LettersOut.forEach((v, i) => {
+          Animated.timing(v, {
+            toValue: 1,
+            duration: 600 * dur,
+            delay: i * 30 * dur,
+            easing: EASE_OUT,
+            useNativeDriver: NATIVE_DRIVER,
+          }).start();
+        });
+        Animated.timing(act1SubtitleOut, {
+          toValue: 1,
+          duration: 600 * dur,
+          delay: 80 * dur,
+          easing: EASE_OUT,
+          useNativeDriver: NATIVE_DRIVER,
+        }).start();
+      }, T.ACT1_EXIT * dur)
+    );
+
+    // ---- ACT 2 in (logo leads, then text) ----
+    timers.current.push(
+      setTimeout(() => {
+        Animated.timing(act2Glow, {
+          toValue: 1,
+          duration: 1200 * dur,
+          delay: 150 * dur,
+          easing: EASE_IN,
+          useNativeDriver: NATIVE_DRIVER,
+        }).start();
+
+        Animated.timing(act2Logo, {
+          toValue: 1,
+          duration: 1000 * dur,
+          delay: 200 * dur,
+          easing: EASE_IN,
+          useNativeDriver: NATIVE_DRIVER,
+        }).start();
+
+        act2Letters.forEach((v, i) => {
+          Animated.timing(v, {
+            toValue: 1,
+            duration: 1000 * dur,
+            delay: (340 + i * 50) * dur,
+            easing: EASE_IN,
+            useNativeDriver: NATIVE_DRIVER,
+          }).start();
+        });
+
+        Animated.timing(act2Tagline, {
+          toValue: 1,
+          duration: 1000 * dur,
+          delay: 540 * dur,
+          easing: EASE_IN,
+          useNativeDriver: NATIVE_DRIVER,
+        }).start();
+
+        // ambient loops start ~3.6s after act2 begins (matches CSS delay)
+        const ambientT = setTimeout(() => {
+          const floatLoop = Animated.loop(
+            Animated.sequence([
+              Animated.timing(act2Floaty, { toValue: 1, duration: 2500 * dur, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE_DRIVER }),
+              Animated.timing(act2Floaty, { toValue: 0, duration: 2500 * dur, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE_DRIVER }),
+            ])
+          );
+          const breatheLoop = Animated.loop(
+            Animated.sequence([
+              Animated.timing(act2GlowBreathe, { toValue: 1, duration: 2250 * dur, easing: Easing.inOut(Easing.ease), useNativeDriver: NATIVE_DRIVER }),
+              Animated.timing(act2GlowBreathe, { toValue: 0, duration: 2250 * dur, easing: Easing.inOut(Easing.ease), useNativeDriver: NATIVE_DRIVER }),
+            ])
+          );
+          sparkLoops.current.push(floatLoop, breatheLoop);
+          floatLoop.start();
+          breatheLoop.start();
+        }, T.AMBIENT_START * dur);
+        timers.current.push(ambientT);
+      }, T.ACT2_ENTER * dur)
+    );
+
+    // ---- act1 fully gone ----
+    timers.current.push(
+      setTimeout(() => {
+        act1Visible.setValue(0);
+      }, T.ACT1_GONE * dur)
+    );
+
+    // ---- end: fade sparkles ----
+    timers.current.push(
+      setTimeout(() => {
+        Animated.timing(sparksEnd, {
+          toValue: 0,
+          duration: 500 * dur,
+          easing: Easing.linear,
+          useNativeDriver: NATIVE_DRIVER,
+        }).start();
+      }, T.END * dur)
+    );
+
+    // ---- outdone: show replay button ----
+    timers.current.push(
+      setTimeout(() => {
+        Animated.timing(replayOpacity, {
+          toValue: 1,
+          duration: 550 * dur,
+          easing: Easing.linear,
+          useNativeDriver: NATIVE_DRIVER,
+        }).start(() => {
+          if (onFinish) onFinish();
+        });
+      }, T.OUTDONE * dur)
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled?.().then((v: boolean) => {
+      reduceMotion.current = !!v;
+      play();
+    });
+    return clearTimers;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ---- derived transforms ----
+  // Raw interpolation nodes for the glow bloom, kept separate from
+  // `glowStyle` below so they can be combined with `breatheStyle` via
+  // Animated.add without re-reading `.opacity` off an already-cast style
+  // object (that would reintroduce `undefined` into the type).
+  const glowOpacity = (progress: Animated.Value) =>
+    progress.interpolate({ inputRange: [0, 0.35, 1], outputRange: [0, 0.9, 0] });
+  const glowScale = (progress: Animated.Value) =>
+    progress.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1.5] });
+
+  const glowStyle = (progress: Animated.Value): AnimatedStyle => ({
+    opacity: glowOpacity(progress),
+    transform: [{ scale: glowScale(progress) }],
+  } as AnimatedStyle);
+
+  const breatheStyle = act2GlowBreathe.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 0.35, 0] });
+
+  const logoInStyle = (progress: Animated.Value): AnimatedStyle => ({
+    opacity: progress,
+    transform: [
+      { translateY: progress.interpolate({ inputRange: [0, 0.6, 1], outputRange: [22, -4, 0] }) },
+      { scale: progress.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.82, 1.05, 1] }) },
+      { rotate: progress.interpolate({ inputRange: [0, 0.6, 1], outputRange: ['-6deg', '1.5deg', '0deg'] }) },
+    ],
+  } as AnimatedStyle);
+
+  // Entrance + exit drive the SAME opacity/transform, so they must be
+  // combined (multiplied/added) into one style rather than passed as two
+  // separate style objects — RN style arrays override matching keys instead
+  // of merging them, which would otherwise let the (initially neutral) exit
+  // values silently clobber the entrance animation.
+  const logoInOutStyle = (inProg: Animated.Value, outProg: Animated.Value): AnimatedStyle => ({
+    opacity: Animated.multiply(
+      inProg,
+      outProg.interpolate({ inputRange: [0, 1], outputRange: [1, 0] })
+    ),
+    transform: [
+      {
+        translateY: Animated.add(
+          inProg.interpolate({ inputRange: [0, 0.6, 1], outputRange: [22, -4, 0] }),
+          outProg.interpolate({ inputRange: [0, 1], outputRange: [0, -18] })
+        ),
+      },
+      {
+        scale: Animated.multiply(
+          inProg.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.82, 1.05, 1] }),
+          outProg.interpolate({ inputRange: [0, 1], outputRange: [1, 0.985] })
+        ),
+      },
+      { rotate: inProg.interpolate({ inputRange: [0, 0.6, 1], outputRange: ['-6deg', '1.5deg', '0deg'] }) },
+    ],
+  } as AnimatedStyle);
+
+  const fadeInOutStyle = (inProg: Animated.Value, outProg: Animated.Value): AnimatedStyle => ({
+    opacity: Animated.multiply(
+      inProg,
+      outProg.interpolate({ inputRange: [0, 1], outputRange: [1, 0] })
+    ),
+  } as AnimatedStyle);
+
+  const letterInStyle = (progress: Animated.Value, rotDeg: number): AnimatedStyle => ({
+    opacity: progress,
+    transform: [
+      { translateY: progress.interpolate({ inputRange: [0, 0.6, 1], outputRange: [18, -3, 0] }) },
+      { scale: progress.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.7, 1.06, 1] }) },
+      { rotate: progress.interpolate({ inputRange: [0, 0.6, 1], outputRange: [`${rotDeg}deg`, '2deg', '0deg'] }) },
+    ],
+  } as AnimatedStyle);
+
+  const taglineStyle = (progress: Animated.Value): AnimatedStyle => ({
+    opacity: progress,
+    transform: [{ translateY: progress.interpolate({ inputRange: [0, 0.6, 1], outputRange: [16, -3, 0] }) }],
+  } as AnimatedStyle);
+
+  const floatyTranslate = act2Floaty.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, -8, 0] });
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor:
-            colors.background,
-        },
-      ]}
-    >
-      <ScrollView
-        showsVerticalScrollIndicator={
-          false
-        }
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingHorizontal:
-              isVerySmallScreen
-                ? 14
-                : Spacing.lg,
-          },
-        ]}
-        refreshControl={
-          <RefreshControl
-            refreshing={
-              refreshing
-            }
-            onRefresh={
-              onRefresh
-            }
-            tintColor={
-              colors.primary
-            }
-            colors={[
-              colors.primary,
-            ]}
-          />
-        }
-      >
-        {/* ======================================================
-           HERO CARD
-        ====================================================== */}
-
-        <MotiView
-          from={{
-            opacity: 0,
-            scale: 0.96,
-            translateY: 14,
-          }}
-          animate={{
-            opacity: 1,
-            scale: 1,
-            translateY: 0,
-          }}
-          transition={{
-            type: 'timing',
-            duration: 450,
-            delay: 100,
-          }}
-        >
-          <View
-            style={
-              styles.characterCard
-            }
-          >
-            {/* ==================================================
-               CHARACTER
-            ================================================== */}
-
-            <View
-              style={
-                styles.characterWrapper
-              }
-            >
-              <View
-                style={
-                  styles.avatarRow
-                }
-              >
-                <View
-                  style={
-                    styles.avatarContainer
-                  }
-                >
-                  <Image
-                    source={require('../../assets/avatars/model.png')}
-                    style={
-                      styles.avatar
-                    }
-                  />
-                </View>
-
-                {/* ================================================
-                   SPEECH BUBBLE
-                ================================================ */}
-
-                <View
-                  style={[
-                    styles.speechBubble,
-                    {
-                      backgroundColor:
-                        colors.surface,
-
-                      borderColor:
-                        colors.border,
-
-                      shadowColor:
-                        isDark
-                          ? '#000000'
-                          : '#6B5AA6',
-                    },
-                  ]}
-                >
-                  <View
-                    pointerEvents="none"
-                    style={[
-                      styles.speechBubbleTail,
-                      {
-                        backgroundColor:
-                          colors.surface,
-
-                        borderColor:
-                          colors.border,
-                      },
-                    ]}
-                  />
-
-                  <Text
-                    style={[
-                      styles.speechBubbleText,
-                      {
-                        color:
-                          isDark
-                            ? '#FFFFFF'
-                            : '#2F2850',
-
-                        textAlign:
-                          isRTL
-                            ? 'right'
-                            : 'left',
-
-                        writingDirection:
-                          isRTL
-                            ? 'rtl'
-                            : 'ltr',
-                      },
-                    ]}
-                  >
-                    {
-                      t.dashboardWelcomeBubble
-                    }
-                  </Text>
-                </View>
-              </View>
-
-              <Text
-                style={[
-                  styles.characterTitle,
-                  {
-                    color:
-                      isDark
-                        ? '#FFFFFF'
-                        : '#2F2850',
-
-                    textAlign:
-                      isRTL
-                        ? 'right'
-                        : 'left',
-
-                    writingDirection:
-                      isRTL
-                        ? 'rtl'
-                        : 'ltr',
-                  },
-                ]}
-              >
-                {
-                  t.dashboardReadyHelp
-                }
-              </Text>
-
-              <Text
-                style={[
-                  styles.characterSubtitle,
-                  {
-                    color:
-                      isDark
-                        ? 'rgba(255,255,255,0.80)'
-                        : '#675F7E',
-
-                    textAlign:
-                      isRTL
-                        ? 'right'
-                        : 'left',
-
-                    writingDirection:
-                      isRTL
-                        ? 'rtl'
-                        : 'ltr',
-                  },
-                ]}
-              >
-                {
-                  t.dashboardWellnessJourney
-                }
-              </Text>
-            </View>
-          </View>
-        </MotiView>
-
-        {/* ======================================================
-           PROGRESS CARD
-        ====================================================== */}
-
-        <MotiView
-          from={{
-            opacity: 0,
-            translateY: 14,
-          }}
-          animate={{
-            opacity: 1,
-            translateY: 0,
-          }}
-          transition={{
-            type: 'timing',
-            duration: 400,
-            delay: 200,
-          }}
-        >
-          <Card
-            style={{
-              ...styles.progressCard,
-              backgroundColor:
-                colors.surface,
-              overflow:
-                'hidden',
-            }}
-          >
-            {/* ==================================================
-               PROGRESS SHINE
-            ================================================== */}
-
-            <ShineEffect
-              color={
-                isDark
-                  ? '#FFFFFF'
-                  : colors.primary
-              }
-              delay={2100}
-              duration={2050}
-              opacity={
-                isDark
-                  ? 0.13
-                  : 0.09
-              }
-            />
-
-            <GlowLayer
-              color={
-                colors.primary
-              }
-              opacity={
-                isDark
-                  ? 0.055
-                  : 0.035
-              }
-            />
-
-            <View
-              style={[
-                styles.progressHeader,
-                {
-                  flexDirection:
-                    isRTL
-                      ? 'row-reverse'
-                      : 'row',
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.progressIconWrap,
-                  {
-                    backgroundColor:
-                      isDark
-                        ? 'rgba(123,97,255,0.12)'
-                        : 'rgba(107,90,166,0.08)',
-                  },
-                ]}
-              >
-                <TrendingUp
-                  size={18}
-                  color={
-                    colors.primary
-                  }
-                  strokeWidth={2}
-                />
-              </View>
-
-              <Text
-                style={[
-                  styles.progressTitle,
-                  {
-                    color:
-                      colors.text,
-
-                    textAlign:
-                      isRTL
-                        ? 'right'
-                        : 'left',
-
-                    writingDirection:
-                      isRTL
-                        ? 'rtl'
-                        : 'ltr',
-                  },
-                ]}
-              >
-                {
-                  t.dashboardCognitiveProgress
-                }
-              </Text>
-
-              <Text
-                style={[
-                  styles.progressPercent,
-                  {
-                    color:
-                      colors.primary,
-                  },
-                ]}
-              >
-                82%
-              </Text>
-            </View>
-
-            {/* ==================================================
-               PROGRESS BAR
-            ================================================== */}
-
-            <View
-              style={
-                styles.progressBarContainer
-              }
-            >
-              <View
-                style={[
-                  styles.progressBarBg,
-                  {
-                    backgroundColor:
-                      colors.border,
-                  },
-                ]}
-              />
-
-              <MotiView
-                from={{
-                  width: '0%',
-                }}
-                animate={{
-                  width: '82%',
-                }}
-                transition={{
-                  type: 'timing',
-                  duration: 1100,
-                  delay: 250,
-                }}
-                style={[
-                  styles.progressBarFillWrap,
-                  {
-                    alignSelf:
-                      isRTL
-                        ? 'flex-end'
-                        : 'flex-start',
-                  },
-                ]}
-              >
-                <LinearGradient
-                  colors={[
-                    colors.primary,
-                    colors.accent ||
-                      colors.primary,
-                  ]}
-                  start={{
-                    x: 0,
-                    y: 0,
-                  }}
-                  end={{
-                    x: 1,
-                    y: 0,
-                  }}
-                  style={
-                    styles.progressBarFill
-                  }
-                />
-              </MotiView>
-            </View>
-
-            <View
-              style={[
-                styles.progressFooter,
-                {
-                  alignItems:
-                    isRTL
-                      ? 'flex-end'
-                      : 'flex-start',
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.progressText,
-                  {
-                    color:
-                      colors.textSecondary,
-
-                    textAlign:
-                      isRTL
-                        ? 'right'
-                        : 'left',
-
-                    writingDirection:
-                      isRTL
-                        ? 'rtl'
-                        : 'ltr',
-                  },
-                ]}
-              >
-                {
-                  t.dashboardKeepGoing
-                }
-              </Text>
-            </View>
-          </Card>
-        </MotiView>
-
-        {/* ======================================================
-           QUICK ACCESS HEADER
-        ====================================================== */}
-
-        <MotiView
-          from={{
-            opacity: 0,
-            translateY: 14,
-          }}
-          animate={{
-            opacity: 1,
-            translateY: 0,
-          }}
-          transition={{
-            type: 'timing',
-            duration: 400,
-            delay: 280,
-          }}
-          style={[
-            styles.menuSectionHeader,
-            {
-              flexDirection:
-                isRTL
-                  ? 'row-reverse'
-                  : 'row',
-            },
-          ]}
-        >
-          <LayoutGrid
-            size={17}
-            color={
-              colors.textSecondary
-            }
-            strokeWidth={1.9}
-          />
-
-          <Text
-            style={[
-              styles.menuSectionTitle,
-              {
-                color:
-                  colors.textSecondary,
-
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
-
-                writingDirection:
-                  isRTL
-                    ? 'rtl'
-                    : 'ltr',
-              },
-            ]}
-          >
-            {t.quickAccess}
-          </Text>
-        </MotiView>
-
-        {/* ======================================================
-           MENU GRID
-        ====================================================== */}
-
-        <View
-          style={[
-            styles.menuGrid,
-            {
-              flexDirection:
-                isRTL
-                  ? 'row-reverse'
-                  : 'row',
-            },
-          ]}
-        >
-          {menuItems.map(
-            renderMenuCard,
-          )}
-        </View>
-
-        <View
-          style={
-            styles.bottomSpace
-          }
+    <View style={styles.stage}>
+      {/* background */}
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}>
+        <LinearGradient
+          colors={[COLORS.bg, COLORS.bg, COLORS.bgDeep]}
+          locations={[0, 0.42, 1]}
+          style={StyleSheet.absoluteFill}
         />
-      </ScrollView>
+      </Animated.View>
+      {/* vignette (approximated with a soft dark overlay) */}
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.vignette]} />
+
+      {/* sparkles */}
+      {SPARKS.map((s, i) => (
+        <Animated.Text
+          key={i}
+          pointerEvents="none"
+          style={[
+            styles.spark,
+            {
+              top: s.top,
+              left: s.left,
+              right: s.right,
+              bottom: s.bottom,
+              fontSize: s.size,
+              color: s.color,
+              opacity: Animated.multiply(
+                sparkVals[i].interpolate({ inputRange: [0, 1], outputRange: [0, 0.85] }),
+                sparksEnd
+              ),
+              transform: [
+                { scale: sparkVals[i].interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }) },
+              ],
+            },
+          ]}
+        >
+          ✦
+        </Animated.Text>
+      ))}
+
+      {/* ACT 1 — IPS */}
+      <Animated.View style={[styles.act, { opacity: act1Visible }]} pointerEvents="none">
+        <Animated.View style={[styles.glow, glowStyle(act1Glow)]} />
+        <Animated.View style={[styles.logoWrap, logoInOutStyle(act1Logo, act1LogoOut)]}>
+          <Image source={logo1} style={styles.logo} resizeMode="contain" />
+        </Animated.View>
+        <View style={styles.wordmarkRow}>
+          {WORD_1.split('').map((ch, i) => (
+            <Animated.Text
+              key={i}
+              style={[styles.wordmark, styles.wordmarkWide, fadeInOutStyle(act1Letters[i], act1LettersOut[i])]}
+            >
+              {ch}
+            </Animated.Text>
+          ))}
+        </View>
+        <Animated.Text style={[styles.subtitle, fadeInOutStyle(act1Subtitle, act1SubtitleOut)]}>
+          {SUBTITLE_1}
+        </Animated.Text>
+      </Animated.View>
+
+      {/* ACT 2 — Neurolia */}
+      <Animated.View style={[styles.act, { transform: [{ translateY: floatyTranslate }] }]} pointerEvents="none">
+        <Animated.View
+          style={[
+            styles.glow,
+            { transform: [{ scale: glowScale(act2Glow) }] } as AnimatedStyle,
+            { opacity: Animated.add(glowOpacity(act2Glow), breatheStyle) },
+          ]}
+        />
+        <Animated.View style={[styles.logoWrap, logoInStyle(act2Logo)]}>
+          <Image source={logo2} style={styles.logo} resizeMode="contain" />
+        </Animated.View>
+        <View style={styles.wordmarkRow}>
+          {WORD_2.split('').map((ch, i) => (
+            <Animated.Text key={i} style={[styles.wordmark, letterInStyle(act2Letters[i], ROT_2[i])]}>
+              {ch}
+            </Animated.Text>
+          ))}
+        </View>
+        <Animated.Text style={[styles.tagline, taglineStyle(act2Tagline)]}>{TAGLINE}</Animated.Text>
+      </Animated.View>
+
+      {/* replay button */}
+      <Animated.View style={[styles.replayWrap, { opacity: replayOpacity }]}>
+        <TouchableOpacity style={styles.replay} onPress={play} activeOpacity={0.7}>
+          <Text style={styles.replayText}>Replay intro</Text>
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 }
 
-/* ================================================================
-   STYLES
-================================================================ */
-
-const styles =
-  StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-
-    scrollContent: {
-      paddingTop:
-        Spacing.xxl,
-
-      paddingBottom: 40,
-    },
-
-    /* ============================================================
-       GENERIC SHINE
-    ============================================================ */
-
-    shineContainer: {
-      position:
-        'absolute',
-
-      top: -90,
-
-      left: -20,
-
-      width: 72,
-
-      height: 280,
-
-      zIndex: 20,
-
-      elevation: 20,
-    },
-
-    shineGradient: {
-      width: '100%',
-
-      height: '100%',
-    },
-
-    glowLayer: {
-      ...StyleSheet.absoluteFillObject,
-
-      borderWidth: 1,
-
-      borderRadius:
-        BorderRadius.lg,
-
-      zIndex: 5,
-    },
-
-    /* ============================================================
-       HERO
-    ============================================================ */
-
-    characterCard: {
-      width: '100%',
-
-      marginBottom:
-        Spacing.lg,
-
-      paddingHorizontal:
-        Spacing.sm,
-
-      paddingVertical:
-        Spacing.md,
-    },
-
-    characterWrapper: {
-      alignItems:
-        'center',
-
-      paddingVertical:
-        Spacing.md,
-    },
-
-    avatarRow: {
-      width: '100%',
-
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      gap: 26,
-    },
-
-    speechBubble: {
-      flexShrink: 1,
-
-      maxWidth: 176,
-
-      borderRadius: 20,
-
-      borderWidth: 1,
-
-      paddingHorizontal: 16,
-
-      paddingVertical: 12,
-
-      position:
-        'relative',
-
-      shadowOffset: {
-        width: 0,
-        height: 6,
-      },
-
-      shadowOpacity: 0.12,
-
-      shadowRadius: 14,
-
-      elevation: 4,
-    },
-
-    speechBubbleText: {
-      fontSize: 13.5,
-
-      lineHeight: 20,
-
-      fontWeight: '700',
-
-      letterSpacing:
-        0.1,
-    },
-
-    speechBubbleTail: {
-      position:
-        'absolute',
-
-      left: -6,
-
-      top: 24,
-
-      width: 16,
-
-      height: 16,
-
-      borderRadius: 4,
-
-      borderWidth: 1,
-
-      transform: [
-        {
-          rotate: '45deg',
-        },
-      ],
-    },
-
-    avatarContainer: {
-      width: 150,
-
-      height: 150,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-    },
-
-    avatar: {
-      width: 180,
-
-      height: 200,
-
-      resizeMode:
-        'contain',
-    },
-
-    characterTitle: {
-      paddingTop: 20,
-
-      width: '100%',
-
-      fontSize: 20,
-
-      lineHeight: 27,
-
-      fontWeight: '700',
-
-      marginTop:
-        Spacing.md,
-    },
-
-    characterSubtitle: {
-      width: '100%',
-
-      fontSize: 14,
-
-      lineHeight: 21,
-
-      marginTop: 4,
-    },
-
-    /* ============================================================
-       PROGRESS
-    ============================================================ */
-
-    progressCard: {
-      marginBottom:
-        Spacing.lg,
-
-      shadowColor:
-        '#000000',
-
-      shadowOffset: {
-        width: 0,
-        height: 4,
-      },
-
-      shadowOpacity:
-        0.06,
-
-      shadowRadius:
-        10,
-
-      elevation: 3,
-
-      overflow:
-        'hidden',
-
-      position:
-        'relative',
-    },
-
-    progressHeader: {
-      alignItems:
-        'center',
-
-      marginBottom:
-        Spacing.md,
-
-      gap: Spacing.sm,
-    },
-
-    progressIconWrap: {
-      width: 32,
-
-      height: 32,
-
-      borderRadius: 10,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-    },
-
-    progressTitle: {
-      flex: 1,
-
-      fontSize: 15,
-
-      lineHeight: 21,
-
-      fontWeight: '600',
-    },
-
-    progressPercent: {
-      fontSize: 18,
-
-      fontWeight: '800',
-    },
-
-    progressBarContainer: {
-      width: '100%',
-
-      height: 7,
-
-      position:
-        'relative',
-
-      borderRadius: 4,
-
-      overflow:
-        'hidden',
-    },
-
-    progressBarBg: {
-      ...StyleSheet.absoluteFillObject,
-
-      borderRadius: 4,
-    },
-
-    progressBarFillWrap: {
-      height: '100%',
-
-      borderRadius: 4,
-
-      overflow:
-        'hidden',
-    },
-
-    progressBarFill: {
-      width: '100%',
-
-      height: '100%',
-
-      borderRadius: 4,
-    },
-
-    progressFooter: {
-      width: '100%',
-
-      marginTop: 8,
-    },
-
-    progressText: {
-      fontSize: 11,
-
-      lineHeight: 17,
-    },
-
-    /* ============================================================
-       QUICK ACCESS
-    ============================================================ */
-
-    menuSectionHeader: {
-      width: '100%',
-
-      alignItems:
-        'center',
-
-      gap: 7,
-
-      marginBottom: 12,
-
-      marginTop: 2,
-    },
-
-    menuSectionTitle: {
-      flex: 1,
-
-      fontSize: 14,
-
-      lineHeight: 20,
-
-      fontWeight: '700',
-    },
-
-    menuGrid: {
-      width: '100%',
-
-      flexWrap:
-        'wrap',
-
-      justifyContent:
-        'space-between',
-
-      rowGap: 10,
-    },
-
-    menuCardWrapper: {
-      flexGrow: 0,
-
-      flexShrink: 0,
-    },
-
-    menuCard: {
-      width: '100%',
-
-      borderRadius: 18,
-
-      borderWidth: 1,
-
-      paddingHorizontal: 8,
-
-      paddingVertical: 12,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      position:
-        'relative',
-
-      overflow:
-        'hidden',
-
-      shadowColor:
-        '#000000',
-
-      shadowOffset: {
-        width: 0,
-        height: 3,
-      },
-
-      shadowOpacity:
-        0.035,
-
-      shadowRadius: 7,
-
-      elevation: 2,
-    },
-
-    menuIconContainer: {
-      borderRadius: 15,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      marginBottom: 10,
-
-      alignSelf:
-        'center',
-    },
-
-    menuCardTitle: {
-      width: '100%',
-
-      minHeight: 36,
-
-      lineHeight: 17,
-
-      fontWeight: '600',
-
-      textAlign:
-        'center',
-    },
-
-    bottomSpace: {
-      height: 30,
-    },
-  });
+const { width, height } = Dimensions.get('window');
+
+const styles = StyleSheet.create({
+  stage: {
+    flex: 1,
+    width,
+    height,
+    backgroundColor: COLORS.bgOuter,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  vignette: {
+    // soft edge darkening approximating the radial vignette
+    backgroundColor: 'transparent',
+    borderWidth: 60,
+    borderColor: 'rgba(8,5,16,0.35)',
+  },
+  spark: {
+    position: 'absolute',
+  },
+  act: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  glow: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    top: '50%',
+    marginTop: -212, // ~ -62% of 300 + 38
+    backgroundColor: COLORS.accent,
+  },
+  logoWrap: {
+    width: 132,
+    height: 132,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: 116,
+    height: 116,
+  },
+  wordmarkRow: {
+    flexDirection: 'row',
+    marginTop: 22,
+    justifyContent: 'center',
+  },
+  wordmark: {
+    fontSize: 52,
+    fontWeight: '800',
+    color: COLORS.fg,
+    lineHeight: 56,
+    letterSpacing: -1, // ~ -0.02em, matches act-2 wordmark tracking
+  },
+  wordmarkWide: {
+    letterSpacing: 8, // ~ 0.2em, matches act-1 (IPS) wordmark tracking
+  },
+  subtitle: {
+    marginTop: 12,
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: COLORS.accentHi,
+  },
+  tagline: {
+    marginTop: 18,
+    fontSize: 15,
+    fontWeight: '500',
+    color: COLORS.muted,
+  },
+  replayWrap: {
+    position: 'absolute',
+    bottom: 18,
+    right: 18,
+  },
+  replay: {
+    backgroundColor: 'rgba(243,238,249,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(243,238,249,0.12)',
+    borderRadius: 999,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+  },
+  replayText: {
+    color: COLORS.muted,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+});

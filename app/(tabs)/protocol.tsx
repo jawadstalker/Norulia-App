@@ -397,7 +397,7 @@ function freshDayProgress(tasks: Task[]): DayProgress {
 export default function ProtocolScreen() {
   const router = useRouter();
 
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, isAthlete } = useTheme();
   const { isRTL, language } = useLanguage();
 
   const fa = language === 'fa';
@@ -407,19 +407,37 @@ export default function ProtocolScreen() {
   const rowDirection = fa ? 'row-reverse' : 'row';
   const contentAlign = fa ? 'flex-end' : 'flex-start';
 
-  const accent = colors.primary;
-  const accentStrong = colors.primaryDark || colors.primary;
+  // Hero از رنگ اصلی استفاده می‌کند
+  const heroAccent = colors.primary;
+  const heroAccentStrong = colors.primaryDark || colors.primary;
+
+  // رنگ بر اساس تم
+  const accent = isAthlete
+    ? '#22C55E'
+    : isDark
+    ? 'rgba(73, 194, 226, 1)'
+    : colors.primary;
+
+  const accentStrong = isAthlete
+    ? '#22C55E'
+    : isDark
+    ? 'rgba(73, 194, 226, 1)'
+    : (colors.primaryDark || colors.primary);
 
   const background = colors.background;
   const card = colors.surface;
   const cardSecondary = colors.surfaceSecondary;
 
-  const softAccent = isDark
-    ? colors.primary + '18'
+  const softAccent = isAthlete
+    ? 'rgba(34,197,94,0.18)'
+    : isDark
+    ? 'rgba(73, 194, 226, 0.18)'
     : colors.primary + '12';
 
-  const softAccentStrong = isDark
-    ? colors.primary + '28'
+  const softAccentStrong = isAthlete
+    ? 'rgba(34,197,94,0.28)'
+    : isDark
+    ? 'rgba(73, 194, 226, 0.28)'
     : colors.primary + '18';
 
   const softBorder = isDark
@@ -808,7 +826,7 @@ export default function ProtocolScreen() {
   const renderModeCard = (protocolMode: ProtocolMode) => {
     const Icon = getModeIcon(protocolMode);
     const active = mode === protocolMode;
-    const modeAccent = colors.primary;
+    const modeAccent = accent;
 
     return (
       <TouchableOpacity
@@ -1084,12 +1102,11 @@ export default function ProtocolScreen() {
               style={[
                 styles.heroCard,
                 {
-                  backgroundColor: accent,
-                  borderColor: accentStrong + '55',
+                  backgroundColor: heroAccent,
+                  borderColor: heroAccentStrong + '55',
                 },
               ]}
             >
-              {/* Decorative glow */}
               <View
                 pointerEvents="none"
                 style={[
@@ -1122,7 +1139,6 @@ export default function ProtocolScreen() {
                   },
                 ]}
               >
-                {/* Avatar */}
                 <MotiView
                   from={{
                     opacity: 0,
@@ -1149,7 +1165,6 @@ export default function ProtocolScreen() {
                   />
                 </MotiView>
 
-                {/* Hero text */}
                 <View
                   style={[
                     styles.heroTextBlock,
@@ -1215,7 +1230,6 @@ export default function ProtocolScreen() {
                 </View>
               </View>
 
-              {/* Progress panel */}
               <View
                 style={[
                   styles.heroProgressPanel,
@@ -1311,7 +1325,6 @@ export default function ProtocolScreen() {
                 </View>
               </View>
 
-              {/* Bottom stats */}
               <View
                 style={[
                   styles.heroStats,
