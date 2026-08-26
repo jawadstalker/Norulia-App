@@ -72,11 +72,30 @@ interface ExerciseMediaItem {
 }
 
 const EXERCISE_MEDIA: Partial<Record<string, ExerciseMediaItem>> = {
-  // warmup: { type: 'gif', source: require('../../assets/exercises/warmup.gif') },
-  // squat: { type: 'gif', source: require('../../assets/exercises/squat.gif') },
-  // walk: { type: 'gif', source: require('../../assets/exercises/walk.gif') },
-  // balance: { type: 'image', source: require('../../assets/exercises/balance.jpg') },
-  // cooldown: { type: 'gif', source: require('../../assets/exercises/cooldown.gif') },
+  warmup: {
+    type: 'image',
+    source: require('../../assets/exercises/three.png'),
+  },
+
+  squat: {
+    type: 'image',
+    source: require('../../assets/exercises/one.png'),
+  },
+
+  walk: {
+    type: 'image',
+    source: require('../../assets/exercises/two.png'),
+  },
+
+  balance: {
+    type: 'image',
+    source: require('../../assets/exercises/four.png'),
+  },
+
+  cooldown: {
+    type: 'image',
+    source: require('../../assets/exercises/three.png'),
+  },
 };
 
 /* ================================================================
@@ -1073,9 +1092,8 @@ const styles = StyleSheet.create({
   exerciseNumber: { width: 28, height: 28, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   exerciseNumberText: { fontSize: 11, fontWeight: '800' },
   exerciseTapArea: { flex: 1, alignItems: 'center', marginHorizontal: 10 },
-
-  exerciseThumb: { width: 52, height: 52, borderRadius: 14, overflow: 'visible' },
-  exerciseThumbImage: { width: 52, height: 52, borderRadius: 14 },
+  exerciseThumb: { width: 30, height: 30, borderRadius: 14, overflow: 'visible' },
+  exerciseThumbImage: { width: 30, height: 30, borderRadius: 14 },
   exerciseThumbFallback: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   playBadge: {
     position: 'absolute',
@@ -1094,7 +1112,6 @@ const styles = StyleSheet.create({
   categoryBadgeRow: { alignItems: 'center', gap: 5, marginTop: 4 },
   categoryDot: { width: 6, height: 6, borderRadius: 3 },
   exerciseSubtitle: { fontSize: 10, fontWeight: '600' },
-
   exerciseStats: { minWidth: 45 },
   exerciseStatValue: { fontSize: 16, fontWeight: '900' },
   exerciseStatLabel: { fontSize: 9, marginTop: 1 },
