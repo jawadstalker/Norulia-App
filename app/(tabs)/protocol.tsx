@@ -1,109 +1,424 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions, SafeAreaView, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Dimensions,
+  SafeAreaView,
+  ActivityIndicator,
+} from 'react-native';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
-import { ArrowLeft, ArrowRight, BarChart3, BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, CircleCheck, ClipboardCheck, Home, PartyPopper, PenLine, Sparkles, Users, UserRound, Target, TrendingUp, Clock3, CheckCircle2, Play, RotateCcw, Brain, UsersRound, Feather, Lock, ChevronDown } from 'lucide-react-native';
+
+import {
+  ArrowLeft,
+  ArrowRight,
+  BarChart3,
+  BookOpen,
+  CalendarDays,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  CircleCheck,
+  ClipboardCheck,
+  Home,
+  PartyPopper,
+  PenLine,
+  Sparkles,
+  Users,
+  UserRound,
+  Target,
+  TrendingUp,
+  Clock3,
+  CheckCircle2,
+  Play,
+  RotateCcw,
+  Brain,
+  UsersRound,
+  Feather,
+  Lock,
+  ChevronDown,
+} from 'lucide-react-native';
+
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+/* ================================================================
+   ATHLETE / GREEN THEME
+================================================================ */
+
+const ATHLETE = {
+  primary: '#B8FF3D',
+  primaryLight: '#D0FF67',
+  primaryDark: '#8FCF32',
+
+  background: '#070908',
+  surface: '#0D120F',
+  surfaceSecondary: '#121A15',
+
+  text: '#F4F8F2',
+  textSecondary: '#AAB6A6',
+  textTertiary: '#687467',
+
+  border: 'rgba(184,255,61,0.14)',
+  borderStrong: 'rgba(184,255,61,0.28)',
+
+  glow: 'rgba(184,255,61,0.10)',
+  glowStrong: 'rgba(184,255,61,0.18)',
+
+  progressTrack: '#1A241A',
+  progressTrackLight: '#E8F2DD',
+} as const;
+
+/* ================================================================
+   MODES
+================================================================ */
+
 const MODES = {
-  single: { icon: UserRound, accent: '#7C3AED' },
-  dyad: { icon: Users, accent: '#2563EB' },
-  group: { icon: Users, accent: '#059669' },
+  single: {
+    icon: UserRound,
+    accent: ATHLETE.primary,
+  },
+
+  dyad: {
+    icon: Users,
+    accent: ATHLETE.primaryLight,
+  },
+
+  group: {
+    icon: Users,
+    accent: ATHLETE.primaryDark,
+  },
 } as const;
 
 type ProtocolMode = 'single' | 'dyad' | 'group';
 type ViewMode = 'home' | 'day' | 'report';
-interface Bilingual { fa: string; en: string; }
-interface Task { text: Bilingual; type: 'checkbox' | 'text'; unit?: Bilingual; }
-interface DayEntry { ayah?: string; ayahRef?: string; poem?: string; poemPoet?: string; title?: Bilingual; icon?: string; desc?: Bilingual; tasks: Task[]; }
-interface TaskProgress { done: boolean; value: string; }
+
+interface Bilingual {
+  fa: string;
+  en: string;
+}
+
+interface Task {
+  text: Bilingual;
+  type: 'checkbox' | 'text';
+  unit?: Bilingual;
+}
+
+interface DayEntry {
+  ayah?: string;
+  ayahRef?: string;
+  poem?: string;
+  poemPoet?: string;
+  title?: Bilingual;
+  icon?: string;
+  desc?: Bilingual;
+  tasks: Task[];
+}
+
+interface TaskProgress {
+  done: boolean;
+  value: string;
+}
+
 type DayProgress = TaskProgress[];
 type Progress = Record<number, DayProgress>;
 
-const AYAHS: { text: string; ref: string; }[] = [
-  { text: 'همانا با سختی، آسانی است.', ref: 'سوره انشراح، آیه ۶' },
-  { text: 'خداوند هیچ‌کس را جز به‌اندازه توانش مکلف نمی‌سازد.', ref: 'سوره بقره، آیه ۲۸۶' },
-  { text: 'آگاه باشید که تنها با یاد خدا دل‌ها آرام می‌گیرد.', ref: 'سوره رعد، آیه ۲۸' },
-  { text: 'و صبرکنندگان را بشارت ده.', ref: 'سوره بقره، آیه ۱۵۵' },
-  { text: 'او با شماست، هر کجا که باشید.', ref: 'سوره حدید، آیه ۴' },
-  { text: 'از رحمت خدا ناامید نشوید.', ref: 'سوره یوسف، آیه ۸۷' },
-  { text: 'پروردگارا، سینه‌ام را گشاده گردان.', ref: 'سوره طه، آیه ۲۵' },
-  { text: 'و خداوند با صابران است.', ref: 'سوره بقره، آیه ۱۵۳' },
-  { text: 'پس مرا یاد کنید تا شما را یاد کنم.', ref: 'سوره بقره، آیه ۱۵۲' },
-  { text: 'و در کارها با یکدیگر مشورت کن.', ref: 'سوره آل‌عمران، آیه ۱۵۹' },
-  { text: 'ای بندگان من که بر خود اسراف کرده‌اید، از رحمت خدا ناامید نشوید.', ref: 'سوره زمر، آیه ۵۳' },
-  { text: 'و هر کس بر خدا توکل کند، او برایش کافی است.', ref: 'سوره طلاق، آیه ۳' },
-  { text: 'همانا با سختی، آسانی است؛ همانا با سختی، آسانی است.', ref: 'سوره انشراح، آیات ۵-۶' },
-  { text: 'و خدا دوستدار نیکوکاران است.', ref: 'سوره بقره، آیه ۱۹۵' },
-  { text: 'آیا سینه تو را گشاده نساختیم؟', ref: 'سوره انشراح، آیه ۱' },
+/* ================================================================
+   AYAHS
+================================================================ */
+
+const AYAHS: { text: string; ref: string }[] = [
+  {
+    text: 'همانا با سختی، آسانی است.',
+    ref: 'سوره انشراح، آیه ۶',
+  },
+  {
+    text: 'خداوند هیچ‌کس را جز به‌اندازه توانش مکلف نمی‌سازد.',
+    ref: 'سوره بقره، آیه ۲۸۶',
+  },
+  {
+    text: 'آگاه باشید که تنها با یاد خدا دل‌ها آرام می‌گیرد.',
+    ref: 'سوره رعد، آیه ۲۸',
+  },
+  {
+    text: 'و صبرکنندگان را بشارت ده.',
+    ref: 'سوره بقره، آیه ۱۵۵',
+  },
+  {
+    text: 'او با شماست، هر کجا که باشید.',
+    ref: 'سوره حدید، آیه ۴',
+  },
+  {
+    text: 'از رحمت خدا ناامید نشوید.',
+    ref: 'سوره یوسف، آیه ۸۷',
+  },
+  {
+    text: 'پروردگارا، سینه‌ام را گشاده گردان.',
+    ref: 'سوره طه، آیه ۲۵',
+  },
+  {
+    text: 'و خداوند با صابران است.',
+    ref: 'سوره بقره، آیه ۱۵۳',
+  },
+  {
+    text: 'پس مرا یاد کنید تا شما را یاد کنم.',
+    ref: 'سوره بقره، آیه ۱۵۲',
+  },
+  {
+    text: 'و در کارها با یکدیگر مشورت کن.',
+    ref: 'سوره آل‌عمران، آیه ۱۵۹',
+  },
+  {
+    text:
+      'ای بندگان من که بر خود اسراف کرده‌اید، از رحمت خدا ناامید نشوید.',
+    ref: 'سوره زمر، آیه ۵۳',
+  },
+  {
+    text: 'و هر کس بر خدا توکل کند، او برایش کافی است.',
+    ref: 'سوره طلاق، آیه ۳',
+  },
+  {
+    text:
+      'همانا با سختی، آسانی است؛ همانا با سختی، آسانی است.',
+    ref: 'سوره انشراح، آیات ۵-۶',
+  },
+  {
+    text: 'و خدا دوستدار نیکوکاران است.',
+    ref: 'سوره بقره، آیه ۱۹۵',
+  },
+  {
+    text: 'آیا سینه تو را گشاده نساختیم؟',
+    ref: 'سوره انشراح، آیه ۱',
+  },
 ];
 
-const POEMS: { text: string; poet: string; }[] = [
-  { text: 'بنی‌آدم اعضای یک پیکرند\nکه در آفرینش ز یک گوهرند', poet: 'سعدی' },
-  { text: 'بشنو از نی چون حکایت می‌کند\nاز جدایی‌ها شکایت می‌کند', poet: 'مولانا' },
-  { text: 'این قافله عمر عجب می‌گذرد\nدریاب دمی که با طرب می‌گذرد', poet: 'خیام' },
-  { text: 'هر نفس که فرو می‌رود ممد حیات است\nو چون برمی‌آید مفرح ذات', poet: 'سعدی' },
-  { text: 'هر کسی کو دور ماند از اصل خویش\nباز جوید روزگار وصل خویش', poet: 'مولانا' },
-  { text: 'تن آدمی شریف است به جان آدمیت\nنه همین لباس زیباست نشان آدمیت', poet: 'سعدی' },
+/* ================================================================
+   POEMS
+================================================================ */
+
+const POEMS: { text: string; poet: string }[] = [
+  {
+    text:
+      'بنی‌آدم اعضای یک پیکرند\nکه در آفرینش ز یک گوهرند',
+    poet: 'سعدی',
+  },
+  {
+    text:
+      'بشنو از نی چون حکایت می‌کند\nاز جدایی‌ها شکایت می‌کند',
+    poet: 'مولانا',
+  },
+  {
+    text:
+      'این قافله عمر عجب می‌گذرد\nدریاب دمی که با طرب می‌گذرد',
+    poet: 'خیام',
+  },
+  {
+    text:
+      'هر نفس که فرو می‌رود ممد حیات است\nو چون برمی‌آید مفرح ذات',
+    poet: 'سعدی',
+  },
+  {
+    text:
+      'هر کسی کو دور ماند از اصل خویش\nباز جوید روزگار وصل خویش',
+    poet: 'مولانا',
+  },
+  {
+    text:
+      'تن آدمی شریف است به جان آدمیت\nنه همین لباس زیباست نشان آدمیت',
+    poet: 'سعدی',
+  },
 ];
+
+/* ================================================================
+   TASKS
+================================================================ */
 
 const SINGLE_TASKS: Task[] = [
-  { text: { fa: 'ثبت خلق و خو (۱ تا ۱۰)', en: 'Log your mood (1–10)' }, type: 'checkbox' },
-  { text: { fa: 'شناسایی یک فکر منفی', en: 'Identify one negative thought' }, type: 'checkbox' },
-  { text: { fa: 'تمرین تنفس عمیق (۵ دقیقه)', en: '5 min deep breathing' }, type: 'checkbox' },
-  { text: { fa: 'یک فعالیت لذت‌بخش', en: 'One enjoyable activity' }, type: 'checkbox' },
-  { text: { fa: 'نوشتن یک نکته مثبت', en: 'Write one positive note' }, type: 'checkbox' },
+  {
+    text: {
+      fa: 'ثبت خلق و خو (۱ تا ۱۰)',
+      en: 'Log your mood (1–10)',
+    },
+    type: 'checkbox',
+  },
+  {
+    text: {
+      fa: 'شناسایی یک فکر منفی',
+      en: 'Identify one negative thought',
+    },
+    type: 'checkbox',
+  },
+  {
+    text: {
+      fa: 'تمرین تنفس عمیق (۵ دقیقه)',
+      en: '5 min deep breathing',
+    },
+    type: 'checkbox',
+  },
+  {
+    text: {
+      fa: 'یک فعالیت لذت‌بخش',
+      en: 'One enjoyable activity',
+    },
+    type: 'checkbox',
+  },
+  {
+    text: {
+      fa: 'نوشتن یک نکته مثبت',
+      en: 'Write one positive note',
+    },
+    type: 'checkbox',
+  },
 ];
+
+/* ================================================================
+   DATA
+================================================================ */
 
 function buildSingleData(): DayEntry[] {
   const result: DayEntry[] = [];
+
   for (let i = 0; i < 31; i++) {
     const ayah = AYAHS[i % AYAHS.length];
     const poem = POEMS[i % POEMS.length];
-    result.push({ ayah: ayah.text, ayahRef: ayah.ref, poem: poem.text, poemPoet: poem.poet, tasks: SINGLE_TASKS });
+
+    result.push({
+      ayah: ayah.text,
+      ayahRef: ayah.ref,
+      poem: poem.text,
+      poemPoet: poem.poet,
+      tasks: SINGLE_TASKS,
+    });
   }
+
   return result;
 }
 
 function buildDyadData(): DayEntry[] {
-  return [{
-    title: { fa: 'جلسه ۱: آشنایی و اعتمادسازی', en: 'Session 1: Getting acquainted' },
-    icon: 'users',
-    desc: { fa: 'تمرینات جفتی برای ایجاد ارتباط مؤثر', en: 'Paired exercises for effective connection' },
-    tasks: [
-      { text: { fa: 'ثبت خلق‌وخو (هر دو نفر)', en: 'Log mood (both partners)' }, type: 'checkbox' },
-      { text: { fa: 'تمرین جفتی: معرفی و آشنایی', en: 'Pair exercise: introductions' }, type: 'checkbox' },
-      { text: { fa: 'نوشتن یک نکته مثبت درباره شریک', en: 'Write one positive note about your partner' }, type: 'text' },
-      { text: { fa: 'گفتگوی ساختاریافته (۵ دقیقه)', en: '5 min structured conversation' }, type: 'checkbox' },
-      { text: { fa: 'تکلیف مشارکتی برای جلسه بعد', en: 'Shared task for next session' }, type: 'text' },
-    ]
-  }];
+  return [
+    {
+      title: {
+        fa: 'جلسه ۱: آشنایی و اعتمادسازی',
+        en: 'Session 1: Getting acquainted',
+      },
+
+      icon: 'users',
+
+      desc: {
+        fa: 'تمرینات جفتی برای ایجاد ارتباط مؤثر',
+        en: 'Paired exercises for effective connection',
+      },
+
+      tasks: [
+        {
+          text: {
+            fa: 'ثبت خلق‌وخو (هر دو نفر)',
+            en: 'Log mood (both partners)',
+          },
+          type: 'checkbox',
+        },
+        {
+          text: {
+            fa: 'تمرین جفتی: معرفی و آشنایی',
+            en: 'Pair exercise: introductions',
+          },
+          type: 'checkbox',
+        },
+        {
+          text: {
+            fa: 'نوشتن یک نکته مثبت درباره شریک',
+            en: 'Write one positive note about your partner',
+          },
+          type: 'text',
+        },
+        {
+          text: {
+            fa: 'گفتگوی ساختاریافته (۵ دقیقه)',
+            en: '5 min structured conversation',
+          },
+          type: 'checkbox',
+        },
+        {
+          text: {
+            fa: 'تکلیف مشارکتی برای جلسه بعد',
+            en: 'Shared task for next session',
+          },
+          type: 'text',
+        },
+      ],
+    },
+  ];
 }
 
 function buildGroupData(): DayEntry[] {
-  return [{
-    title: { fa: 'جلسه ۱: معرفی و قوانین گروه', en: 'Session 1: Intro & group rules' },
-    icon: 'group',
-    desc: { fa: 'تمرینات گروهی برای ایجاد هماهنگی', en: 'Group exercises to build cohesion' },
-    tasks: [
-      { text: { fa: 'ثبت خلق‌وخو (میانگین گروه)', en: 'Log mood (group average)' }, type: 'checkbox' },
-      { text: { fa: 'تمرین گروهی: معرفی اعضا', en: 'Group exercise: introductions' }, type: 'checkbox' },
-      { text: { fa: 'نوشتن یک بازخورد برای گروه', en: 'Write one piece of feedback for the group' }, type: 'text' },
-      { text: { fa: 'بحث گروهی (۱۰ دقیقه)', en: '10 min group discussion' }, type: 'checkbox' },
-      { text: { fa: 'تکلیف گروهی برای جلسه بعد', en: 'Group task for next session' }, type: 'text' },
-    ]
-  }];
+  return [
+    {
+      title: {
+        fa: 'جلسه ۱: معرفی و قوانین گروه',
+        en: 'Session 1: Intro & group rules',
+      },
+
+      icon: 'group',
+
+      desc: {
+        fa: 'تمرینات گروهی برای ایجاد هماهنگی',
+        en: 'Group exercises to build cohesion',
+      },
+
+      tasks: [
+        {
+          text: {
+            fa: 'ثبت خلق‌وخو (میانگین گروه)',
+            en: 'Log mood (group average)',
+          },
+          type: 'checkbox',
+        },
+        {
+          text: {
+            fa: 'تمرین گروهی: معرفی اعضا',
+            en: 'Group exercise: introductions',
+          },
+          type: 'checkbox',
+        },
+        {
+          text: {
+            fa: 'نوشتن یک بازخورد برای گروه',
+            en: 'Write one piece of feedback for the group',
+          },
+          type: 'text',
+        },
+        {
+          text: {
+            fa: 'بحث گروهی (۱۰ دقیقه)',
+            en: '10 min group discussion',
+          },
+          type: 'checkbox',
+        },
+        {
+          text: {
+            fa: 'تکلیف گروهی برای جلسه بعد',
+            en: 'Group task for next session',
+          },
+          type: 'text',
+        },
+      ],
+    },
+  ];
 }
 
 function getData(mode: ProtocolMode): DayEntry[] {
   if (mode === 'single') return buildSingleData();
   if (mode === 'dyad') return buildDyadData();
+
   return buildGroupData();
 }
 
@@ -111,774 +426,3170 @@ function getTotalDays(mode: ProtocolMode): number {
   return mode === 'single' ? 31 : 1;
 }
 
-const STORAGE_KEY = (mode: ProtocolMode) => `@neurolia_cbt_progress_${mode}`;
+const STORAGE_KEY = (mode: ProtocolMode) =>
+  `@neurolia_cbt_progress_${mode}`;
 
 function isTaskDone(progress?: TaskProgress): boolean {
-  return !!progress?.done || !!progress?.value?.trim();
+  return (
+    !!progress?.done ||
+    !!progress?.value?.trim()
+  );
 }
 
 function freshDayProgress(tasks: Task[]): DayProgress {
-  return tasks.map(() => ({ done: false, value: '' }));
+  return tasks.map(() => ({
+    done: false,
+    value: '',
+  }));
 }
+
+/* ================================================================
+   SCREEN
+================================================================ */
 
 export default function ProtocolScreen() {
   const router = useRouter();
+
   const { colors, isDark } = useTheme();
   const { isRTL, language } = useLanguage();
+
   const fa = language === 'fa';
 
   const textDirection = fa ? 'rtl' : 'ltr';
   const textAlign = fa ? 'right' : 'left';
   const rowDirection = fa ? 'row-reverse' : 'row';
-  const contentAlign = fa ? 'flex-end' : 'flex-start';
+  const contentAlign = fa
+    ? 'flex-end'
+    : 'flex-start';
 
-  // 🔹 رنگ‌های بنفش ملایم‌تر و روشن‌تر
-  const accent = '#A78BFA'; // بنفش ملایم (مشابه violet-400)
-  const accentStrong = '#8B5CF6'; // بنفش کمی پررنگ‌تر (مشابه violet-500)
+  /* ==============================================================
+     GREEN ATHLETE THEME
+  ============================================================== */
 
-  const background = colors.background;
-  const card = colors.surface;
-  const cardSecondary = colors.surfaceSecondary;
+  const accent = ATHLETE.primary;
+  const accentStrong = ATHLETE.primaryDark;
+
+  const background = ATHLETE.background;
+  const card = ATHLETE.surface;
+  const cardSecondary = ATHLETE.surfaceSecondary;
+
   const softAccent = isDark
-    ? 'rgba(167, 139, 250, 0.15)'
-    : 'rgba(167, 139, 250, 0.10)';
+    ? ATHLETE.glow
+    : 'rgba(184,255,61,0.08)';
+
   const softAccentStrong = isDark
-    ? 'rgba(167, 139, 250, 0.25)'
-    : 'rgba(167, 139, 250, 0.15)';
+    ? ATHLETE.glowStrong
+    : 'rgba(184,255,61,0.14)';
 
-  const [mode, setMode] = useState<ProtocolMode>('single');
-  const [view, setView] = useState<ViewMode>('home');
-  const [currentDay, setCurrentDay] = useState(0);
-  const [progress, setProgress] = useState<Progress>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedTask, setSelectedTask] = useState<number | null>(null);
-  const [showCelebration, setShowCelebration] = useState(false);
+  const softBorder = isDark
+    ? ATHLETE.border
+    : 'rgba(116,160,54,0.22)';
 
-  const data = useMemo(() => getData(mode), [mode]);
-  const totalDays = getTotalDays(mode);
-  const currentEntry = data[currentDay];
+  const progressTrack = isDark
+    ? ATHLETE.progressTrack
+    : ATHLETE.progressTrackLight;
 
-  const getDayProgress = useCallback((dayIndex: number): DayProgress => {
-    return progress[dayIndex] ?? freshDayProgress(data[dayIndex]?.tasks ?? []);
-  }, [progress, data]);
+  /* ==============================================================
+     STATE
+  ============================================================== */
 
-  const getCompletedTasks = useCallback((dayIndex: number): number => {
-    const dayProgress = getDayProgress(dayIndex);
-    return dayProgress.filter(item => isTaskDone(item)).length;
-  }, [getDayProgress]);
+  const [mode, setMode] =
+    useState<ProtocolMode>('single');
 
-  const getDayPercent = useCallback((dayIndex: number): number => {
-    const tasks = data[dayIndex]?.tasks ?? [];
-    if (!tasks.length) return 0;
-    const completed = getCompletedTasks(dayIndex);
-    return Math.round((completed / tasks.length) * 100);
-  }, [data, getCompletedTasks]);
+  const [view, setView] =
+    useState<ViewMode>('home');
 
-  const completedDays = useMemo(() => {
-    return Array.from({ length: totalDays }, (_, index) => getDayPercent(index) === 100).filter(Boolean).length;
-  }, [totalDays, getDayPercent]);
+  const [currentDay, setCurrentDay] =
+    useState(0);
 
-  const overallPercent = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
+  const [progress, setProgress] =
+    useState<Progress>({});
+
+  const [isLoading, setIsLoading] =
+    useState(true);
+
+  const [selectedTask, setSelectedTask] =
+    useState<number | null>(null);
+
+  const [showCelebration, setShowCelebration] =
+    useState(false);
+
+  const data = useMemo(
+    () => getData(mode),
+    [mode],
+  );
+
+  const totalDays =
+    getTotalDays(mode);
+
+  const currentEntry =
+    data[currentDay];
+
+  const getDayProgress =
+    useCallback(
+      (
+        dayIndex: number,
+      ): DayProgress => {
+        return (
+          progress[dayIndex] ??
+          freshDayProgress(
+            data[dayIndex]?.tasks ?? [],
+          )
+        );
+      },
+      [progress, data],
+    );
+
+  const getCompletedTasks =
+    useCallback(
+      (
+        dayIndex: number,
+      ): number => {
+        const dayProgress =
+          getDayProgress(dayIndex);
+
+        return dayProgress.filter(
+          item => isTaskDone(item),
+        ).length;
+      },
+      [getDayProgress],
+    );
+
+  const getDayPercent =
+    useCallback(
+      (
+        dayIndex: number,
+      ): number => {
+        const tasks =
+          data[dayIndex]?.tasks ?? [];
+
+        if (!tasks.length) return 0;
+
+        const completed =
+          getCompletedTasks(dayIndex);
+
+        return Math.round(
+          (completed / tasks.length) * 100,
+        );
+      },
+      [data, getCompletedTasks],
+    );
+
+  const completedDays =
+    useMemo(() => {
+      return Array.from(
+        {
+          length: totalDays,
+        },
+        (_, index) =>
+          getDayPercent(index) === 100,
+      ).filter(Boolean).length;
+    }, [
+      totalDays,
+      getDayPercent,
+    ]);
+
+  const overallPercent =
+    totalDays > 0
+      ? Math.round(
+          (completedDays / totalDays) * 100,
+        )
+      : 0;
+
+  /* ==============================================================
+     STORAGE
+  ============================================================== */
 
   useEffect(() => {
     let mounted = true;
-    const loadProgress = async () => {
-      try {
-        setIsLoading(true);
-        const raw = await AsyncStorage.getItem(STORAGE_KEY(mode));
-        if (raw && mounted) {
-          const parsed = JSON.parse(raw);
-          setProgress(parsed || {});
-        } else if (mounted) {
-          setProgress({});
+
+    const loadProgress =
+      async () => {
+        try {
+          setIsLoading(true);
+
+          const raw =
+            await AsyncStorage.getItem(
+              STORAGE_KEY(mode),
+            );
+
+          if (raw && mounted) {
+            const parsed =
+              JSON.parse(raw);
+
+            setProgress(
+              parsed || {},
+            );
+          } else if (mounted) {
+            setProgress({});
+          }
+        } catch (error) {
+          console.log(
+            '[Protocol] Failed to load progress:',
+            error,
+          );
+        } finally {
+          if (mounted) {
+            setIsLoading(false);
+          }
         }
-      } catch (error) {
-        console.log('[Protocol] Failed to load progress:', error);
-      } finally {
-        if (mounted) setIsLoading(false);
-      }
-    };
+      };
+
     loadProgress();
-    return () => { mounted = false; };
+
+    return () => {
+      mounted = false;
+    };
   }, [mode]);
 
   useEffect(() => {
     if (isLoading) return;
-    AsyncStorage.setItem(STORAGE_KEY(mode), JSON.stringify(progress)).catch(error => {
-      console.log('[Protocol] Failed to save progress:', error);
-    });
-  }, [progress, mode, isLoading]);
 
-  const lightHaptic = () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); };
-  const successHaptic = () => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); };
+    AsyncStorage.setItem(
+      STORAGE_KEY(mode),
+      JSON.stringify(progress),
+    ).catch(error => {
+      console.log(
+        '[Protocol] Failed to save progress:',
+        error,
+      );
+    });
+  }, [
+    progress,
+    mode,
+    isLoading,
+  ]);
+
+  /* ==============================================================
+     ACTIONS
+  ============================================================== */
+
+  const lightHaptic = () => {
+    Haptics.impactAsync(
+      Haptics.ImpactFeedbackStyle.Light,
+    ).catch(() => {});
+  };
+
+  const successHaptic = () => {
+    Haptics.notificationAsync(
+      Haptics.NotificationFeedbackType.Success,
+    ).catch(() => {});
+  };
 
   const handleBack = () => {
     lightHaptic();
-    if (view === 'day' || view === 'report') {
+
+    if (
+      view === 'day' ||
+      view === 'report'
+    ) {
       setView('home');
       return;
     }
+
     router.back();
   };
 
-  const changeMode = (nextMode: ProtocolMode) => {
+  const changeMode = (
+    nextMode: ProtocolMode,
+  ) => {
     if (nextMode === mode) return;
+
     lightHaptic();
+
     setMode(nextMode);
     setView('home');
     setCurrentDay(0);
     setSelectedTask(null);
   };
 
-  const openDay = (dayIndex: number) => {
+  const openDay = (
+    dayIndex: number,
+  ) => {
     lightHaptic();
-    setCurrentDay(Math.max(0, Math.min(dayIndex, totalDays - 1)));
+
+    setCurrentDay(
+      Math.max(
+        0,
+        Math.min(
+          dayIndex,
+          totalDays - 1,
+        ),
+      ),
+    );
+
     setView('day');
     setSelectedTask(null);
   };
 
-  const toggleTask = (taskIndex: number) => {
+  const toggleTask = (
+    taskIndex: number,
+  ) => {
     lightHaptic();
+
     setProgress(prev => {
-      const current = prev[currentDay] ?? freshDayProgress(currentEntry?.tasks ?? []);
+      const current =
+        prev[currentDay] ??
+        freshDayProgress(
+          currentEntry?.tasks ?? [],
+        );
+
       const updated = [...current];
-      updated[taskIndex] = { ...updated[taskIndex], done: !updated[taskIndex]?.done };
-      return { ...prev, [currentDay]: updated };
+
+      updated[taskIndex] = {
+        ...updated[taskIndex],
+        done:
+          !updated[taskIndex]?.done,
+      };
+
+      return {
+        ...prev,
+        [currentDay]: updated,
+      };
     });
   };
 
-  const updateTextTask = (taskIndex: number, value: string) => {
+  const updateTextTask = (
+    taskIndex: number,
+    value: string,
+  ) => {
     setProgress(prev => {
-      const current = prev[currentDay] ?? freshDayProgress(currentEntry?.tasks ?? []);
+      const current =
+        prev[currentDay] ??
+        freshDayProgress(
+          currentEntry?.tasks ?? [],
+        );
+
       const updated = [...current];
-      updated[taskIndex] = { ...updated[taskIndex], value, done: value.trim().length > 0 };
-      return { ...prev, [currentDay]: updated };
+
+      updated[taskIndex] = {
+        ...updated[taskIndex],
+        value,
+        done:
+          value.trim().length > 0,
+      };
+
+      return {
+        ...prev,
+        [currentDay]: updated,
+      };
     });
   };
 
   const completeDay = () => {
-    const tasks = currentEntry?.tasks ?? [];
+    const tasks =
+      currentEntry?.tasks ?? [];
+
     if (!tasks.length) return;
-    const current = getDayProgress(currentDay);
-    const allDone = current.every(item => isTaskDone(item));
-    if (!allDone) { lightHaptic(); return; }
+
+    const current =
+      getDayProgress(currentDay);
+
+    const allDone =
+      current.every(item =>
+        isTaskDone(item),
+      );
+
+    if (!allDone) {
+      lightHaptic();
+      return;
+    }
+
     successHaptic();
-    setProgress(prev => ({ ...prev, [currentDay]: current.map(item => ({ ...item, done: true })) }));
+
+    setProgress(prev => ({
+      ...prev,
+      [currentDay]:
+        current.map(item => ({
+          ...item,
+          done: true,
+        })),
+    }));
+
     setShowCelebration(true);
-    setTimeout(() => { setShowCelebration(false); }, 2200);
+
+    setTimeout(() => {
+      setShowCelebration(false);
+    }, 2200);
   };
 
   const previousDay = () => {
     if (currentDay <= 0) return;
+
     lightHaptic();
-    setCurrentDay(currentDay - 1);
+
+    setCurrentDay(
+      currentDay - 1,
+    );
+
     setSelectedTask(null);
   };
 
   const nextDay = () => {
-    if (currentDay >= totalDays - 1) return;
+    if (
+      currentDay >=
+      totalDays - 1
+    ) {
+      return;
+    }
+
     lightHaptic();
-    setCurrentDay(currentDay + 1);
+
+    setCurrentDay(
+      currentDay + 1,
+    );
+
     setSelectedTask(null);
   };
 
-  const resetProtocol = async () => {
-    lightHaptic();
-    try {
-      await AsyncStorage.removeItem(STORAGE_KEY(mode));
-      setProgress({});
-      setCurrentDay(0);
-      setView('home');
-      setSelectedTask(null);
-    } catch (error) {
-      console.log('[Protocol] Failed to reset:', error);
-    }
-  };
+  const resetProtocol =
+    async () => {
+      lightHaptic();
 
-  const tr = (value?: Bilingual) => {
+      try {
+        await AsyncStorage.removeItem(
+          STORAGE_KEY(mode),
+        );
+
+        setProgress({});
+        setCurrentDay(0);
+        setView('home');
+        setSelectedTask(null);
+      } catch (error) {
+        console.log(
+          '[Protocol] Failed to reset:',
+          error,
+        );
+      }
+    };
+
+  /* ==============================================================
+     HELPERS
+  ============================================================== */
+
+  const tr = (
+    value?: Bilingual,
+  ) => {
     if (!value) return '';
-    return fa ? value.fa : value.en;
+
+    return fa
+      ? value.fa
+      : value.en;
   };
 
-  const getModeTitle = (protocolMode: ProtocolMode) => {
-    if (protocolMode === 'single') return fa ? 'برنامه فردی' : 'Individual';
-    if (protocolMode === 'dyad') return fa ? 'برنامه دونفره' : 'Two-person';
-    return fa ? 'برنامه گروهی' : 'Group';
+  const getModeTitle = (
+    protocolMode: ProtocolMode,
+  ) => {
+    if (
+      protocolMode ===
+      'single'
+    ) {
+      return fa
+        ? 'برنامه فردی'
+        : 'Individual';
+    }
+
+    if (
+      protocolMode ===
+      'dyad'
+    ) {
+      return fa
+        ? 'برنامه دونفره'
+        : 'Two-person';
+    }
+
+    return fa
+      ? 'برنامه گروهی'
+      : 'Group';
   };
 
-  const getModeDescription = (protocolMode: ProtocolMode) => {
-    if (protocolMode === 'single') return fa ? 'تمرین‌های روزانه برای رشد و آرامش ذهن' : 'Daily exercises for cognitive and emotional growth';
-    if (protocolMode === 'dyad') return fa ? 'تمرین‌های مشترک برای دو نفر' : 'Shared exercises for two people';
-    return fa ? 'تمرین‌های مشارکتی برای یک گروه' : 'Collaborative exercises for a group';
+  const getModeDescription = (
+    protocolMode: ProtocolMode,
+  ) => {
+    if (
+      protocolMode ===
+      'single'
+    ) {
+      return fa
+        ? 'تمرین‌های روزانه برای رشد و آرامش ذهن'
+        : 'Daily exercises for cognitive and emotional growth';
+    }
+
+    if (
+      protocolMode ===
+      'dyad'
+    ) {
+      return fa
+        ? 'تمرین‌های مشترک برای دو نفر'
+        : 'Shared exercises for two people';
+    }
+
+    return fa
+      ? 'تمرین‌های مشارکتی برای یک گروه'
+      : 'Collaborative exercises for a group';
   };
 
-  const getModeIcon = (protocolMode: ProtocolMode) => {
-    if (protocolMode === 'single') return Brain;
-    if (protocolMode === 'dyad') return Users;
+  const getModeIcon = (
+    protocolMode: ProtocolMode,
+  ) => {
+    if (
+      protocolMode ===
+      'single'
+    ) {
+      return Brain;
+    }
+
+    if (
+      protocolMode ===
+      'dyad'
+    ) {
+      return Users;
+    }
+
     return UsersRound;
   };
 
-  const getDayLabel = (index: number) => {
-    if (mode === 'single') return fa ? `روز ${index + 1}` : `Day ${index + 1}`;
-    return fa ? `جلسه ${index + 1}` : `Session ${index + 1}`;
+  const getDayLabel = (
+    index: number,
+  ) => {
+    if (
+      mode === 'single'
+    ) {
+      return fa
+        ? `روز ${index + 1}`
+        : `Day ${index + 1}`;
+    }
+
+    return fa
+      ? `جلسه ${index + 1}`
+      : `Session ${index + 1}`;
   };
 
-  const currentDayPercent = getDayPercent(currentDay);
-  const currentCompletedTasks = getCompletedTasks(currentDay);
-  const currentTotalTasks = currentEntry?.tasks?.length ?? 0;
+  const currentDayPercent =
+    getDayPercent(
+      currentDay,
+    );
 
-  const renderPageHeader = (title: string, subtitle: string) => (
-    <View style={[styles.pageHeader, { backgroundColor: background }]}>
+  const currentCompletedTasks =
+    getCompletedTasks(
+      currentDay,
+    );
+
+  const currentTotalTasks =
+    currentEntry?.tasks
+      ?.length ?? 0;
+
+  /* ==============================================================
+     PAGE HEADER
+  ============================================================== */
+
+  const renderPageHeader = (
+    title: string,
+    subtitle: string,
+  ) => (
+    <View
+      style={[
+        styles.pageHeader,
+        {
+          backgroundColor:
+            background,
+        },
+      ]}
+    >
       <TouchableOpacity
         onPress={handleBack}
         activeOpacity={0.75}
         accessibilityRole="button"
-        accessibilityLabel={fa ? 'بازگشت' : 'Back'}
-        style={[styles.headerBackButton, { backgroundColor: card, borderColor: colors.border }]}
+        accessibilityLabel={
+          fa
+            ? 'بازگشت'
+            : 'Back'
+        }
+        style={[
+          styles.headerBackButton,
+          {
+            backgroundColor:
+              card,
+            borderColor:
+              softBorder,
+          },
+        ]}
       >
-        <ArrowLeft size={21} color={colors.text} strokeWidth={2.2} />
+        <ArrowLeft
+          size={21}
+          color={
+            ATHLETE.text
+          }
+          strokeWidth={2.2}
+        />
       </TouchableOpacity>
 
-      <View style={styles.headerTitleContainer}>
-        <Text style={[styles.headerTitle, { color: colors.text, textAlign, writingDirection: textDirection }]}>
+      <View
+        style={
+          styles.headerTitleContainer
+        }
+      >
+        <Text
+          style={[
+            styles.headerTitle,
+            {
+              color:
+                ATHLETE.text,
+              textAlign,
+              writingDirection:
+                textDirection,
+            },
+          ]}
+        >
           {title}
         </Text>
-        <Text style={[styles.headerSubtitle, { color: colors.textSecondary, textAlign, writingDirection: textDirection }]}>
+
+        <Text
+          style={[
+            styles.headerSubtitle,
+            {
+              color:
+                ATHLETE.textSecondary,
+              textAlign,
+              writingDirection:
+                textDirection,
+            },
+          ]}
+        >
           {subtitle}
         </Text>
       </View>
 
-      <View style={styles.headerSidePlaceholder} />
+      <View
+        style={
+          styles.headerSidePlaceholder
+        }
+      />
     </View>
   );
 
+  /* ==============================================================
+     DAY NAVIGATION
+  ============================================================== */
+
   const renderDayNavigation = () => (
-    <View style={[styles.dayNavigation, { flexDirection: rowDirection }]}>
+    <View
+      style={[
+        styles.dayNavigation,
+        {
+          flexDirection:
+            rowDirection,
+        },
+      ]}
+    >
       <TouchableOpacity
         onPress={previousDay}
-        disabled={currentDay === 0}
+        disabled={
+          currentDay === 0
+        }
         activeOpacity={0.75}
         accessibilityRole="button"
-        accessibilityLabel={fa ? 'روز قبلی' : 'Previous day'}
-        style={[styles.dayNavButton, { backgroundColor: card, borderColor: colors.border, opacity: currentDay === 0 ? 0.35 : 1 }]}
+        accessibilityLabel={
+          fa
+            ? 'روز قبلی'
+            : 'Previous day'
+        }
+        style={[
+          styles.dayNavButton,
+          {
+            backgroundColor:
+              card,
+            borderColor:
+              softBorder,
+            opacity:
+              currentDay === 0
+                ? 0.35
+                : 1,
+          },
+        ]}
       >
-        <ChevronLeft size={22} color={colors.text} strokeWidth={2.2} />
+        <ChevronLeft
+          size={22}
+          color={
+            ATHLETE.text
+          }
+          strokeWidth={2.2}
+        />
       </TouchableOpacity>
 
-      <View style={[styles.dayIndicator, { backgroundColor: softAccent, borderColor: softAccentStrong }]}>
-        <Text style={[styles.dayIndicatorText, { color: accent, textAlign, writingDirection: textDirection }]}>
-          {getDayLabel(currentDay)}
+      <View
+        style={[
+          styles.dayIndicator,
+          {
+            backgroundColor:
+              softAccent,
+            borderColor:
+              softBorder,
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.dayIndicatorText,
+            {
+              color: accent,
+              textAlign,
+              writingDirection:
+                textDirection,
+            },
+          ]}
+        >
+          {getDayLabel(
+            currentDay,
+          )}
         </Text>
       </View>
 
       <TouchableOpacity
         onPress={nextDay}
-        disabled={currentDay >= totalDays - 1}
+        disabled={
+          currentDay >=
+          totalDays - 1
+        }
         activeOpacity={0.75}
         accessibilityRole="button"
-        accessibilityLabel={fa ? 'روز بعدی' : 'Next day'}
-        style={[styles.dayNavButton, { backgroundColor: card, borderColor: colors.border, opacity: currentDay >= totalDays - 1 ? 0.35 : 1 }]}
+        accessibilityLabel={
+          fa
+            ? 'روز بعدی'
+            : 'Next day'
+        }
+        style={[
+          styles.dayNavButton,
+          {
+            backgroundColor:
+              card,
+            borderColor:
+              softBorder,
+            opacity:
+              currentDay >=
+              totalDays - 1
+                ? 0.35
+                : 1,
+          },
+        ]}
       >
-        <ChevronRight size={22} color={colors.text} strokeWidth={2.2} />
+        <ChevronRight
+          size={22}
+          color={
+            ATHLETE.text
+          }
+          strokeWidth={2.2}
+        />
       </TouchableOpacity>
     </View>
   );
 
-  const renderModeCard = (protocolMode: ProtocolMode) => {
-    const Icon = getModeIcon(protocolMode);
-    const active = mode === protocolMode;
+  /* ==============================================================
+     MODE CARD
+  ============================================================== */
+
+  const renderModeCard = (
+    protocolMode: ProtocolMode,
+  ) => {
+    const Icon =
+      getModeIcon(
+        protocolMode,
+      );
+
+    const active =
+      mode === protocolMode;
+
+    const modeAccent =
+      MODES[protocolMode]
+        .accent;
 
     return (
       <TouchableOpacity
         key={protocolMode}
         activeOpacity={0.82}
-        onPress={() => changeMode(protocolMode)}
+        onPress={() =>
+          changeMode(
+            protocolMode,
+          )
+        }
         style={[
           styles.modeCard,
           {
-            backgroundColor: active ? softAccentStrong : card,
-            borderColor: active ? accent : colors.border,
+            backgroundColor:
+              active
+                ? softAccentStrong
+                : card,
+
+            borderColor:
+              active
+                ? modeAccent
+                : softBorder,
           },
         ]}
       >
-        <View style={[styles.modeIcon, { backgroundColor: active ? accent : cardSecondary }]}>
-          <Icon size={21} color={active ? '#FFFFFF' : accent} strokeWidth={2.1} />
+        <View
+          style={[
+            styles.modeIcon,
+            {
+              backgroundColor:
+                active
+                  ? modeAccent
+                  : cardSecondary,
+            },
+          ]}
+        >
+          <Icon
+            size={21}
+            color={
+              active
+                ? ATHLETE.background
+                : modeAccent
+            }
+            strokeWidth={2.1}
+          />
         </View>
-        <Text style={[styles.modeTitle, { color: colors.text, textAlign, writingDirection: textDirection }]}>
-          {getModeTitle(protocolMode)}
+
+        <Text
+          style={[
+            styles.modeTitle,
+            {
+              color:
+                ATHLETE.text,
+              textAlign,
+              writingDirection:
+                textDirection,
+            },
+          ]}
+        >
+          {getModeTitle(
+            protocolMode,
+          )}
         </Text>
-        <Text style={[styles.modeDescription, { color: colors.textSecondary, textAlign, writingDirection: textDirection }]} numberOfLines={2}>
-          {getModeDescription(protocolMode)}
+
+        <Text
+          style={[
+            styles.modeDescription,
+            {
+              color:
+                ATHLETE.textSecondary,
+              textAlign,
+              writingDirection:
+                textDirection,
+            },
+          ]}
+          numberOfLines={2}
+        >
+          {getModeDescription(
+            protocolMode,
+          )}
         </Text>
+
         {active && (
-          <View style={[styles.modeActiveIndicator, { backgroundColor: accent }]}>
-            <Check size={12} color="#FFFFFF" strokeWidth={3} />
+          <View
+            style={[
+              styles.modeActiveIndicator,
+              {
+                backgroundColor:
+                  modeAccent,
+              },
+            ]}
+          >
+            <Check
+              size={12}
+              color={
+                ATHLETE.background
+              }
+              strokeWidth={3}
+            />
           </View>
         )}
       </TouchableOpacity>
     );
   };
 
-  const renderDayCard = (dayIndex: number) => {
-    const percent = getDayPercent(dayIndex);
-    const completed = getCompletedTasks(dayIndex);
-    const total = data[dayIndex]?.tasks?.length ?? 0;
-    const completedDay = percent === 100;
+  /* ==============================================================
+     DAY CARD
+  ============================================================== */
+
+  const renderDayCard = (
+    dayIndex: number,
+  ) => {
+    const percent =
+      getDayPercent(
+        dayIndex,
+      );
+
+    const completed =
+      getCompletedTasks(
+        dayIndex,
+      );
+
+    const total =
+      data[dayIndex]?.tasks
+        ?.length ?? 0;
+
+    const completedDay =
+      percent === 100;
 
     return (
       <TouchableOpacity
         key={`day-${dayIndex}`}
         activeOpacity={0.82}
-        onPress={() => openDay(dayIndex)}
-        style={[styles.dayCard, { backgroundColor: card, borderColor: colors.border }]}
+        onPress={() =>
+          openDay(dayIndex)
+        }
+        style={[
+          styles.dayCard,
+          {
+            backgroundColor:
+              card,
+            borderColor:
+              softBorder,
+          },
+        ]}
       >
-        <View style={[styles.dayCardTop, { flexDirection: rowDirection }]}>
-          <View style={[styles.dayNumber, { backgroundColor: completedDay ? accent : softAccent }]}>
+        <View
+          style={[
+            styles.dayCardTop,
+            {
+              flexDirection:
+                rowDirection,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.dayNumber,
+              {
+                backgroundColor:
+                  completedDay
+                    ? accent
+                    : softAccent,
+              },
+            ]}
+          >
             {completedDay ? (
-              <Check size={18} color="#FFFFFF" strokeWidth={2.8} />
+              <Check
+                size={18}
+                color={
+                  ATHLETE.background
+                }
+                strokeWidth={2.8}
+              />
             ) : (
-              <Text style={[styles.dayNumberText, { color: accent }]}>{dayIndex + 1}</Text>
+              <Text
+                style={[
+                  styles.dayNumberText,
+                  {
+                    color:
+                      accent,
+                  },
+                ]}
+              >
+                {dayIndex + 1}
+              </Text>
             )}
           </View>
-          <View style={[styles.dayCardInfo, { alignItems: contentAlign }]}>
-            <Text style={[styles.dayTitle, { color: colors.text, textAlign, writingDirection: textDirection }]}>
-              {getDayLabel(dayIndex)}
+
+          <View
+            style={[
+              styles.dayCardInfo,
+              {
+                alignItems:
+                  contentAlign,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.dayTitle,
+                {
+                  color:
+                    ATHLETE.text,
+                  textAlign,
+                  writingDirection:
+                    textDirection,
+                },
+              ]}
+            >
+              {getDayLabel(
+                dayIndex,
+              )}
             </Text>
-            <Text style={[styles.dayTasksText, { color: colors.textSecondary, textAlign, writingDirection: textDirection }]}>
-              {fa ? `${completed} از ${total} فعالیت` : `${completed} of ${total} activities`}
+
+            <Text
+              style={[
+                styles.dayTasksText,
+                {
+                  color:
+                    ATHLETE.textSecondary,
+                  textAlign,
+                  writingDirection:
+                    textDirection,
+                },
+              ]}
+            >
+              {fa
+                ? `${completed} از ${total} فعالیت`
+                : `${completed} of ${total} activities`}
             </Text>
           </View>
-          <View style={[styles.dayPercent, { backgroundColor: percent === 100 ? softAccentStrong : cardSecondary }]}>
-            <Text style={[styles.dayPercentText, { color: percent === 100 ? accent : colors.textSecondary }]}>
+
+          <View
+            style={[
+              styles.dayPercent,
+              {
+                backgroundColor:
+                  percent === 100
+                    ? softAccentStrong
+                    : cardSecondary,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.dayPercentText,
+                {
+                  color:
+                    percent === 100
+                      ? accent
+                      : ATHLETE.textSecondary,
+                },
+              ]}
+            >
               {percent}%
             </Text>
           </View>
         </View>
-        <View style={[styles.progressTrack, { backgroundColor: isDark ? '#292533' : '#EAE6F3' }]}>
-          <View style={[styles.progressFill, { width: `${percent}%`, backgroundColor: accent }]} />
+
+        <View
+          style={[
+            styles.progressTrack,
+            {
+              backgroundColor:
+                progressTrack,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.progressFill,
+              {
+                width: `${percent}%`,
+                backgroundColor:
+                  accent,
+              },
+            ]}
+          />
         </View>
       </TouchableOpacity>
     );
   };
 
+  /* ==============================================================
+     LOADING
+  ============================================================== */
+
   if (isLoading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: background }]}>
-        <ActivityIndicator size="large" color={accent} />
-        <Text style={[styles.loadingText, { color: colors.textSecondary, textAlign, writingDirection: textDirection }]}>
-          {fa ? 'در حال بارگذاری...' : 'Loading...'}
+      <View
+        style={[
+          styles.loadingContainer,
+          {
+            backgroundColor:
+              background,
+          },
+        ]}
+      >
+        <ActivityIndicator
+          size="large"
+          color={accent}
+        />
+
+        <Text
+          style={[
+            styles.loadingText,
+            {
+              color:
+                ATHLETE.textSecondary,
+              textAlign,
+              writingDirection:
+                textDirection,
+            },
+          ]}
+        >
+          {fa
+            ? 'در حال بارگذاری...'
+            : 'Loading...'}
         </Text>
       </View>
     );
   }
 
-  return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: background }]}>
-      <View style={[styles.root, { backgroundColor: background }]}>
-        {view === 'home' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-            {renderPageHeader(fa ? 'پروتکل' : 'Protocol', fa ? 'برنامه روزانه شما' : 'Your daily program')}
+  /* ==============================================================
+     RENDER
+  ============================================================== */
 
-            <View style={[styles.heroCard, { backgroundColor: accent }]}>
-              <View style={styles.heroGlowOne} />
-              <View style={styles.heroGlowTwo} />
-              <View style={[styles.heroContent, { alignItems: contentAlign }]}>
-                <View style={[styles.heroIcon, { backgroundColor: 'rgba(255,255,255,0.16)' }]}>
-                  <Brain size={25} color="#FFFFFF" strokeWidth={2} />
+  return (
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        {
+          backgroundColor:
+            background,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.root,
+          {
+            backgroundColor:
+              background,
+          },
+        ]}
+      >
+        {/* ======================================================
+            HOME
+        ====================================================== */}
+
+        {view === 'home' && (
+          <ScrollView
+            showsVerticalScrollIndicator={
+              false
+            }
+            contentContainerStyle={
+              styles.scrollContent
+            }
+          >
+            {renderPageHeader(
+              fa
+                ? 'پروتکل'
+                : 'Protocol',
+              fa
+                ? 'برنامه روزانه شما'
+                : 'Your daily program',
+            )}
+
+            {/* HERO */}
+
+            <View
+              style={[
+                styles.heroCard,
+                {
+                  backgroundColor:
+                    accent,
+                },
+              ]}
+            >
+              <View
+                style={
+                  styles.heroGlowOne
+                }
+              />
+
+              <View
+                style={
+                  styles.heroGlowTwo
+                }
+              />
+
+              <View
+                style={[
+                  styles.heroContent,
+                  {
+                    alignItems:
+                      contentAlign,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.heroIcon,
+                    {
+                      backgroundColor:
+                        'rgba(7,9,8,0.14)',
+                    },
+                  ]}
+                >
+                  <Brain
+                    size={25}
+                    color={
+                      ATHLETE.background
+                    }
+                    strokeWidth={2}
+                  />
                 </View>
-                <Text style={[styles.heroTitle, { textAlign, writingDirection: textDirection }]}>
-                  {getModeTitle(mode)}
+
+                <Text
+                  style={[
+                    styles.heroTitle,
+                    {
+                      textAlign,
+                      writingDirection:
+                        textDirection,
+                      color:
+                        ATHLETE.background,
+                    },
+                  ]}
+                >
+                  {getModeTitle(
+                    mode,
+                  )}
                 </Text>
-                <Text style={[styles.heroDescription, { textAlign, writingDirection: textDirection }]}>
-                  {getModeDescription(mode)}
+
+                <Text
+                  style={[
+                    styles.heroDescription,
+                    {
+                      textAlign,
+                      writingDirection:
+                        textDirection,
+                      color:
+                        'rgba(7,9,8,0.72)',
+                    },
+                  ]}
+                >
+                  {getModeDescription(
+                    mode,
+                  )}
                 </Text>
-                <View style={[styles.heroProgressRow, { flexDirection: rowDirection }]}>
-                  <View style={[styles.heroProgressInfo, { alignItems: contentAlign }]}>
-                    <Text style={[styles.heroProgressLabel, { textAlign, writingDirection: textDirection }]}>
-                      {fa ? 'پیشرفت کلی' : 'Overall progress'}
+
+                <View
+                  style={[
+                    styles.heroProgressRow,
+                    {
+                      flexDirection:
+                        rowDirection,
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.heroProgressInfo,
+                      {
+                        alignItems:
+                          contentAlign,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.heroProgressLabel,
+                        {
+                          textAlign,
+                          writingDirection:
+                            textDirection,
+                          color:
+                            'rgba(7,9,8,0.62)',
+                        },
+                      ]}
+                    >
+                      {fa
+                        ? 'پیشرفت کلی'
+                        : 'Overall progress'}
                     </Text>
-                    <Text style={[styles.heroProgressValue, { textAlign, writingDirection: textDirection }]}>
+
+                    <Text
+                      style={[
+                        styles.heroProgressValue,
+                        {
+                          textAlign,
+                          writingDirection:
+                            textDirection,
+                          color:
+                            ATHLETE.background,
+                        },
+                      ]}
+                    >
                       {overallPercent}%
                     </Text>
                   </View>
-                  <View style={styles.heroProgressTrack}>
-                    <View style={[styles.heroProgressFill, { width: `${overallPercent}%` }]} />
+
+                  <View
+                    style={
+                      styles.heroProgressTrack
+                    }
+                  >
+                    <View
+                      style={[
+                        styles.heroProgressFill,
+                        {
+                          width: `${overallPercent}%`,
+                          backgroundColor:
+                            ATHLETE.background,
+                        },
+                      ]}
+                    />
                   </View>
                 </View>
               </View>
             </View>
 
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.text, textAlign, writingDirection: textDirection }]}>
-                {fa ? 'نوع پروتکل' : 'Protocol type'}
+            {/* PROTOCOL TYPE */}
+
+            <View
+              style={styles.section}
+            >
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  {
+                    color:
+                      ATHLETE.text,
+                    textAlign,
+                    writingDirection:
+                      textDirection,
+                  },
+                ]}
+              >
+                {fa
+                  ? 'نوع پروتکل'
+                  : 'Protocol type'}
               </Text>
-              <View style={[styles.modeGrid, { flexDirection: rowDirection }]}>
-                {renderModeCard('single')}
-                {renderModeCard('dyad')}
-                {renderModeCard('group')}
+
+              <View
+                style={[
+                  styles.modeGrid,
+                  {
+                    flexDirection:
+                      rowDirection,
+                  },
+                ]}
+              >
+                {renderModeCard(
+                  'single',
+                )}
+
+                {renderModeCard(
+                  'dyad',
+                )}
+
+                {renderModeCard(
+                  'group',
+                )}
               </View>
             </View>
 
-            <View style={styles.section}>
-              <View style={[styles.sectionHeader, { flexDirection: rowDirection }]}>
-                <View style={{ alignItems: contentAlign }}>
-                  <Text style={[styles.sectionTitle, { color: colors.text, textAlign, writingDirection: textDirection }]}>
-                    {fa ? 'گزارش امروز' : "Today's report"}
+            {/* TODAY REPORT */}
+
+            <View
+              style={styles.section}
+            >
+              <View
+                style={[
+                  styles.sectionHeader,
+                  {
+                    flexDirection:
+                      rowDirection,
+                  },
+                ]}
+              >
+                <View
+                  style={{
+                    alignItems:
+                      contentAlign,
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.sectionTitle,
+                      {
+                        color:
+                          ATHLETE.text,
+                        textAlign,
+                        writingDirection:
+                          textDirection,
+                      },
+                    ]}
+                  >
+                    {fa
+                      ? 'گزارش امروز'
+                      : "Today's report"}
                   </Text>
-                  <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, textAlign, writingDirection: textDirection }]}>
-                    {getDayLabel(currentDay)}
+
+                  <Text
+                    style={[
+                      styles.sectionSubtitle,
+                      {
+                        color:
+                          ATHLETE.textSecondary,
+                        textAlign,
+                        writingDirection:
+                          textDirection,
+                      },
+                    ]}
+                  >
+                    {getDayLabel(
+                      currentDay,
+                    )}
                   </Text>
                 </View>
+
                 <TouchableOpacity
                   activeOpacity={0.75}
-                  onPress={() => { lightHaptic(); setView('report'); }}
-                  style={[styles.reportButton, { backgroundColor: softAccent, flexDirection: rowDirection }]}
+                  onPress={() => {
+                    lightHaptic();
+                    setView(
+                      'report',
+                    );
+                  }}
+                  style={[
+                    styles.reportButton,
+                    {
+                      backgroundColor:
+                        softAccent,
+                      flexDirection:
+                        rowDirection,
+                    },
+                  ]}
                 >
-                  <BarChart3 size={17} color={accent} strokeWidth={2} />
-                  <Text style={[styles.reportButtonText, { color: accent, textAlign, writingDirection: textDirection }]}>
-                    {fa ? 'گزارش کامل' : 'Full report'}
+                  <BarChart3
+                    size={17}
+                    color={accent}
+                    strokeWidth={2}
+                  />
+
+                  <Text
+                    style={[
+                      styles.reportButtonText,
+                      {
+                        color:
+                          accent,
+                        textAlign,
+                        writingDirection:
+                          textDirection,
+                      },
+                    ]}
+                  >
+                    {fa
+                      ? 'گزارش کامل'
+                      : 'Full report'}
                   </Text>
                 </TouchableOpacity>
               </View>
-              <View style={[styles.reportCard, { backgroundColor: card, borderColor: colors.border }]}>
-                <View style={[styles.reportMain, { flexDirection: rowDirection }]}>
-                  <View style={styles.circularProgress}>
-                    <Text style={[styles.circularProgressText, { color: accent, textAlign: 'center' }]}>
+
+              <View
+                style={[
+                  styles.reportCard,
+                  {
+                    backgroundColor:
+                      card,
+                    borderColor:
+                      softBorder,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.reportMain,
+                    {
+                      flexDirection:
+                        rowDirection,
+                    },
+                  ]}
+                >
+                  <View
+                    style={
+                      styles.circularProgress
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.circularProgressText,
+                        {
+                          color:
+                            accent,
+                          textAlign:
+                            'center',
+                        },
+                      ]}
+                    >
                       {currentDayPercent}%
                     </Text>
-                    <Text style={[styles.circularProgressLabel, { color: colors.textSecondary, textAlign: 'center', writingDirection: textDirection }]}>
-                      {fa ? 'امروز' : 'Today'}
-                    </Text>
-                  </View>
-                  <View style={[styles.reportStats, { alignItems: contentAlign }]}>
-                    <Text style={[styles.reportStatsTitle, { color: colors.text, textAlign, writingDirection: textDirection }]}>
-                      {fa ? 'وضعیت فعالیت‌ها' : 'Activity status'}
-                    </Text>
-                    <Text style={[styles.reportStatsValue, { color: colors.textSecondary, textAlign, writingDirection: textDirection }]}>
-                      {fa ? `${currentCompletedTasks} از ${currentTotalTasks} فعالیت انجام شده` : `${currentCompletedTasks} of ${currentTotalTasks} activities completed`}
-                    </Text>
-                    <View style={[styles.progressTrack, { backgroundColor: isDark ? '#292533' : '#EAE6F3' }]}>
-                      <View style={[styles.progressFill, { width: `${currentDayPercent}%`, backgroundColor: accent }]} />
-                    </View>
-                  </View>
-                </View>
-              </View>
-            </View>
 
-            <View style={styles.section}>
-              <View style={[styles.sectionHeader, { flexDirection: rowDirection }]}>
-                <View style={{ alignItems: contentAlign }}>
-                  <Text style={[styles.sectionTitle, { color: colors.text, textAlign, writingDirection: textDirection }]}>
-                    {fa ? 'فعالیت‌های امروز' : "Today's activities"}
-                  </Text>
-                  <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, textAlign, writingDirection: textDirection }]}>
-                    {fa ? 'برای ادامه روی یک فعالیت بزنید' : 'Tap an activity to continue'}
-                  </Text>
-                </View>
-              </View>
-              {currentEntry?.tasks?.map((task, index) => {
-                const taskProgress = getDayProgress(currentDay)[index];
-                const done = isTaskDone(taskProgress);
-                return (
-                  <TouchableOpacity
-                    key={`today-task-${index}`}
-                    activeOpacity={0.8}
-                    onPress={() => { openDay(currentDay); setTimeout(() => setSelectedTask(index), 50); }}
-                    style={[styles.todayTaskCard, { backgroundColor: card, borderColor: done ? accent : colors.border, flexDirection: rowDirection }]}
+                    <Text
+                      style={[
+                        styles.circularProgressLabel,
+                        {
+                          color:
+                            ATHLETE.textSecondary,
+                          textAlign:
+                            'center',
+                          writingDirection:
+                            textDirection,
+                        },
+                      ]}
+                    >
+                      {fa
+                        ? 'امروز'
+                        : 'Today'}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.reportStats,
+                      {
+                        alignItems:
+                          contentAlign,
+                      },
+                    ]}
                   >
-                    <View style={[styles.todayTaskIcon, { backgroundColor: done ? accent : softAccent }]}>
-                      {done ? <Check size={17} color="#FFFFFF" strokeWidth={2.7} /> : <CheckCircle2 size={17} color={accent} strokeWidth={2} />}
-                    </View>
-                    <Text style={[styles.todayTaskText, { color: done ? colors.textSecondary : colors.text, textAlign, writingDirection: textDirection, textDecorationLine: done ? 'line-through' : 'none' }]}>
-                      {tr(task.text)}
+                    <Text
+                      style={[
+                        styles.reportStatsTitle,
+                        {
+                          color:
+                            ATHLETE.text,
+                          textAlign,
+                          writingDirection:
+                            textDirection,
+                        },
+                      ]}
+                    >
+                      {fa
+                        ? 'وضعیت فعالیت‌ها'
+                        : 'Activity status'}
                     </Text>
-                    <ChevronLeft size={18} color={colors.textTertiary} style={{ transform: [{ rotate: fa ? '0deg' : '180deg' }] }} />
-                  </TouchableOpacity>
-                );
-              })}
+
+                    <Text
+                      style={[
+                        styles.reportStatsValue,
+                        {
+                          color:
+                            ATHLETE.textSecondary,
+                          textAlign,
+                          writingDirection:
+                            textDirection,
+                        },
+                      ]}
+                    >
+                      {fa
+                        ? `${currentCompletedTasks} از ${currentTotalTasks} فعالیت انجام شده`
+                        : `${currentCompletedTasks} of ${currentTotalTasks} activities completed`}
+                    </Text>
+
+                    <View
+                      style={[
+                        styles.progressTrack,
+                        {
+                          backgroundColor:
+                            progressTrack,
+                        },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.progressFill,
+                          {
+                            width: `${currentDayPercent}%`,
+                            backgroundColor:
+                              accent,
+                          },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                </View>
+              </View>
             </View>
 
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.text, textAlign, writingDirection: textDirection }]}>
-                {mode === 'single' ? (fa ? 'روزهای پروتکل' : 'Protocol days') : (fa ? 'جلسات پروتکل' : 'Protocol sessions')}
-              </Text>
-              {data.map((_, index) => renderDayCard(index))}
+            {/* TODAY TASKS */}
+
+            <View
+              style={styles.section}
+            >
+              <View
+                style={[
+                  styles.sectionHeader,
+                  {
+                    flexDirection:
+                      rowDirection,
+                  },
+                ]}
+              >
+                <View
+                  style={{
+                    alignItems:
+                      contentAlign,
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.sectionTitle,
+                      {
+                        color:
+                          ATHLETE.text,
+                        textAlign,
+                        writingDirection:
+                          textDirection,
+                      },
+                    ]}
+                  >
+                    {fa
+                      ? 'فعالیت‌های امروز'
+                      : "Today's activities"}
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.sectionSubtitle,
+                      {
+                        color:
+                          ATHLETE.textSecondary,
+                        textAlign,
+                        writingDirection:
+                          textDirection,
+                      },
+                    ]}
+                  >
+                    {fa
+                      ? 'برای ادامه روی یک فعالیت بزنید'
+                      : 'Tap an activity to continue'}
+                  </Text>
+                </View>
+              </View>
+
+              {currentEntry?.tasks?.map(
+                (
+                  task,
+                  index,
+                ) => {
+                  const taskProgress =
+                    getDayProgress(
+                      currentDay,
+                    )[index];
+
+                  const done =
+                    isTaskDone(
+                      taskProgress,
+                    );
+
+                  return (
+                    <TouchableOpacity
+                      key={`today-task-${index}`}
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        openDay(
+                          currentDay,
+                        );
+
+                        setTimeout(
+                          () =>
+                            setSelectedTask(
+                              index,
+                            ),
+                          50,
+                        );
+                      }}
+                      style={[
+                        styles.todayTaskCard,
+                        {
+                          backgroundColor:
+                            card,
+
+                          borderColor:
+                            done
+                              ? accent
+                              : softBorder,
+
+                          flexDirection:
+                            rowDirection,
+                        },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.todayTaskIcon,
+                          {
+                            backgroundColor:
+                              done
+                                ? accent
+                                : softAccent,
+                          },
+                        ]}
+                      >
+                        {done ? (
+                          <Check
+                            size={17}
+                            color={
+                              ATHLETE.background
+                            }
+                            strokeWidth={2.7}
+                          />
+                        ) : (
+                          <CheckCircle2
+                            size={17}
+                            color={
+                              accent
+                            }
+                            strokeWidth={2}
+                          />
+                        )}
+                      </View>
+
+                      <Text
+                        style={[
+                          styles.todayTaskText,
+                          {
+                            color:
+                              done
+                                ? ATHLETE.textSecondary
+                                : ATHLETE.text,
+
+                            textAlign,
+                            writingDirection:
+                              textDirection,
+
+                            textDecorationLine:
+                              done
+                                ? 'line-through'
+                                : 'none',
+                          },
+                        ]}
+                      >
+                        {tr(
+                          task.text,
+                        )}
+                      </Text>
+
+                      <ChevronLeft
+                        size={18}
+                        color={
+                          ATHLETE.textTertiary
+                        }
+                        style={{
+                          transform: [
+                            {
+                              rotate:
+                                fa
+                                  ? '0deg'
+                                  : '180deg',
+                            },
+                          ],
+                        }}
+                      />
+                    </TouchableOpacity>
+                  );
+                },
+              )}
             </View>
+
+            {/* PROTOCOL DAYS */}
+
+            <View
+              style={styles.section}
+            >
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  {
+                    color:
+                      ATHLETE.text,
+                    textAlign,
+                    writingDirection:
+                      textDirection,
+                  },
+                ]}
+              >
+                {mode ===
+                'single'
+                  ? fa
+                    ? 'روزهای پروتکل'
+                    : 'Protocol days'
+                  : fa
+                  ? 'جلسات پروتکل'
+                  : 'Protocol sessions'}
+              </Text>
+
+              {data.map(
+                (_, index) =>
+                  renderDayCard(
+                    index,
+                  ),
+              )}
+            </View>
+
+            {/* RESET */}
 
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={resetProtocol}
-              style={[styles.resetButton, { borderColor: colors.border, backgroundColor: card, flexDirection: rowDirection }]}
+              onPress={
+                resetProtocol
+              }
+              style={[
+                styles.resetButton,
+                {
+                  borderColor:
+                    softBorder,
+                  backgroundColor:
+                    card,
+                  flexDirection:
+                    rowDirection,
+                },
+              ]}
             >
-              <RotateCcw size={17} color={colors.textSecondary} strokeWidth={2} />
-              <Text style={[styles.resetButtonText, { color: colors.textSecondary, textAlign, writingDirection: textDirection }]}>
-                {fa ? 'شروع مجدد پروتکل' : 'Reset protocol'}
+              <RotateCcw
+                size={17}
+                color={
+                  ATHLETE.textSecondary
+                }
+                strokeWidth={2}
+              />
+
+              <Text
+                style={[
+                  styles.resetButtonText,
+                  {
+                    color:
+                      ATHLETE.textSecondary,
+                    textAlign,
+                    writingDirection:
+                      textDirection,
+                  },
+                ]}
+              >
+                {fa
+                  ? 'شروع مجدد پروتکل'
+                  : 'Reset protocol'}
               </Text>
             </TouchableOpacity>
-            <View style={styles.bottomSpace} />
+
+            <View
+              style={
+                styles.bottomSpace
+              }
+            />
           </ScrollView>
         )}
 
-        {view === 'day' && currentEntry && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-            {renderPageHeader(getDayLabel(currentDay), getModeTitle(mode))}
+        {/* ======================================================
+            DAY
+        ====================================================== */}
 
-            <View style={[styles.dayProgressCard, { backgroundColor: card, borderColor: colors.border }]}>
-              <View style={[styles.dayProgressHeader, { flexDirection: rowDirection }]}>
-                <View style={{ alignItems: contentAlign }}>
-                  <Text style={[styles.dayProgressTitle, { color: colors.text, textAlign, writingDirection: textDirection }]}>
-                    {fa ? 'پیشرفت امروز' : "Today's progress"}
-                  </Text>
-                  <Text style={[styles.dayProgressSubtitle, { color: colors.textSecondary, textAlign, writingDirection: textDirection }]}>
-                    {fa ? `${currentCompletedTasks} از ${currentTotalTasks} فعالیت` : `${currentCompletedTasks} of ${currentTotalTasks} activities`}
-                  </Text>
-                </View>
-                <Text style={[styles.dayProgressPercent, { color: accent, textAlign: 'center' }]}>
-                  {currentDayPercent}%
-                </Text>
-              </View>
-              <View style={[styles.progressTrack, { backgroundColor: isDark ? '#292533' : '#EAE6F3' }]}>
-                <View style={[styles.progressFill, { width: `${currentDayPercent}%`, backgroundColor: accent }]} />
-              </View>
-            </View>
+        {view === 'day' &&
+          currentEntry && (
+            <ScrollView
+              showsVerticalScrollIndicator={
+                false
+              }
+              contentContainerStyle={
+                styles.scrollContent
+              }
+            >
+              {renderPageHeader(
+                getDayLabel(
+                  currentDay,
+                ),
+                getModeTitle(
+                  mode,
+                ),
+              )}
 
-            {renderDayNavigation()}
+              {/* DAY PROGRESS */}
 
-            {currentEntry.ayah && (
-              <View style={[styles.quoteCard, { backgroundColor: softAccent, borderColor: isDark ? 'rgba(167, 139, 250, 0.25)' : 'rgba(167, 139, 250, 0.15)' }]}>
-                <View style={[styles.quoteIcon, { backgroundColor: accent }]}>
-                  <BookOpen size={18} color="#FFFFFF" strokeWidth={2} />
-                </View>
-                <Text style={[styles.quoteText, { color: colors.text, textAlign, writingDirection: textDirection }]}>
-                  {currentEntry.ayah}
-                </Text>
-                {currentEntry.ayahRef && (
-                  <Text style={[styles.quoteReference, { color: accent, textAlign, writingDirection: textDirection }]}>
-                    {currentEntry.ayahRef}
-                  </Text>
-                )}
-              </View>
-            )}
-
-            {currentEntry.poem && (
-              <View style={[styles.poemCard, { backgroundColor: card, borderColor: colors.border }]}>
-                <View style={[styles.poemHeader, { flexDirection: rowDirection }]}>
-                  <View style={[styles.poemIcon, { backgroundColor: softAccent }]}>
-                    <Feather size={18} color={accent} strokeWidth={2} />
-                  </View>
-                  <View style={{ alignItems: contentAlign }}>
-                    <Text style={[styles.poemTitle, { color: colors.text, textAlign, writingDirection: textDirection }]}>
-                      {fa ? 'شعر امروز' : "Today's poem"}
-                    </Text>
-                    {currentEntry.poemPoet && (
-                      <Text style={[styles.poemPoet, { color: colors.textSecondary, textAlign, writingDirection: textDirection }]}>
-                        {currentEntry.poemPoet}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-                <Text style={[styles.poemText, { color: colors.text, textAlign, writingDirection: textDirection }]}>
-                  {currentEntry.poem}
-                </Text>
-              </View>
-            )}
-
-            <View style={styles.tasksSection}>
-              <Text style={[styles.sectionTitle, { color: colors.text, textAlign, writingDirection: textDirection }]}>
-                {fa ? 'فعالیت‌های این روز' : "Today's tasks"}
-              </Text>
-              {currentEntry.tasks.map((task, index) => {
-                const taskProgress = getDayProgress(currentDay)[index];
-                const done = isTaskDone(taskProgress);
-                const selected = selectedTask === index;
-
-                return (
-                  <View key={`task-${index}`} style={[styles.taskCard, { backgroundColor: card, borderColor: selected ? accent : done ? accent : colors.border }]}>
-                    <TouchableOpacity
-                      activeOpacity={0.8}
-                      onPress={() => setSelectedTask(selected ? null : index)}
-                      style={[styles.taskHeader, { flexDirection: rowDirection }]}
+              <View
+                style={[
+                  styles.dayProgressCard,
+                  {
+                    backgroundColor:
+                      card,
+                    borderColor:
+                      softBorder,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.dayProgressHeader,
+                    {
+                      flexDirection:
+                        rowDirection,
+                    },
+                  ]}
+                >
+                  <View
+                    style={{
+                      alignItems:
+                        contentAlign,
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.dayProgressTitle,
+                        {
+                          color:
+                            ATHLETE.text,
+                          textAlign,
+                          writingDirection:
+                            textDirection,
+                        },
+                      ]}
                     >
-                      <View style={[styles.taskCheckbox, { backgroundColor: done ? accent : 'transparent', borderColor: done ? accent : colors.border }]}>
-                        {done && <Check size={16} color="#FFFFFF" strokeWidth={2.8} />}
-                      </View>
-                      <Text style={[styles.taskText, { color: colors.text, textAlign, writingDirection: textDirection, textDecorationLine: done ? 'line-through' : 'none' }]}>
-                        {tr(task.text)}
+                      {fa
+                        ? 'پیشرفت امروز'
+                        : "Today's progress"}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.dayProgressSubtitle,
+                        {
+                          color:
+                            ATHLETE.textSecondary,
+                          textAlign,
+                          writingDirection:
+                            textDirection,
+                        },
+                      ]}
+                    >
+                      {fa
+                        ? `${currentCompletedTasks} از ${currentTotalTasks} فعالیت`
+                        : `${currentCompletedTasks} of ${currentTotalTasks} activities`}
+                    </Text>
+                  </View>
+
+                  <Text
+                    style={[
+                      styles.dayProgressPercent,
+                      {
+                        color:
+                          accent,
+                        textAlign:
+                          'center',
+                      },
+                    ]}
+                  >
+                    {currentDayPercent}%
+                  </Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.progressTrack,
+                    {
+                      backgroundColor:
+                        progressTrack,
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${currentDayPercent}%`,
+                        backgroundColor:
+                          accent,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+
+              {renderDayNavigation()}
+
+              {/* AYAH */}
+
+              {currentEntry.ayah && (
+                <View
+                  style={[
+                    styles.quoteCard,
+                    {
+                      backgroundColor:
+                        softAccent,
+                      borderColor:
+                        softBorder,
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.quoteIcon,
+                      {
+                        backgroundColor:
+                          accent,
+                      },
+                    ]}
+                  >
+                    <BookOpen
+                      size={18}
+                      color={
+                        ATHLETE.background
+                      }
+                      strokeWidth={2}
+                    />
+                  </View>
+
+                  <Text
+                    style={[
+                      styles.quoteText,
+                      {
+                        color:
+                          ATHLETE.text,
+                        textAlign,
+                        writingDirection:
+                          textDirection,
+                      },
+                    ]}
+                  >
+                    {currentEntry.ayah}
+                  </Text>
+
+                  {currentEntry.ayahRef && (
+                    <Text
+                      style={[
+                        styles.quoteReference,
+                        {
+                          color:
+                            accent,
+                          textAlign,
+                          writingDirection:
+                            textDirection,
+                        },
+                      ]}
+                    >
+                      {
+                        currentEntry.ayahRef
+                      }
+                    </Text>
+                  )}
+                </View>
+              )}
+
+              {/* POEM */}
+
+              {currentEntry.poem && (
+                <View
+                  style={[
+                    styles.poemCard,
+                    {
+                      backgroundColor:
+                        card,
+                      borderColor:
+                        softBorder,
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.poemHeader,
+                      {
+                        flexDirection:
+                          rowDirection,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.poemIcon,
+                        {
+                          backgroundColor:
+                            softAccent,
+                        },
+                      ]}
+                    >
+                      <Feather
+                        size={18}
+                        color={
+                          accent
+                        }
+                        strokeWidth={2}
+                      />
+                    </View>
+
+                    <View
+                      style={{
+                        alignItems:
+                          contentAlign,
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.poemTitle,
+                          {
+                            color:
+                              ATHLETE.text,
+                            textAlign,
+                            writingDirection:
+                              textDirection,
+                          },
+                        ]}
+                      >
+                        {fa
+                          ? 'شعر امروز'
+                          : "Today's poem"}
                       </Text>
-                      <ChevronDown size={18} color={colors.textSecondary} style={{ transform: [{ rotate: selected ? '180deg' : '0deg' }] }} />
-                    </TouchableOpacity>
-                    {selected && (
-                      <View style={[styles.taskExpanded, { borderTopColor: colors.border }]}>
-                        {task.type === 'text' ? (
-                          <TextInput
-                            value={taskProgress?.value ?? ''}
-                            onChangeText={(value) => updateTextTask(index, value)}
-                            placeholder={fa ? 'پاسخ خود را بنویسید...' : 'Write your response...'}
-                            placeholderTextColor={colors.textTertiary}
-                            multiline
-                            style={[styles.taskInput, { color: colors.text, backgroundColor: cardSecondary, borderColor: colors.border, textAlign, writingDirection: textDirection }]}
-                          />
-                        ) : (
-                          <TouchableOpacity
-                            activeOpacity={0.8}
-                            onPress={() => toggleTask(index)}
-                            style={[styles.taskActionButton, { backgroundColor: done ? softAccent : accent, flexDirection: rowDirection }]}
+
+                      {currentEntry.poemPoet && (
+                        <Text
+                          style={[
+                            styles.poemPoet,
+                            {
+                              color:
+                                ATHLETE.textSecondary,
+                              textAlign,
+                              writingDirection:
+                                textDirection,
+                            },
+                          ]}
+                        >
+                          {
+                            currentEntry.poemPoet
+                          }
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+
+                  <Text
+                    style={[
+                      styles.poemText,
+                      {
+                        color:
+                          ATHLETE.text,
+                        textAlign,
+                        writingDirection:
+                          textDirection,
+                      },
+                    ]}
+                  >
+                    {currentEntry.poem}
+                  </Text>
+                </View>
+              )}
+
+              {/* TASKS */}
+
+              <View
+                style={
+                  styles.tasksSection
+                }
+              >
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    {
+                      color:
+                        ATHLETE.text,
+                      textAlign,
+                      writingDirection:
+                        textDirection,
+                    },
+                  ]}
+                >
+                  {fa
+                    ? 'فعالیت‌های این روز'
+                    : "Today's tasks"}
+                </Text>
+
+                {currentEntry.tasks.map(
+                  (
+                    task,
+                    index,
+                  ) => {
+                    const taskProgress =
+                      getDayProgress(
+                        currentDay,
+                      )[index];
+
+                    const done =
+                      isTaskDone(
+                        taskProgress,
+                      );
+
+                    const selected =
+                      selectedTask ===
+                      index;
+
+                    return (
+                      <View
+                        key={`task-${index}`}
+                        style={[
+                          styles.taskCard,
+                          {
+                            backgroundColor:
+                              card,
+
+                            borderColor:
+                              selected ||
+                              done
+                                ? accent
+                                : softBorder,
+                          },
+                        ]}
+                      >
+                        <TouchableOpacity
+                          activeOpacity={
+                            0.8
+                          }
+                          onPress={() =>
+                            setSelectedTask(
+                              selected
+                                ? null
+                                : index,
+                            )
+                          }
+                          style={[
+                            styles.taskHeader,
+                            {
+                              flexDirection:
+                                rowDirection,
+                            },
+                          ]}
+                        >
+                          <View
+                            style={[
+                              styles.taskCheckbox,
+                              {
+                                backgroundColor:
+                                  done
+                                    ? accent
+                                    : 'transparent',
+
+                                borderColor:
+                                  done
+                                    ? accent
+                                    : softBorder,
+                              },
+                            ]}
                           >
-                            <Check size={17} color={done ? accent : '#FFFFFF'} strokeWidth={2.5} />
-                            <Text style={[styles.taskActionText, { color: done ? accent : '#FFFFFF', textAlign, writingDirection: textDirection }]}>
-                              {done ? (fa ? 'انجام شد' : 'Completed') : (fa ? 'انجام دادم' : 'Mark complete')}
-                            </Text>
-                          </TouchableOpacity>
+                            {done && (
+                              <Check
+                                size={
+                                  16
+                                }
+                                color={
+                                  ATHLETE.background
+                                }
+                                strokeWidth={
+                                  2.8
+                                }
+                              />
+                            )}
+                          </View>
+
+                          <Text
+                            style={[
+                              styles.taskText,
+                              {
+                                color:
+                                  ATHLETE.text,
+
+                                textAlign,
+                                writingDirection:
+                                  textDirection,
+
+                                textDecorationLine:
+                                  done
+                                    ? 'line-through'
+                                    : 'none',
+                              },
+                            ]}
+                          >
+                            {tr(
+                              task.text,
+                            )}
+                          </Text>
+
+                          <ChevronDown
+                            size={18}
+                            color={
+                              ATHLETE.textSecondary
+                            }
+                            style={{
+                              transform: [
+                                {
+                                  rotate:
+                                    selected
+                                      ? '180deg'
+                                      : '0deg',
+                                },
+                              ],
+                            }}
+                          />
+                        </TouchableOpacity>
+
+                        {selected && (
+                          <View
+                            style={[
+                              styles.taskExpanded,
+                              {
+                                borderTopColor:
+                                  softBorder,
+                              },
+                            ]}
+                          >
+                            {task.type ===
+                            'text' ? (
+                              <TextInput
+                                value={
+                                  taskProgress?.value ??
+                                  ''
+                                }
+                                onChangeText={value =>
+                                  updateTextTask(
+                                    index,
+                                    value,
+                                  )
+                                }
+                                placeholder={
+                                  fa
+                                    ? 'پاسخ خود را بنویسید...'
+                                    : 'Write your response...'
+                                }
+                                placeholderTextColor={
+                                  ATHLETE.textTertiary
+                                }
+                                multiline
+                                style={[
+                                  styles.taskInput,
+                                  {
+                                    color:
+                                      ATHLETE.text,
+
+                                    backgroundColor:
+                                      cardSecondary,
+
+                                    borderColor:
+                                      softBorder,
+
+                                    textAlign,
+                                    writingDirection:
+                                      textDirection,
+                                  },
+                                ]}
+                              />
+                            ) : (
+                              <TouchableOpacity
+                                activeOpacity={
+                                  0.8
+                                }
+                                onPress={() =>
+                                  toggleTask(
+                                    index,
+                                  )
+                                }
+                                style={[
+                                  styles.taskActionButton,
+                                  {
+                                    backgroundColor:
+                                      done
+                                        ? softAccent
+                                        : accent,
+
+                                    flexDirection:
+                                      rowDirection,
+                                  },
+                                ]}
+                              >
+                                <Check
+                                  size={
+                                    17
+                                  }
+                                  color={
+                                    done
+                                      ? accent
+                                      : ATHLETE.background
+                                  }
+                                  strokeWidth={
+                                    2.5
+                                  }
+                                />
+
+                                <Text
+                                  style={[
+                                    styles.taskActionText,
+                                    {
+                                      color:
+                                        done
+                                          ? accent
+                                          : ATHLETE.background,
+
+                                      textAlign,
+                                      writingDirection:
+                                        textDirection,
+                                    },
+                                  ]}
+                                >
+                                  {done
+                                    ? fa
+                                      ? 'انجام شد'
+                                      : 'Completed'
+                                    : fa
+                                    ? 'انجام دادم'
+                                    : 'Mark complete'}
+                                </Text>
+                              </TouchableOpacity>
+                            )}
+                          </View>
                         )}
                       </View>
-                    )}
-                  </View>
-                );
-              })}
-            </View>
+                    );
+                  },
+                )}
+              </View>
 
-            <TouchableOpacity
-              activeOpacity={0.82}
-              disabled={currentDayPercent !== 100}
-              onPress={completeDay}
-              style={[styles.completeDayButton, {
-                backgroundColor: currentDayPercent === 100 ? accent : cardSecondary,
-                borderColor: currentDayPercent === 100 ? accent : colors.border,
-                opacity: currentDayPercent === 100 ? 1 : 0.75,
-                flexDirection: rowDirection
-              }]}
-            >
-              {currentDayPercent === 100 ? (
-                <CheckCircle2 size={21} color="#FFFFFF" strokeWidth={2.3} />
-              ) : (
-                <Lock size={19} color={colors.textSecondary} strokeWidth={2} />
-              )}
-              <Text style={[styles.completeDayText, { color: currentDayPercent === 100 ? '#FFFFFF' : colors.textSecondary, textAlign, writingDirection: textDirection }]}>
-                {currentDayPercent === 100 ? (fa ? 'تکمیل روز' : 'Complete day') : (fa ? 'تمام فعالیت‌ها را انجام دهید' : 'Complete all tasks first')}
-              </Text>
-            </TouchableOpacity>
+              {/* COMPLETE */}
 
-            <View style={styles.bottomSpace} />
-          </ScrollView>
-        )}
+              <TouchableOpacity
+                activeOpacity={0.82}
+                disabled={
+                  currentDayPercent !==
+                  100
+                }
+                onPress={
+                  completeDay
+                }
+                style={[
+                  styles.completeDayButton,
+                  {
+                    backgroundColor:
+                      currentDayPercent ===
+                      100
+                        ? accent
+                        : cardSecondary,
+
+                    borderColor:
+                      currentDayPercent ===
+                      100
+                        ? accent
+                        : softBorder,
+
+                    opacity:
+                      currentDayPercent ===
+                      100
+                        ? 1
+                        : 0.75,
+
+                    flexDirection:
+                      rowDirection,
+                  },
+                ]}
+              >
+                {currentDayPercent ===
+                100 ? (
+                  <CheckCircle2
+                    size={21}
+                    color={
+                      ATHLETE.background
+                    }
+                    strokeWidth={2.3}
+                  />
+                ) : (
+                  <Lock
+                    size={19}
+                    color={
+                      ATHLETE.textSecondary
+                    }
+                    strokeWidth={2}
+                  />
+                )}
+
+                <Text
+                  style={[
+                    styles.completeDayText,
+                    {
+                      color:
+                        currentDayPercent ===
+                        100
+                          ? ATHLETE.background
+                          : ATHLETE.textSecondary,
+
+                      textAlign,
+                      writingDirection:
+                        textDirection,
+                    },
+                  ]}
+                >
+                  {currentDayPercent ===
+                  100
+                    ? fa
+                      ? 'تکمیل روز'
+                      : 'Complete day'
+                    : fa
+                    ? 'تمام فعالیت‌ها را انجام دهید'
+                    : 'Complete all tasks first'}
+                </Text>
+              </TouchableOpacity>
+
+              <View
+                style={
+                  styles.bottomSpace
+                }
+              />
+            </ScrollView>
+          )}
+
+        {/* ======================================================
+            REPORT
+        ====================================================== */}
 
         {view === 'report' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-            {renderPageHeader(fa ? 'گزارش پروتکل' : 'Protocol report', getModeTitle(mode))}
+          <ScrollView
+            showsVerticalScrollIndicator={
+              false
+            }
+            contentContainerStyle={
+              styles.scrollContent
+            }
+          >
+            {renderPageHeader(
+              fa
+                ? 'گزارش پروتکل'
+                : 'Protocol report',
+              getModeTitle(
+                mode,
+              ),
+            )}
 
-            <View style={[styles.reportHero, { backgroundColor: card, borderColor: colors.border }]}>
-              <View style={[styles.reportCircle, { borderColor: accent }]}>
-                <Text style={[styles.reportCircleValue, { color: accent, textAlign: 'center' }]}>
+            <View
+              style={[
+                styles.reportHero,
+                {
+                  backgroundColor:
+                    card,
+                  borderColor:
+                    softBorder,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.reportCircle,
+                  {
+                    borderColor:
+                      accent,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.reportCircleValue,
+                    {
+                      color:
+                        accent,
+                      textAlign:
+                        'center',
+                    },
+                  ]}
+                >
                   {overallPercent}%
                 </Text>
-                <Text style={[styles.reportCircleLabel, { color: colors.textSecondary, textAlign: 'center', writingDirection: textDirection }]}>
-                  {fa ? 'پیشرفت' : 'Progress'}
+
+                <Text
+                  style={[
+                    styles.reportCircleLabel,
+                    {
+                      color:
+                        ATHLETE.textSecondary,
+                      textAlign:
+                        'center',
+                      writingDirection:
+                        textDirection,
+                    },
+                  ]}
+                >
+                  {fa
+                    ? 'پیشرفت'
+                    : 'Progress'}
                 </Text>
               </View>
-              <Text style={[styles.reportHeroTitle, { color: colors.text, textAlign, writingDirection: textDirection }]}>
-                {fa ? 'پیشرفت کلی شما' : 'Your overall progress'}
+
+              <Text
+                style={[
+                  styles.reportHeroTitle,
+                  {
+                    color:
+                      ATHLETE.text,
+                    textAlign,
+                    writingDirection:
+                      textDirection,
+                  },
+                ]}
+              >
+                {fa
+                  ? 'پیشرفت کلی شما'
+                  : 'Your overall progress'}
               </Text>
-              <Text style={[styles.reportHeroSubtitle, { color: colors.textSecondary, textAlign, writingDirection: textDirection }]}>
-                {fa ? `${completedDays} روز از ${totalDays} روز کامل شده است` : `${completedDays} of ${totalDays} days completed`}
+
+              <Text
+                style={[
+                  styles.reportHeroSubtitle,
+                  {
+                    color:
+                      ATHLETE.textSecondary,
+                    textAlign,
+                    writingDirection:
+                      textDirection,
+                  },
+                ]}
+              >
+                {fa
+                  ? `${completedDays} روز از ${totalDays} روز کامل شده است`
+                  : `${completedDays} of ${totalDays} days completed`}
               </Text>
             </View>
 
-            <View style={[styles.reportStatsGrid, { flexDirection: rowDirection }]}>
-              <View style={[styles.reportStatCard, { backgroundColor: card, borderColor: colors.border }]}>
-                <View style={[styles.reportStatIcon, { backgroundColor: softAccent }]}>
-                  <CalendarDays size={19} color={accent} strokeWidth={2} />
+            <View
+              style={[
+                styles.reportStatsGrid,
+                {
+                  flexDirection:
+                    rowDirection,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.reportStatCard,
+                  {
+                    backgroundColor:
+                      card,
+                    borderColor:
+                      softBorder,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.reportStatIcon,
+                    {
+                      backgroundColor:
+                        softAccent,
+                    },
+                  ]}
+                >
+                  <CalendarDays
+                    size={19}
+                    color={
+                      accent
+                    }
+                    strokeWidth={2}
+                  />
                 </View>
-                <Text style={[styles.reportStatValue, { color: colors.text, textAlign: 'center' }]}>
+
+                <Text
+                  style={[
+                    styles.reportStatValue,
+                    {
+                      color:
+                        ATHLETE.text,
+                      textAlign:
+                        'center',
+                    },
+                  ]}
+                >
                   {completedDays}
                 </Text>
-                <Text style={[styles.reportStatLabel, { color: colors.textSecondary, textAlign: 'center', writingDirection: textDirection }]}>
-                  {fa ? 'روز کامل‌شده' : 'Days completed'}
+
+                <Text
+                  style={[
+                    styles.reportStatLabel,
+                    {
+                      color:
+                        ATHLETE.textSecondary,
+                      textAlign:
+                        'center',
+                      writingDirection:
+                        textDirection,
+                    },
+                  ]}
+                >
+                  {fa
+                    ? 'روز کامل‌شده'
+                    : 'Days completed'}
                 </Text>
               </View>
-              <View style={[styles.reportStatCard, { backgroundColor: card, borderColor: colors.border }]}>
-                <View style={[styles.reportStatIcon, { backgroundColor: softAccent }]}>
-                  <CheckCircle2 size={19} color={accent} strokeWidth={2} />
+
+              <View
+                style={[
+                  styles.reportStatCard,
+                  {
+                    backgroundColor:
+                      card,
+                    borderColor:
+                      softBorder,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.reportStatIcon,
+                    {
+                      backgroundColor:
+                        softAccent,
+                    },
+                  ]}
+                >
+                  <CheckCircle2
+                    size={19}
+                    color={
+                      accent
+                    }
+                    strokeWidth={2}
+                  />
                 </View>
-                <Text style={[styles.reportStatValue, { color: colors.text, textAlign: 'center' }]}>
-                  {data.reduce((sum, _, i) => sum + getCompletedTasks(i), 0)}
+
+                <Text
+                  style={[
+                    styles.reportStatValue,
+                    {
+                      color:
+                        ATHLETE.text,
+                      textAlign:
+                        'center',
+                    },
+                  ]}
+                >
+                  {data.reduce(
+                    (
+                      sum,
+                      _,
+                      i,
+                    ) =>
+                      sum +
+                      getCompletedTasks(
+                        i,
+                      ),
+                    0,
+                  )}
                 </Text>
-                <Text style={[styles.reportStatLabel, { color: colors.textSecondary, textAlign: 'center', writingDirection: textDirection }]}>
-                  {fa ? 'فعالیت انجام‌شده' : 'Tasks completed'}
+
+                <Text
+                  style={[
+                    styles.reportStatLabel,
+                    {
+                      color:
+                        ATHLETE.textSecondary,
+                      textAlign:
+                        'center',
+                      writingDirection:
+                        textDirection,
+                    },
+                  ]}
+                >
+                  {fa
+                    ? 'فعالیت انجام‌شده'
+                    : 'Tasks completed'}
                 </Text>
               </View>
-              <View style={[styles.reportStatCard, { backgroundColor: card, borderColor: colors.border }]}>
-                <View style={[styles.reportStatIcon, { backgroundColor: softAccent }]}>
-                  <Target size={19} color={accent} strokeWidth={2} />
+
+              <View
+                style={[
+                  styles.reportStatCard,
+                  {
+                    backgroundColor:
+                      card,
+                    borderColor:
+                      softBorder,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.reportStatIcon,
+                    {
+                      backgroundColor:
+                        softAccent,
+                    },
+                  ]}
+                >
+                  <Target
+                    size={19}
+                    color={
+                      accent
+                    }
+                    strokeWidth={2}
+                  />
                 </View>
-                <Text style={[styles.reportStatValue, { color: colors.text, textAlign: 'center' }]}>
-                  {data.reduce((sum, item) => sum + (item.tasks?.length ?? 0), 0) > 0
-                    ? Math.round((data.reduce((sum, _, i) => sum + getCompletedTasks(i), 0) / data.reduce((sum, item) => sum + (item.tasks?.length ?? 0), 0)) * 100)
-                    : 0}%
+
+                <Text
+                  style={[
+                    styles.reportStatValue,
+                    {
+                      color:
+                        ATHLETE.text,
+                      textAlign:
+                        'center',
+                    },
+                  ]}
+                >
+                  {data.reduce(
+                    (
+                      sum,
+                      item,
+                    ) =>
+                      sum +
+                      (item.tasks
+                        ?.length ??
+                        0),
+                    0,
+                  ) > 0
+                    ? Math.round(
+                        (data.reduce(
+                          (
+                            sum,
+                            _,
+                            i,
+                          ) =>
+                            sum +
+                            getCompletedTasks(
+                              i,
+                            ),
+                          0,
+                        ) /
+                          data.reduce(
+                            (
+                              sum,
+                              item,
+                            ) =>
+                              sum +
+                              (item
+                                .tasks
+                                ?.length ??
+                                0),
+                            0,
+                          )) *
+                          100,
+                      )
+                    : 0}
+                  %
                 </Text>
-                <Text style={[styles.reportStatLabel, { color: colors.textSecondary, textAlign: 'center', writingDirection: textDirection }]}>
-                  {fa ? 'تکمیل فعالیت‌ها' : 'Task completion'}
+
+                <Text
+                  style={[
+                    styles.reportStatLabel,
+                    {
+                      color:
+                        ATHLETE.textSecondary,
+                      textAlign:
+                        'center',
+                      writingDirection:
+                        textDirection,
+                    },
+                  ]}
+                >
+                  {fa
+                    ? 'تکمیل فعالیت‌ها'
+                    : 'Task completion'}
                 </Text>
               </View>
             </View>
 
-            <View style={[styles.reportProgressCard, { backgroundColor: card, borderColor: colors.border }]}>
-              <View style={[styles.sectionHeader, { flexDirection: rowDirection }]}>
-                <Text style={[styles.sectionTitle, { color: colors.text, textAlign, writingDirection: textDirection }]}>
-                  {fa ? 'پیشرفت روزانه' : 'Daily progress'}
+            {/* DAILY REPORT */}
+
+            <View
+              style={[
+                styles.reportProgressCard,
+                {
+                  backgroundColor:
+                    card,
+                  borderColor:
+                    softBorder,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.sectionHeader,
+                  {
+                    flexDirection:
+                      rowDirection,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    {
+                      color:
+                        ATHLETE.text,
+                      textAlign,
+                      writingDirection:
+                        textDirection,
+                    },
+                  ]}
+                >
+                  {fa
+                    ? 'پیشرفت روزانه'
+                    : 'Daily progress'}
                 </Text>
-                <BarChart3 size={19} color={accent} strokeWidth={2} />
+
+                <BarChart3
+                  size={19}
+                  color={
+                    accent
+                  }
+                  strokeWidth={2}
+                />
               </View>
-              <View style={styles.reportDays}>
-                {data.map((_, index) => {
-                  const percent = getDayPercent(index);
-                  return (
-                    <TouchableOpacity key={`report-day-${index}`} activeOpacity={0.8} onPress={() => openDay(index)} style={styles.reportDay}>
-                      <View style={[styles.reportDayBarTrack, { backgroundColor: isDark ? '#292533' : '#EAE6F3' }]}>
-                        <View style={[styles.reportDayBar, { height: `${Math.max(percent, 5)}%`, backgroundColor: percent === 100 ? accent : accentStrong }]} />
-                      </View>
-                      <Text style={[styles.reportDayLabel, { color: colors.textSecondary, textAlign: 'center' }]}>
-                        {index + 1}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+
+              <View
+                style={
+                  styles.reportDays
+                }
+              >
+                {data.map(
+                  (
+                    _,
+                    index,
+                  ) => {
+                    const percent =
+                      getDayPercent(
+                        index,
+                      );
+
+                    return (
+                      <TouchableOpacity
+                        key={`report-day-${index}`}
+                        activeOpacity={
+                          0.8
+                        }
+                        onPress={() =>
+                          openDay(
+                            index,
+                          )
+                        }
+                        style={
+                          styles.reportDay
+                        }
+                      >
+                        <View
+                          style={[
+                            styles.reportDayBarTrack,
+                            {
+                              backgroundColor:
+                                progressTrack,
+                            },
+                          ]}
+                        >
+                          <View
+                            style={[
+                              styles.reportDayBar,
+                              {
+                                height: `${Math.max(
+                                  percent,
+                                  5,
+                                )}%`,
+
+                                backgroundColor:
+                                  percent ===
+                                  100
+                                    ? accent
+                                    : accentStrong,
+                              },
+                            ]}
+                          />
+                        </View>
+
+                        <Text
+                          style={[
+                            styles.reportDayLabel,
+                            {
+                              color:
+                                ATHLETE.textSecondary,
+                              textAlign:
+                                'center',
+                            },
+                          ]}
+                        >
+                          {index + 1}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  },
+                )}
               </View>
             </View>
 
-            <View style={[styles.summaryCard, { backgroundColor: softAccent, borderColor: isDark ? 'rgba(167, 139, 250, 0.25)' : 'rgba(167, 139, 250, 0.15)', flexDirection: rowDirection }]}>
-              <View style={[styles.summaryIcon, { backgroundColor: accent }]}>
-                <Sparkles size={19} color="#FFFFFF" strokeWidth={2} />
+            {/* SUMMARY */}
+
+            <View
+              style={[
+                styles.summaryCard,
+                {
+                  backgroundColor:
+                    softAccent,
+                  borderColor:
+                    softBorder,
+                  flexDirection:
+                    rowDirection,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.summaryIcon,
+                  {
+                    backgroundColor:
+                      accent,
+                  },
+                ]}
+              >
+                <Sparkles
+                  size={19}
+                  color={
+                    ATHLETE.background
+                  }
+                  strokeWidth={2}
+                />
               </View>
-              <View style={[styles.summaryContent, { alignItems: contentAlign }]}>
-                <Text style={[styles.summaryTitle, { color: colors.text, textAlign, writingDirection: textDirection }]}>
-                  {overallPercent === 100 ? (fa ? 'پروتکل را کامل کرده‌اید' : 'You completed the protocol') : (fa ? 'به مسیر خود ادامه دهید' : 'Keep moving forward')}
+
+              <View
+                style={[
+                  styles.summaryContent,
+                  {
+                    alignItems:
+                      contentAlign,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.summaryTitle,
+                    {
+                      color:
+                        ATHLETE.text,
+                      textAlign,
+                      writingDirection:
+                        textDirection,
+                    },
+                  ]}
+                >
+                  {overallPercent ===
+                  100
+                    ? fa
+                      ? 'پروتکل را کامل کرده‌اید'
+                      : 'You completed the protocol'
+                    : fa
+                    ? 'به مسیر خود ادامه دهید'
+                    : 'Keep moving forward'}
                 </Text>
-                <Text style={[styles.summaryText, { color: colors.textSecondary, textAlign, writingDirection: textDirection }]}>
-                  {overallPercent === 100
-                    ? (fa ? 'تمام فعالیت‌های این پروتکل با موفقیت انجام شده‌اند.' : 'All activities in this protocol have been completed.')
-                    : (fa ? 'هر فعالیت کوچک، یک قدم به سمت پیشرفت بیشتر است.' : 'Every small activity is another step forward.')}
+
+                <Text
+                  style={[
+                    styles.summaryText,
+                    {
+                      color:
+                        ATHLETE.textSecondary,
+                      textAlign,
+                      writingDirection:
+                        textDirection,
+                    },
+                  ]}
+                >
+                  {overallPercent ===
+                  100
+                    ? fa
+                      ? 'تمام فعالیت‌های این پروتکل با موفقیت انجام شده‌اند.'
+                      : 'All activities in this protocol have been completed.'
+                    : fa
+                    ? 'هر فعالیت کوچک، یک قدم به سمت پیشرفت بیشتر است.'
+                    : 'Every small activity is another step forward.'}
                 </Text>
               </View>
             </View>
-            <View style={styles.bottomSpace} />
+
+            <View
+              style={
+                styles.bottomSpace
+              }
+            />
           </ScrollView>
         )}
+
+        {/* ======================================================
+            CELEBRATION
+        ====================================================== */}
 
         {showCelebration && (
           <MotiView
-            from={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            style={[styles.celebrationOverlay, { backgroundColor: isDark ? 'rgba(9,9,15,0.82)' : 'rgba(255,255,255,0.82)' }]}
+            from={{
+              opacity: 0,
+              scale: 0.85,
+            }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+            }}
+            style={[
+              styles.celebrationOverlay,
+              {
+                backgroundColor:
+                  'rgba(0,0,0,0.78)',
+              },
+            ]}
           >
-            <MotiView from={{ opacity: 0, translateY: 20 }} animate={{ opacity: 1, translateY: 0 }} style={[styles.celebrationCard, { backgroundColor: card, borderColor: colors.border }]}>
-              <View style={[styles.celebrationIcon, { backgroundColor: accent }]}>
-                <CheckCircle2 size={35} color="#FFFFFF" strokeWidth={2} />
+            <MotiView
+              from={{
+                opacity: 0,
+                translateY: 20,
+              }}
+              animate={{
+                opacity: 1,
+                translateY: 0,
+              }}
+              style={[
+                styles.celebrationCard,
+                {
+                  backgroundColor:
+                    card,
+                  borderColor:
+                    softBorder,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.celebrationIcon,
+                  {
+                    backgroundColor:
+                      accent,
+                  },
+                ]}
+              >
+                <CheckCircle2
+                  size={35}
+                  color={
+                    ATHLETE.background
+                  }
+                  strokeWidth={2}
+                />
               </View>
-              <Text style={[styles.celebrationTitle, { color: colors.text, textAlign, writingDirection: textDirection }]}>
-                {fa ? 'روز کامل شد' : 'Day completed'}
+
+              <Text
+                style={[
+                  styles.celebrationTitle,
+                  {
+                    color:
+                      ATHLETE.text,
+                    textAlign,
+                    writingDirection:
+                      textDirection,
+                  },
+                ]}
+              >
+                {fa
+                  ? 'روز کامل شد'
+                  : 'Day completed'}
               </Text>
-              <Text style={[styles.celebrationText, { color: colors.textSecondary, textAlign, writingDirection: textDirection }]}>
-                {fa ? 'آفرین! یک قدم دیگر به جلو رفتید.' : 'Great job! You took another step forward.'}
+
+              <Text
+                style={[
+                  styles.celebrationText,
+                  {
+                    color:
+                      ATHLETE.textSecondary,
+                    textAlign,
+                    writingDirection:
+                      textDirection,
+                  },
+                ]}
+              >
+                {fa
+                  ? 'آفرین! یک قدم دیگر به جلو رفتید.'
+                  : 'Great job! You took another step forward.'}
               </Text>
             </MotiView>
           </MotiView>
@@ -888,12 +3599,37 @@ export default function ProtocolScreen() {
   );
 }
 
+/* =================================================================
+   STYLES
+================================================================= */
+
 const styles = StyleSheet.create({
-  safeArea: { flex: 1 },
-  root: { flex: 1 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
-  loadingText: { fontSize: 16 },
-  scrollContent: { paddingBottom: 40 },
+  safeArea: {
+    flex: 1,
+  },
+
+  root: {
+    flex: 1,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+
+  loadingText: {
+    fontSize: 16,
+  },
+
+  scrollContent: {
+    paddingBottom: 40,
+  },
+
+  /* ===============================================================
+     HEADER
+  =============================================================== */
 
   pageHeader: {
     width: '100%',
@@ -940,6 +3676,10 @@ const styles = StyleSheet.create({
     height: 42,
   },
 
+  /* ===============================================================
+     HERO
+  =============================================================== */
+
   heroCard: {
     marginHorizontal: 16,
     marginTop: 8,
@@ -954,7 +3694,8 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor:
+      'rgba(255,255,255,0.08)',
     right: -80,
     top: -80,
   },
@@ -964,7 +3705,8 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     borderRadius: 75,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor:
+      'rgba(255,255,255,0.05)',
     left: -60,
     bottom: -60,
   },
@@ -987,7 +3729,6 @@ const styles = StyleSheet.create({
     width: '100%',
     fontSize: 24,
     fontWeight: '800',
-    color: '#FFFFFF',
     marginBottom: 4,
   },
 
@@ -995,7 +3736,6 @@ const styles = StyleSheet.create({
     width: '100%',
     fontSize: 13,
     lineHeight: 21,
-    color: 'rgba(255,255,255,0.85)',
     marginBottom: 18,
   },
 
@@ -1011,28 +3751,30 @@ const styles = StyleSheet.create({
 
   heroProgressLabel: {
     fontSize: 11,
-    color: 'rgba(255,255,255,0.7)',
   },
 
   heroProgressValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#FFFFFF',
   },
 
   heroProgressTrack: {
     flex: 1,
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor:
+      'rgba(7,9,8,0.18)',
     overflow: 'hidden',
   },
 
   heroProgressFill: {
     height: '100%',
     borderRadius: 3,
-    backgroundColor: '#FFFFFF',
   },
+
+  /* ===============================================================
+     SECTIONS
+  =============================================================== */
 
   section: {
     paddingHorizontal: 16,
@@ -1047,7 +3789,7 @@ const styles = StyleSheet.create({
   },
 
   sectionTitle: {
-    paddingBottom:10,
+    paddingBottom: 10,
     fontSize: 17,
     fontWeight: '700',
   },
@@ -1056,6 +3798,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
+
+  /* ===============================================================
+     MODES
+  =============================================================== */
 
   modeGrid: {
     gap: 10,
@@ -1101,6 +3847,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  /* ===============================================================
+     REPORT
+  =============================================================== */
 
   reportButton: {
     alignItems: 'center',
@@ -1167,6 +3917,10 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
 
+  /* ===============================================================
+     TODAY TASK
+  =============================================================== */
+
   todayTaskCard: {
     alignItems: 'center',
     padding: 12,
@@ -1188,6 +3942,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
   },
+
+  /* ===============================================================
+     DAY CARD
+  =============================================================== */
 
   dayCard: {
     padding: 14,
@@ -1239,6 +3997,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
+  /* ===============================================================
+     RESET
+  =============================================================== */
+
   resetButton: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -1257,6 +4019,10 @@ const styles = StyleSheet.create({
   bottomSpace: {
     height: 30,
   },
+
+  /* ===============================================================
+     DAY PROGRESS
+  =============================================================== */
 
   dayProgressCard: {
     marginHorizontal: 16,
@@ -1286,6 +4052,10 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
+  /* ===============================================================
+     DAY NAVIGATION
+  =============================================================== */
+
   dayNavigation: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -1304,7 +4074,6 @@ const styles = StyleSheet.create({
   },
 
   dayIndicator: {
-    
     minWidth: 90,
     height: 40,
     paddingHorizontal: 14,
@@ -1318,6 +4087,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
+
+  /* ===============================================================
+     QUOTE
+  =============================================================== */
 
   quoteCard: {
     marginHorizontal: 16,
@@ -1346,6 +4119,10 @@ const styles = StyleSheet.create({
   quoteReference: {
     fontSize: 12,
   },
+
+  /* ===============================================================
+     POEM
+  =============================================================== */
 
   poemCard: {
     marginHorizontal: 16,
@@ -1384,6 +4161,10 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontStyle: 'italic',
   },
+
+  /* ===============================================================
+     TASKS
+  =============================================================== */
 
   tasksSection: {
     paddingHorizontal: 16,
@@ -1459,6 +4240,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
+  /* ===============================================================
+     REPORT HERO
+  =============================================================== */
+
   reportHero: {
     marginHorizontal: 16,
     marginTop: 8,
@@ -1533,6 +4318,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
+  /* ===============================================================
+     REPORT PROGRESS
+  =============================================================== */
+
   reportProgressCard: {
     marginHorizontal: 16,
     marginTop: 12,
@@ -1573,6 +4362,10 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
 
+  /* ===============================================================
+     SUMMARY
+  =============================================================== */
+
   summaryCard: {
     alignItems: 'center',
     marginHorizontal: 16,
@@ -1605,6 +4398,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.7,
   },
+
+  /* ===============================================================
+     CELEBRATION
+  =============================================================== */
 
   celebrationOverlay: {
     position: 'absolute',
