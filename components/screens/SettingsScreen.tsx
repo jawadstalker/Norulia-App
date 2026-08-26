@@ -1,8 +1,4 @@
-import React, {
-  useEffect,
-  useRef,
-} from 'react';
-
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,21 +8,11 @@ import {
   Animated,
 } from 'react-native';
 
-import {
-  useTheme,
-} from '../../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 
-import {
-  useLanguage,
-} from '../../context/LanguageContext';
-
-import {
-  useAuth,
-} from '../../context/AuthContext';
-
-import {
-  Card,
-} from '../ui/Card';
+import { Card } from '../ui/Card';
 
 import {
   Spacing,
@@ -43,13 +29,9 @@ import {
   Palette,
 } from 'lucide-react-native';
 
-import {
-  LinearGradient,
-} from 'expo-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import {
-  ThemeMode,
-} from '../../types';
+import { ThemeMode } from '../../types';
 
 // =======================================================
 // THEME OPTION
@@ -57,20 +39,17 @@ import {
 
 interface ThemeOptionProps {
   mode: ThemeMode;
-
   title: string;
-
   subtitle: string;
-
   icon: React.ReactNode;
-
   previewColors: string[];
-
   selected: boolean;
-
   onPress: () => void;
-
   isRTL: boolean;
+  textColor: string;
+  secondaryTextColor: string;
+  surfaceColor: string;
+  borderColor: string;
 }
 
 function ThemeOption({
@@ -81,64 +60,60 @@ function ThemeOption({
   selected,
   onPress,
   isRTL,
+  textColor,
+  secondaryTextColor,
+  surfaceColor,
+  borderColor,
 }: ThemeOptionProps) {
-  const scale =
-    useRef(
-      new Animated.Value(
-        selected ? 1 : 0.98
-      )
-    ).current;
+  const scale = useRef(
+    new Animated.Value(selected ? 1 : 0.985)
+  ).current;
 
-  const glow =
-    useRef(
-      new Animated.Value(
-        selected ? 1 : 0
-      )
-    ).current;
+  const selectionProgress = useRef(
+    new Animated.Value(selected ? 1 : 0)
+  ).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(
-        scale,
-        {
-          toValue:
-            selected
-              ? 1
-              : 0.98,
+      Animated.spring(scale, {
+        toValue: selected ? 1 : 0.985,
+        useNativeDriver: true,
+        damping: 16,
+        stiffness: 180,
+        mass: 0.8,
+      }),
 
-          useNativeDriver: true,
-
-          damping: 16,
-
-          stiffness: 180,
-        }
-      ),
-
-      Animated.timing(
-        glow,
-        {
-          toValue:
-            selected
-              ? 1
-              : 0,
-
-          duration: 220,
-
-          useNativeDriver: false,
-        }
-      ),
+      Animated.timing(selectionProgress, {
+        toValue: selected ? 1 : 0,
+        duration: 220,
+        useNativeDriver: false,
+      }),
     ]).start();
-  }, [
-    selected,
-    scale,
-    glow,
-  ]);
+  }, [selected, scale, selectionProgress]);
 
-  const borderColor =
-    glow.interpolate({
+  const animatedBorderColor =
+    selectionProgress.interpolate({
       inputRange: [0, 1],
       outputRange: [
-        'rgba(128,128,128,0.12)',
+        borderColor,
+        previewColors[1],
+      ],
+    });
+
+  const animatedBackgroundColor =
+    selectionProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [
+        surfaceColor,
+        previewColors[1] + '0D',
+      ],
+    });
+
+  const animatedIconBackground =
+    selectionProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [
+        'rgba(128,128,128,0.10)',
         previewColors[1],
       ],
     });
@@ -148,11 +123,7 @@ function ThemeOption({
       style={[
         styles.themeOptionWrapper,
         {
-          transform: [
-            {
-              scale,
-            },
-          ],
+          transform: [{ scale }],
         },
       ]}
     >
@@ -160,174 +131,179 @@ function ThemeOption({
         activeOpacity={0.88}
         onPress={onPress}
         accessibilityRole="button"
-        style={[
-          styles.themeOption,
-
-        ]}
+        accessibilityState={{
+          selected,
+        }}
+        style={styles.themeTouchable}
       >
-
-        <View
+        <Animated.View
           style={[
-            styles.themePreview,
+            styles.themeOption,
             {
-              backgroundColor:
-                previewColors[0],
+              borderColor: animatedBorderColor,
+              backgroundColor: animatedBackgroundColor,
             },
           ]}
         >
-          <View
-            style={[
-              styles.previewTop,
-              {
-                backgroundColor:
-                  previewColors[2],
-              },
-            ]}
-          />
+          {/* ============================================
+              THEME PREVIEW
+          ============================================ */}
 
           <View
             style={[
-              styles.previewContent,
+              styles.themePreview,
               {
-                backgroundColor:
-                  previewColors[0],
+                backgroundColor: previewColors[0],
               },
             ]}
           >
             <View
               style={[
-                styles.previewLine,
+                styles.previewTop,
                 {
-                  backgroundColor:
-                    previewColors[3],
+                  backgroundColor: previewColors[2],
                 },
               ]}
             />
 
             <View
               style={[
-                styles.previewLineShort,
+                styles.previewContent,
                 {
-                  backgroundColor:
-                    previewColors[3],
+                  backgroundColor: previewColors[0],
                 },
               ]}
-            />
+            >
+              <View
+                style={[
+                  styles.previewLine,
+                  {
+                    backgroundColor: previewColors[3],
+                  },
+                ]}
+              />
 
+              <View
+                style={[
+                  styles.previewLineShort,
+                  {
+                    backgroundColor: previewColors[3],
+                  },
+                ]}
+              />
+
+              <View
+                style={[
+                  styles.previewCard,
+                  {
+                    backgroundColor: previewColors[2],
+                  },
+                ]}
+              />
+
+              <View
+                style={[
+                  styles.previewAccent,
+                  {
+                    backgroundColor: previewColors[1],
+                  },
+                ]}
+              />
+            </View>
+          </View>
+
+          {/* ============================================
+              INFO
+          ============================================ */}
+
+          <View
+            style={[
+              styles.themeInfo,
+              {
+                alignItems: isRTL
+                  ? 'flex-end'
+                  : 'flex-start',
+              },
+            ]}
+          >
             <View
               style={[
-                styles.previewCard,
+                styles.themeTitleRow,
                 {
-                  backgroundColor:
-                    previewColors[2],
+                  flexDirection: isRTL
+                    ? 'row-reverse'
+                    : 'row',
                 },
               ]}
-            />
+            >
+              <Animated.View
+                style={[
+                  styles.themeIcon,
+                  {
+                    backgroundColor:
+                      animatedIconBackground,
+                  },
+                ]}
+              >
+                {icon}
+              </Animated.View>
 
+              <Text
+                style={[
+                  styles.themeTitle,
+                  {
+                    color: selected
+                      ? previewColors[1]
+                      : textColor,
+                    textAlign: isRTL
+                      ? 'right'
+                      : 'left',
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {title}
+              </Text>
+            </View>
+
+            <Text
+              style={[
+                styles.themeSubtitle,
+                {
+                  color: secondaryTextColor,
+                  textAlign: isRTL
+                    ? 'right'
+                    : 'left',
+                },
+              ]}
+              numberOfLines={2}
+            >
+              {subtitle}
+            </Text>
+          </View>
+
+          {/* ============================================
+              SELECTED BADGE
+          ============================================ */}
+
+          {selected && (
             <View
               style={[
-                styles.previewAccent,
+                styles.checkBadge,
                 {
                   backgroundColor:
                     previewColors[1],
                 },
               ]}
-            />
-          </View>
-        </View>
-
-        {/* =================================================
-            INFO
-        ================================================= */}
-
-        <View
-          style={[
-            styles.themeInfo,
-            {
-              alignItems: isRTL
-                ? 'flex-end'
-                : 'flex-start',
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.themeTitleRow,
-              {
-                flexDirection:
-                  isRTL
-                    ? 'row-reverse'
-                    : 'row',
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.themeIcon,
-                {
-                  backgroundColor:
-                    selected
-                      ? previewColors[1]
-                      : 'rgba(128,128,128,0.10)',
-                },
-              ]}
             >
-              {icon}
+              <Check
+                size={15}
+                color={previewColors[0]}
+                strokeWidth={3}
+              />
             </View>
-
-            <Text
-              style={[
-                styles.themeTitle,
-                {
-                  color:
-                    selected
-                      ? previewColors[1]
-                      : '#FFFFFF',
-                },
-              ]}
-            >
-              {title}
-            </Text>
-          </View>
-
-          <Text
-            style={[
-              styles.themeSubtitle,
-              {
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
-              },
-            ]}
-          >
-            {subtitle}
-          </Text>
-        </View>
-
-        {/* =================================================
-            CHECK
-        ================================================= */}
-
-        {selected && (
-          <View
-            style={[
-              styles.checkBadge,
-              {
-                backgroundColor:
-                  previewColors[1],
-              },
-            ]}
-          >
-            <Check
-              size={15}
-              color={
-                previewColors[0]
-              }
-              strokeWidth={3}
-            />
-          </View>
-        )}
+          )}
+        </Animated.View>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -363,15 +339,13 @@ export function SettingsScreen() {
     {
       mode: 'light' as ThemeMode,
 
-      title:
-        isRTL
-          ? 'روشن'
-          : 'Light',
+      title: isRTL
+        ? 'روشن'
+        : 'Light',
 
-      subtitle:
-        isRTL
-          ? 'تم روشن و مینیمال'
-          : 'Clean & minimal',
+      subtitle: isRTL
+        ? 'تم روشن و مینیمال'
+        : 'Clean & minimal',
 
       icon: (
         <Sun
@@ -381,6 +355,7 @@ export function SettingsScreen() {
               ? '#FFFFFF'
               : colors.textSecondary
           }
+          strokeWidth={2.2}
         />
       ),
 
@@ -395,15 +370,13 @@ export function SettingsScreen() {
     {
       mode: 'dark' as ThemeMode,
 
-      title:
-        isRTL
-          ? 'تاریک'
-          : 'Dark',
+      title: isRTL
+        ? 'تاریک'
+        : 'Dark',
 
-      subtitle:
-        isRTL
-          ? 'تیره و آرام برای شب'
-          : 'Deep & comfortable',
+      subtitle: isRTL
+        ? 'تیره و آرام برای شب'
+        : 'Deep & comfortable',
 
       icon: (
         <Moon
@@ -413,6 +386,7 @@ export function SettingsScreen() {
               ? '#FFFFFF'
               : colors.textSecondary
           }
+          strokeWidth={2.2}
         />
       ),
 
@@ -427,13 +401,10 @@ export function SettingsScreen() {
     {
       mode: 'athlete' as ThemeMode,
 
-      title:
-        'Neon Athlete',
+      title: 'Neon Athlete',
 
       subtitle:
-        isRTL
-          ? 'Brain × Body × Performance'
-          : 'Brain × Body × Performance',
+        'Brain × Body × Performance',
 
       icon: (
         <Dumbbell
@@ -469,16 +440,11 @@ export function SettingsScreen() {
             colors.background,
         },
       ]}
-      contentContainerStyle={[
-        styles.content,
-        {
-          direction:
-            isRTL
-              ? 'rtl'
-              : 'ltr',
-        },
-      ]}
+      contentContainerStyle={
+        styles.content
+      }
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
     >
       {/* =================================================
           HERO
@@ -488,10 +454,9 @@ export function SettingsScreen() {
         style={[
           styles.hero,
           {
-            alignItems:
-              isRTL
-                ? 'flex-end'
-                : 'flex-start',
+            alignItems: isRTL
+              ? 'flex-end'
+              : 'flex-start',
           },
         ]}
       >
@@ -501,6 +466,7 @@ export function SettingsScreen() {
             {
               backgroundColor:
                 colors.primary + '18',
+
               borderColor:
                 colors.primary + '35',
             },
@@ -508,9 +474,7 @@ export function SettingsScreen() {
         >
           <Palette
             size={22}
-            color={
-              colors.primary
-            }
+            color={colors.primary}
             strokeWidth={2.2}
           />
         </View>
@@ -519,17 +483,19 @@ export function SettingsScreen() {
           style={[
             styles.title,
             {
-              color:
-                colors.text,
+              color: colors.text,
 
-              textAlign:
-                isRTL
-                  ? 'right'
-                  : 'left',
+              textAlign: isRTL
+                ? 'right'
+                : 'left',
             },
           ]}
         >
-          {t.settings}
+          {t.settings || (
+            isRTL
+              ? 'تنظیمات'
+              : 'Settings'
+          )}
         </Text>
 
         <Text
@@ -539,10 +505,9 @@ export function SettingsScreen() {
               color:
                 colors.textSecondary,
 
-              textAlign:
-                isRTL
-                  ? 'right'
-                  : 'left',
+              textAlign: isRTL
+                ? 'right'
+                : 'left',
             },
           ]}
         >
@@ -572,10 +537,9 @@ export function SettingsScreen() {
           style={[
             styles.sectionHeader,
             {
-              flexDirection:
-                isRTL
-                  ? 'row-reverse'
-                  : 'row',
+              flexDirection: isRTL
+                ? 'row-reverse'
+                : 'row',
             },
           ]}
         >
@@ -590,9 +554,8 @@ export function SettingsScreen() {
           >
             <Sparkles
               size={18}
-              color={
-                colors.primary
-              }
+              color={colors.primary}
+              strokeWidth={2.1}
             />
           </View>
 
@@ -600,10 +563,9 @@ export function SettingsScreen() {
             style={[
               styles.sectionHeaderText,
               {
-                alignItems:
-                  isRTL
-                    ? 'flex-end'
-                    : 'flex-start',
+                alignItems: isRTL
+                  ? 'flex-end'
+                  : 'flex-start',
               },
             ]}
           >
@@ -611,8 +573,11 @@ export function SettingsScreen() {
               style={[
                 styles.sectionTitle,
                 {
-                  color:
-                    colors.text,
+                  color: colors.text,
+
+                  textAlign: isRTL
+                    ? 'right'
+                    : 'left',
                 },
               ]}
             >
@@ -628,10 +593,9 @@ export function SettingsScreen() {
                   color:
                     colors.textSecondary,
 
-                  textAlign:
-                    isRTL
-                      ? 'right'
-                      : 'left',
+                  textAlign: isRTL
+                    ? 'right'
+                    : 'left',
                 },
               ]}
             >
@@ -646,55 +610,44 @@ export function SettingsScreen() {
             THEME OPTIONS
         ================================================= */}
 
-        <View
-          style={
-            styles.themeList
-          }
-        >
-          {themeOptions.map(
-            (option) => (
-              <ThemeOption
-                key={
-                  option.mode
-                }
-                mode={
-                  option.mode
-                }
-                title={
-                  option.title
-                }
-                subtitle={
-                  option.subtitle
-                }
-                icon={
-                  option.icon
-                }
-                previewColors={
-                  option.previewColors
-                }
-                selected={
-                  theme ===
-                  option.mode
-                }
-                onPress={() =>
-                  setTheme(
-                    option.mode
-                  )
-                }
-                isRTL={
-                  isRTL
-                }
-              />
-            )
-          )}
+        <View style={styles.themeList}>
+          {themeOptions.map((option) => (
+            <ThemeOption
+              key={option.mode}
+              mode={option.mode}
+              title={option.title}
+              subtitle={option.subtitle}
+              icon={option.icon}
+              previewColors={
+                option.previewColors
+              }
+              selected={
+                theme === option.mode
+              }
+              onPress={() =>
+                setTheme(option.mode)
+              }
+              isRTL={isRTL}
+              textColor={colors.text}
+              secondaryTextColor={
+                colors.textSecondary
+              }
+              surfaceColor={
+                colors.surfaceSecondary ||
+                colors.surface
+              }
+              borderColor={
+                colors.border
+              }
+            />
+          ))}
         </View>
 
         {/* =================================================
             ATHLETE CALLOUT
         ================================================= */}
 
-        {theme ===
-          'athlete' && (
+        {theme === 'athlete' && (
           <LinearGradient
             colors={[
               'rgba(184,255,61,0.14)',
@@ -714,23 +667,30 @@ export function SettingsScreen() {
               {
                 borderColor:
                   'rgba(184,255,61,0.20)',
+
+                flexDirection: isRTL
+                  ? 'row-reverse'
+                  : 'row',
               },
             ]}
           >
-            <Dumbbell
-              size={19}
-              color="#B8FF3D"
-              strokeWidth={2.4}
-            />
+            <View
+              style={styles.calloutIcon}
+            >
+              <Dumbbell
+                size={19}
+                color="#B8FF3D"
+                strokeWidth={2.4}
+              />
+            </View>
 
             <View
               style={[
                 styles.calloutContent,
                 {
-                  alignItems:
-                    isRTL
-                      ? 'flex-end'
-                      : 'flex-start',
+                  alignItems: isRTL
+                    ? 'flex-end'
+                    : 'flex-start',
                 },
               ]}
             >
@@ -738,10 +698,9 @@ export function SettingsScreen() {
                 style={[
                   styles.calloutTitle,
                   {
-                    textAlign:
-                      isRTL
-                        ? 'right'
-                        : 'left',
+                    textAlign: isRTL
+                      ? 'right'
+                      : 'left',
                   },
                 ]}
               >
@@ -752,10 +711,9 @@ export function SettingsScreen() {
                 style={[
                   styles.calloutText,
                   {
-                    textAlign:
-                      isRTL
-                        ? 'right'
-                        : 'left',
+                    textAlign: isRTL
+                      ? 'right'
+                      : 'left',
                   },
                 ]}
               >
@@ -791,10 +749,9 @@ export function SettingsScreen() {
               color:
                 colors.textSecondary,
 
-              textAlign:
-                isRTL
-                  ? 'right'
-                  : 'left',
+              textAlign: isRTL
+                ? 'right'
+                : 'left',
             },
           ]}
         >
@@ -805,20 +762,26 @@ export function SettingsScreen() {
           style={[
             styles.optionsRow,
             {
-              flexDirection:
-                isRTL
-                  ? 'row-reverse'
-                  : 'row',
+              flexDirection: isRTL
+                ? 'row-reverse'
+                : 'row',
             },
           ]}
         >
-          {/* PERSIAN */}
+          {/* ==========================================
+              PERSIAN
+          ========================================== */}
 
           <TouchableOpacity
             activeOpacity={0.78}
             onPress={() =>
               setLanguage('fa')
             }
+            accessibilityRole="button"
+            accessibilityState={{
+              selected:
+                language === 'fa',
+            }}
             style={[
               styles.languageOption,
               {
@@ -837,11 +800,7 @@ export function SettingsScreen() {
               },
             ]}
           >
-            <Text
-              style={
-                styles.flag
-              }
-            >
+            <Text style={styles.flag}>
               🇮🇷
             </Text>
 
@@ -858,15 +817,42 @@ export function SettingsScreen() {
             >
               {t.persian}
             </Text>
+
+            {language === 'fa' && (
+              <View
+                style={[
+                  styles.languageCheck,
+                  {
+                    backgroundColor:
+                      colors.primary,
+                  },
+                ]}
+              >
+                <Check
+                  size={11}
+                  color={
+                    colors.background
+                  }
+                  strokeWidth={3}
+                />
+              </View>
+            )}
           </TouchableOpacity>
 
-          {/* ENGLISH */}
+          {/* ==========================================
+              ENGLISH
+          ========================================== */}
 
           <TouchableOpacity
             activeOpacity={0.78}
             onPress={() =>
               setLanguage('en')
             }
+            accessibilityRole="button"
+            accessibilityState={{
+              selected:
+                language === 'en',
+            }}
             style={[
               styles.languageOption,
               {
@@ -885,11 +871,7 @@ export function SettingsScreen() {
               },
             ]}
           >
-            <Text
-              style={
-                styles.flag
-              }
-            >
+            <Text style={styles.flag}>
               🇬🇧
             </Text>
 
@@ -906,6 +888,26 @@ export function SettingsScreen() {
             >
               {t.english}
             </Text>
+
+            {language === 'en' && (
+              <View
+                style={[
+                  styles.languageCheck,
+                  {
+                    backgroundColor:
+                      colors.primary,
+                  },
+                ]}
+              >
+                <Check
+                  size={11}
+                  color={
+                    colors.background
+                  }
+                  strokeWidth={3}
+                />
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </Card>
@@ -929,14 +931,16 @@ export function SettingsScreen() {
 
             borderColor:
               colors.error + '30',
+
+            flexDirection: isRTL
+              ? 'row-reverse'
+              : 'row',
           },
         ]}
       >
         <LogOut
           size={20}
-          color={
-            colors.error
-          }
+          color={colors.error}
           strokeWidth={2}
         />
 
@@ -954,9 +958,7 @@ export function SettingsScreen() {
       </TouchableOpacity>
 
       <View
-        style={
-          styles.bottomSpace
-        }
+        style={styles.bottomSpace}
       />
     </ScrollView>
   );
@@ -966,531 +968,584 @@ export function SettingsScreen() {
 // STYLES
 // =======================================================
 
-const styles =
-  StyleSheet.create({
-    container: {
-      flex: 1,
-    },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
 
-    content: {
-      paddingHorizontal:
-        Spacing.lg,
+  content: {
+    paddingHorizontal:
+      Spacing.lg,
 
-      paddingTop:
-        Spacing.md,
+    paddingTop:
+      Spacing.md,
 
-      paddingBottom:
-        50,
+    paddingBottom:
+      50,
 
-      width: '100%',
-    },
+    width: '100%',
+  },
 
-    // ===================================================
-    // HERO
-    // ===================================================
+  // =====================================================
+  // HERO
+  // =====================================================
 
-    hero: {
-      width: '100%',
-      marginBottom:
-        Spacing.lg,
-    },
+  hero: {
+    width: '100%',
+    marginBottom:
+      Spacing.lg,
+  },
 
-    heroIcon: {
-      width: 48,
-      height: 48,
+  heroIcon: {
+    width: 48,
+    height: 48,
 
-      borderRadius:
-        BorderRadius.md,
+    borderRadius:
+      BorderRadius.md,
 
-      alignItems:
-        'center',
+    alignItems:
+      'center',
 
-      justifyContent:
-        'center',
+    justifyContent:
+      'center',
 
-      borderWidth: 1,
+    borderWidth: 1,
 
-      marginBottom:
-        Spacing.md,
-    },
+    marginBottom:
+      Spacing.md,
+  },
 
-    title: {
-      width: '100%',
+  title: {
+    width: '100%',
 
-      fontSize: 30,
+    fontSize: 30,
 
-      lineHeight: 38,
+    lineHeight: 38,
 
-      fontWeight: '800',
+    fontWeight: '800',
 
-      letterSpacing: -0.6,
+    letterSpacing: -0.6,
 
-      includeFontPadding:
-        false,
-    },
+    includeFontPadding:
+      false,
+  },
 
-    heroSubtitle: {
-      width: '100%',
+  heroSubtitle: {
+    width: '100%',
 
-      fontSize: 14,
+    fontSize: 14,
 
-      lineHeight: 21,
+    lineHeight: 21,
 
-      marginTop: 6,
+    marginTop: 6,
 
-      includeFontPadding:
-        false,
-    },
+    includeFontPadding:
+      false,
+  },
 
-    // ===================================================
-    // SECTION
-    // ===================================================
+  // =====================================================
+  // SECTION
+  // =====================================================
 
-    section: {
-      width: '100%',
+  section: {
+    width: '100%',
 
-      marginBottom:
-        Spacing.lg,
+    marginBottom:
+      Spacing.lg,
 
-      padding:
-        Spacing.md,
+    padding:
+      Spacing.md,
 
-      borderWidth: 1,
+    borderWidth: 1,
 
-      borderRadius:
-        BorderRadius.xl,
+    borderRadius:
+      BorderRadius.xl,
 
-      overflow: 'hidden',
-    },
+    overflow: 'hidden',
+  },
 
-    sectionHeader: {
-      width: '100%',
+  sectionHeader: {
+    width: '100%',
 
-      alignItems:
-        'center',
+    alignItems:
+      'center',
 
-      gap: Spacing.sm,
+    gap: Spacing.sm,
 
-      marginBottom:
-        Spacing.lg,
-    },
+    marginBottom:
+      Spacing.lg,
+  },
 
-    sectionIcon: {
-      width: 40,
-      height: 40,
+  sectionIcon: {
+    width: 40,
+    height: 40,
 
-      borderRadius:
-        BorderRadius.md,
+    borderRadius:
+      BorderRadius.md,
 
-      alignItems:
-        'center',
+    alignItems:
+      'center',
 
-      justifyContent:
-        'center',
+    justifyContent:
+      'center',
 
-      flexShrink: 0,
-    },
+    flexShrink: 0,
+  },
 
-    sectionHeaderText: {
-      flex: 1,
+  sectionHeaderText: {
+    flex: 1,
 
-      minWidth: 0,
-    },
+    minWidth: 0,
+  },
 
-    sectionTitle: {
-      width: '100%',
+  sectionTitle: {
+    width: '100%',
 
-      fontSize: 15,
+    fontSize: 15,
 
-      lineHeight: 21,
+    lineHeight: 21,
 
-      fontWeight: '700',
+    fontWeight: '700',
 
-      includeFontPadding:
-        false,
-    },
+    includeFontPadding:
+      false,
+  },
 
-    sectionDescription: {
-      width: '100%',
+  sectionDescription: {
+    width: '100%',
 
-      fontSize: 12,
+    fontSize: 12,
 
-      lineHeight: 18,
+    lineHeight: 18,
 
-      marginTop: 2,
+    marginTop: 2,
 
-      includeFontPadding:
-        false,
-    },
+    includeFontPadding:
+      false,
+  },
 
-    // ===================================================
-    // THEMES
-    // ===================================================
+  // =====================================================
+  // THEMES
+  // =====================================================
 
-    themeList: {
-      width: '100%',
+  themeList: {
+    width: '100%',
+    gap: Spacing.sm,
+  },
 
-      gap: Spacing.sm,
-    },
+  themeOptionWrapper: {
+    width: '100%',
+  },
 
-    themeOptionWrapper: {
-      width: '100%',
-    },
+  themeTouchable: {
+    width: '100%',
+  },
 
-    themeOption: {
-      width: '100%',
+  themeOption: {
+    width: '100%',
 
-      minHeight: 112,
+    minHeight: 112,
 
-      borderRadius:
-        BorderRadius.lg,
+    borderRadius:
+      BorderRadius.lg,
 
-      borderWidth: 1,
+    borderWidth: 1,
 
-      padding: 10,
+    padding: 10,
 
-      flexDirection: 'row',
+    flexDirection:
+      'row',
 
-      alignItems: 'center',
+    alignItems:
+      'center',
 
-      position: 'relative',
+    position:
+      'relative',
 
-      overflow: 'hidden',
+    overflow:
+      'hidden',
+  },
 
-      backgroundColor:
-        'rgba(128,128,128,0.035)',
-    },
+  // =====================================================
+  // PREVIEW
+  // =====================================================
 
-    // ===================================================
-    // PREVIEW
-    // ===================================================
+  themePreview: {
+    width: 84,
+    height: 88,
 
-    themePreview: {
-      width: 84,
-      height: 88,
+    borderRadius:
+      BorderRadius.md,
 
-      borderRadius:
-        BorderRadius.md,
+    overflow:
+      'hidden',
 
-      overflow: 'hidden',
+    flexShrink: 0,
+  },
 
-      flexShrink: 0,
-    },
+  previewTop: {
+    height: 17,
 
-    previewTop: {
-      height: 17,
+    width: '100%',
+  },
 
-      width: '100%',
-    },
+  previewContent: {
+    flex: 1,
 
-    previewContent: {
-      flex: 1,
+    padding: 9,
 
-      padding: 9,
+    position:
+      'relative',
+  },
 
-      position: 'relative',
-    },
+  previewLine: {
+    height: 5,
 
-    previewLine: {
-      height: 5,
+    width: '68%',
 
-      width: '68%',
+    borderRadius: 4,
 
-      borderRadius: 4,
+    opacity: 0.7,
 
-      opacity: 0.7,
+    marginBottom: 5,
+  },
 
-      marginBottom: 5,
-    },
+  previewLineShort: {
+    height: 4,
 
-    previewLineShort: {
-      height: 4,
+    width: '42%',
 
-      width: '42%',
+    borderRadius: 4,
 
-      borderRadius: 4,
+    opacity: 0.4,
+  },
 
-      opacity: 0.4,
-    },
+  previewCard: {
+    height: 29,
 
-    previewCard: {
-      height: 29,
+    width: '100%',
 
-      width: '100%',
+    borderRadius: 6,
 
-      borderRadius: 6,
+    marginTop: 8,
+  },
 
-      marginTop: 8,
-    },
+  previewAccent: {
+    position: 'absolute',
 
-    previewAccent: {
-      position: 'absolute',
+    width: 20,
+    height: 20,
 
-      width: 20,
+    borderRadius: 10,
 
-      height: 20,
+    right: 7,
+    bottom: 7,
+  },
 
-      borderRadius: 10,
+  // =====================================================
+  // THEME INFO
+  // =====================================================
 
-      right: 7,
+  themeInfo: {
+    flex: 1,
 
-      bottom: 7,
-    },
+    minWidth: 0,
 
-    // ===================================================
-    // INFO
-    // ===================================================
+    paddingHorizontal:
+      Spacing.sm,
+  },
 
-    themeInfo: {
-      flex: 1,
+  themeTitleRow: {
+    alignItems:
+      'center',
 
-      minWidth: 0,
+    gap: 8,
 
-      paddingHorizontal:
-        Spacing.sm,
-    },
+    marginBottom: 5,
 
-    themeTitleRow: {
-      alignItems:
-        'center',
+    minWidth: 0,
+  },
 
-      gap: 8,
+  themeIcon: {
+    width: 30,
+    height: 30,
 
-      marginBottom: 5,
-    },
+    borderRadius: 9,
 
-    themeIcon: {
-      width: 30,
-      height: 30,
+    alignItems:
+      'center',
 
-      borderRadius: 9,
+    justifyContent:
+      'center',
 
-      alignItems:
-        'center',
+    flexShrink: 0,
+  },
 
-      justifyContent:
-        'center',
-    },
+  themeTitle: {
+    flexShrink: 1,
 
-    themeTitle: {
-      fontSize: 15,
+    fontSize: 15,
 
-      lineHeight: 20,
+    lineHeight: 20,
 
-      fontWeight: '700',
+    fontWeight: '700',
 
-      includeFontPadding:
-        false,
-    },
+    includeFontPadding:
+      false,
+  },
 
-    themeSubtitle: {
-      color:
-        '#89948C',
+  themeSubtitle: {
+    fontSize: 12,
 
-      fontSize: 12,
+    lineHeight: 18,
 
-      lineHeight: 18,
+    includeFontPadding:
+      false,
+  },
 
-      includeFontPadding:
-        false,
-    },
+  // =====================================================
+  // CHECK
+  // =====================================================
 
-    // ===================================================
-    // CHECK
-    // ===================================================
+  checkBadge: {
+    position:
+      'absolute',
 
-    checkBadge: {
-      position: 'absolute',
+    top: 9,
 
-      top: 9,
+    right: 9,
 
-      right: 9,
+    width: 26,
+    height: 26,
 
-      width: 26,
+    borderRadius: 13,
 
-      height: 26,
+    alignItems:
+      'center',
 
-      borderRadius: 13,
+    justifyContent:
+      'center',
+  },
 
-      alignItems:
-        'center',
+  // =====================================================
+  // ATHLETE CALLOUT
+  // =====================================================
 
-      justifyContent:
-        'center',
-    },
+  athleteCallout: {
+    width: '100%',
 
-    // ===================================================
-    // ATHLETE CALLOUT
-    // ===================================================
+    marginTop:
+      Spacing.md,
 
-    athleteCallout: {
-      width: '100%',
+    minHeight: 66,
 
-      marginTop:
-        Spacing.md,
+    borderRadius:
+      BorderRadius.lg,
 
-      minHeight: 66,
+    borderWidth: 1,
 
-      borderRadius:
-        BorderRadius.lg,
+    paddingHorizontal:
+      Spacing.md,
 
-      borderWidth: 1,
+    paddingVertical:
+      Spacing.sm,
 
-      paddingHorizontal:
-        Spacing.md,
+    alignItems:
+      'center',
 
-      paddingVertical:
-        Spacing.sm,
+    gap: Spacing.sm,
+  },
 
-      flexDirection: 'row',
+  calloutIcon: {
+    width: 34,
+    height: 34,
 
-      alignItems: 'center',
+    borderRadius: 10,
 
-      gap: Spacing.sm,
-    },
+    alignItems:
+      'center',
 
-    calloutContent: {
-      flex: 1,
+    justifyContent:
+      'center',
 
-      minWidth: 0,
-    },
+    backgroundColor:
+      'rgba(184,255,61,0.10)',
 
-    calloutTitle: {
-      color: '#B8FF3D',
+    flexShrink: 0,
+  },
 
-      fontSize: 13,
+  calloutContent: {
+    flex: 1,
 
-      lineHeight: 18,
+    minWidth: 0,
+  },
 
-      fontWeight: '800',
+  calloutTitle: {
+    color:
+      '#B8FF3D',
 
-      includeFontPadding:
-        false,
-    },
+    fontSize: 13,
 
-    calloutText: {
-      color: '#849087',
+    lineHeight: 18,
 
-      fontSize: 11,
+    fontWeight: '800',
 
-      lineHeight: 17,
+    includeFontPadding:
+      false,
+  },
 
-      marginTop: 2,
+  calloutText: {
+    color:
+      '#849087',
 
-      includeFontPadding:
-        false,
-    },
+    fontSize: 11,
 
-    // ===================================================
-    // LANGUAGE
-    // ===================================================
+    lineHeight: 17,
 
-    optionsRow: {
-      width: '100%',
+    marginTop: 2,
 
-      alignItems:
-        'stretch',
+    includeFontPadding:
+      false,
+  },
 
-      gap: Spacing.sm,
-    },
+  // =====================================================
+  // LANGUAGE
+  // =====================================================
 
-    languageOption: {
-      flex: 1,
+  optionsRow: {
+    width: '100%',
 
-      minWidth: 0,
+    alignItems:
+      'stretch',
 
-      minHeight: 58,
+    gap: Spacing.sm,
 
-      borderRadius:
-        BorderRadius.md,
+    marginTop:
+      Spacing.md,
+  },
 
-      paddingHorizontal:
-        Spacing.sm,
+  languageOption: {
+    flex: 1,
 
-      paddingVertical: 10,
+    minWidth: 0,
 
-      flexDirection: 'row',
+    minHeight: 58,
 
-      alignItems: 'center',
+    borderRadius:
+      BorderRadius.md,
 
-      justifyContent:
-        'center',
+    paddingHorizontal:
+      Spacing.sm,
 
-      gap: 8,
+    paddingVertical: 10,
 
-      overflow: 'hidden',
-    },
+    flexDirection:
+      'row',
 
-    flag: {
-      fontSize: 21,
+    alignItems:
+      'center',
 
-      lineHeight: 25,
+    justifyContent:
+      'center',
 
-      flexShrink: 0,
-    },
+    gap: 8,
 
-    optionText: {
-      flexShrink: 1,
+    overflow:
+      'hidden',
 
-      minWidth: 0,
+    position:
+      'relative',
+  },
 
-      fontSize: 14,
+  flag: {
+    fontSize: 21,
 
-      lineHeight: 20,
+    lineHeight: 25,
 
-      fontWeight: '600',
+    flexShrink: 0,
+  },
 
-      textAlign: 'center',
+  optionText: {
+    flexShrink: 1,
 
-      includeFontPadding:
-        false,
-    },
+    minWidth: 0,
 
-    // ===================================================
-    // LOGOUT
-    // ===================================================
+    fontSize: 14,
 
-    logoutButton: {
-      width: '100%',
+    lineHeight: 20,
 
-      minHeight: 56,
+    fontWeight: '600',
 
-      borderRadius:
-        BorderRadius.lg,
+    textAlign:
+      'center',
 
-      borderWidth: 1,
+    includeFontPadding:
+      false,
+  },
 
-      flexDirection: 'row',
+  languageCheck: {
+    width: 18,
+    height: 18,
 
-      alignItems:
-        'center',
+    borderRadius: 9,
 
-      justifyContent:
-        'center',
+    alignItems:
+      'center',
 
-      paddingHorizontal:
-        Spacing.lg,
+    justifyContent:
+      'center',
 
-      paddingVertical:
-        Spacing.md,
+    marginLeft: 2,
+  },
 
-      gap: Spacing.sm,
+  // =====================================================
+  // LOGOUT
+  // =====================================================
 
-      overflow: 'hidden',
-    },
+  logoutButton: {
+    width: '100%',
 
-    logoutText: {
-      fontSize: 15,
+    minHeight: 56,
 
-      lineHeight: 21,
+    borderRadius:
+      BorderRadius.lg,
 
-      fontWeight: '600',
+    borderWidth: 1,
 
-      includeFontPadding:
-        false,
-    },
+    alignItems:
+      'center',
 
-    bottomSpace: {
-      height: 30,
-    },
-  });
+    justifyContent:
+      'center',
+
+    paddingHorizontal:
+      Spacing.lg,
+
+    paddingVertical:
+      Spacing.md,
+
+    gap: Spacing.sm,
+
+    overflow:
+      'hidden',
+  },
+
+  logoutText: {
+    fontSize: 15,
+
+    lineHeight: 21,
+
+    fontWeight: '600',
+
+    includeFontPadding:
+      false,
+  },
+
+  // =====================================================
+  // BOTTOM SPACE
+  // =====================================================
+
+  bottomSpace: {
+    height: 30,
+  },
+});
