@@ -58,9 +58,7 @@ import {
   AssessmentProvider,
 } from '../context/AssessmentContext';
 
-import {
-  SplashScreen as AppSplashScreen,
-} from '../components/screens/SplashScreen';
+import AppSplashScreen from '../components/screens/SplashScreen';
 
 import {
   BottomNavBar,

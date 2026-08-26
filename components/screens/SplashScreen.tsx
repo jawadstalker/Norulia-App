@@ -1,1105 +1,1690 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
+
 import {
-  View,
-  Text,
-  Image,
+  AccessibilityInfo,
   Animated,
   Easing,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-  AccessibilityInfo,
+  Image,
   ImageSourcePropType,
-  ViewStyle,
-  TextStyle,
-  Platform,
+  I18nManager,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
 
-const NATIVE_DRIVER = Platform.OS !== 'web';
-
-type AnimatedStyle = Animated.WithAnimatedValue<ViewStyle & TextStyle>;
-
-const WORD_1 = 'IPS';
-const SUBTITLE_1 = 'Iliya Pardazesh Shargh';
-const WORD_2 = 'Neurolia';
-const TAGLINE = 'Mind, beautifully calibrated.';
+/* ================================================================
+   COLORS
+================================================================ */
 
 const COLORS = {
-  bgDeep: '#151020',
-  bg: '#24142F',
-  bgOuter: '#0c0814',
-  fg: '#F3EEF9',
-  muted: '#B3A7BE',
-  accent: '#C39BEF',
-  accentHi: '#E6D8F8',
-  accentLo: '#8758C8',
-} as const;
+  bgTop: '#30203F',
+  bg: '#24152F',
+  bgMiddle: '#1D1328',
+  bgBottom: '#100B17',
 
-const ROT_2: number[] = [-12, 12, -12, 12, -12, 12, -12, 12];
+  fg: '#F6F0FA',
+  muted: '#B9ACBF',
 
-interface Spark {
-  top?: string;
-  left?: string;
-  right?: string;
-  bottom?: string;
+  accent: '#CFA8F2',
+  accentHi: '#E9DDF5',
+  accentSoft: '#A96FE0',
+
+  star: '#E8D7F7',
+};
+
+/* ================================================================
+   TEXT
+================================================================ */
+
+const FIRST_WORD = 'IPS';
+
+const FIRST_SUBTITLE_EN =
+  'Iliya Pardazesh Shargh';
+
+const FIRST_SUBTITLE_FA =
+  'ایلیا پردازش شرق';
+
+const SECOND_WORD_EN =
+  'Neurolia';
+
+const SECOND_WORD_FA =
+  'نورولیا';
+
+const SECOND_TAGLINE_EN =
+  'Mind, beautifully calibrated.';
+
+const SECOND_TAGLINE_FA =
+  'ذهن، با ظرافت تنظیم‌شده.';
+
+/* ================================================================
+   TIMING
+================================================================ */
+
+const TIMING = {
+  FIRST_IN: 650,
+
+  FIRST_OUT_START: 1450,
+
+  FIRST_OUT: 480,
+
+  SECOND_START: 1660,
+
+  SECOND_LOGO_IN: 620,
+
+  WORD_STAGGER: 52,
+
+  WORD_IN: 460,
+
+  TAGLINE_DELAY: 280,
+
+  TAGLINE_IN: 520,
+
+  COMPLETE: 3500,
+};
+
+/* ================================================================
+   EASING
+================================================================ */
+
+const EASE_ENTER =
+  Easing.bezier(
+    0.22,
+    1,
+    0.36,
+    1
+  );
+
+const EASE_EXIT =
+  Easing.bezier(
+    0.55,
+    0,
+    0.78,
+    0
+  );
+
+/* ================================================================
+   SPARK CONFIG
+================================================================ */
+
+type SparkConfig = {
+  top?: `${number}%`;
+  bottom?: `${number}%`;
+  left?: `${number}%`;
+  right?: `${number}%`;
+
   size: number;
-  color: string;
-  delay: number;
-  duration: number;
-}
 
-const SPARKS: Spark[] = [
+  delay: number;
+
+  duration: number;
+
+  opacity: number;
+};
+
+const SPARKS: SparkConfig[] = [
   {
-    top: '22%',
-    left: '20%',
-    size: 22,
-    color: COLORS.accentHi,
-    delay: 900,
-    duration: 2400,
-  },
-  {
-    top: '30%',
-    right: '18%',
-    size: 14,
-    color: COLORS.accent,
-    delay: 1300,
-    duration: 2800,
-  },
-  {
-    bottom: '30%',
-    left: '26%',
-    size: 16,
-    color: COLORS.accentHi,
-    delay: 1600,
-    duration: 2100,
-  },
-  {
-    bottom: '26%',
-    right: '24%',
-    size: 20,
-    color: COLORS.accentHi,
-    delay: 1100,
+    top: '20%',
+    left: '17%',
+    size: 15,
+    delay: 350,
     duration: 2600,
+    opacity: 0.42,
   },
+
   {
-    top: '46%',
-    left: '12%',
+    top: '29%',
+    right: '16%',
+    size: 10,
+    delay: 850,
+    duration: 2900,
+    opacity: 0.32,
+  },
+
+  {
+    bottom: '27%',
+    left: '23%',
     size: 12,
-    color: COLORS.accent,
-    delay: 1900,
+    delay: 1050,
+    duration: 2500,
+    opacity: 0.36,
+  },
+
+  {
+    bottom: '23%',
+    right: '20%',
+    size: 14,
+    delay: 700,
+    duration: 2800,
+    opacity: 0.4,
+  },
+
+  {
+    top: '49%',
+    left: '9%',
+    size: 9,
+    delay: 1250,
     duration: 3100,
+    opacity: 0.28,
+  },
+
+  {
+    top: '39%',
+    right: '8%',
+    size: 7,
+    delay: 1550,
+    duration: 3200,
+    opacity: 0.24,
   },
 ];
 
-const T = {
-  ACT1_EXIT: 1350,
-  ACT2_ENTER: 1900,
-  ACT1_GONE: 2100,
-  AMBIENT_START: 3600,
-  END: 4600,
-  OUTDONE: 4900,
-};
-
-const EASE_IN = Easing.bezier(0.2, 0, 0, 1);
-const EASE_OUT = Easing.bezier(0.5, 0, 0.75, 0);
-
-function mkVal(v = 0): Animated.Value {
-  return new Animated.Value(v);
-}
+/* ================================================================
+   PROPS
+================================================================ */
 
 export interface SplashScreenProps {
-  /**
-   * Called once the entrance animation finishes
-   * and the replay button appears.
-   */
-  onFinish?: () => void;
+  onComplete?: () => void;
 
-  /**
-   * First logo.
-   */
   logo1?: ImageSourcePropType;
 
-  /**
-   * Second logo.
-   */
   logo2?: ImageSourcePropType;
 }
 
-export default function SplashScreen({
-  onFinish,
-  logo1 = require('../../assets/logo1.png'),
-  logo2 = require('../../assets/logo2.png'),
-}: SplashScreenProps): React.JSX.Element {
-  const reduceMotion = useRef(false);
+/* ================================================================
+   HELPERS
+================================================================ */
 
-  // -------------------------------------------------------------------------
-  // Background
-  // -------------------------------------------------------------------------
+function createAnimatedValue(
+  value = 0
+) {
+  return new Animated.Value(value);
+}
 
-  const bgOpacity = useRef(mkVal(0)).current;
+/* ================================================================
+   SPARKLE
+================================================================ */
 
-  const sparkVals = useRef<Animated.Value[]>(
-    SPARKS.map(() => mkVal(0))
-  ).current;
+function Sparkle({
+  config,
+  animation,
+}: {
+  config: SparkConfig;
 
-  const sparkLoops = useRef<Animated.CompositeAnimation[]>([]);
-
-  // -------------------------------------------------------------------------
-  // ACT 1
-  // -------------------------------------------------------------------------
-
-  const act1Glow = useRef(mkVal(0)).current;
-  const act1Logo = useRef(mkVal(0)).current;
-  const act1LogoOut = useRef(mkVal(0)).current;
-
-  const act1Letters = useRef<Animated.Value[]>(
-    WORD_1.split('').map(() => mkVal(0))
-  ).current;
-
-  const act1LettersOut = useRef<Animated.Value[]>(
-    WORD_1.split('').map(() => mkVal(0))
-  ).current;
-
-  const act1Subtitle = useRef(mkVal(0)).current;
-  const act1SubtitleOut = useRef(mkVal(0)).current;
-
-  const act1Visible = useRef(mkVal(1)).current;
-
-  // -------------------------------------------------------------------------
-  // ACT 2
-  // -------------------------------------------------------------------------
-
-  const act2Glow = useRef(mkVal(0)).current;
-  const act2GlowBreathe = useRef(mkVal(0)).current;
-  const act2Logo = useRef(mkVal(0)).current;
-
-  const act2Letters = useRef<Animated.Value[]>(
-    WORD_2.split('').map(() => mkVal(0))
-  ).current;
-
-  const act2Tagline = useRef(mkVal(0)).current;
-  const act2Floaty = useRef(mkVal(0)).current;
-
-  // -------------------------------------------------------------------------
-  // Chrome
-  // -------------------------------------------------------------------------
-
-  const sparksEnd = useRef(mkVal(1)).current;
-  const replayOpacity = useRef(mkVal(0)).current;
-
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  const clearTimers = useCallback(() => {
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
-
-    sparkLoops.current.forEach((loop) => {
-      if (loop) {
-        loop.stop();
-      }
+  animation: Animated.Value;
+}) {
+  const opacity =
+    animation.interpolate({
+      inputRange: [0, 0.5, 1],
+      outputRange: [
+        0,
+        config.opacity,
+        0,
+      ],
     });
 
-    sparkLoops.current = [];
-  }, []);
-
-  // -------------------------------------------------------------------------
-  // Animation
-  // -------------------------------------------------------------------------
-
-  const play = useCallback(() => {
-    clearTimers();
-
-    const dur = reduceMotion.current ? 0.001 : 1;
-
-    // Reset all animated values.
-    [
-      bgOpacity,
-      act1Glow,
-      act1Logo,
-      act1LogoOut,
-      act1Subtitle,
-      act1SubtitleOut,
-      act2Glow,
-      act2GlowBreathe,
-      act2Logo,
-      act2Tagline,
-      act2Floaty,
-      sparksEnd,
-      replayOpacity,
-    ].forEach((value) => {
-      value.setValue(0);
+  const translateY =
+    animation.interpolate({
+      inputRange: [0, 0.5, 1],
+      outputRange: [4, -4, 4],
     });
 
-    act1Visible.setValue(1);
-    sparksEnd.setValue(1);
-
-    act1Letters.forEach((value) => value.setValue(0));
-    act1LettersOut.forEach((value) => value.setValue(0));
-    act2Letters.forEach((value) => value.setValue(0));
-    sparkVals.forEach((value) => value.setValue(0));
-
-    // -----------------------------------------------------------------------
-    // Background
-    // -----------------------------------------------------------------------
-
-    Animated.timing(bgOpacity, {
-      toValue: 1,
-      duration: 700 * dur,
-      easing: Easing.linear,
-      useNativeDriver: NATIVE_DRIVER,
-    }).start();
-
-    // -----------------------------------------------------------------------
-    // Sparkles
-    // -----------------------------------------------------------------------
-
-    SPARKS.forEach((spark, index) => {
-      const timer = setTimeout(() => {
-        const loop = Animated.loop(
-          Animated.sequence([
-            Animated.timing(sparkVals[index], {
-              toValue: 1,
-              duration: (spark.duration / 2) * dur,
-              easing: Easing.inOut(Easing.ease),
-              useNativeDriver: NATIVE_DRIVER,
-            }),
-
-            Animated.timing(sparkVals[index], {
-              toValue: 0,
-              duration: (spark.duration / 2) * dur,
-              easing: Easing.inOut(Easing.ease),
-              useNativeDriver: NATIVE_DRIVER,
-            }),
-          ])
-        );
-
-        sparkLoops.current.push(loop);
-        loop.start();
-      }, spark.delay * dur);
-
-      timers.current.push(timer);
+  const scale =
+    animation.interpolate({
+      inputRange: [0, 0.5, 1],
+      outputRange: [
+        0.75,
+        1,
+        0.75,
+      ],
     });
 
-    // -----------------------------------------------------------------------
-    // ACT 1 - Entrance
-    // -----------------------------------------------------------------------
+  return (
+    <Animated.Text
+      pointerEvents="none"
+      style={[
+        styles.spark,
+        {
+          top: config.top,
+          bottom: config.bottom,
+          left: config.left,
+          right: config.right,
 
-    Animated.timing(act1Glow, {
-      toValue: 1,
-      duration: 1200 * dur,
-      delay: 100 * dur,
-      easing: EASE_IN,
-      useNativeDriver: NATIVE_DRIVER,
-    }).start();
+          fontSize: config.size,
 
-    Animated.timing(act1Logo, {
-      toValue: 1,
-      duration: 1000 * dur,
-      delay: 50 * dur,
-      easing: EASE_IN,
-      useNativeDriver: NATIVE_DRIVER,
-    }).start();
+          opacity,
 
-    act1Letters.forEach((value, index) => {
-      Animated.timing(value, {
-        toValue: 1,
-        duration: 800 * dur,
-        delay: (50 + index * 30) * dur,
-        easing: EASE_IN,
-        useNativeDriver: NATIVE_DRIVER,
-      }).start();
+          transform: [
+            {
+              translateY,
+            },
+            {
+              scale,
+            },
+          ],
+        },
+      ]}
+    >
+      ✦
+    </Animated.Text>
+  );
+}
+
+/* ================================================================
+   FIRST BRAND
+================================================================ */
+
+function FirstBrand({
+  logo,
+  logoLife,
+  letterLives,
+  subtitleLife,
+  isRTL,
+}: {
+  logo: ImageSourcePropType;
+
+  logoLife: Animated.Value;
+
+  letterLives: Animated.Value[];
+
+  subtitleLife: Animated.Value;
+
+  isRTL: boolean;
+}) {
+  const logoOpacity =
+    logoLife.interpolate({
+      inputRange: [0, 1, 2],
+      outputRange: [0, 1, 0],
     });
 
-    Animated.timing(act1Subtitle, {
-      toValue: 1,
-      duration: 800 * dur,
-      delay: 150 * dur,
-      easing: EASE_IN,
-      useNativeDriver: NATIVE_DRIVER,
-    }).start();
+  const logoTranslateY =
+    logoLife.interpolate({
+      inputRange: [0, 1, 2],
+      outputRange: [18, 0, -18],
+    });
 
-    // -----------------------------------------------------------------------
-    // ACT 1 - Exit
-    // -----------------------------------------------------------------------
+  const logoScale =
+    logoLife.interpolate({
+      inputRange: [0, 1, 2],
+      outputRange: [
+        0.9,
+        1,
+        0.96,
+      ],
+    });
 
-    timers.current.push(
-      setTimeout(() => {
-        Animated.timing(act1LogoOut, {
-          toValue: 1,
-          duration: 750 * dur,
-          easing: EASE_OUT,
-          useNativeDriver: NATIVE_DRIVER,
-        }).start();
+  const subtitleOpacity =
+    subtitleLife.interpolate({
+      inputRange: [0, 1, 2],
+      outputRange: [0, 1, 0],
+    });
 
-        act1LettersOut.forEach((value, index) => {
-          Animated.timing(value, {
-            toValue: 1,
-            duration: 600 * dur,
-            delay: index * 30 * dur,
-            easing: EASE_OUT,
-            useNativeDriver: NATIVE_DRIVER,
-          }).start();
-        });
+  const subtitleTranslateY =
+    subtitleLife.interpolate({
+      inputRange: [0, 1, 2],
+      outputRange: [10, 0, -10],
+    });
 
-        Animated.timing(act1SubtitleOut, {
-          toValue: 1,
-          duration: 600 * dur,
-          delay: 80 * dur,
-          easing: EASE_OUT,
-          useNativeDriver: NATIVE_DRIVER,
-        }).start();
-      }, T.ACT1_EXIT * dur)
-    );
+  const subtitle =
+    isRTL
+      ? FIRST_SUBTITLE_FA
+      : FIRST_SUBTITLE_EN;
 
-    // -----------------------------------------------------------------------
-    // ACT 2 - Entrance
-    // -----------------------------------------------------------------------
+  return (
+    <View
+      pointerEvents="none"
+      style={styles.brandLayer}
+    >
+      {/* ======================================================
+          FIRST LOGO
+      ====================================================== */}
 
-    timers.current.push(
-      setTimeout(() => {
-        Animated.timing(act2Glow, {
-          toValue: 1,
-          duration: 1200 * dur,
-          delay: 150 * dur,
-          easing: EASE_IN,
-          useNativeDriver: NATIVE_DRIVER,
-        }).start();
+      <Animated.View
+        style={[
+          styles.firstLogoContainer,
 
-        Animated.timing(act2Logo, {
-          toValue: 1,
-          duration: 1000 * dur,
-          delay: 200 * dur,
-          easing: EASE_IN,
-          useNativeDriver: NATIVE_DRIVER,
-        }).start();
+          {
+            opacity: logoOpacity,
 
-        act2Letters.forEach((value, index) => {
-          Animated.timing(value, {
-            toValue: 1,
-            duration: 1000 * dur,
-            delay: (340 + index * 50) * dur,
-            easing: EASE_IN,
-            useNativeDriver: NATIVE_DRIVER,
-          }).start();
-        });
+            transform: [
+              {
+                translateY:
+                  logoTranslateY,
+              },
+              {
+                scale:
+                  logoScale,
+              },
+            ],
+          },
+        ]}
+      >
+        <Image
+          source={logo}
+          resizeMode="contain"
+          style={styles.firstLogo}
+        />
+      </Animated.View>
 
-        Animated.timing(act2Tagline, {
-          toValue: 1,
-          duration: 1000 * dur,
-          delay: 540 * dur,
-          easing: EASE_IN,
-          useNativeDriver: NATIVE_DRIVER,
-        }).start();
+      {/* ======================================================
+          IPS
+      ====================================================== */}
 
-        // Ambient animation.
-        const ambientTimer = setTimeout(() => {
-          const floatLoop = Animated.loop(
-            Animated.sequence([
-              Animated.timing(act2Floaty, {
-                toValue: 1,
-                duration: 2500 * dur,
-                easing: Easing.inOut(Easing.sin),
-                useNativeDriver: NATIVE_DRIVER,
-              }),
+      <View
+        style={[
+          styles.firstWordmark,
+          isRTL &&
+            styles.rtlWordmark,
+        ]}
+      >
+        {FIRST_WORD.split('').map(
+          (letter, index) => {
+            const life =
+              letterLives[index];
 
-              Animated.timing(act2Floaty, {
-                toValue: 0,
-                duration: 2500 * dur,
-                easing: Easing.inOut(Easing.sin),
-                useNativeDriver: NATIVE_DRIVER,
-              }),
-            ])
-          );
+            const opacity =
+              life.interpolate({
+                inputRange: [
+                  0,
+                  1,
+                  2,
+                ],
+                outputRange: [
+                  0,
+                  1,
+                  0,
+                ],
+              });
 
-          const breatheLoop = Animated.loop(
-            Animated.sequence([
-              Animated.timing(act2GlowBreathe, {
-                toValue: 1,
-                duration: 2250 * dur,
-                easing: Easing.inOut(Easing.ease),
-                useNativeDriver: NATIVE_DRIVER,
-              }),
+            const translateY =
+              life.interpolate({
+                inputRange: [
+                  0,
+                  1,
+                  2,
+                ],
+                outputRange: [
+                  10,
+                  0,
+                  -10,
+                ],
+              });
 
-              Animated.timing(act2GlowBreathe, {
-                toValue: 0,
-                duration: 2250 * dur,
-                easing: Easing.inOut(Easing.ease),
-                useNativeDriver: NATIVE_DRIVER,
-              }),
-            ])
-          );
+            return (
+              <Animated.Text
+                key={`${letter}-${index}`}
+                style={[
+                  styles.firstWordLetter,
+                  {
+                    opacity,
 
-          sparkLoops.current.push(floatLoop, breatheLoop);
-
-          floatLoop.start();
-          breatheLoop.start();
-        }, T.AMBIENT_START * dur);
-
-        timers.current.push(ambientTimer);
-      }, T.ACT2_ENTER * dur)
-    );
-
-    // -----------------------------------------------------------------------
-    // Remove ACT 1
-    // -----------------------------------------------------------------------
-
-    timers.current.push(
-      setTimeout(() => {
-        act1Visible.setValue(0);
-      }, T.ACT1_GONE * dur)
-    );
-
-    // -----------------------------------------------------------------------
-    // Fade sparkles
-    // -----------------------------------------------------------------------
-
-    timers.current.push(
-      setTimeout(() => {
-        Animated.timing(sparksEnd, {
-          toValue: 0,
-          duration: 500 * dur,
-          easing: Easing.linear,
-          useNativeDriver: NATIVE_DRIVER,
-        }).start();
-      }, T.END * dur)
-    );
-
-    // -----------------------------------------------------------------------
-    // Finish
-    // -----------------------------------------------------------------------
-
-    timers.current.push(
-      setTimeout(() => {
-        Animated.timing(replayOpacity, {
-          toValue: 1,
-          duration: 550 * dur,
-          easing: Easing.linear,
-          useNativeDriver: NATIVE_DRIVER,
-        }).start(({ finished }) => {
-          if (finished) {
-            onFinish?.();
+                    transform: [
+                      {
+                        translateY,
+                      },
+                    ],
+                  },
+                ]}
+              >
+                {letter}
+              </Animated.Text>
+            );
           }
-        });
-      }, T.OUTDONE * dur)
-    );
-  }, [
-    clearTimers,
-    bgOpacity,
-    act1Glow,
-    act1Logo,
-    act1LogoOut,
-    act1Subtitle,
-    act1SubtitleOut,
-    act1Visible,
-    act1Letters,
-    act1LettersOut,
-    act2Glow,
-    act2GlowBreathe,
-    act2Logo,
-    act2Letters,
-    act2Tagline,
-    act2Floaty,
-    sparksEnd,
-    replayOpacity,
-    sparkVals,
-    onFinish,
-  ]);
+        )}
+      </View>
 
-  // -------------------------------------------------------------------------
-  // Start animation
-  // -------------------------------------------------------------------------
+      {/* ======================================================
+          FIRST SUBTITLE
+      ====================================================== */}
+
+      <Animated.Text
+        style={[
+          styles.firstSubtitle,
+
+          isRTL &&
+            styles.persianFirstSubtitle,
+
+          {
+            opacity:
+              subtitleOpacity,
+
+            transform: [
+              {
+                translateY:
+                  subtitleTranslateY,
+              },
+            ],
+          },
+        ]}
+      >
+        {subtitle}
+      </Animated.Text>
+    </View>
+  );
+}
+
+/* ================================================================
+   SECOND BRAND
+================================================================ */
+
+function SecondBrand({
+  logo,
+  logoProgress,
+  letterProgresses,
+  taglineProgress,
+  isRTL,
+}: {
+  logo: ImageSourcePropType;
+
+  logoProgress: Animated.Value;
+
+  letterProgresses: Animated.Value[];
+
+  taglineProgress: Animated.Value;
+
+  isRTL: boolean;
+}) {
+  const logoOpacity =
+    logoProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 1],
+    });
+
+  const logoTranslateY =
+    logoProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [16, 0],
+    });
+
+  const logoScale =
+    logoProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [
+        0.92,
+        1,
+      ],
+    });
+
+  const taglineOpacity =
+    taglineProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 1],
+    });
+
+  const taglineTranslateY =
+    taglineProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [9, 0],
+    });
+
+  const secondWord =
+    isRTL
+      ? SECOND_WORD_FA
+      : SECOND_WORD_EN;
+
+  const tagline =
+    isRTL
+      ? SECOND_TAGLINE_FA
+      : SECOND_TAGLINE_EN;
+
+  return (
+    <View
+      pointerEvents="none"
+      style={styles.brandLayer}
+    >
+      {/* ======================================================
+          SECOND LOGO
+
+          No circle.
+          No glow.
+          No border.
+          No animated background.
+      ====================================================== */}
+
+      <Animated.View
+        style={[
+          styles.secondLogoContainer,
+
+          {
+            opacity: logoOpacity,
+
+            transform: [
+              {
+                translateY:
+                  logoTranslateY,
+              },
+              {
+                scale:
+                  logoScale,
+              },
+            ],
+          },
+        ]}
+      >
+        <Image
+          source={logo}
+          resizeMode="contain"
+          style={styles.secondLogo}
+        />
+      </Animated.View>
+
+      {/* ======================================================
+          SECOND WORD
+      ====================================================== */}
+
+      <View
+        style={[
+          styles.secondWordmark,
+
+          isRTL &&
+            styles.rtlWordmark,
+        ]}
+      >
+        {secondWord
+          .split('')
+          .map(
+            (
+              letter,
+              index
+            ) => {
+              const progress =
+                letterProgresses[
+                  index
+                ];
+
+              const opacity =
+                progress.interpolate({
+                  inputRange: [
+                    0,
+                    1,
+                  ],
+                  outputRange: [
+                    0,
+                    1,
+                  ],
+                });
+
+              const translateY =
+                progress.interpolate({
+                  inputRange: [
+                    0,
+                    1,
+                  ],
+                  outputRange: [
+                    12,
+                    0,
+                  ],
+                });
+
+              return (
+                <Animated.Text
+                  key={`${letter}-${index}`}
+                  style={[
+                    styles.secondWordLetter,
+
+                    isRTL &&
+                      styles.persianWordLetter,
+
+                    {
+                      opacity,
+
+                      transform: [
+                        {
+                          translateY,
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  {letter}
+                </Animated.Text>
+              );
+            }
+          )}
+      </View>
+
+      {/* ======================================================
+          TAGLINE
+      ====================================================== */}
+
+      <Animated.Text
+        style={[
+          styles.tagline,
+
+          isRTL &&
+            styles.persianTagline,
+
+          {
+            opacity:
+              taglineOpacity,
+
+            transform: [
+              {
+                translateY:
+                  taglineTranslateY,
+              },
+            ],
+          },
+        ]}
+      >
+        {tagline}
+      </Animated.Text>
+    </View>
+  );
+}
+
+/* ================================================================
+   SPLASH SCREEN
+================================================================ */
+
+export function SplashScreen({
+  onComplete,
+
+  logo1 = require('../../assets/logo1.png'),
+
+  logo2 = require('../../assets/logo2.png'),
+}: SplashScreenProps) {
+  const {
+    width,
+    height,
+  } = useWindowDimensions();
+
+  const isRTL =
+    I18nManager.isRTL;
+
+  const reduceMotion =
+    useRef(false);
+
+  const timers =
+    useRef<
+      ReturnType<
+        typeof setTimeout
+      >[]
+    >([]);
+
+  const completed =
+    useRef(false);
+
+  /* ==============================================================
+     ANIMATED VALUES
+  ============================================================== */
+
+  const backgroundProgress =
+    useRef(
+      createAnimatedValue(0)
+    ).current;
+
+  const firstLogoLife =
+    useRef(
+      createAnimatedValue(0)
+    ).current;
+
+  const firstLetterLives =
+    useRef(
+      FIRST_WORD.split('').map(
+        () =>
+          createAnimatedValue(0)
+      )
+    ).current;
+
+  const firstSubtitleLife =
+    useRef(
+      createAnimatedValue(0)
+    ).current;
+
+  const secondLogoProgress =
+    useRef(
+      createAnimatedValue(0)
+    ).current;
+
+  const secondWordLength =
+    isRTL
+      ? SECOND_WORD_FA.length
+      : SECOND_WORD_EN.length;
+
+  const secondLetterProgresses =
+    useRef(
+      Array.from(
+        {
+          length:
+            secondWordLength,
+        },
+        () =>
+          createAnimatedValue(0)
+      )
+    ).current;
+
+  const secondTaglineProgress =
+    useRef(
+      createAnimatedValue(0)
+    ).current;
+
+  const sparkValues =
+    useRef(
+      SPARKS.map(() =>
+        createAnimatedValue(0)
+      )
+    ).current;
+
+  /* ==============================================================
+     CLEAR TIMERS
+  ============================================================== */
+
+  const clearTimers =
+    useCallback(() => {
+      timers.current.forEach(
+        timer =>
+          clearTimeout(timer)
+      );
+
+      timers.current = [];
+    }, []);
+
+  /* ==============================================================
+     FINISH
+  ============================================================== */
+
+  const finish =
+    useCallback(() => {
+      if (completed.current) {
+        return;
+      }
+
+      completed.current = true;
+
+      onComplete?.();
+    }, [onComplete]);
+
+  /* ==============================================================
+     PLAY ANIMATION
+  ============================================================== */
+
+  const play =
+    useCallback(() => {
+      clearTimers();
+
+      completed.current = false;
+
+      const d =
+        reduceMotion.current
+          ? 0.001
+          : 1;
+
+      /* ----------------------------------------------------------
+         RESET
+      ---------------------------------------------------------- */
+
+      backgroundProgress.setValue(0);
+
+      firstLogoLife.setValue(0);
+
+      firstLetterLives.forEach(
+        value =>
+          value.setValue(0)
+      );
+
+      firstSubtitleLife.setValue(0);
+
+      secondLogoProgress.setValue(0);
+
+      secondLetterProgresses.forEach(
+        value =>
+          value.setValue(0)
+      );
+
+      secondTaglineProgress.setValue(
+        0
+      );
+
+      sparkValues.forEach(
+        value =>
+          value.setValue(0)
+      );
+
+      /* ----------------------------------------------------------
+         BACKGROUND FADE
+      ---------------------------------------------------------- */
+
+      Animated.timing(
+        backgroundProgress,
+        {
+          toValue: 1,
+
+          duration:
+            700 * d,
+
+          easing:
+            Easing.out(
+              Easing.quad
+            ),
+
+          useNativeDriver: true,
+        }
+      ).start();
+
+      /* ----------------------------------------------------------
+         SPARKLES
+      ---------------------------------------------------------- */
+
+      SPARKS.forEach(
+        (
+          spark,
+          index
+        ) => {
+          const timer =
+            setTimeout(
+              () => {
+                Animated.loop(
+                  Animated.sequence([
+                    Animated.timing(
+                      sparkValues[
+                        index
+                      ],
+                      {
+                        toValue: 1,
+
+                        duration:
+                          spark.duration *
+                          d,
+
+                        easing:
+                          Easing.inOut(
+                            Easing.sin
+                          ),
+
+                        useNativeDriver:
+                          true,
+                      }
+                    ),
+
+                    Animated.timing(
+                      sparkValues[
+                        index
+                      ],
+                      {
+                        toValue: 0,
+
+                        duration:
+                          spark.duration *
+                          d,
+
+                        easing:
+                          Easing.inOut(
+                            Easing.sin
+                          ),
+
+                        useNativeDriver:
+                          true,
+                      }
+                    ),
+                  ])
+                ).start();
+              },
+
+              spark.delay * d
+            );
+
+          timers.current.push(
+            timer
+          );
+        }
+      );
+
+      /* ----------------------------------------------------------
+         FIRST LOGO
+      ---------------------------------------------------------- */
+
+      Animated.timing(
+        firstLogoLife,
+        {
+          toValue: 1,
+
+          duration:
+            TIMING.FIRST_IN * d,
+
+          easing:
+            EASE_ENTER,
+
+          useNativeDriver: true,
+        }
+      ).start();
+
+      /* ----------------------------------------------------------
+         IPS LETTERS
+      ---------------------------------------------------------- */
+
+      firstLetterLives.forEach(
+        (
+          value,
+          index
+        ) => {
+          Animated.timing(
+            value,
+            {
+              toValue: 1,
+
+              duration:
+                480 * d,
+
+              delay:
+                (110 +
+                  index *
+                    65) *
+                d,
+
+              easing:
+                EASE_ENTER,
+
+              useNativeDriver:
+                true,
+            }
+          ).start();
+        }
+      );
+
+      /* ----------------------------------------------------------
+         FIRST SUBTITLE
+      ---------------------------------------------------------- */
+
+      Animated.timing(
+        firstSubtitleLife,
+        {
+          toValue: 1,
+
+          duration:
+            520 * d,
+
+          delay:
+            190 * d,
+
+          easing:
+            EASE_ENTER,
+
+          useNativeDriver: true,
+        }
+      ).start();
+
+      /* ----------------------------------------------------------
+         FIRST BRAND EXIT
+      ---------------------------------------------------------- */
+
+      timers.current.push(
+        setTimeout(
+          () => {
+            Animated.parallel([
+              Animated.timing(
+                firstLogoLife,
+                {
+                  toValue: 2,
+
+                  duration:
+                    TIMING.FIRST_OUT *
+                    d,
+
+                  easing:
+                    EASE_EXIT,
+
+                  useNativeDriver:
+                    true,
+                }
+              ),
+
+              ...firstLetterLives.map(
+                (
+                  value,
+                  index
+                ) =>
+                  Animated.timing(
+                    value,
+                    {
+                      toValue: 2,
+
+                      duration:
+                        340 * d,
+
+                      delay:
+                        index *
+                        22 *
+                        d,
+
+                      easing:
+                        EASE_EXIT,
+
+                      useNativeDriver:
+                        true,
+                    }
+                  )
+              ),
+
+              Animated.timing(
+                firstSubtitleLife,
+                {
+                  toValue: 2,
+
+                  duration:
+                    350 * d,
+
+                  delay:
+                    25 * d,
+
+                  easing:
+                    EASE_EXIT,
+
+                  useNativeDriver:
+                    true,
+                }
+              ),
+            ]).start();
+          },
+
+          TIMING.FIRST_OUT_START *
+            d
+        )
+      );
+
+      /* ----------------------------------------------------------
+         SECOND BRAND
+      ---------------------------------------------------------- */
+
+      timers.current.push(
+        setTimeout(
+          () => {
+            /* ----------------------------------------------------
+               SECOND LOGO
+
+               فقط خود لوگو وارد می‌شود.
+               هیچ circle / glow / background animation ندارد.
+            ---------------------------------------------------- */
+
+            Animated.timing(
+              secondLogoProgress,
+              {
+                toValue: 1,
+
+                duration:
+                  TIMING.SECOND_LOGO_IN *
+                  d,
+
+                easing:
+                  EASE_ENTER,
+
+                useNativeDriver:
+                  true,
+              }
+            ).start();
+
+            /* ----------------------------------------------------
+               SECOND WORD
+            ---------------------------------------------------- */
+
+            secondLetterProgresses.forEach(
+              (
+                value,
+                index
+              ) => {
+                Animated.timing(
+                  value,
+                  {
+                    toValue: 1,
+
+                    duration:
+                      TIMING.WORD_IN *
+                      d,
+
+                    delay:
+                      (100 +
+                        index *
+                          TIMING.WORD_STAGGER) *
+                      d,
+
+                    easing:
+                      EASE_ENTER,
+
+                    useNativeDriver:
+                      true,
+                  }
+                ).start();
+              }
+            );
+
+            /* ----------------------------------------------------
+               TAGLINE
+            ---------------------------------------------------- */
+
+            Animated.timing(
+              secondTaglineProgress,
+              {
+                toValue: 1,
+
+                duration:
+                  TIMING.TAGLINE_IN *
+                  d,
+
+                delay:
+                  TIMING.TAGLINE_DELAY *
+                  d,
+
+                easing:
+                  EASE_ENTER,
+
+                useNativeDriver:
+                  true,
+              }
+            ).start();
+          },
+
+          TIMING.SECOND_START * d
+        )
+      );
+
+      /* ----------------------------------------------------------
+         COMPLETE
+      ---------------------------------------------------------- */
+
+      timers.current.push(
+        setTimeout(
+          finish,
+          TIMING.COMPLETE * d
+        )
+      );
+    }, [
+      backgroundProgress,
+      clearTimers,
+      finish,
+
+      firstLetterLives,
+      firstLogoLife,
+      firstSubtitleLife,
+
+      secondLetterProgresses,
+      secondLogoProgress,
+      secondTaglineProgress,
+
+      sparkValues,
+    ]);
+
+  /* ==============================================================
+     ACCESSIBILITY / REDUCED MOTION
+  ============================================================== */
 
   useEffect(() => {
     let mounted = true;
 
-    AccessibilityInfo.isReduceMotionEnabled?.().then((value: boolean) => {
-      if (!mounted) {
-        return;
-      }
+    AccessibilityInfo
+      .isReduceMotionEnabled?.()
+      .then(enabled => {
+        if (!mounted) {
+          return;
+        }
 
-      reduceMotion.current = !!value;
-      play();
-    });
+        reduceMotion.current =
+          Boolean(enabled);
+
+        play();
+      })
+      .catch(() => {
+        if (mounted) {
+          play();
+        }
+      });
 
     return () => {
       mounted = false;
+
       clearTimers();
+
+      sparkValues.forEach(
+        value =>
+          value.stopAnimation()
+      );
     };
-  }, [clearTimers, play]);
+  }, [
+    clearTimers,
+    play,
+    sparkValues,
+  ]);
 
-  // -------------------------------------------------------------------------
-  // Derived animation styles
-  // -------------------------------------------------------------------------
+  /* ==============================================================
+     BACKGROUND
+  ============================================================== */
 
-  const glowOpacity = (progress: Animated.Value) =>
-    progress.interpolate({
-      inputRange: [0, 0.35, 1],
-      outputRange: [0, 0.9, 0],
-    });
-
-  const glowScale = (progress: Animated.Value) =>
-    progress.interpolate({
+  const backgroundOpacity =
+    backgroundProgress.interpolate({
       inputRange: [0, 1],
-      outputRange: [0.55, 1.5],
+      outputRange: [0, 1],
     });
 
-  const glowStyle = (
-    progress: Animated.Value
-  ): AnimatedStyle => ({
-    opacity: glowOpacity(progress),
-    transform: [
-      {
-        scale: glowScale(progress),
-      },
-    ],
-  });
-
-  const breatheStyle = act2GlowBreathe.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0, 0.35, 0],
-  });
-
-  const logoInStyle = (
-    progress: Animated.Value
-  ): AnimatedStyle => ({
-    opacity: progress,
-
-    transform: [
-      {
-        translateY: progress.interpolate({
-          inputRange: [0, 0.6, 1],
-          outputRange: [22, -4, 0],
-        }),
-      },
-      {
-        scale: progress.interpolate({
-          inputRange: [0, 0.6, 1],
-          outputRange: [0.82, 1.05, 1],
-        }),
-      },
-      {
-        rotate: progress.interpolate({
-          inputRange: [0, 0.6, 1],
-          outputRange: ['-6deg', '1.5deg', '0deg'],
-        }),
-      },
-    ],
-  });
-
-  const logoInOutStyle = (
-    inProg: Animated.Value,
-    outProg: Animated.Value
-  ): AnimatedStyle => ({
-    opacity: Animated.multiply(
-      inProg,
-      outProg.interpolate({
-        inputRange: [0, 1],
-        outputRange: [1, 0],
-      })
-    ),
-
-    transform: [
-      {
-        translateY: Animated.add(
-          inProg.interpolate({
-            inputRange: [0, 0.6, 1],
-            outputRange: [22, -4, 0],
-          }),
-          outProg.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, -18],
-          })
-        ),
-      },
-
-      {
-        scale: Animated.multiply(
-          inProg.interpolate({
-            inputRange: [0, 0.6, 1],
-            outputRange: [0.82, 1.05, 1],
-          }),
-          outProg.interpolate({
-            inputRange: [0, 1],
-            outputRange: [1, 0.985],
-          })
-        ),
-      },
-
-      {
-        rotate: inProg.interpolate({
-          inputRange: [0, 0.6, 1],
-          outputRange: ['-6deg', '1.5deg', '0deg'],
-        }),
-      },
-    ],
-  });
-
-  const fadeInOutStyle = (
-    inProg: Animated.Value,
-    outProg: Animated.Value
-  ): AnimatedStyle => ({
-    opacity: Animated.multiply(
-      inProg,
-      outProg.interpolate({
-        inputRange: [0, 1],
-        outputRange: [1, 0],
-      })
-    ),
-  });
-
-  const letterInStyle = (
-    progress: Animated.Value,
-    rotDeg: number
-  ): AnimatedStyle => ({
-    opacity: progress,
-
-    transform: [
-      {
-        translateY: progress.interpolate({
-          inputRange: [0, 0.6, 1],
-          outputRange: [18, -3, 0],
-        }),
-      },
-
-      {
-        scale: progress.interpolate({
-          inputRange: [0, 0.6, 1],
-          outputRange: [0.7, 1.06, 1],
-        }),
-      },
-
-      {
-        rotate: progress.interpolate({
-          inputRange: [0, 0.6, 1],
-          outputRange: [
-            `${rotDeg}deg`,
-            '2deg',
-            '0deg',
-          ],
-        }),
-      },
-    ],
-  });
-
-  const taglineStyle = (
-    progress: Animated.Value
-  ): AnimatedStyle => ({
-    opacity: progress,
-
-    transform: [
-      {
-        translateY: progress.interpolate({
-          inputRange: [0, 0.6, 1],
-          outputRange: [16, -3, 0],
-        }),
-      },
-    ],
-  });
-
-  const floatyTranslate = act2Floaty.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0, -8, 0],
-  });
-
-  // -------------------------------------------------------------------------
-  // Spark position
-  // -------------------------------------------------------------------------
-
-  /**
-   * IMPORTANT:
-   *
-   * This function fixes the TS2322 error.
-   *
-   * Instead of passing:
-   *
-   * top: undefined
-   * left: undefined
-   * right: undefined
-   * bottom: undefined
-   *
-   * we only add properties that actually exist.
-   */
-  const getSparkPosition = (
-    spark: Spark
-  ): ViewStyle => {
-    const position: ViewStyle = {
-      position: 'absolute',
-    };
-
-    if (spark.top !== undefined) {
-      position.top = spark.top as `${number}%`;
-    }
-
-    if (spark.left !== undefined) {
-      position.left = spark.left as `${number}%`;
-    }
-
-    if (spark.right !== undefined) {
-      position.right = spark.right as `${number}%`;
-    }
-
-    if (spark.bottom !== undefined) {
-      position.bottom = spark.bottom as `${number}%`;
-    }
-
-    return position;
-  };
-
-  // -------------------------------------------------------------------------
-  // Render
-  // -------------------------------------------------------------------------
+  /* ==============================================================
+     RENDER
+  ============================================================== */
 
   return (
-    <View style={styles.stage}>
-      {/* Background */}
+    <View
+      style={[
+        styles.container,
+        {
+          width,
+          height,
+        },
+      ]}
+    >
+      {/* ==========================================================
+          FULL SCREEN GRADIENT
+
+          No border.
+          No rectangle.
+          No animated circle.
+      ========================================================== */}
 
       <Animated.View
+        pointerEvents="none"
         style={[
-          StyleSheet.absoluteFill,
+          StyleSheet.absoluteFillObject,
           {
-            opacity: bgOpacity,
+            opacity:
+              backgroundOpacity,
           },
         ]}
       >
         <LinearGradient
           colors={[
+            COLORS.bgTop,
             COLORS.bg,
-            COLORS.bg,
-            COLORS.bgDeep,
+            COLORS.bgMiddle,
+            COLORS.bgBottom,
           ]}
-          locations={[0, 0.42, 1]}
-          style={StyleSheet.absoluteFill}
+          locations={[
+            0,
+            0.36,
+            0.68,
+            1,
+          ]}
+          start={{
+            x: 0.15,
+            y: 0,
+          }}
+          end={{
+            x: 0.85,
+            y: 1,
+          }}
+          style={
+            StyleSheet.absoluteFillObject
+          }
         />
       </Animated.View>
 
-      {/* Vignette */}
+      {/* ==========================================================
+          VERY SUBTLE TOP LIGHT
 
-      <View
+          This is NOT a circle.
+          It is a transparent gradient layer.
+      ========================================================== */}
+
+      <LinearGradient
         pointerEvents="none"
-        style={[
-          StyleSheet.absoluteFill,
-          styles.vignette,
+        colors={[
+          'rgba(207,168,242,0.075)',
+          'rgba(207,168,242,0.015)',
+          'rgba(207,168,242,0)',
         ]}
+        locations={[
+          0,
+          0.38,
+          1,
+        ]}
+        start={{
+          x: 0.5,
+          y: 0,
+        }}
+        end={{
+          x: 0.5,
+          y: 1,
+        }}
+        style={
+          StyleSheet.absoluteFillObject
+        }
       />
 
-      {/* Sparkles */}
+      {/* ==========================================================
+          SPARKLES
+      ========================================================== */}
 
-      {SPARKS.map((spark, index) => (
-        <Animated.Text
-          key={index}
-          pointerEvents="none"
-          style={[
-            getSparkPosition(spark),
-
-            {
-              fontSize: spark.size,
-              color: spark.color,
-
-              opacity: Animated.multiply(
-                sparkVals[index].interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 0.85],
-                }),
-                sparksEnd
-              ),
-
-              transform: [
-                {
-                  scale: sparkVals[index].interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.7, 1],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
-          ✦
-        </Animated.Text>
-      ))}
-
-      {/* ================================================================ */}
-      {/* ACT 1 — IPS */}
-      {/* ================================================================ */}
-
-      <Animated.View
-        style={[
-          styles.act,
-          {
-            opacity: act1Visible,
-          },
-        ]}
-        pointerEvents="none"
-      >
-        <Animated.View
-          style={[
-            styles.glow,
-            glowStyle(act1Glow),
-          ]}
-        />
-
-        <Animated.View
-          style={[
-            styles.logoWrap,
-            logoInOutStyle(
-              act1Logo,
-              act1LogoOut
-            ),
-          ]}
-        >
-          <Image
-            source={logo1}
-            style={styles.logo}
-            resizeMode="contain"
+      {SPARKS.map(
+        (
+          spark,
+          index
+        ) => (
+          <Sparkle
+            key={index}
+            config={spark}
+            animation={
+              sparkValues[index]
+            }
           />
-        </Animated.View>
+        )
+      )}
 
-        <View style={styles.wordmarkRow}>
-          {WORD_1.split('').map((character, index) => (
-            <Animated.Text
-              key={index}
-              style={[
-                styles.wordmark,
-                styles.wordmarkWide,
-                fadeInOutStyle(
-                  act1Letters[index],
-                  act1LettersOut[index]
-                ),
-              ]}
-            >
-              {character}
-            </Animated.Text>
-          ))}
-        </View>
+      {/* ==========================================================
+          FIRST BRAND
+      ========================================================== */}
 
-        <Animated.Text
-          style={[
-            styles.subtitle,
-            fadeInOutStyle(
-              act1Subtitle,
-              act1SubtitleOut
-            ),
-          ]}
-        >
-          {SUBTITLE_1}
-        </Animated.Text>
-      </Animated.View>
+      <FirstBrand
+        logo={logo1}
+        logoLife={
+          firstLogoLife
+        }
+        letterLives={
+          firstLetterLives
+        }
+        subtitleLife={
+          firstSubtitleLife
+        }
+        isRTL={isRTL}
+      />
 
-      {/* ================================================================ */}
-      {/* ACT 2 — Neurolia */}
-      {/* ================================================================ */}
+      {/* ==========================================================
+          SECOND BRAND
+      ========================================================== */}
 
-      <Animated.View
-        style={[
-          styles.act,
-          {
-            transform: [
-              {
-                translateY: floatyTranslate,
-              },
-            ],
-          },
-        ]}
-        pointerEvents="none"
-      >
-        <Animated.View
-          style={[
-            styles.glow,
-
-            {
-              transform: [
-                {
-                  scale: glowScale(act2Glow),
-                },
-              ],
-            },
-
-            {
-              opacity: Animated.add(
-                glowOpacity(act2Glow),
-                breatheStyle
-              ),
-            },
-          ]}
-        />
-
-        <Animated.View
-          style={[
-            styles.logoWrap,
-            logoInStyle(act2Logo),
-          ]}
-        >
-          <Image
-            source={logo2}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </Animated.View>
-
-        <View style={styles.wordmarkRow}>
-          {WORD_2.split('').map((character, index) => (
-            <Animated.Text
-              key={index}
-              style={[
-                styles.wordmark,
-                letterInStyle(
-                  act2Letters[index],
-                  ROT_2[index]
-                ),
-              ]}
-            >
-              {character}
-            </Animated.Text>
-          ))}
-        </View>
-
-        <Animated.Text
-          style={[
-            styles.tagline,
-            taglineStyle(act2Tagline),
-          ]}
-        >
-          {TAGLINE}
-        </Animated.Text>
-      </Animated.View>
-
-      {/* Replay */}
-
-      <Animated.View
-        style={[
-          styles.replayWrap,
-          {
-            opacity: replayOpacity,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          style={styles.replay}
-          onPress={play}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.replayText}>
-            Replay intro
-          </Text>
-        </TouchableOpacity>
-      </Animated.View>
+      <SecondBrand
+        logo={logo2}
+        logoProgress={
+          secondLogoProgress
+        }
+        letterProgresses={
+          secondLetterProgresses
+        }
+        taglineProgress={
+          secondTaglineProgress
+        }
+        isRTL={isRTL}
+      />
     </View>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Dimensions
-// ---------------------------------------------------------------------------
-
-const { width, height } = Dimensions.get('window');
-
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
+/* ================================================================
+   STYLES
+================================================================ */
 
 const styles = StyleSheet.create({
-  stage: {
+  container: {
     flex: 1,
-    width,
-    height,
-    backgroundColor: COLORS.bgOuter,
+
+    backgroundColor:
+      COLORS.bgBottom,
+
     alignItems: 'center',
-    justifyContent: 'center',
+
+    justifyContent:
+      'center',
+
     overflow: 'hidden',
   },
 
-  vignette: {
-    backgroundColor: 'transparent',
-    borderWidth: 60,
-    borderColor: 'rgba(8,5,16,0.35)',
+  /* ==============================================================
+     SPARK
+  ============================================================== */
+
+  spark: {
+    position: 'absolute',
+
+    color: COLORS.star,
+
+    fontWeight: '300',
+
+    includeFontPadding: false,
+
+    textShadowColor:
+      'rgba(195,155,239,0.45)',
+
+    textShadowOffset: {
+      width: 0,
+      height: 0,
+    },
+
+    textShadowRadius: 5,
   },
 
-  act: {
+  /* ==============================================================
+     BRAND LAYER
+  ============================================================== */
+
+  brandLayer: {
     position: 'absolute',
-    top: 0,
+
     left: 0,
+
     right: 0,
+
+    top: 0,
+
     bottom: 0,
+
     alignItems: 'center',
-    justifyContent: 'center',
+
+    justifyContent:
+      'center',
   },
 
-  glow: {
-    position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    top: '50%',
-    marginTop: -212,
-    backgroundColor: COLORS.accent,
-  },
+  /* ==============================================================
+     FIRST LOGO
+  ============================================================== */
 
-  logoWrap: {
+  firstLogoContainer: {
     width: 132,
+
     height: 132,
+
     alignItems: 'center',
-    justifyContent: 'center',
+
+    justifyContent:
+      'center',
   },
 
-  logo: {
+  firstLogo: {
     width: 116,
+
     height: 116,
+
+    /* Important:
+       explicitly ImageStyle */
+    overflow: 'hidden',
   },
 
-  wordmarkRow: {
+  /* ==============================================================
+     FIRST WORD
+  ============================================================== */
+
+  firstWordmark: {
     flexDirection: 'row',
-    marginTop: 22,
-    justifyContent: 'center',
+
+    alignItems: 'center',
+
+    justifyContent:
+      'center',
+
+    marginTop: 17,
   },
 
-  wordmark: {
-    fontSize: 52,
-    fontWeight: '800',
+  rtlWordmark: {
+    flexDirection: 'row-reverse',
+  },
+
+  firstWordLetter: {
     color: COLORS.fg,
-    lineHeight: 56,
-    letterSpacing: -1,
+
+    fontSize: 50,
+
+    lineHeight: 55,
+
+    fontWeight: '800',
+
+    letterSpacing: 7,
+
+    includeFontPadding: false,
   },
 
-  wordmarkWide: {
-    letterSpacing: 8,
-  },
+  /* ==============================================================
+     FIRST SUBTITLE
+  ============================================================== */
 
-  subtitle: {
-    marginTop: 12,
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
+  firstSubtitle: {
+    marginTop: 10,
+
     color: COLORS.accentHi,
+
+    fontSize: 12,
+
+    lineHeight: 18,
+
+    fontWeight: '600',
+
+    letterSpacing: 1.5,
+
+    textTransform:
+      'uppercase',
+
+    textAlign: 'center',
+
+    includeFontPadding: false,
   },
+
+  persianFirstSubtitle: {
+    fontSize: 14,
+
+    lineHeight: 22,
+
+    fontWeight: '500',
+
+    letterSpacing: 0,
+
+    textTransform:
+      'none',
+
+    writingDirection: 'rtl',
+  },
+
+  /* ==============================================================
+     SECOND LOGO
+  ============================================================== */
+
+  secondLogoContainer: {
+    width: 132,
+
+    height: 132,
+
+    alignItems: 'center',
+
+    justifyContent:
+      'center',
+  },
+
+  secondLogo: {
+    width: 116,
+
+    height: 116,
+
+    /* Explicit ImageStyle.
+       This fixes TS2322. */
+    overflow: 'hidden',
+  },
+
+  /* ==============================================================
+     SECOND WORD
+  ============================================================== */
+
+  secondWordmark: {
+    flexDirection: 'row',
+
+    alignItems: 'center',
+
+    justifyContent:
+      'center',
+
+    marginTop: 18,
+  },
+
+  secondWordLetter: {
+    color: COLORS.fg,
+
+    fontSize: 50,
+
+    lineHeight: 56,
+
+    fontWeight: '800',
+
+    letterSpacing: -1,
+
+    includeFontPadding: false,
+  },
+
+  persianWordLetter: {
+    fontSize: 48,
+
+    lineHeight: 57,
+
+    fontWeight: '700',
+
+    letterSpacing: 0,
+
+    includeFontPadding: false,
+
+    writingDirection: 'rtl',
+  },
+
+  /* ==============================================================
+     TAGLINE
+  ============================================================== */
 
   tagline: {
-    marginTop: 18,
-    fontSize: 15,
+    marginTop: 15,
+
+    color: COLORS.muted,
+
+    fontSize: 14,
+
+    lineHeight: 20,
+
     fontWeight: '500',
+
+    letterSpacing: 0.15,
+
+    textAlign: 'center',
+
+    includeFontPadding: false,
+
+    paddingHorizontal: 24,
+  },
+
+  persianTagline: {
+    marginTop: 14,
+
     color: COLORS.muted,
-  },
 
-  replayWrap: {
-    position: 'absolute',
-    bottom: 18,
-    right: 18,
-  },
+    fontSize: 15,
 
-  replay: {
-    backgroundColor: 'rgba(243,238,249,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(243,238,249,0.12)',
-    borderRadius: 999,
-    paddingVertical: 9,
-    paddingHorizontal: 14,
-  },
+    lineHeight: 24,
 
-  replayText: {
-    color: COLORS.muted,
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.5,
+    fontWeight: '500',
+
+    letterSpacing: 0,
+
+    writingDirection: 'rtl',
+
+    textAlign: 'center',
+
+    paddingHorizontal: 30,
   },
 });
+
+/* ================================================================
+   DEFAULT EXPORT
+================================================================ */
+
+export default SplashScreen;

@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
+
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Animated,
 } from 'react-native';
 
 import { useTheme } from '../../context/ThemeContext';
@@ -26,288 +26,260 @@ import {
   Check,
   Sparkles,
   LogOut,
-  Palette,
 } from 'lucide-react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { ThemeMode } from '../../types';
 
+
 // =======================================================
-// THEME OPTION
+// TYPES
 // =======================================================
 
 interface ThemeOptionProps {
   mode: ThemeMode;
   title: string;
   subtitle: string;
-  icon: React.ReactNode;
-  previewColors: string[];
   selected: boolean;
-  onPress: () => void;
   isRTL: boolean;
-  textColor: string;
-  secondaryTextColor: string;
-  surfaceColor: string;
-  borderColor: string;
+  previewColors: string[];
+  onPress: () => void;
 }
 
+
+// =======================================================
+// THEME OPTION
+// =======================================================
+
 function ThemeOption({
+  mode,
   title,
   subtitle,
-  icon,
-  previewColors,
   selected,
-  onPress,
   isRTL,
-  textColor,
-  secondaryTextColor,
-  surfaceColor,
-  borderColor,
+  previewColors,
+  onPress,
 }: ThemeOptionProps) {
-  const scale = useRef(
-    new Animated.Value(selected ? 1 : 0.985)
-  ).current;
+  const Icon =
+    mode === 'light'
+      ? Sun
+      : mode === 'dark'
+        ? Moon
+        : Dumbbell;
 
-  const selectionProgress = useRef(
-    new Animated.Value(selected ? 1 : 0)
-  ).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scale, {
-        toValue: selected ? 1 : 0.985,
-        useNativeDriver: true,
-        damping: 16,
-        stiffness: 180,
-        mass: 0.8,
-      }),
-
-      Animated.timing(selectionProgress, {
-        toValue: selected ? 1 : 0,
-        duration: 220,
-        useNativeDriver: false,
-      }),
-    ]).start();
-  }, [selected, scale, selectionProgress]);
-
-  const animatedBorderColor =
-    selectionProgress.interpolate({
-      inputRange: [0, 1],
-      outputRange: [
-        borderColor,
-        previewColors[1],
-      ],
-    });
-
-  const animatedBackgroundColor =
-    selectionProgress.interpolate({
-      inputRange: [0, 1],
-      outputRange: [
-        surfaceColor,
-        previewColors[1] + '0D',
-      ],
-    });
-
-  const animatedIconBackground =
-    selectionProgress.interpolate({
-      inputRange: [0, 1],
-      outputRange: [
-        'rgba(128,128,128,0.10)',
-        previewColors[1],
-      ],
-    });
+  const iconColor =
+    selected
+      ? mode === 'athlete'
+        ? '#071006'
+        : '#FFFFFF'
+      : previewColors[1];
 
   return (
-    <Animated.View
+    <TouchableOpacity
+      activeOpacity={0.82}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{
+        selected,
+      }}
       style={[
-        styles.themeOptionWrapper,
+        styles.themeOption,
         {
-          transform: [{ scale }],
+          borderColor: selected
+            ? previewColors[1]
+            : 'rgba(128,128,128,0.16)',
+
+          backgroundColor: selected
+            ? `${previewColors[1]}0D`
+            : 'rgba(128,128,128,0.035)',
+
+          flexDirection: isRTL
+            ? 'row-reverse'
+            : 'row',
         },
       ]}
     >
-      <TouchableOpacity
-        activeOpacity={0.88}
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityState={{
-          selected,
-        }}
-        style={styles.themeTouchable}
+      {/* -----------------------------------------------
+          PREVIEW
+      ------------------------------------------------ */}
+
+      <View
+        style={[
+          styles.themePreview,
+          {
+            backgroundColor:
+              previewColors[0],
+          },
+        ]}
       >
-        <Animated.View
+        <View
           style={[
-            styles.themeOption,
+            styles.previewTop,
             {
-              borderColor: animatedBorderColor,
-              backgroundColor: animatedBackgroundColor,
+              backgroundColor:
+                previewColors[2],
+            },
+          ]}
+        />
+
+        <View
+          style={[
+            styles.previewContent,
+            {
+              backgroundColor:
+                previewColors[0],
             },
           ]}
         >
-          {/* ============================================
-              THEME PREVIEW
-          ============================================ */}
+          <View
+            style={[
+              styles.previewLine,
+              {
+                backgroundColor:
+                  previewColors[3],
+              },
+            ]}
+          />
 
           <View
             style={[
-              styles.themePreview,
+              styles.previewLineShort,
               {
-                backgroundColor: previewColors[0],
+                backgroundColor:
+                  previewColors[3],
+              },
+            ]}
+          />
+
+          <View
+            style={[
+              styles.previewCard,
+              {
+                backgroundColor:
+                  previewColors[2],
+              },
+            ]}
+          />
+
+          <View
+            style={[
+              styles.previewAccent,
+              {
+                backgroundColor:
+                  previewColors[1],
+              },
+            ]}
+          />
+        </View>
+      </View>
+
+
+      {/* -----------------------------------------------
+          INFORMATION
+      ------------------------------------------------ */}
+
+      <View
+        style={[
+          styles.themeInfo,
+          {
+            alignItems: isRTL
+              ? 'flex-end'
+              : 'flex-start',
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.themeTitleRow,
+            {
+              flexDirection: isRTL
+                ? 'row-reverse'
+                : 'row',
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.themeIcon,
+              {
+                backgroundColor:
+                  selected
+                    ? previewColors[1]
+                    : 'rgba(128,128,128,0.10)',
               },
             ]}
           >
-            <View
-              style={[
-                styles.previewTop,
-                {
-                  backgroundColor: previewColors[2],
-                },
-              ]}
+            <Icon
+              size={18}
+              color={iconColor}
+              strokeWidth={2.4}
             />
-
-            <View
-              style={[
-                styles.previewContent,
-                {
-                  backgroundColor: previewColors[0],
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.previewLine,
-                  {
-                    backgroundColor: previewColors[3],
-                  },
-                ]}
-              />
-
-              <View
-                style={[
-                  styles.previewLineShort,
-                  {
-                    backgroundColor: previewColors[3],
-                  },
-                ]}
-              />
-
-              <View
-                style={[
-                  styles.previewCard,
-                  {
-                    backgroundColor: previewColors[2],
-                  },
-                ]}
-              />
-
-              <View
-                style={[
-                  styles.previewAccent,
-                  {
-                    backgroundColor: previewColors[1],
-                  },
-                ]}
-              />
-            </View>
           </View>
 
-          {/* ============================================
-              INFO
-          ============================================ */}
-
-          <View
+          <Text
+            numberOfLines={1}
             style={[
-              styles.themeInfo,
+              styles.themeTitle,
               {
-                alignItems: isRTL
-                  ? 'flex-end'
-                  : 'flex-start',
+                color: selected
+                  ? previewColors[1]
+                  : '#FFFFFF',
+                textAlign: isRTL
+                  ? 'right'
+                  : 'left',
               },
             ]}
           >
-            <View
-              style={[
-                styles.themeTitleRow,
-                {
-                  flexDirection: isRTL
-                    ? 'row-reverse'
-                    : 'row',
-                },
-              ]}
-            >
-              <Animated.View
-                style={[
-                  styles.themeIcon,
-                  {
-                    backgroundColor:
-                      animatedIconBackground,
-                  },
-                ]}
-              >
-                {icon}
-              </Animated.View>
+            {title}
+          </Text>
+        </View>
 
-              <Text
-                style={[
-                  styles.themeTitle,
-                  {
-                    color: selected
-                      ? previewColors[1]
-                      : textColor,
-                    textAlign: isRTL
-                      ? 'right'
-                      : 'left',
-                  },
-                ]}
-                numberOfLines={1}
-              >
-                {title}
-              </Text>
-            </View>
+        <Text
+          numberOfLines={2}
+          style={[
+            styles.themeSubtitle,
+            {
+              textAlign: isRTL
+                ? 'right'
+                : 'left',
+            },
+          ]}
+        >
+          {subtitle}
+        </Text>
+      </View>
 
-            <Text
-              style={[
-                styles.themeSubtitle,
-                {
-                  color: secondaryTextColor,
-                  textAlign: isRTL
-                    ? 'right'
-                    : 'left',
-                },
-              ]}
-              numberOfLines={2}
-            >
-              {subtitle}
-            </Text>
-          </View>
 
-          {/* ============================================
-              SELECTED BADGE
-          ============================================ */}
+      {/* -----------------------------------------------
+          CHECK
+      ------------------------------------------------ */}
 
-          {selected && (
-            <View
-              style={[
-                styles.checkBadge,
-                {
-                  backgroundColor:
-                    previewColors[1],
-                },
-              ]}
-            >
-              <Check
-                size={15}
-                color={previewColors[0]}
-                strokeWidth={3}
-              />
-            </View>
-          )}
-        </Animated.View>
-      </TouchableOpacity>
-    </Animated.View>
+      {selected && (
+        <View
+          style={[
+            styles.checkBadge,
+            {
+              backgroundColor:
+                previewColors[1],
+
+              [isRTL
+                ? 'left'
+                : 'right']: 9,
+            },
+          ]}
+        >
+          <Check
+            size={15}
+            color={previewColors[0]}
+            strokeWidth={3}
+          />
+        </View>
+      )}
+    </TouchableOpacity>
   );
 }
+
 
 // =======================================================
 // SETTINGS SCREEN
@@ -331,13 +303,19 @@ export function SettingsScreen() {
     logout,
   } = useAuth();
 
+
   // =====================================================
-  // THEME DATA
+  // THEME OPTIONS
   // =====================================================
 
-  const themeOptions = [
+  const themeOptions: {
+    mode: ThemeMode;
+    title: string;
+    subtitle: string;
+    previewColors: string[];
+  }[] = [
     {
-      mode: 'light' as ThemeMode,
+      mode: 'light',
 
       title: isRTL
         ? 'روشن'
@@ -346,18 +324,6 @@ export function SettingsScreen() {
       subtitle: isRTL
         ? 'تم روشن و مینیمال'
         : 'Clean & minimal',
-
-      icon: (
-        <Sun
-          size={18}
-          color={
-            theme === 'light'
-              ? '#FFFFFF'
-              : colors.textSecondary
-          }
-          strokeWidth={2.2}
-        />
-      ),
 
       previewColors: [
         '#F8F7FC',
@@ -368,7 +334,7 @@ export function SettingsScreen() {
     },
 
     {
-      mode: 'dark' as ThemeMode,
+      mode: 'dark',
 
       title: isRTL
         ? 'تاریک'
@@ -377,18 +343,6 @@ export function SettingsScreen() {
       subtitle: isRTL
         ? 'تیره و آرام برای شب'
         : 'Deep & comfortable',
-
-      icon: (
-        <Moon
-          size={18}
-          color={
-            theme === 'dark'
-              ? '#FFFFFF'
-              : colors.textSecondary
-          }
-          strokeWidth={2.2}
-        />
-      ),
 
       previewColors: [
         '#0B1026',
@@ -399,24 +353,12 @@ export function SettingsScreen() {
     },
 
     {
-      mode: 'athlete' as ThemeMode,
+      mode: 'athlete',
 
       title: 'Neon Athlete',
 
       subtitle:
         'Brain × Body × Performance',
-
-      icon: (
-        <Dumbbell
-          size={18}
-          color={
-            theme === 'athlete'
-              ? '#071006'
-              : '#B8FF3D'
-          }
-          strokeWidth={2.5}
-        />
-      ),
 
       previewColors: [
         '#070908',
@@ -426,6 +368,7 @@ export function SettingsScreen() {
       ],
     },
   ];
+
 
   // =====================================================
   // RENDER
@@ -440,12 +383,16 @@ export function SettingsScreen() {
             colors.background,
         },
       ]}
-      contentContainerStyle={
-        styles.content
-      }
+      contentContainerStyle={[
+        styles.content,
+        {
+          paddingBottom: 60,
+        },
+      ]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
+
       {/* =================================================
           HERO
       ================================================= */}
@@ -460,24 +407,20 @@ export function SettingsScreen() {
           },
         ]}
       >
-        <View
+        {/* <View
           style={[
             styles.heroIcon,
             {
               backgroundColor:
-                colors.primary + '18',
+                `${colors.primary}18`,
 
               borderColor:
-                colors.primary + '35',
+                `${colors.primary}35`,
             },
           ]}
         >
-          <Palette
-            size={22}
-            color={colors.primary}
-            strokeWidth={2.2}
-          />
-        </View>
+
+        </View> */}
 
         <Text
           style={[
@@ -491,11 +434,10 @@ export function SettingsScreen() {
             },
           ]}
         >
-          {t.settings || (
-            isRTL
+          {t.settings ||
+            (isRTL
               ? 'تنظیمات'
-              : 'Settings'
-          )}
+              : 'Settings')}
         </Text>
 
         <Text
@@ -517,6 +459,7 @@ export function SettingsScreen() {
         </Text>
       </View>
 
+
       {/* =================================================
           APPEARANCE
       ================================================= */}
@@ -533,6 +476,9 @@ export function SettingsScreen() {
           },
         ]}
       >
+
+        {/* SECTION HEADER */}
+
         <View
           style={[
             styles.sectionHeader,
@@ -543,12 +489,13 @@ export function SettingsScreen() {
             },
           ]}
         >
+
           <View
             style={[
               styles.sectionIcon,
               {
                 backgroundColor:
-                  colors.primary + '14',
+                  `${colors.primary}14`,
               },
             ]}
           >
@@ -606,9 +553,8 @@ export function SettingsScreen() {
           </View>
         </View>
 
-        {/* =================================================
-            THEME OPTIONS
-        ================================================= */}
+
+        {/* THEME LIST */}
 
         <View style={styles.themeList}>
           {themeOptions.map((option) => (
@@ -617,35 +563,22 @@ export function SettingsScreen() {
               mode={option.mode}
               title={option.title}
               subtitle={option.subtitle}
-              icon={option.icon}
               previewColors={
                 option.previewColors
               }
               selected={
                 theme === option.mode
               }
+              isRTL={isRTL}
               onPress={() =>
                 setTheme(option.mode)
-              }
-              isRTL={isRTL}
-              textColor={colors.text}
-              secondaryTextColor={
-                colors.textSecondary
-              }
-              surfaceColor={
-                colors.surfaceSecondary ||
-                colors.surface
-              }
-              borderColor={
-                colors.border
               }
             />
           ))}
         </View>
 
-        {/* =================================================
-            ATHLETE CALLOUT
-        ================================================= */}
+
+        {/* ATHLETE CALLOUT */}
 
         {theme === 'athlete' && (
           <LinearGradient
@@ -665,24 +598,20 @@ export function SettingsScreen() {
             style={[
               styles.athleteCallout,
               {
-                borderColor:
-                  'rgba(184,255,61,0.20)',
-
                 flexDirection: isRTL
                   ? 'row-reverse'
                   : 'row',
+
+                borderColor:
+                  'rgba(184,255,61,0.20)',
               },
             ]}
           >
-            <View
-              style={styles.calloutIcon}
-            >
-              <Dumbbell
-                size={19}
-                color="#B8FF3D"
-                strokeWidth={2.4}
-              />
-            </View>
+            <Dumbbell
+              size={19}
+              color="#B8FF3D"
+              strokeWidth={2.4}
+            />
 
             <View
               style={[
@@ -726,6 +655,7 @@ export function SettingsScreen() {
         )}
       </Card>
 
+
       {/* =================================================
           LANGUAGE
       ================================================= */}
@@ -742,21 +672,29 @@ export function SettingsScreen() {
           },
         ]}
       >
+
         <Text
           style={[
             styles.sectionTitle,
             {
               color:
-                colors.textSecondary,
+                colors.text,
 
               textAlign: isRTL
                 ? 'right'
                 : 'left',
+
+              marginBottom:
+                Spacing.md,
             },
           ]}
         >
-          {t.language}
+          {t.language ||
+            (isRTL
+              ? 'زبان'
+              : 'Language')}
         </Text>
+
 
         <View
           style={[
@@ -768,20 +706,14 @@ export function SettingsScreen() {
             },
           ]}
         >
-          {/* ==========================================
-              PERSIAN
-          ========================================== */}
+
+          {/* PERSIAN */}
 
           <TouchableOpacity
             activeOpacity={0.78}
             onPress={() =>
               setLanguage('fa')
             }
-            accessibilityRole="button"
-            accessibilityState={{
-              selected:
-                language === 'fa',
-            }}
             style={[
               styles.languageOption,
               {
@@ -815,44 +747,18 @@ export function SettingsScreen() {
                 },
               ]}
             >
-              {t.persian}
+              {t.persian || 'فارسی'}
             </Text>
-
-            {language === 'fa' && (
-              <View
-                style={[
-                  styles.languageCheck,
-                  {
-                    backgroundColor:
-                      colors.primary,
-                  },
-                ]}
-              >
-                <Check
-                  size={11}
-                  color={
-                    colors.background
-                  }
-                  strokeWidth={3}
-                />
-              </View>
-            )}
           </TouchableOpacity>
 
-          {/* ==========================================
-              ENGLISH
-          ========================================== */}
+
+          {/* ENGLISH */}
 
           <TouchableOpacity
             activeOpacity={0.78}
             onPress={() =>
               setLanguage('en')
             }
-            accessibilityRole="button"
-            accessibilityState={{
-              selected:
-                language === 'en',
-            }}
             style={[
               styles.languageOption,
               {
@@ -886,31 +792,13 @@ export function SettingsScreen() {
                 },
               ]}
             >
-              {t.english}
+              {t.english || 'English'}
             </Text>
-
-            {language === 'en' && (
-              <View
-                style={[
-                  styles.languageCheck,
-                  {
-                    backgroundColor:
-                      colors.primary,
-                  },
-                ]}
-              >
-                <Check
-                  size={11}
-                  color={
-                    colors.background
-                  }
-                  strokeWidth={3}
-                />
-              </View>
-            )}
           </TouchableOpacity>
+
         </View>
       </Card>
+
 
       {/* =================================================
           LOGOUT
@@ -921,20 +809,16 @@ export function SettingsScreen() {
         onPress={logout}
         accessibilityRole="button"
         accessibilityLabel={
-          t.logout
+          t.logout || 'Logout'
         }
         style={[
           styles.logoutButton,
           {
             backgroundColor:
-              colors.error + '12',
+              `${colors.error}12`,
 
             borderColor:
-              colors.error + '30',
-
-            flexDirection: isRTL
-              ? 'row-reverse'
-              : 'row',
+              `${colors.error}30`,
           },
         ]}
       >
@@ -953,22 +837,26 @@ export function SettingsScreen() {
             },
           ]}
         >
-          {t.logout}
+          {t.logout || 'Logout'}
         </Text>
       </TouchableOpacity>
+
 
       <View
         style={styles.bottomSpace}
       />
+
     </ScrollView>
   );
 }
+
 
 // =======================================================
 // STYLES
 // =======================================================
 
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
   },
@@ -980,11 +868,9 @@ const styles = StyleSheet.create({
     paddingTop:
       Spacing.md,
 
-    paddingBottom:
-      50,
-
     width: '100%',
   },
+
 
   // =====================================================
   // HERO
@@ -1043,6 +929,7 @@ const styles = StyleSheet.create({
       false,
   },
 
+
   // =====================================================
   // SECTION
   // =====================================================
@@ -1070,7 +957,8 @@ const styles = StyleSheet.create({
     alignItems:
       'center',
 
-    gap: Spacing.sm,
+    gap:
+      Spacing.sm,
 
     marginBottom:
       Spacing.lg,
@@ -1124,21 +1012,14 @@ const styles = StyleSheet.create({
       false,
   },
 
+
   // =====================================================
-  // THEMES
+  // THEME LIST
   // =====================================================
 
   themeList: {
     width: '100%',
     gap: Spacing.sm,
-  },
-
-  themeOptionWrapper: {
-    width: '100%',
-  },
-
-  themeTouchable: {
-    width: '100%',
   },
 
   themeOption: {
@@ -1153,21 +1034,17 @@ const styles = StyleSheet.create({
 
     padding: 10,
 
-    flexDirection:
-      'row',
-
     alignItems:
       'center',
 
-    position:
-      'relative',
+    position: 'relative',
 
-    overflow:
-      'hidden',
+    overflow: 'hidden',
   },
 
+
   // =====================================================
-  // PREVIEW
+  // THEME PREVIEW
   // =====================================================
 
   themePreview: {
@@ -1177,15 +1054,13 @@ const styles = StyleSheet.create({
     borderRadius:
       BorderRadius.md,
 
-    overflow:
-      'hidden',
+    overflow: 'hidden',
 
     flexShrink: 0,
   },
 
   previewTop: {
     height: 17,
-
     width: '100%',
   },
 
@@ -1194,8 +1069,7 @@ const styles = StyleSheet.create({
 
     padding: 9,
 
-    position:
-      'relative',
+    position: 'relative',
   },
 
   previewLine: {
@@ -1242,6 +1116,7 @@ const styles = StyleSheet.create({
     bottom: 7,
   },
 
+
   // =====================================================
   // THEME INFO
   // =====================================================
@@ -1263,7 +1138,7 @@ const styles = StyleSheet.create({
 
     marginBottom: 5,
 
-    minWidth: 0,
+    maxWidth: '100%',
   },
 
   themeIcon: {
@@ -1295,6 +1170,8 @@ const styles = StyleSheet.create({
   },
 
   themeSubtitle: {
+    color: '#89948C',
+
     fontSize: 12,
 
     lineHeight: 18,
@@ -1303,17 +1180,15 @@ const styles = StyleSheet.create({
       false,
   },
 
+
   // =====================================================
   // CHECK
   // =====================================================
 
   checkBadge: {
-    position:
-      'absolute',
+    position: 'absolute',
 
     top: 9,
-
-    right: 9,
 
     width: 26,
     height: 26,
@@ -1326,6 +1201,7 @@ const styles = StyleSheet.create({
     justifyContent:
       'center',
   },
+
 
   // =====================================================
   // ATHLETE CALLOUT
@@ -1353,25 +1229,8 @@ const styles = StyleSheet.create({
     alignItems:
       'center',
 
-    gap: Spacing.sm,
-  },
-
-  calloutIcon: {
-    width: 34,
-    height: 34,
-
-    borderRadius: 10,
-
-    alignItems:
-      'center',
-
-    justifyContent:
-      'center',
-
-    backgroundColor:
-      'rgba(184,255,61,0.10)',
-
-    flexShrink: 0,
+    gap:
+      Spacing.sm,
   },
 
   calloutContent: {
@@ -1381,8 +1240,7 @@ const styles = StyleSheet.create({
   },
 
   calloutTitle: {
-    color:
-      '#B8FF3D',
+    color: '#B8FF3D',
 
     fontSize: 13,
 
@@ -1395,8 +1253,7 @@ const styles = StyleSheet.create({
   },
 
   calloutText: {
-    color:
-      '#849087',
+    color: '#849087',
 
     fontSize: 11,
 
@@ -1408,6 +1265,7 @@ const styles = StyleSheet.create({
       false,
   },
 
+
   // =====================================================
   // LANGUAGE
   // =====================================================
@@ -1418,10 +1276,8 @@ const styles = StyleSheet.create({
     alignItems:
       'stretch',
 
-    gap: Spacing.sm,
-
-    marginTop:
-      Spacing.md,
+    gap:
+      Spacing.sm,
   },
 
   languageOption: {
@@ -1450,11 +1306,7 @@ const styles = StyleSheet.create({
 
     gap: 8,
 
-    overflow:
-      'hidden',
-
-    position:
-      'relative',
+    overflow: 'hidden',
   },
 
   flag: {
@@ -1483,20 +1335,6 @@ const styles = StyleSheet.create({
       false,
   },
 
-  languageCheck: {
-    width: 18,
-    height: 18,
-
-    borderRadius: 9,
-
-    alignItems:
-      'center',
-
-    justifyContent:
-      'center',
-
-    marginLeft: 2,
-  },
 
   // =====================================================
   // LOGOUT
@@ -1512,6 +1350,9 @@ const styles = StyleSheet.create({
 
     borderWidth: 1,
 
+    flexDirection:
+      'row',
+
     alignItems:
       'center',
 
@@ -1524,10 +1365,10 @@ const styles = StyleSheet.create({
     paddingVertical:
       Spacing.md,
 
-    gap: Spacing.sm,
+    gap:
+      Spacing.sm,
 
-    overflow:
-      'hidden',
+    overflow: 'hidden',
   },
 
   logoutText: {
@@ -1540,10 +1381,6 @@ const styles = StyleSheet.create({
     includeFontPadding:
       false,
   },
-
-  // =====================================================
-  // BOTTOM SPACE
-  // =====================================================
 
   bottomSpace: {
     height: 30,
