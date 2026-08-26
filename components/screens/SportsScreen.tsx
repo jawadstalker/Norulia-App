@@ -1092,9 +1092,21 @@ const styles = StyleSheet.create({
   exerciseNumber: { width: 28, height: 28, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   exerciseNumberText: { fontSize: 11, fontWeight: '800' },
   exerciseTapArea: { flex: 1, alignItems: 'center', marginHorizontal: 10 },
-  exerciseThumb: { width: 30, height: 30, borderRadius: 14, overflow: 'visible' },
-  exerciseThumbImage: { width: 10, height: 10, borderRadius: 14 },
-  exerciseThumbFallback: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  // NOTE: this is the ONE place that controls how big the thumbnail is.
+  // Change width/height here — resizeMode on the <Image> only controls how
+  // the picture fits inside this box, it never changes the box's size.
+  exerciseThumb: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Fills its parent (exerciseThumb) so resizing the container above is
+  // enough — no need to also edit this every time.
+  exerciseThumbImage: { width: '100%', height: '100%' },
+  exerciseThumbFallback: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   playBadge: {
     position: 'absolute',
     bottom: -2,
@@ -1107,7 +1119,7 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
   },
 
-  exerciseContent: { flex: 1, marginHorizontal: 12 },
+  exerciseContent: {  flex: 1, marginHorizontal: 12 },
   exerciseTitle: { fontSize: 14, fontWeight: '800' },
   categoryBadgeRow: { alignItems: 'center', gap: 5, marginTop: 4 },
   categoryDot: { width: 6, height: 6, borderRadius: 3 },
@@ -1165,8 +1177,10 @@ const styles = StyleSheet.create({
 
   /* EXERCISE MODAL */
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
-  modalCard: { maxHeight: '86%', borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden' },
-  modalMediaWrap: { width: '100%', height: 220 },
+  modalCard: { paddingTop:20,maxHeight: '86%', borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden' },
+  // This height is what controls the size of the big picture in the
+  // exercise popup — change the number here, not resizeMode on the <Image>.
+  modalMediaWrap: { width: '100%', height: 160 },
   modalMedia: { width: '100%', height: '100%' },
   modalMediaFallback: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30, gap: 8 },
   modalMediaFallbackTitle: { fontSize: 14, fontWeight: '800', textAlign: 'center' },
