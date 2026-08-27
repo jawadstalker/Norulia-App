@@ -407,9 +407,6 @@ export default function ProtocolScreen() {
   const rowDirection = fa ? 'row-reverse' : 'row';
   const contentAlign = fa ? 'flex-end' : 'flex-start';
 
-  const heroAccent = 'rgba(73, 194, 226, 1)';
-  const heroAccentStrong = 'rgba(73, 194, 226, 1)';
-
   const accent = isAthlete
     ? '#22C55E'
     : isDark
@@ -1100,8 +1097,12 @@ export default function ProtocolScreen() {
               style={[
                 styles.heroCard,
                 {
-                  backgroundColor: heroAccent,
-                  borderColor: heroAccentStrong + '55',
+                  backgroundColor: isDark 
+                    ? 'rgba(73, 194, 226, 0.12)'
+                    : 'rgba(73, 194, 226, 1)',
+                  borderColor: isDark
+                    ? 'rgba(73, 194, 226, 0.20)'
+                    : 'rgba(73, 194, 226, 0.55)',
                 },
               ]}
             >
@@ -1111,7 +1112,7 @@ export default function ProtocolScreen() {
                   styles.heroGlowOne,
                   {
                     backgroundColor: isDark
-                      ? 'rgba(255,255,255,0.10)'
+                      ? 'rgba(73, 194, 226, 0.08)'
                       : 'rgba(255,255,255,0.20)',
                   },
                 ]}
@@ -1123,7 +1124,7 @@ export default function ProtocolScreen() {
                   styles.heroGlowTwo,
                   {
                     backgroundColor: isDark
-                      ? 'rgba(255,255,255,0.07)'
+                      ? 'rgba(73, 194, 226, 0.05)'
                       : 'rgba(255,255,255,0.14)',
                   },
                 ]}
@@ -1175,14 +1176,16 @@ export default function ProtocolScreen() {
                     style={[
                       styles.heroBadge,
                       {
-                        backgroundColor: 'rgba(255,255,255,0.15)',
+                        backgroundColor: isDark
+                          ? 'rgba(73, 194, 226, 0.20)'
+                          : 'rgba(255,255,255,0.15)',
                         flexDirection: rowDirection,
                       },
                     ]}
                   >
                     <Sparkles
                       size={14}
-                      color="rgba(255,255,255,0.95)"
+                      color={isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(255,255,255,0.95)'}
                       strokeWidth={2.2}
                     />
 
@@ -1190,7 +1193,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.heroBadgeText,
                         {
-                          color: 'rgba(255,255,255,0.95)',
+                          color: isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(255,255,255,0.95)',
                           textAlign,
                           writingDirection: textDirection,
                         },
@@ -1204,7 +1207,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.heroTitle,
                       {
-                        color: '#FFFFFF',
+                        color: isDark ? colors.text : '#FFFFFF',
                         textAlign,
                         writingDirection: textDirection,
                       },
@@ -1217,7 +1220,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.heroDescription,
                       {
-                        color: 'rgba(255,255,255,0.82)',
+                        color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.82)',
                         textAlign,
                         writingDirection: textDirection,
                       },
@@ -1235,7 +1238,9 @@ export default function ProtocolScreen() {
                     backgroundColor: isDark
                       ? 'rgba(0,0,0,0.18)'
                       : 'rgba(255,255,255,0.13)',
-                    borderColor: 'rgba(255,255,255,0.18)',
+                    borderColor: isDark
+                      ? 'rgba(73, 194, 226, 0.20)'
+                      : 'rgba(255,255,255,0.18)',
                   },
                 ]}
               >
@@ -1257,7 +1262,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.heroProgressLabel,
                         {
-                          color: 'rgba(255,255,255,0.70)',
+                          color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.70)',
                           textAlign,
                           writingDirection: textDirection,
                         },
@@ -1270,7 +1275,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.heroProgressHint,
                         {
-                          color: 'rgba(255,255,255,0.55)',
+                          color: isDark ? colors.textTertiary : 'rgba(255,255,255,0.55)',
                           textAlign,
                           writingDirection: textDirection,
                         },
@@ -1286,7 +1291,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.heroProgressValue,
                       {
-                        color: '#FFFFFF',
+                        color: isDark ? colors.text : '#FFFFFF',
                       },
                     ]}
                   >
@@ -1298,7 +1303,9 @@ export default function ProtocolScreen() {
                   style={[
                     styles.heroProgressTrack,
                     {
-                      backgroundColor: 'rgba(255,255,255,0.18)',
+                      backgroundColor: isDark
+                        ? 'rgba(73, 194, 226, 0.15)'
+                        : 'rgba(255,255,255,0.18)',
                     },
                   ]}
                 >
@@ -1316,7 +1323,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.heroProgressFill,
                       {
-                        backgroundColor: '#FFFFFF',
+                        backgroundColor: isDark ? 'rgba(73, 194, 226, 1)' : '#FFFFFF',
                       },
                     ]}
                   />
@@ -1335,13 +1342,15 @@ export default function ProtocolScreen() {
                   style={[
                     styles.heroStat,
                     {
-                      borderColor: 'rgba(255,255,255,0.14)',
+                      borderColor: isDark
+                        ? 'rgba(73, 194, 226, 0.15)'
+                        : 'rgba(255,255,255,0.14)',
                     },
                   ]}
                 >
                   <Target
                     size={17}
-                    color="rgba(255,255,255,0.88)"
+                    color={isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(255,255,255,0.88)'}
                     strokeWidth={2}
                   />
 
@@ -1350,7 +1359,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.heroStatValue,
                         {
-                          color: '#FFFFFF',
+                          color: isDark ? colors.text : '#FFFFFF',
                         },
                       ]}
                     >
@@ -1361,7 +1370,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.heroStatLabel,
                         {
-                          color: 'rgba(255,255,255,0.58)',
+                          color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.58)',
                           textAlign,
                           writingDirection: textDirection,
                         },
@@ -1376,13 +1385,15 @@ export default function ProtocolScreen() {
                   style={[
                     styles.heroStat,
                     {
-                      borderColor: 'rgba(255,255,255,0.14)',
+                      borderColor: isDark
+                        ? 'rgba(73, 194, 226, 0.15)'
+                        : 'rgba(255,255,255,0.14)',
                     },
                   ]}
                 >
                   <CheckCircle2
                     size={17}
-                    color="rgba(255,255,255,0.88)"
+                    color={isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(255,255,255,0.88)'}
                     strokeWidth={2}
                   />
 
@@ -1391,7 +1402,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.heroStatValue,
                         {
-                          color: '#FFFFFF',
+                          color: isDark ? colors.text : '#FFFFFF',
                         },
                       ]}
                     >
@@ -1402,7 +1413,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.heroStatLabel,
                         {
-                          color: 'rgba(255,255,255,0.58)',
+                          color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.58)',
                           textAlign,
                           writingDirection: textDirection,
                         },

@@ -84,7 +84,10 @@ export default function ProfileScreen() {
       showsVerticalScrollIndicator={false}
     >
       <LinearGradient
-        colors={['rgba(73, 194, 226, 1)', 'rgba(73, 194, 226, 0.7)']}
+        colors={isDark 
+          ? ['rgba(73, 194, 226, 0.12)', 'rgba(73, 194, 226, 0.12)']
+          : ['rgba(73, 194, 226, 1)', 'rgba(73, 194, 226, 0.7)']
+        }
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[
@@ -120,7 +123,7 @@ export default function ProfileScreen() {
             style={styles.characterWrapper}
           >
             <Image
-              source={require('../../assets/avatars/model8.png')}
+              source={require('../../assets/avatars/Head2.png')}
               style={styles.characterHead}
             />
           </MotiView>
@@ -146,7 +149,7 @@ export default function ProfileScreen() {
             style={[
               styles.userName,
               {
-                color: '#FFFFFF',
+                color: isDark ? colors.text : '#FFFFFF',
               },
             ]}
           >
@@ -157,7 +160,7 @@ export default function ProfileScreen() {
             style={[
               styles.email,
               {
-                color: 'rgba(255,255,255,0.85)',
+                color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.85)',
               },
             ]}
           >
@@ -168,7 +171,9 @@ export default function ProfileScreen() {
             style={[
               styles.profileAccent,
               {
-                backgroundColor: 'rgba(255,255,255,0.30)',
+                backgroundColor: isDark 
+                  ? colors.border 
+                  : 'rgba(255,255,255,0.30)',
               },
             ]}
           >
@@ -176,7 +181,7 @@ export default function ProfileScreen() {
               style={[
                 styles.profileAccentDot,
                 {
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: isDark ? iconColor : '#FFFFFF',
                 },
               ]}
             />

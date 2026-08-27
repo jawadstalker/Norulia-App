@@ -943,7 +943,10 @@ export default function ScheduleScreen() {
       >
 
         <LinearGradient
-          colors={['rgba(73, 194, 226, 1)', 'rgba(73, 194, 226, 0.7)']}
+          colors={isDark 
+            ? ['rgba(73, 194, 226, 0.12)', 'rgba(73, 194, 226, 0.12)']
+            : ['rgba(73, 194, 226, 1)', 'rgba(73, 194, 226, 0.7)']
+          }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[
@@ -1014,7 +1017,7 @@ export default function ScheduleScreen() {
               style={[
                 styles.scheduleHeroTitle,
                 {
-                  color: '#FFFFFF',
+                  color: isDark ? colors.text : '#FFFFFF',
                 },
               ]}
             >
@@ -1025,7 +1028,7 @@ export default function ScheduleScreen() {
               style={[
                 styles.scheduleHeroSubtitle,
                 {
-                  color: 'rgba(255,255,255,0.85)',
+                  color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.85)',
                 },
               ]}
             >
@@ -1038,7 +1041,9 @@ export default function ScheduleScreen() {
               style={[
                 styles.scheduleHeroAccent,
                 {
-                  backgroundColor: 'rgba(255,255,255,0.30)',
+                  backgroundColor: isDark 
+                    ? colors.border 
+                    : 'rgba(255,255,255,0.30)',
                 },
               ]}
             >
@@ -1046,7 +1051,7 @@ export default function ScheduleScreen() {
                 style={[
                   styles.scheduleHeroAccentDot,
                   {
-                    backgroundColor: '#FFFFFF',
+                    backgroundColor: isDark ? iconColor : '#FFFFFF',
                   },
                 ]}
               />
