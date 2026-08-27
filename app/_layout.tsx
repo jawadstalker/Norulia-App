@@ -76,9 +76,7 @@ import {
    NATIVE SPLASH
 ================================================================ */
 
-SplashScreen.preventAutoHideAsync().catch(
-  () => {}
-);
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 /* ================================================================
    NOTIFICATION CONFIGURATION
@@ -95,10 +93,16 @@ Notifications.setNotificationHandler({
 
 /* ================================================================
    FONT FAMILY
+
+   فارسی:
+   Estedad-Medium
+
+   انگلیسی:
+   Inter
 ================================================================ */
 
 export const FONT_FAMILY = {
-  persian: 'XBNiloofar',
+  persian: 'EstedadMedium',
 
   english: {
     regular: 'Inter_400Regular',
@@ -264,7 +268,7 @@ function useWorkoutReminderNotification() {
            * after application startup.
            */
           await new Promise<void>(
-            resolve => {
+            (resolve) => {
               setTimeout(
                 resolve,
                 10000
@@ -359,8 +363,6 @@ function AppContent() {
 
   /*
    * Notification reminder
-   *
-   * This starts when AppContent mounts.
    */
   useWorkoutReminderNotification();
 
@@ -570,7 +572,6 @@ function AppContent() {
 
       {/* ========================================================
           MAIN ROUTER
-
           BottomNavBar is outside Stack
           and exists exactly once.
       ======================================================== */}
@@ -619,14 +620,18 @@ export default function RootLayout() {
     fontsLoaded,
     fontError,
   ] = useFonts({
+    /* English */
+
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
 
-    XBNiloofar:
+    /* Persian */
+
+    EstedadMedium:
       require(
-        '../XB Niloofar.ttf'
+        '../assets/fonts/Estedad-Medium.ttf'
       ),
   });
 

@@ -18,10 +18,6 @@ export const Colors = {
 
     accent: '#C4B5FD',
 
-    // ===================================================
-    // ICON + PROGRESS ACCENT
-    // ===================================================
-
     iconAccent: '#7C3AED',
     progressAccent: '#7C3AED',
 
@@ -107,10 +103,6 @@ export const Colors = {
 
     accent: '#7B61FF',
 
-    // ===================================================
-    // ICON + PROGRESS ACCENT
-    // ===================================================
-
     iconAccent:
       'rgba(73, 194, 226, 1)',
 
@@ -190,19 +182,11 @@ export const Colors = {
   // =====================================================
 
   athlete: {
-    // ---------------------------------------------------
-    // BACKGROUND
-    // ---------------------------------------------------
-
     background: '#070908',
 
     surface: '#0D120F',
 
     surfaceSecondary: '#121A15',
-
-    // ---------------------------------------------------
-    // PRIMARY
-    // ---------------------------------------------------
 
     primary: '#B8FF3D',
 
@@ -210,23 +194,11 @@ export const Colors = {
 
     primaryDark: '#72B52A',
 
-    // ---------------------------------------------------
-    // ACCENT
-    // ---------------------------------------------------
-
     accent: '#B8FF3D',
-
-    // ===================================================
-    // ICON + PROGRESS ACCENT
-    // ===================================================
 
     iconAccent: '#B8FF3D',
 
     progressAccent: '#B8FF3D',
-
-    // ---------------------------------------------------
-    // TEXT
-    // ---------------------------------------------------
 
     text: '#F4F7F2',
 
@@ -234,16 +206,8 @@ export const Colors = {
 
     textTertiary: '#657168',
 
-    // ---------------------------------------------------
-    // BORDER
-    // ---------------------------------------------------
-
     border:
       'rgba(184, 255, 61, 0.16)',
-
-    // ---------------------------------------------------
-    // STATUS
-    // ---------------------------------------------------
 
     success: '#B8FF3D',
 
@@ -251,16 +215,8 @@ export const Colors = {
 
     error: '#FF5C5C',
 
-    // ---------------------------------------------------
-    // SHADOW
-    // ---------------------------------------------------
-
     cardShadow:
       'rgba(0, 0, 0, 0.65)',
-
-    // ---------------------------------------------------
-    // GRADIENTS
-    // ---------------------------------------------------
 
     gradientPrimary: [
       '#070908',
@@ -290,10 +246,6 @@ export const Colors = {
       '#B8FF3D',
     ],
 
-    // ---------------------------------------------------
-    // GLASS
-    // ---------------------------------------------------
-
     glassBackground:
       'rgba(13, 18, 15, 0.86)',
 
@@ -306,19 +258,11 @@ export const Colors = {
     glassBorderHover:
       'rgba(184, 255, 61, 0.34)',
 
-    // ---------------------------------------------------
-    // GLOW
-    // ---------------------------------------------------
-
     glow:
       'rgba(184, 255, 61, 0.10)',
 
     glowStrong:
       'rgba(184, 255, 61, 0.22)',
-
-    // ---------------------------------------------------
-    // ICON
-    // ---------------------------------------------------
 
     iconFilter:
       'brightness(0) saturate(100%)',
@@ -326,14 +270,102 @@ export const Colors = {
 };
 
 // =======================================================
-// FONTS
+// FONT FAMILY
 // =======================================================
 
 export const Fonts = {
+  // Persian
+  persian: 'EstedadMedium',
+
+  // English
   regular: 'Inter_400Regular',
   medium: 'Inter_500Medium',
   semiBold: 'Inter_600SemiBold',
   bold: 'Inter_700Bold',
+};
+
+// =======================================================
+// TYPOGRAPHY
+// =======================================================
+
+export const Typography = {
+  display: {
+    fontFamily: Fonts.persian,
+    fontSize: 32,
+    lineHeight: 42,
+    fontWeight: '500' as const,
+  },
+
+  h1: {
+    fontFamily: Fonts.persian,
+    fontSize: 28,
+    lineHeight: 38,
+    fontWeight: '500' as const,
+  },
+
+  h2: {
+    fontFamily: Fonts.persian,
+    fontSize: 24,
+    lineHeight: 34,
+    fontWeight: '500' as const,
+  },
+
+  h3: {
+    fontFamily: Fonts.persian,
+    fontSize: 20,
+    lineHeight: 30,
+    fontWeight: '500' as const,
+  },
+
+  body: {
+    fontFamily: Fonts.persian,
+    fontSize: 16,
+    lineHeight: 27,
+    fontWeight: '500' as const,
+  },
+
+  bodySmall: {
+    fontFamily: Fonts.persian,
+    fontSize: 14,
+    lineHeight: 23,
+    fontWeight: '500' as const,
+  },
+
+  caption: {
+    fontFamily: Fonts.persian,
+    fontSize: 12,
+    lineHeight: 20,
+    fontWeight: '500' as const,
+  },
+
+  button: {
+    fontFamily: Fonts.persian,
+    fontSize: 15,
+    lineHeight: 24,
+    fontWeight: '500' as const,
+  },
+
+  english: {
+    regular: {
+      fontFamily: Fonts.regular,
+      fontWeight: '400' as const,
+    },
+
+    medium: {
+      fontFamily: Fonts.medium,
+      fontWeight: '500' as const,
+    },
+
+    semiBold: {
+      fontFamily: Fonts.semiBold,
+      fontWeight: '600' as const,
+    },
+
+    bold: {
+      fontFamily: Fonts.bold,
+      fontWeight: '700' as const,
+    },
+  },
 };
 
 // =======================================================
@@ -365,6 +397,11 @@ export const BorderRadius = {
 // THEME HELPERS
 // =======================================================
 
+export type ThemeName =
+  | 'light'
+  | 'dark'
+  | 'athlete';
+
 export type ThemeColors =
   typeof Colors.light;
 
@@ -376,10 +413,7 @@ export const getGradient = (
     | 'button'
     | 'header',
 
-  theme:
-    | 'light'
-    | 'dark'
-    | 'athlete',
+  theme: ThemeName,
 ) => {
   const selectedTheme =
     Colors[theme];
@@ -410,11 +444,7 @@ export const getGradient = (
 // =======================================================
 
 export const getGlassStyle = (
-  theme:
-    | 'light'
-    | 'dark'
-    | 'athlete',
-
+  theme: ThemeName,
   opacity: number = 0.08,
 ) => {
   const selectedTheme =
@@ -469,10 +499,7 @@ export const getGlassStyle = (
 // =======================================================
 
 export const getGlassHoverStyle = (
-  theme:
-    | 'light'
-    | 'dark'
-    | 'athlete',
+  theme: ThemeName,
 ) => {
   const selectedTheme =
     Colors[theme];
@@ -493,11 +520,7 @@ export const getGlassHoverStyle = (
 // =======================================================
 
 export const getShadowStyle = (
-  theme:
-    | 'light'
-    | 'dark'
-    | 'athlete',
-
+  theme: ThemeName,
   intensity: number = 1,
 ) => {
   if (theme === 'athlete') {
@@ -563,10 +586,7 @@ export const getShadowStyle = (
 // =======================================================
 
 export const getCardShadowStyle = (
-  theme:
-    | 'light'
-    | 'dark'
-    | 'athlete',
+  theme: ThemeName,
 ) => {
   if (theme === 'athlete') {
     return {

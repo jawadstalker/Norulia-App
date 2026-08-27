@@ -17,11 +17,17 @@ import AsyncStorage from
 
 import {
   Colors,
+  Fonts,
+  Typography,
 } from '../constants/theme';
 
 import {
   ThemeMode,
 } from '../types';
+
+// =======================================================
+// CONTEXT TYPE
+// =======================================================
 
 interface ThemeContextType {
   theme: ThemeMode;
@@ -33,12 +39,21 @@ interface ThemeContextType {
   colors:
     typeof Colors.light;
 
+  fonts: typeof Fonts;
+
+  typography:
+    typeof Typography;
+
   toggleTheme: () => void;
 
   setTheme: (
     theme: ThemeMode
   ) => Promise<void>;
 }
+
+// =======================================================
+// CONTEXT
+// =======================================================
 
 const ThemeContext =
   createContext<
@@ -47,6 +62,10 @@ const ThemeContext =
 
 const THEME_KEY =
   '@neurolia_theme';
+
+// =======================================================
+// PROVIDER
+// =======================================================
 
 export function ThemeProvider({
   children,
@@ -73,7 +92,7 @@ export function ThemeProvider({
         try {
           const savedTheme =
             await AsyncStorage.getItem(
-              THEME_KEY
+              THEME_KEY,
             );
 
           if (!mounted) {
@@ -86,7 +105,7 @@ export function ThemeProvider({
             savedTheme === 'athlete'
           ) {
             setThemeState(
-              savedTheme
+              savedTheme,
             );
 
             return;
@@ -95,19 +114,19 @@ export function ThemeProvider({
           setThemeState(
             systemColorScheme === 'dark'
               ? 'dark'
-              : 'light'
+              : 'light',
           );
         } catch (error) {
           console.error(
             '[THEME] Failed to load theme:',
-            error
+            error,
           );
 
           if (mounted) {
             setThemeState(
               systemColorScheme === 'dark'
                 ? 'dark'
-                : 'light'
+                : 'light',
             );
           }
         }
@@ -127,25 +146,25 @@ export function ThemeProvider({
   const setTheme =
     useCallback(
       async (
-        newTheme: ThemeMode
+        newTheme: ThemeMode,
       ) => {
         try {
           setThemeState(
-            newTheme
+            newTheme,
           );
 
           await AsyncStorage.setItem(
             THEME_KEY,
-            newTheme
+            newTheme,
           );
         } catch (error) {
           console.error(
             '[THEME] Failed to save theme:',
-            error
+            error,
           );
         }
       },
-      []
+      [],
     );
 
   // =====================================================
@@ -153,40 +172,37 @@ export function ThemeProvider({
   // =====================================================
 
   const toggleTheme =
-    useCallback(
-      () => {
-        setThemeState(
-          (currentTheme) => {
-            let nextTheme: ThemeMode;
+    useCallback(() => {
+      setThemeState(
+        currentTheme => {
+          let nextTheme: ThemeMode;
 
-            if (
-              currentTheme === 'light'
-            ) {
-              nextTheme = 'dark';
-            } else if (
-              currentTheme === 'dark'
-            ) {
-              nextTheme = 'athlete';
-            } else {
-              nextTheme = 'light';
-            }
-
-            AsyncStorage.setItem(
-              THEME_KEY,
-              nextTheme
-            ).catch((error) => {
-              console.error(
-                '[THEME] Failed to persist theme:',
-                error
-              );
-            });
-
-            return nextTheme;
+          if (
+            currentTheme === 'light'
+          ) {
+            nextTheme = 'dark';
+          } else if (
+            currentTheme === 'dark'
+          ) {
+            nextTheme = 'athlete';
+          } else {
+            nextTheme = 'light';
           }
-        );
-      },
-      []
-    );
+
+          AsyncStorage.setItem(
+            THEME_KEY,
+            nextTheme,
+          ).catch(error => {
+            console.error(
+              '[THEME] Failed to persist theme:',
+              error,
+            );
+          });
+
+          return nextTheme;
+        },
+      );
+    }, []);
 
   // =====================================================
   // DERIVED STATE
@@ -202,7 +218,23 @@ export function ThemeProvider({
   const colors =
     useMemo(
       () => Colors[theme],
-      [theme]
+      [theme],
+    );
+
+  // =====================================================
+  // TYPOGRAPHY
+  // =====================================================
+
+  const fonts =
+    useMemo(
+      () => Fonts,
+      [],
+    );
+
+  const typography =
+    useMemo(
+      () => Typography,
+      [],
     );
 
   // =====================================================
@@ -220,6 +252,10 @@ export function ThemeProvider({
 
         colors,
 
+        fonts,
+
+        typography,
+
         toggleTheme,
 
         setTheme,
@@ -229,9 +265,11 @@ export function ThemeProvider({
         isDark,
         isAthlete,
         colors,
+        fonts,
+        typography,
         toggleTheme,
         setTheme,
-      ]
+      ],
     );
 
   return (
@@ -251,12 +289,12 @@ export function useTheme():
   ThemeContextType {
   const context =
     useContext(
-      ThemeContext
+      ThemeContext,
     );
 
   if (!context) {
     throw new Error(
-      'useTheme must be used within a ThemeProvider'
+      'useTheme must be used within a ThemeProvider',
     );
   }
 

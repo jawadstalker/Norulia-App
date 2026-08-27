@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import {
   View,
   Text,
@@ -7,6 +8,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
 import { useRouter } from 'expo-router';
@@ -38,6 +40,7 @@ const weeks = [
     id: 1,
     label: 'Week 1',
     shortLabel: 'W1',
+
     theme: {
       en: 'Mind & Basic Calm',
       fa: 'آشنایی با ذهن و آرامش پایه',
@@ -48,20 +51,27 @@ const weeks = [
         en: 'Good Will Hunting',
         fa: 'ویل هانتینگ نابغه',
       },
+
       year: '1997',
+
       duration: {
         en: '2h 6m',
         fa: '۲ ساعت و ۶ دقیقه',
       },
+
       rating: '8.3',
+
       genre: {
         en: 'Drama • Romance • Psychological',
         fa: 'درام • عاشقانه • روانشناختی',
       },
+
       description: {
         en: 'Will Hunting is a twenty-year-old young man from South Boston who, despite having a criminal record, is a mathematical genius who has developed his knowledge largely on his own. After being released on probation, he works as a janitor at the Massachusetts Institute of Technology. The film follows a psychologist who tries to help Will discover his potential and confront his troubled past. A powerful story about personal growth, friendship, and the importance of human connection.',
+
         fa: 'ویل هانتینگ، جوان بیست ساله‌ای از جنوب بوستون، با وجود اینکه سابقه زندان دارد، نابغه‌ای در ریاضیات است که دانش خود را به‌صورت خودآموخته پرورش داده است. او پس از آزادی مشروط به عنوان نظافتچی در مؤسسه فناوری ماساچوست مشغول به کار می‌شود. داستان فیلم درباره تلاش یک روانشناس برای کمک به ویل در کشف استعدادهایش و رهایی از گذشته دشوار اوست؛ فیلمی تأثیرگذار درباره رشد شخصی، دوستی و اهمیت ارتباط انسانی.',
       },
+
       poster: require('../../assets/movies/movie_1.jpg'),
     },
 
@@ -70,20 +80,26 @@ const weeks = [
         en: 'Psycho-Logical',
         fa: 'ذهن پریشان',
       },
+
       author: {
         en: 'Psycho-Logical',
         fa: 'Psycho-Logical',
       },
+
       genre: {
         en: 'Psychology • Neuroscience • Self-help',
         fa: 'روانشناسی • علوم اعصاب • خودیاری',
       },
+
       rating: '4.3',
       year: '2021',
+
       description: {
         en: 'One in four people experiences some form of mental health problem during a year, while anxiety and depression alone affect more than 500 million people worldwide. This book explores why psychological problems have become so widespread and examines how modern life can disrupt our mental wellbeing. It explains complex psychological concepts in a simple way and provides practical approaches for understanding the mind and managing stress and anxiety.',
+
         fa: 'از هر چهار نفر، یک نفر در طول سال دچار نوعی مشکل سلامت روان می‌شود و تنها اضطراب و افسردگی بیش از ۵۰۰ میلیون نفر را در سراسر جهان تحت‌تأثیر قرار داده‌اند. اما چرا این مشکلات تا این حد فراگیر شده‌اند؟ چه چیزی در زندگی مدرن روان ما را تحت‌تأثیر قرار می‌دهد؟ این کتاب به بررسی عمیق این موضوع می‌پردازد و راهکارهایی برای مدیریت استرس و اضطراب ارائه می‌دهد. نویسنده با زبانی ساده مفاهیم پیچیده روانشناسی را توضیح می‌دهد و به خواننده کمک می‌کند درک بهتری از ذهن خود پیدا کند.',
       },
+
       cover: require('../../assets/movies/Book_1.jpg'),
     },
 
@@ -97,6 +113,7 @@ const weeks = [
     id: 2,
     label: 'Week 2',
     shortLabel: 'W2',
+
     theme: {
       en: 'Emotional Regulation & Acceptance',
       fa: 'تنظیم هیجانات و پذیرش',
@@ -107,20 +124,27 @@ const weeks = [
         en: 'Everything Everywhere All at Once',
         fa: 'همه‌چیز همه‌جا به‌یکباره',
       },
+
       year: '2022',
+
       duration: {
         en: '2h 19m',
         fa: '۲ ساعت و ۱۹ دقیقه',
       },
+
       rating: '8.0',
+
       genre: {
         en: 'Sci-Fi • Comedy • Drama',
         fa: 'علمی‌تخیلی • کمدی • درام',
       },
+
       description: {
         en: 'A Chinese-American woman dealing with a tax audit suddenly finds herself caught in a chaotic adventure across multiple realities. The film explores acceptance, family love, identity, and finding meaning in everyday life.',
+
         fa: 'داستان زنی چینی-آمریکایی که درگیر حسابرسی مالیاتی است و ناگهان خود را در میان ماجراجویی عجیب و دیوانه‌واری برای نجات جهان می‌یابد. فیلم درباره پذیرش، عشق خانوادگی، هویت و پیدا کردن معنا در زندگی روزمره است.',
       },
+
       poster: require('../../assets/movies/movie_2.jpg'),
     },
 
@@ -129,20 +153,26 @@ const weeks = [
         en: 'The Happiness Trap',
         fa: 'تله شادی',
       },
+
       author: {
         en: 'Russ Harris',
         fa: 'راس هریس',
       },
+
       genre: {
         en: 'Psychology • Self-help • Cognitive Therapy',
         fa: 'روانشناسی • خودیاری • درمان شناختی',
       },
+
       rating: '4.2',
       year: '2008',
+
       description: {
         en: 'Based on Acceptance and Commitment Therapy (ACT), this book explains how the constant pursuit of happiness can sometimes make us unhappy. It teaches practical ways to stop fighting negative thoughts and instead build a richer and more meaningful life through acceptance and psychological flexibility.',
+
         fa: 'آیا مانند میلیون‌ها نفر در دام شادی گرفتار شده‌اید؟ راس هریس توضیح می‌دهد که تلاش مداوم برای یافتن خوشبختی گاهی می‌تواند باعث ناراحتی بیشتر شود. این کتاب بر اساس درمان مبتنی بر پذیرش و تعهد یا ACT نوشته شده و به شما کمک می‌کند به جای مبارزه با افکار منفی، زندگی غنی‌تر و معنادارتری بسازید. کتاب شامل تکنیک‌های عملی برای کاهش استرس و افزایش آرامش است.',
       },
+
       cover: require('../../assets/movies/Book_2.jpg'),
     },
 
@@ -156,6 +186,7 @@ const weeks = [
     id: 3,
     label: 'Week 3',
     shortLabel: 'W3',
+
     theme: {
       en: 'Creativity & Burnout Prevention',
       fa: 'شکوفایی خلاقیت و پیشگیری از فرسودگی',
@@ -166,20 +197,27 @@ const weeks = [
         en: 'Frida',
         fa: 'فریدا',
       },
+
       year: '2002',
+
       duration: {
         en: '2h 3m',
         fa: '۲ ساعت و ۳ دقیقه',
       },
+
       rating: '7.4',
+
       genre: {
         en: 'Biography • Drama • Art',
         fa: 'بیوگرافی • درام • هنری',
       },
+
       description: {
         en: 'A film about the life of Mexican surrealist painter Frida Kahlo. The story portrays her passionate and painful life and shows how art helped her cope with physical disability and the challenges she faced.',
+
         fa: 'این فیلم درباره زندگی نقاش مکزیکی سورئالیست، فریدا کالو است. فیلم زندگی پر از درد و رنج اما پرشور او را به تصویر می‌کشد و نشان می‌دهد چگونه هنر به او کمک کرد تا با محدودیت‌های جسمی و سختی‌های زندگی کنار بیاید. بازی درخشان سلما هایک و طراحی صحنه‌های چشمگیر از ویژگی‌های این فیلم است.',
       },
+
       poster: require('../../assets/movies/movie_3.jpg'),
     },
 
@@ -188,20 +226,26 @@ const weeks = [
         en: "The Artist's Way",
         fa: 'راه هنرمند',
       },
+
       author: {
         en: 'Julia Cameron',
         fa: 'جولیا کامرون',
       },
+
       genre: {
         en: 'Creativity • Art • Self-discovery • Psychology',
         fa: 'خلاقیت • هنر • خودشناسی • روانشناسی',
       },
+
       rating: '4.1',
       year: '1992',
+
       description: {
         en: "The Artist's Way is a revolutionary program for personal renewal that helps readers reconnect with themselves and rediscover their creativity. The twelve-week program includes techniques such as Morning Pages and Artist Dates to identify and overcome creative blocks.",
+
         fa: 'کتاب «راه هنرمند» یک برنامه برای نوسازی شخصی است که به شما کمک می‌کند دوباره به مسیر خود بازگردید و احساسات و خلاقیتتان را کشف کنید. این کتاب شامل تمرین‌های ۱۲ هفته‌ای برای شکوفایی خلاقیت است. روش‌هایی مانند صبح‌نویسی و قرار هنری به شما کمک می‌کنند موانع خلاقیت را شناسایی کرده و از بین ببرید.',
       },
+
       cover: require('../../assets/movies/Book_3.jpg'),
     },
 
@@ -215,6 +259,7 @@ const weeks = [
     id: 4,
     label: 'Week 4',
     shortLabel: 'W4',
+
     theme: {
       en: 'Emotional Roots & Deep Calm',
       fa: 'ریشه‌های هیجانی و آرامش عمیق',
@@ -225,20 +270,27 @@ const weeks = [
         en: 'The Secret World of Arrietty',
         fa: 'دنیای مخفی آریتی',
       },
+
       year: '2010',
+
       duration: {
         en: '1h 35m',
         fa: '۱ ساعت و ۳۵ دقیقه',
       },
+
       rating: '7.6',
+
       genre: {
         en: 'Animation • Adventure • Family • Fantasy',
         fa: 'انیمیشن • ماجراجویی • خانوادگی • فانتزی',
       },
+
       description: {
         en: 'Arrietty is a young Borrower, one of a tiny people who live secretly within human homes. She meets a sick young boy and their friendship soon creates danger for her family. A beautiful Studio Ghibli animation exploring empathy, trust, nature, accepting differences, and the importance of home and family.',
+
         fa: 'آریتی دختری از نژاد قرض‌گیرندگان است؛ موجوداتی ریزاندام که در مخفیگاه‌های خانه‌های انسان‌ها زندگی می‌کنند. او با یک پسر بیمار آشنا می‌شود و این آشنایی به‌زودی خطراتی را برای خانواده‌اش به همراه می‌آورد. انیمیشنی زیبا از استودیو جیبلی که به موضوعاتی مانند همدلی، اعتماد، ارتباط با طبیعت، پذیرش تفاوت‌ها و اهمیت خانه و خانواده می‌پردازد.',
       },
+
       poster: require('../../assets/movies/movie_4.jpg'),
     },
 
@@ -247,20 +299,26 @@ const weeks = [
         en: 'Scattered Minds',
         fa: 'ذهن فروپاشیده',
       },
+
       author: {
         en: 'Gabor Maté',
         fa: 'گابور ماته',
       },
+
       genre: {
         en: 'Psychology • Neuroscience • Mental Health',
         fa: 'روانشناسی • علوم اعصاب • اختلالات روانی',
       },
+
       rating: '4.4',
       year: '2019',
+
       description: {
         en: 'Scattered Minds by Gabor Maté presents a different perspective on ADHD and explores how developmental and environmental factors may influence its formation. The book examines emotional and psychological roots and offers approaches for understanding and managing the condition.',
+
         fa: 'کتاب «ذهن فروپاشیده» اثر گابور ماته با نگاهی متفاوت به اختلال نقص توجه و بیش‌فعالی ADHD می‌پردازد. نویسنده عوامل محیطی و تجربیات دوران کودکی را در رشد این اختلال مهم می‌داند و به بررسی ریشه‌های هیجانی و روانی آن می‌پردازد. کتاب برای والدین، معلمان و افرادی که به دنبال درک عمیق‌تر این موضوع هستند مفید است.',
       },
+
       cover: require('../../assets/movies/Book_4.jpg'),
     },
 
@@ -300,7 +358,6 @@ function PageHeader({
 }: PageHeaderProps) {
   return (
     <View style={styles.headerRoot}>
-      {/* BACK BUTTON - ALWAYS LEFT */}
       <TouchableOpacity
         activeOpacity={0.75}
         onPress={onBack}
@@ -312,7 +369,6 @@ function PageHeader({
             backgroundColor: isDark
               ? 'rgba(255,255,255,0.08)'
               : '#FFFFFF',
-
             borderColor: isDark
               ? 'rgba(255,255,255,0.12)'
               : colors.border,
@@ -326,14 +382,11 @@ function PageHeader({
         />
       </TouchableOpacity>
 
-      {/* TEXT AREA */}
       <View
         style={[
           styles.headerTextArea,
           {
-            alignItems: isRTL
-              ? 'flex-end'
-              : 'flex-start',
+            alignItems: isRTL ? 'flex-end' : 'flex-start',
           },
         ]}
       >
@@ -343,9 +396,7 @@ function PageHeader({
               styles.headerEyebrow,
               {
                 color: colors.primary,
-                textAlign: isRTL
-                  ? 'right'
-                  : 'left',
+                textAlign: isRTL ? 'right' : 'left',
               },
             ]}
           >
@@ -383,13 +434,9 @@ function PageHeader({
               styles.headerTitle,
               {
                 color: colors.text,
-                textAlign: isRTL
-                  ? 'right'
-                  : 'left',
-
+                textAlign: isRTL ? 'right' : 'left',
                 marginLeft:
                   isRTL || !icon ? 0 : 10,
-
                 marginRight:
                   isRTL && icon ? 10 : 0,
               },
@@ -406,9 +453,7 @@ function PageHeader({
               styles.headerSubtitle,
               {
                 color: colors.textSecondary,
-                textAlign: isRTL
-                  ? 'right'
-                  : 'left',
+                textAlign: isRTL ? 'right' : 'left',
               },
             ]}
           >
@@ -429,17 +474,19 @@ export default function CulturalScreen() {
   const { t, isRTL } = useLanguage();
   const router = useRouter();
 
-  const [selectedWeek, setSelectedWeek] = useState<number | null>(
-    null,
-  );
+  const [selectedWeek, setSelectedWeek] =
+    useState<number | null>(null);
 
   const currentWeek =
     selectedWeek !== null
       ? weeks[selectedWeek]
       : null;
 
-  // FIX: Define gradient colors properly for LinearGradient
-  const gradientColors: [string, string, string] = isDark
+  const gradientColors: [
+    string,
+    string,
+    string,
+  ] = isDark
     ? ['#211A38', '#151226', '#100E1B']
     : ['#F4F0FF', '#FAF9FF', '#FFFFFF'];
 
@@ -451,12 +498,23 @@ export default function CulturalScreen() {
     }
   };
 
-  // Helper to get localized text
   const getLocalized = (obj: any) => {
     return isRTL ? obj.fa : obj.en;
   };
 
+  // ================================================================
+  // LOCAL NAVIGATION TRANSLATIONS
+  // ================================================================
+
+  const navigationLabels = {
+    previous: isRTL ? 'قبلی' : 'Previous',
+    next: isRTL ? 'بعدی' : 'Next',
+  };
+
+  // ================================================================
   // PAGE 1 — WEEK LIST
+  // ================================================================
+
   if (selectedWeek === null) {
     return (
       <LinearGradient
@@ -504,7 +562,6 @@ export default function CulturalScreen() {
             />
           </MotiView>
 
-          {/* INTRO */}
           <MotiView
             from={{
               opacity: 0,
@@ -526,7 +583,6 @@ export default function CulturalScreen() {
                   backgroundColor: isDark
                     ? 'rgba(167,139,250,0.10)'
                     : 'rgba(124,58,237,0.055)',
-
                   borderColor: isDark
                     ? 'rgba(167,139,250,0.18)'
                     : 'rgba(124,58,237,0.10)',
@@ -592,7 +648,6 @@ export default function CulturalScreen() {
             </View>
           </MotiView>
 
-          {/* WEEKS */}
           <View style={styles.weekGrid}>
             {weeks.map((week, index) => {
               const isCurrent = index === 0;
@@ -637,9 +692,10 @@ export default function CulturalScreen() {
                       style={[
                         styles.weekCardTop,
                         {
-                          flexDirection: isRTL
-                            ? 'row-reverse'
-                            : 'row',
+                          flexDirection:
+                            isRTL
+                              ? 'row-reverse'
+                              : 'row',
                         },
                       ]}
                     >
@@ -731,9 +787,10 @@ export default function CulturalScreen() {
                       style={[
                         styles.previewRow,
                         {
-                          flexDirection: isRTL
-                            ? 'row-reverse'
-                            : 'row',
+                          flexDirection:
+                            isRTL
+                              ? 'row-reverse'
+                              : 'row',
                         },
                       ]}
                     >
@@ -750,7 +807,9 @@ export default function CulturalScreen() {
                       >
                         <Film
                           size={16}
-                          color={colors.primary}
+                          color={
+                            colors.primary
+                          }
                         />
                       </View>
 
@@ -767,7 +826,9 @@ export default function CulturalScreen() {
                       >
                         <BookOpen
                           size={16}
-                          color={colors.primary}
+                          color={
+                            colors.primary
+                          }
                         />
                       </View>
                     </View>
@@ -776,9 +837,10 @@ export default function CulturalScreen() {
                       style={[
                         styles.weekCardFooter,
                         {
-                          flexDirection: isRTL
-                            ? 'row-reverse'
-                            : 'row',
+                          flexDirection:
+                            isRTL
+                              ? 'row-reverse'
+                              : 'row',
                           borderTopColor:
                             colors.border,
                         },
@@ -836,8 +898,10 @@ export default function CulturalScreen() {
     );
   }
 
+  // ================================================================
   // PAGE 2 — WEEK DETAIL
-  // FIX: currentWeek is guaranteed not null here
+  // ================================================================
+
   const weekData = currentWeek!;
 
   return (
@@ -863,8 +927,12 @@ export default function CulturalScreen() {
           }}
         >
           <PageHeader
-            title={getLocalized(weekData.theme)}
-            eyebrow={`${t.week || 'هفته'} ${weekData.id}`}
+            title={getLocalized(
+              weekData.theme,
+            )}
+            eyebrow={`${t.week || 'هفته'} ${
+              weekData.id
+            }`}
             onBack={handleBack}
             colors={colors}
             isDark={isDark}
@@ -874,6 +942,7 @@ export default function CulturalScreen() {
         </MotiView>
 
         {/* PROGRESS */}
+
         <MotiView
           from={{
             opacity: 0,
@@ -909,6 +978,7 @@ export default function CulturalScreen() {
         </MotiView>
 
         {/* WEEK INTRO */}
+
         <View
           style={[
             styles.weekIntro,
@@ -926,7 +996,6 @@ export default function CulturalScreen() {
                 flexDirection: isRTL
                   ? 'row-reverse'
                   : 'row',
-
                 backgroundColor: isDark
                   ? 'rgba(167,139,250,0.13)'
                   : 'rgba(124,58,237,0.08)',
@@ -984,6 +1053,7 @@ export default function CulturalScreen() {
         </View>
 
         {/* MOVIE */}
+
         <MotiView
           key={`movie-${selectedWeek}`}
           from={{
@@ -1026,10 +1096,10 @@ export default function CulturalScreen() {
                 style={[
                   styles.mediaLabel,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(167,139,250,0.13)'
-                      : 'rgba(124,58,237,0.08)',
-
+                    backgroundColor:
+                      isDark
+                        ? 'rgba(167,139,250,0.13)'
+                        : 'rgba(124,58,237,0.08)',
                     flexDirection: isRTL
                       ? 'row-reverse'
                       : 'row',
@@ -1055,12 +1125,7 @@ export default function CulturalScreen() {
               </View>
 
               <View
-                style={[
-                  styles.rating,
-                  {
-                    flexDirection: 'row',
-                  },
-                ]}
+                style={styles.rating}
               >
                 <Star
                   size={14}
@@ -1072,7 +1137,8 @@ export default function CulturalScreen() {
                   style={[
                     styles.ratingText,
                     {
-                      color: colors.text,
+                      color:
+                        colors.text,
                     },
                   ]}
                 >
@@ -1081,9 +1147,13 @@ export default function CulturalScreen() {
               </View>
             </View>
 
-            <View style={styles.posterContainer}>
+            <View
+              style={styles.posterContainer}
+            >
               <Image
-                source={weekData.movie.poster}
+                source={
+                  weekData.movie.poster
+                }
                 style={styles.poster}
               />
 
@@ -1094,7 +1164,9 @@ export default function CulturalScreen() {
                     ? 'rgba(15,12,24,0.85)'
                     : 'rgba(255,255,255,0.88)',
                 ]}
-                style={styles.posterOverlay}
+                style={
+                  styles.posterOverlay
+                }
               />
             </View>
 
@@ -1119,7 +1191,9 @@ export default function CulturalScreen() {
                   },
                 ]}
               >
-                {getLocalized(weekData.movie.title)}
+                {getLocalized(
+                  weekData.movie.title,
+                )}
               </Text>
 
               <Text
@@ -1135,7 +1209,9 @@ export default function CulturalScreen() {
                 ]}
               >
                 {weekData.movie.year} •{' '}
-                {getLocalized(weekData.movie.genre)}
+                {getLocalized(
+                  weekData.movie.genre,
+                )}
               </Text>
 
               <View
@@ -1165,15 +1241,22 @@ export default function CulturalScreen() {
                       },
                     ]}
                   >
-                    {getLocalized(weekData.movie.duration)}
+                    {getLocalized(
+                      weekData.movie
+                        .duration,
+                    )}
                   </Text>
                 </View>
 
                 <View style={styles.stat}>
                   <Star
                     size={14}
-                    color={colors.warning}
-                    fill={colors.warning}
+                    color={
+                      colors.warning
+                    }
+                    fill={
+                      colors.warning
+                    }
                   />
 
                   <Text
@@ -1185,7 +1268,10 @@ export default function CulturalScreen() {
                       },
                     ]}
                   >
-                    {weekData.movie.rating}
+                    {
+                      weekData.movie
+                        .rating
+                    }
                   </Text>
                 </View>
               </View>
@@ -1202,7 +1288,10 @@ export default function CulturalScreen() {
                   },
                 ]}
               >
-                {getLocalized(weekData.movie.description)}
+                {getLocalized(
+                  weekData.movie
+                    .description,
+                )}
               </Text>
 
               <TouchableOpacity
@@ -1212,7 +1301,6 @@ export default function CulturalScreen() {
                   {
                     backgroundColor:
                       colors.primary,
-
                     flexDirection: isRTL
                       ? 'row-reverse'
                       : 'row',
@@ -1245,6 +1333,7 @@ export default function CulturalScreen() {
         </MotiView>
 
         {/* BOOK */}
+
         <MotiView
           key={`book-${selectedWeek}`}
           from={{
@@ -1285,10 +1374,10 @@ export default function CulturalScreen() {
                 style={[
                   styles.mediaLabel,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(167,139,250,0.13)'
-                      : 'rgba(124,58,237,0.08)',
-
+                    backgroundColor:
+                      isDark
+                        ? 'rgba(167,139,250,0.13)'
+                        : 'rgba(124,58,237,0.08)',
                     flexDirection: isRTL
                       ? 'row-reverse'
                       : 'row',
@@ -1297,7 +1386,9 @@ export default function CulturalScreen() {
               >
                 <BookOpen
                   size={15}
-                  color={colors.primary}
+                  color={
+                    colors.primary
+                  }
                 />
 
                 <Text
@@ -1315,7 +1406,9 @@ export default function CulturalScreen() {
 
               <Bookmark
                 size={18}
-                color={colors.textTertiary}
+                color={
+                  colors.textTertiary
+                }
               />
             </View>
 
@@ -1323,15 +1416,20 @@ export default function CulturalScreen() {
               style={[
                 styles.bookBody,
                 {
-                  flexDirection: isRTL
-                    ? 'row-reverse'
-                    : 'row',
+                  flexDirection:
+                    isRTL
+                      ? 'row-reverse'
+                      : 'row',
                 },
               ]}
             >
               <Image
-                source={weekData.book.cover}
-                style={styles.bookCover}
+                source={
+                  weekData.book.cover
+                }
+                style={
+                  styles.bookCover
+                }
               />
 
               <View
@@ -1348,14 +1446,18 @@ export default function CulturalScreen() {
                   style={[
                     styles.bookTitle,
                     {
-                      color: colors.text,
+                      color:
+                        colors.text,
                       textAlign: isRTL
                         ? 'right'
                         : 'left',
                     },
                   ]}
                 >
-                  {getLocalized(weekData.book.title)}
+                  {getLocalized(
+                    weekData.book
+                      .title,
+                  )}
                 </Text>
 
                 <Text
@@ -1370,7 +1472,10 @@ export default function CulturalScreen() {
                     },
                   ]}
                 >
-                  {getLocalized(weekData.book.author)}
+                  {getLocalized(
+                    weekData.book
+                      .author,
+                  )}
                 </Text>
 
                 <Text
@@ -1385,16 +1490,25 @@ export default function CulturalScreen() {
                     },
                   ]}
                 >
-                  {getLocalized(weekData.book.genre)}
+                  {getLocalized(
+                    weekData.book
+                      .genre,
+                  )}
                 </Text>
 
                 <View
-                  style={styles.bookRating}
+                  style={
+                    styles.bookRating
+                  }
                 >
                   <Star
                     size={14}
-                    color={colors.warning}
-                    fill={colors.warning}
+                    color={
+                      colors.warning
+                    }
+                    fill={
+                      colors.warning
+                    }
                   />
 
                   <Text
@@ -1406,7 +1520,10 @@ export default function CulturalScreen() {
                       },
                     ]}
                   >
-                    {weekData.book.rating}
+                    {
+                      weekData.book
+                        .rating
+                    }
                   </Text>
                 </View>
               </View>
@@ -1424,7 +1541,10 @@ export default function CulturalScreen() {
                 },
               ]}
             >
-              {getLocalized(weekData.book.description)}
+              {getLocalized(
+                weekData.book
+                  .description,
+              )}
             </Text>
 
             <TouchableOpacity
@@ -1434,16 +1554,18 @@ export default function CulturalScreen() {
                 {
                   borderColor:
                     colors.primary,
-
-                  flexDirection: isRTL
-                    ? 'row-reverse'
-                    : 'row',
+                  flexDirection:
+                    isRTL
+                      ? 'row-reverse'
+                      : 'row',
                 },
               ]}
             >
               <BookOpen
                 size={16}
-                color={colors.primary}
+                color={
+                  colors.primary
+                }
               />
 
               <Text
@@ -1452,10 +1574,8 @@ export default function CulturalScreen() {
                   {
                     color:
                       colors.primary,
-
                     marginLeft:
                       isRTL ? 0 : 8,
-
                     marginRight:
                       isRTL ? 8 : 0,
                   },
@@ -1467,13 +1587,16 @@ export default function CulturalScreen() {
 
               <ChevronRight
                 size={17}
-                color={colors.primary}
+                color={
+                  colors.primary
+                }
               />
             </TouchableOpacity>
           </View>
         </MotiView>
 
         {/* WHY THIS WEEK */}
+
         <View
           style={[
             styles.reasonCard,
@@ -1521,7 +1644,8 @@ export default function CulturalScreen() {
               style={[
                 styles.reasonTitle,
                 {
-                  color: colors.text,
+                  color:
+                    colors.text,
                   textAlign: isRTL
                     ? 'right'
                     : 'left',
@@ -1544,22 +1668,38 @@ export default function CulturalScreen() {
                 },
               ]}
             >
-              {getLocalized(weekData.reason)}
+              {getLocalized(
+                weekData.reason,
+              )}
             </Text>
           </View>
         </View>
 
-        {/* NAVIGATION */}
+        {/* ============================================================
+            WEEK NAVIGATION
+
+            IMPORTANT:
+            - Previous is ALWAYS on the LEFT.
+            - Next is ALWAYS on the RIGHT.
+            - This remains the same in RTL and LTR.
+            - Previous uses ArrowLeft.
+            - Next uses ChevronRight.
+            - Labels are translated locally so English never falls
+              back to Persian.
+        ============================================================ */}
+
         <View
           style={[
             styles.navigationRow,
             {
-              flexDirection: isRTL
-                ? 'row-reverse'
-                : 'row',
+              // DO NOT reverse this row in RTL.
+              // Previous = left, Next = right.
+              flexDirection: 'row',
             },
           ]}
         >
+          {/* PREVIOUS — LEFT */}
+
           {selectedWeek > 0 ? (
             <TouchableOpacity
               activeOpacity={0.8}
@@ -1568,8 +1708,13 @@ export default function CulturalScreen() {
                   selectedWeek - 1,
                 )
               }
+              accessibilityRole="button"
+              accessibilityLabel={
+                navigationLabels.previous
+              }
               style={[
                 styles.navButton,
+                styles.previousButton,
                 {
                   borderColor:
                     colors.border,
@@ -1581,31 +1726,41 @@ export default function CulturalScreen() {
               <ArrowLeft
                 size={17}
                 color={colors.text}
+                strokeWidth={2.3}
               />
 
               <Text
                 style={[
                   styles.navButtonText,
                   {
-                    color: colors.text,
+                    color:
+                      colors.text,
                   },
                 ]}
               >
-                {t.previous ||
-                  'قبلی'}
+                {navigationLabels.previous}
               </Text>
             </TouchableOpacity>
           ) : (
-            <View />
+            <View
+              style={styles.navPlaceholder}
+            />
           )}
 
-          {selectedWeek < weeks.length - 1 ? (
+          {/* NEXT — RIGHT */}
+
+          {selectedWeek <
+          weeks.length - 1 ? (
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() =>
                 setSelectedWeek(
                   selectedWeek + 1,
                 )
+              }
+              accessibilityRole="button"
+              accessibilityLabel={
+                navigationLabels.next
               }
               style={[
                 styles.nextButton,
@@ -1620,15 +1775,20 @@ export default function CulturalScreen() {
                   styles.nextButtonText
                 }
               >
-                {t.next || 'بعدی'}
+                {navigationLabels.next}
               </Text>
 
               <ChevronRight
                 size={18}
                 color="#FFFFFF"
+                strokeWidth={2.5}
               />
             </TouchableOpacity>
-          ) : null}
+          ) : (
+            <View
+              style={styles.navPlaceholder}
+            />
+          )}
         </View>
 
         <View style={styles.bottomSpace} />
@@ -1669,7 +1829,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
     marginRight: 12,
-
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -1771,7 +1930,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 15,
     overflow: 'hidden',
-
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -1843,7 +2001,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 16,
     paddingTop: 11,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth:
+      StyleSheet.hairlineWidth,
   },
 
   exploreText: {
@@ -2131,11 +2290,20 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
 
+  // ================================================================
+  // NAVIGATION STYLES
+  // ================================================================
+
   navigationRow: {
     width: '100%',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 18,
+
+    // IMPORTANT:
+    // Always LTR for physical button placement.
+    // Previous stays LEFT.
+    // Next stays RIGHT.
   },
 
   navButton: {
@@ -2150,6 +2318,11 @@ const styles = StyleSheet.create({
     gap: 7,
   },
 
+  previousButton: {
+    // Explicitly keeps Previous on the left.
+    alignSelf: 'flex-start',
+  },
+
   navButtonText: {
     fontSize: 11.5,
     fontWeight: '700',
@@ -2162,14 +2335,24 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+
+    // Next button content is always:
+    // Text -> Right Arrow
     flexDirection: 'row',
     gap: 6,
+
+    alignSelf: 'flex-end',
   },
 
   nextButtonText: {
     color: '#FFFFFF',
     fontSize: 11.5,
     fontWeight: '800',
+  },
+
+  navPlaceholder: {
+    minWidth: 95,
+    height: 43,
   },
 
   bottomSpace: {

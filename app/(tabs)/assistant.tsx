@@ -179,8 +179,8 @@ export default function AssistantScreen() {
 
   const welcomeMessage =
     language === 'fa'
-      ? 'سلام، روز بخیر 🌱\nمن نورولیا هستم.\nراجع به چیزی دوست داری با هم صحبت کنیم؟'
-      : 'Hello, good day 🌱\nI am Norulia.\nIs there something you would like to talk about?';
+      ? 'سلام، روز بخیر !\nمن نورولیا هستم.\nراجع به چیزی دوست داری با هم صحبت کنیم؟'
+      : 'Hello, good day \nI am Neurolia.\nIs there something you would like to talk about?';
 
   /*
    * Welcome typing animation
@@ -681,7 +681,7 @@ export default function AssistantScreen() {
                 >
                   <Image
                     source={require(
-                      '../../assets/avatars/modell.png'
+                      '../../assets/avatars/Head.png'
                     )}
                     style={
                       styles.welcomeAvatar

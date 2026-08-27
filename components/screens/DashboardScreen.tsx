@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+
 import {
   View,
   Text,
@@ -42,6 +48,10 @@ import {
   LayoutGrid,
 } from 'lucide-react-native';
 
+/* =========================================================
+   MENU ITEMS
+   ========================================================= */
+
 const menuItems = [
   {
     id: 'psycho',
@@ -81,6 +91,10 @@ const menuItems = [
   },
 ];
 
+/* =========================================================
+   SHINE EFFECT
+   ========================================================= */
+
 interface ShineEffectProps {
   color?: string;
   delay?: number;
@@ -97,17 +111,27 @@ function ShineEffect({
   const shineX = useSharedValue(-180);
   const shineOpacity = useSharedValue(0);
 
-  React.useEffect(() => {
+  useEffect(() => {
     shineX.value = -180;
     shineOpacity.value = 0;
 
     shineX.value = withRepeat(
       withSequence(
-        withTiming(-180, { duration: delay }),
-        withTiming(-145, { duration: 180 }),
-        withTiming(430, { duration }),
-        withTiming(500, { duration: 220 }),
-        withTiming(500, { duration: 350 }),
+        withTiming(-180, {
+          duration: delay,
+        }),
+        withTiming(-145, {
+          duration: 180,
+        }),
+        withTiming(430, {
+          duration,
+        }),
+        withTiming(500, {
+          duration: 220,
+        }),
+        withTiming(500, {
+          duration: 350,
+        }),
       ),
       -1,
       false,
@@ -115,21 +139,41 @@ function ShineEffect({
 
     shineOpacity.value = withRepeat(
       withSequence(
-        withTiming(0, { duration: delay }),
-        withTiming(opacity, { duration: 180 }),
-        withTiming(opacity, { duration }),
-        withTiming(0, { duration: 220 }),
-        withTiming(0, { duration: 350 }),
+        withTiming(0, {
+          duration: delay,
+        }),
+        withTiming(opacity, {
+          duration: 180,
+        }),
+        withTiming(opacity, {
+          duration,
+        }),
+        withTiming(0, {
+          duration: 220,
+        }),
+        withTiming(0, {
+          duration: 350,
+        }),
       ),
       -1,
       false,
     );
-  }, [delay, duration, opacity, shineOpacity, shineX]);
+  }, [
+    delay,
+    duration,
+    opacity,
+    shineOpacity,
+    shineX,
+  ]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateX: shineX.value },
-      { rotate: '20deg' },
+      {
+        translateX: shineX.value,
+      },
+      {
+        rotate: '20deg',
+      },
     ],
     opacity: shineOpacity.value,
   }));
@@ -150,14 +194,30 @@ function ShineEffect({
           `${color}10`,
           'transparent',
         ]}
-        locations={[0, 0.28, 0.5, 0.72, 1]}
-        start={{ x: 0, y: 0.5 }}
-        end={{ x: 1, y: 0.5 }}
+        locations={[
+          0,
+          0.28,
+          0.5,
+          0.72,
+          1,
+        ]}
+        start={{
+          x: 0,
+          y: 0.5,
+        }}
+        end={{
+          x: 1,
+          y: 0.5,
+        }}
         style={styles.shineGradient}
       />
     </Animated.View>
   );
 }
+
+/* =========================================================
+   GLOW LAYER
+   ========================================================= */
 
 interface GlowLayerProps {
   color: string;
@@ -182,6 +242,10 @@ function GlowLayer({
   );
 }
 
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+
 export function DashboardScreen() {
   const {
     colors,
@@ -200,13 +264,11 @@ export function DashboardScreen() {
   const { width } = useWindowDimensions();
 
   const [refreshing, setRefreshing] =
-    React.useState(false);
+    useState(false);
 
-  /*
-   * =========================================================
-   * NORULIA WELCOME TYPING
-   * =========================================================
-   */
+  /* =======================================================
+     NORULIA WELCOME TYPING
+     ======================================================= */
 
   const [typedWelcome, setTypedWelcome] =
     useState('');
@@ -216,16 +278,14 @@ export function DashboardScreen() {
       null,
     );
 
-  /*
-   * Use the same dashboard bubble text
-   * that already exists in LanguageContext.
-   */
   const welcomeText =
     t.dashboardWelcomeBubble || '';
 
   useEffect(() => {
     if (typingTimerRef.current) {
-      clearTimeout(typingTimerRef.current);
+      clearTimeout(
+        typingTimerRef.current,
+      );
     }
 
     setTypedWelcome('');
@@ -238,7 +298,10 @@ export function DashboardScreen() {
       }
 
       setTypedWelcome(
-        welcomeText.slice(0, index + 1),
+        welcomeText.slice(
+          0,
+          index + 1,
+        ),
       );
 
       index += 1;
@@ -251,8 +314,8 @@ export function DashboardScreen() {
     };
 
     /*
-     * Small delay so the avatar enters first,
-     * then the bubble starts typing.
+     * Avatar enters first.
+     * Bubble starts typing shortly after.
      */
     typingTimerRef.current =
       setTimeout(
@@ -272,7 +335,7 @@ export function DashboardScreen() {
     welcomeText,
   ]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       if (typingTimerRef.current) {
         clearTimeout(
@@ -282,13 +345,21 @@ export function DashboardScreen() {
     };
   }, []);
 
+  /* =======================================================
+     REFRESH
+     ======================================================= */
+
   const refreshTimerRef =
-    React.useRef<ReturnType<typeof setTimeout> | null>(
+    useRef<ReturnType<typeof setTimeout> | null>(
       null,
     );
 
   const isVerySmallScreen =
     width < 350;
+
+  /* =======================================================
+     THEME COLORS
+     ======================================================= */
 
   const themeColor = isAthlete
     ? '#22C55E'
@@ -297,8 +368,12 @@ export function DashboardScreen() {
       : colors.primary;
 
   const iconColor = themeColor;
-  const progressIconColor = themeColor;
-  const progressBarColor = themeColor;
+
+  const progressIconColor =
+    themeColor;
+
+  const progressBarColor =
+    themeColor;
 
   const iconBgColor = isAthlete
     ? 'rgba(34,197,94,0.15)'
@@ -306,18 +381,21 @@ export function DashboardScreen() {
       ? 'rgba(73, 194, 226, 0.15)'
       : 'rgba(107,90,166,0.07)';
 
-  const onRefresh =
-    React.useCallback(() => {
-      setRefreshing(true);
+  /* =======================================================
+     REFRESH HANDLER
+     ======================================================= */
 
-      refreshTimerRef.current =
-        setTimeout(() => {
-          setRefreshing(false);
-          refreshTimerRef.current = null;
-        }, 1500);
-    }, []);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
 
-  React.useEffect(() => {
+    refreshTimerRef.current =
+      setTimeout(() => {
+        setRefreshing(false);
+        refreshTimerRef.current = null;
+      }, 1500);
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (refreshTimerRef.current) {
         clearTimeout(
@@ -326,6 +404,10 @@ export function DashboardScreen() {
       }
     };
   }, []);
+
+  /* =======================================================
+     MENU CARD
+     ======================================================= */
 
   const renderMenuCard = (
     item: (typeof menuItems)[number],
@@ -367,7 +449,9 @@ export function DashboardScreen() {
         <TouchableOpacity
           activeOpacity={0.82}
           onPress={() =>
-            router.push(item.route as any)
+            router.push(
+              item.route as any,
+            )
           }
           accessibilityRole="button"
           accessibilityLabel={title}
@@ -376,8 +460,10 @@ export function DashboardScreen() {
             {
               backgroundColor:
                 colors.surface,
+
               borderColor:
                 colors.border,
+
               minHeight:
                 isVerySmallScreen
                   ? 118
@@ -413,10 +499,12 @@ export function DashboardScreen() {
               {
                 backgroundColor:
                   iconBgColor,
+
                 width:
                   isVerySmallScreen
                     ? 43
                     : 48,
+
                 height:
                   isVerySmallScreen
                     ? 43
@@ -442,11 +530,14 @@ export function DashboardScreen() {
               styles.menuCardTitle,
               {
                 color: colors.text,
+
                 textAlign: 'center',
+
                 writingDirection:
                   isRTL
                     ? 'rtl'
                     : 'ltr',
+
                 fontSize:
                   isVerySmallScreen
                     ? 11
@@ -460,6 +551,10 @@ export function DashboardScreen() {
       </MotiView>
     );
   };
+
+  /* =======================================================
+     RENDER
+     ======================================================= */
 
   return (
     <View
@@ -491,9 +586,9 @@ export function DashboardScreen() {
           />
         }
       >
-        {/* =====================================================
+        {/* ===================================================
             NORULIA CHARACTER
-            ===================================================== */}
+            =================================================== */}
 
         <MotiView
           from={{
@@ -516,21 +611,30 @@ export function DashboardScreen() {
             style={styles.characterCard}
           >
             <View
-              style={styles.characterWrapper}
+              style={
+                styles.characterWrapper
+              }
             >
+              {/* =================================================
+                  IMPORTANT:
+                  ALWAYS LTR PHYSICAL LAYOUT
+
+                  Avatar = LEFT
+                  Bubble = RIGHT
+
+                  RTL only affects text inside bubble.
+                  ================================================= */}
+
               <View
-                style={[
-                  styles.avatarRow,
-                  {
-                    flexDirection: isRTL
-                      ? 'row-reverse'
-                      : 'row',
-                  },
-                ]}
+                style={
+                  styles.avatarRow
+                }
               >
-                {/* =================================================
-                    AVATAR — ENTERS FROM LEFT
-                    ================================================= */}
+                {/* ===============================================
+                    AVATAR
+                    ALWAYS LEFT
+                    ENTERS FROM LEFT
+                    =============================================== */}
 
                 <MotiView
                   from={{
@@ -563,9 +667,11 @@ export function DashboardScreen() {
                   />
                 </MotiView>
 
-                {/* =================================================
-                    SPEECH BUBBLE — ENTERS FROM RIGHT
-                    ================================================= */}
+                {/* ===============================================
+                    SPEECH BUBBLE
+                    ALWAYS RIGHT
+                    ENTERS FROM RIGHT
+                    =============================================== */}
 
                 <MotiView
                   from={{
@@ -584,13 +690,9 @@ export function DashboardScreen() {
                     stiffness: 105,
                     delay: 430,
                   }}
-                  style={[
-                    styles.speechBubbleWrapper,
-                    {
-                      alignSelf:
-                        'center',
-                    },
-                  ]}
+                  style={
+                    styles.speechBubbleWrapper
+                  }
                 >
                   <View
                     style={[
@@ -598,8 +700,10 @@ export function DashboardScreen() {
                       {
                         backgroundColor:
                           colors.surface,
+
                         borderColor:
                           colors.border,
+
                         shadowColor:
                           isDark
                             ? '#000000'
@@ -607,34 +711,48 @@ export function DashboardScreen() {
                       },
                     ]}
                   >
+                    {/* =========================================
+                        BUBBLE TAIL
+                        ALWAYS POINTS LEFT
+                        TOWARD AVATAR
+                        ========================================= */}
+
                     <View
                       pointerEvents="none"
                       style={[
                         styles.speechBubbleTail,
+                        styles.speechBubbleTailLeft,
                         {
                           backgroundColor:
                             colors.surface,
+
                           borderColor:
                             colors.border,
                         },
-                        isRTL
-                          ? styles.speechBubbleTailRight
-                          : styles.speechBubbleTailLeft,
                       ]}
                     />
+
+                    {/* =========================================
+                        DIALOG TEXT
+
+                        Position does NOT change.
+
+                        Only text direction changes.
+                        ========================================= */}
 
                     <Text
                       style={[
                         styles.speechBubbleText,
                         {
-                          color:
-                            isDark
-                              ? '#FFFFFF'
-                              : '#2F2850',
+                          color: isDark
+                            ? '#FFFFFF'
+                            : '#2F2850',
+
                           textAlign:
                             isRTL
                               ? 'right'
                               : 'left',
+
                           writingDirection:
                             isRTL
                               ? 'rtl'
@@ -671,9 +789,12 @@ export function DashboardScreen() {
                     color: isDark
                       ? '#FFFFFF'
                       : '#2F2850',
-                    textAlign: isRTL
-                      ? 'right'
-                      : 'left',
+
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+
                     writingDirection:
                       isRTL
                         ? 'rtl'
@@ -683,11 +804,6 @@ export function DashboardScreen() {
               >
                 {t.dashboardReadyHelp}
               </Text>
-
-              {/* =================================================
-                  REMOVED:
-                  dashboardWellnessJourney
-                  ================================================= */}
             </View>
           </View>
         </MotiView>
@@ -714,8 +830,10 @@ export function DashboardScreen() {
           <Card
             style={{
               ...styles.progressCard,
+
               backgroundColor:
                 colors.surface,
+
               overflow: 'hidden',
             }}
           >
@@ -773,10 +891,12 @@ export function DashboardScreen() {
                   styles.progressTitle,
                   {
                     color: colors.text,
+
                     textAlign:
                       isRTL
                         ? 'right'
                         : 'left',
+
                     writingDirection:
                       isRTL
                         ? 'rtl'
@@ -876,10 +996,12 @@ export function DashboardScreen() {
                   {
                     color:
                       colors.textSecondary,
+
                     textAlign:
                       isRTL
                         ? 'right'
                         : 'left',
+
                     writingDirection:
                       isRTL
                         ? 'rtl'
@@ -932,10 +1054,12 @@ export function DashboardScreen() {
               styles.menuSectionTitle,
               {
                 color: iconColor,
+
                 textAlign:
                   isRTL
                     ? 'right'
                     : 'left',
+
                 writingDirection:
                   isRTL
                     ? 'rtl'
@@ -970,6 +1094,10 @@ export function DashboardScreen() {
     </View>
   );
 }
+
+/* ===========================================================
+   STYLES
+   =========================================================== */
 
 const styles = StyleSheet.create({
   container: {
@@ -1023,11 +1151,23 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
   },
 
+  /*
+   * IMPORTANT:
+   *
+   * This row is ALWAYS physical LTR.
+   *
+   * LEFT  -> Avatar
+   * RIGHT -> Speech Bubble
+   *
+   * Do NOT add isRTL here.
+   */
+
   avatarRow: {
     width: '100%',
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 26,
+    justifyContent: 'space-between',
+    gap: 16,
   },
 
   avatarContainer: {
@@ -1035,6 +1175,7 @@ const styles = StyleSheet.create({
     height: 150,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
 
   avatar: {
@@ -1048,15 +1189,19 @@ const styles = StyleSheet.create({
      ========================================================= */
 
   speechBubbleWrapper: {
-    flexShrink: 1,
+    flex: 1,
     maxWidth: 176,
+    minWidth: 0,
+    alignSelf: 'center',
   },
 
   speechBubble: {
     flexShrink: 1,
     maxWidth: 176,
+
     borderRadius: 20,
     borderWidth: 1,
+
     paddingHorizontal: 16,
     paddingVertical: 12,
 
@@ -1069,6 +1214,7 @@ const styles = StyleSheet.create({
 
     shadowOpacity: 0.12,
     shadowRadius: 14,
+
     elevation: 4,
   },
 
@@ -1079,13 +1225,25 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
 
+  /*
+   * Tail is ALWAYS on the LEFT side of the bubble.
+   *
+   * Avatar is always on the left,
+   * therefore the tail always points toward Avatar.
+   */
+
   speechBubbleTail: {
     position: 'absolute',
+
     top: 24,
+    left: -6,
+
     width: 16,
     height: 16,
+
     borderRadius: 4,
     borderWidth: 1,
+
     transform: [
       {
         rotate: '45deg',
@@ -1093,32 +1251,23 @@ const styles = StyleSheet.create({
     ],
   },
 
-  /*
-   * LTR:
-   * Avatar -> Bubble
-   * Tail points left toward avatar.
-   */
-
   speechBubbleTailLeft: {
     left: -6,
   },
 
-  /*
-   * RTL:
-   * Bubble -> Avatar
-   * Tail points right toward avatar.
-   */
-
-  speechBubbleTailRight: {
-    right: -6,
-  },
+  /* =========================================================
+     CHARACTER TITLE
+     ========================================================= */
 
   characterTitle: {
     paddingTop: 20,
     width: '100%',
+
     fontSize: 20,
     lineHeight: 27,
+
     fontWeight: '700',
+
     marginTop: Spacing.md,
   },
 
@@ -1128,14 +1277,19 @@ const styles = StyleSheet.create({
 
   progressCard: {
     marginBottom: Spacing.lg,
+
     shadowColor: '#000000',
+
     shadowOffset: {
       width: 0,
       height: 4,
     },
+
     shadowOpacity: 0.06,
     shadowRadius: 10,
+
     elevation: 3,
+
     overflow: 'hidden',
     position: 'relative',
   },
@@ -1149,15 +1303,19 @@ const styles = StyleSheet.create({
   progressIconWrap: {
     width: 32,
     height: 32,
+
     borderRadius: 10,
+
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   progressTitle: {
     flex: 1,
+
     fontSize: 15,
     lineHeight: 21,
+
     fontWeight: '600',
   },
 
@@ -1169,7 +1327,9 @@ const styles = StyleSheet.create({
   progressBarContainer: {
     width: '100%',
     height: 7,
+
     position: 'relative',
+
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -1181,13 +1341,16 @@ const styles = StyleSheet.create({
 
   progressBarFillWrap: {
     height: '100%',
+
     borderRadius: 4,
+
     overflow: 'hidden',
   },
 
   progressBarFill: {
     width: '100%',
     height: '100%',
+
     borderRadius: 4,
   },
 
@@ -1207,23 +1370,32 @@ const styles = StyleSheet.create({
 
   menuSectionHeader: {
     width: '100%',
+
     alignItems: 'center',
+
     gap: 7,
+
     marginBottom: 12,
     marginTop: 2,
   },
 
   menuSectionTitle: {
     flex: 1,
+
     fontSize: 14,
     lineHeight: 20,
+
     fontWeight: '700',
   },
 
   menuGrid: {
     width: '100%',
+
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+
+    justifyContent:
+      'space-between',
+
     rowGap: 10,
   },
 
@@ -1234,38 +1406,51 @@ const styles = StyleSheet.create({
 
   menuCard: {
     width: '100%',
+
     borderRadius: 18,
     borderWidth: 1,
+
     paddingHorizontal: 8,
     paddingVertical: 12,
+
     alignItems: 'center',
     justifyContent: 'center',
+
     position: 'relative',
     overflow: 'hidden',
 
     shadowColor: '#000000',
+
     shadowOffset: {
       width: 0,
       height: 3,
     },
+
     shadowOpacity: 0.035,
     shadowRadius: 7,
+
     elevation: 2,
   },
 
   menuIconContainer: {
     borderRadius: 15,
+
     alignItems: 'center',
     justifyContent: 'center',
+
     marginBottom: 10,
+
     alignSelf: 'center',
   },
 
   menuCardTitle: {
     width: '100%',
     minHeight: 36,
+
     lineHeight: 17,
+
     fontWeight: '600',
+
     textAlign: 'center',
   },
 

@@ -15,6 +15,8 @@ import {
   Animated,
   ScrollView,
   useWindowDimensions,
+  BackHandler,
+  Platform,
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -75,103 +77,70 @@ const PLAY_SIDE_MARGIN = 14;
 
 type DifficultyConfig = {
   level: number;
-
   nameFa: string;
-
   nameEn: string;
-
   spawnInterval: number;
-
   lifeTime: number;
-
   maxObjects: number;
-
   objectSize: number;
-
   duration: number;
-
-  dangerProbability: number;
 };
 
 const DIFFICULTIES: DifficultyConfig[] = [
   {
     level: 1,
-
     nameFa: 'آسان',
-
     nameEn: 'Easy',
-
     spawnInterval: 1050,
-
     lifeTime: 2400,
-
     maxObjects: 3,
-
     objectSize: 76,
-
     duration: 30000,
-
     dangerProbability: 0.25,
+  } as DifficultyConfig & {
+    dangerProbability: number;
   },
 
   {
     level: 2,
-
     nameFa: 'متوسط',
-
     nameEn: 'Medium',
-
     spawnInterval: 800,
-
     lifeTime: 1900,
-
     maxObjects: 4,
-
     objectSize: 70,
-
     duration: 35000,
-
     dangerProbability: 0.35,
+  } as DifficultyConfig & {
+    dangerProbability: number;
   },
 
   {
     level: 3,
-
     nameFa: 'سخت',
-
     nameEn: 'Hard',
-
     spawnInterval: 620,
-
     lifeTime: 1500,
-
     maxObjects: 5,
-
     objectSize: 64,
-
     duration: 40000,
-
     dangerProbability: 0.45,
+  } as DifficultyConfig & {
+    dangerProbability: number;
   },
 
   {
     level: 4,
-
     nameFa: 'حرفه‌ای',
-
     nameEn: 'Expert',
-
     spawnInterval: 470,
-
     lifeTime: 1150,
-
     maxObjects: 6,
-
     objectSize: 58,
-
     duration: 45000,
-
     dangerProbability: 0.55,
+  } as DifficultyConfig & {
+    dangerProbability: number;
   },
 ];
 
@@ -181,29 +150,19 @@ const DIFFICULTIES: DifficultyConfig[] = [
 
 type GameObject = {
   id: number;
-
   isDanger: boolean;
-
   x: number;
-
   y: number;
-
   scale: Animated.Value;
-
   opacity: Animated.Value;
 };
 
 type ScorePopup = {
   id: number;
-
   x: number;
-
   y: number;
-
   value: number;
-
   opacity: Animated.Value;
-
   translateY: Animated.Value;
 };
 
@@ -213,15 +172,10 @@ type ScorePopup = {
 
 interface PageHeaderProps {
   title: string;
-
   subtitle?: string;
-
   onBack: () => void;
-
   colors: any;
-
   isRTL: boolean;
-
   backLabel: string;
 }
 
@@ -238,8 +192,7 @@ function PageHeader({
       style={[
         styles.pageHeader,
         {
-          borderBottomColor:
-            colors.border,
+          borderBottomColor: colors.border,
         },
       ]}
     >
@@ -251,11 +204,8 @@ function PageHeader({
         style={[
           styles.backButton,
           {
-            backgroundColor:
-              colors.surface,
-
-            borderColor:
-              colors.border,
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
           },
         ]}
       >
@@ -266,19 +216,14 @@ function PageHeader({
         />
       </TouchableOpacity>
 
-      <View
-        style={styles.headerTextContainer}
-      >
+      <View style={styles.headerTextContainer}>
         <Text
           numberOfLines={2}
           style={[
             styles.headerTitle,
             {
               color: colors.text,
-
-              textAlign: isRTL
-                ? 'right'
-                : 'left',
+              textAlign: isRTL ? 'right' : 'left',
             },
           ]}
         >
@@ -290,12 +235,8 @@ function PageHeader({
             style={[
               styles.headerSubtitle,
               {
-                color:
-                  colors.textSecondary,
-
-                textAlign: isRTL
-                  ? 'right'
-                  : 'left',
+                color: colors.textSecondary,
+                textAlign: isRTL ? 'right' : 'left',
               },
             ]}
           >
@@ -314,14 +255,11 @@ function PageHeader({
 export default function LastSurvivalScreen() {
   const router = useRouter();
 
-  const { colors } =
-    useTheme();
+  const { colors } = useTheme();
 
-  const { language, isRTL } =
-    useLanguage();
+  const { language, isRTL } = useLanguage();
 
-  const { width } =
-    useWindowDimensions();
+  const { width } = useWindowDimensions();
 
   /* ================================================================
      TEXT
@@ -332,116 +270,59 @@ export default function LastSurvivalScreen() {
       language === 'fa'
         ? {
             title: 'آخرین بازمانده',
-
-            subtitle:
-              'از تصاویر امن محافظت کن',
-
+            subtitle: 'از تصاویر امن محافظت کن',
             instruction:
               'تصویر آبی را لمس کن و از تصویر قرمز دوری کن',
-
             score: 'امتیاز',
-
             lives: 'جان',
-
             level: 'سطح',
-
             start: 'شروع بازی',
-
             playAgain: 'بازی مجدد',
-
             back: 'بازگشت',
-
-            completed:
-              'مرحله با موفقیت تمام شد',
-
-            gameOver:
-              'بازی تمام شد',
-
-            adaptive:
-              'سختی تطبیقی',
-
+            completed: 'مرحله با موفقیت تمام شد',
+            gameOver: 'بازی تمام شد',
+            adaptive: 'سختی تطبیقی',
             adaptiveInfo:
               'سطح بازی بر اساس عملکرد واقعی شما به‌صورت خودکار تغییر می‌کند.',
-
-            difficulty:
-              'سطح فعلی',
-
-            accuracy:
-              'دقت',
-
-            correct:
-              'درست',
-
-            wrong:
-              'اشتباه',
-
+            difficulty: 'سطح فعلی',
+            accuracy: 'دقت',
+            correct: 'درست',
+            wrong: 'اشتباه',
             adaptiveUp:
               'عملکرد عالی بود؛ بازی در دفعه بعد سخت‌تر می‌شود.',
-
             adaptiveDown:
               'این مرحله دشوار بود؛ بازی در دفعه بعد کمی آسان‌تر می‌شود.',
-
             adaptiveSame:
               'عملکرد مناسب بود؛ سختی بازی حفظ می‌شود.',
-
             noLevelSelection:
               'سطح بازی به‌صورت خودکار تعیین می‌شود',
           }
         : {
             title: 'Last Survivor',
-
-            subtitle:
-              'Protect the safe images',
-
+            subtitle: 'Protect the safe images',
             instruction:
               'Tap the blue image and avoid the red image',
-
             score: 'Score',
-
             lives: 'Lives',
-
             level: 'Level',
-
             start: 'Start Game',
-
-            playAgain:
-              'Play Again',
-
+            playAgain: 'Play Again',
             back: 'Back',
-
-            completed:
-              'Stage Completed',
-
-            gameOver:
-              'Game Over',
-
-            adaptive:
-              'Adaptive Difficulty',
-
+            completed: 'Stage Completed',
+            gameOver: 'Game Over',
+            adaptive: 'Adaptive Difficulty',
             adaptiveInfo:
               'Game difficulty automatically changes based on your actual performance.',
-
-            difficulty:
-              'Current Level',
-
-            accuracy:
-              'Accuracy',
-
-            correct:
-              'Correct',
-
-            wrong:
-              'Mistakes',
-
+            difficulty: 'Current Level',
+            accuracy: 'Accuracy',
+            correct: 'Correct',
+            wrong: 'Mistakes',
             adaptiveUp:
               'Excellent performance. The game will become harder next time.',
-
             adaptiveDown:
               'This session was challenging. The game will become easier next time.',
-
             adaptiveSame:
               'Good performance. The difficulty will remain stable.',
-
             noLevelSelection:
               'Difficulty is selected automatically',
           },
@@ -452,138 +333,94 @@ export default function LastSurvivalScreen() {
      STATE
   ================================================================= */
 
-  const [
-    difficulty,
-    setDifficulty,
-  ] = useState(
-    INITIAL_DIFFICULTY
-  );
+  const [difficulty, setDifficulty] =
+    useState(INITIAL_DIFFICULTY);
 
-  const [
-    previousAccuracy,
-    setPreviousAccuracy,
-  ] = useState<
-    number | null
-  >(null);
+  const [previousAccuracy, setPreviousAccuracy] =
+    useState<number | null>(null);
 
-  const [
-    playing,
-    setPlaying,
-  ] = useState(false);
+  const [playing, setPlaying] =
+    useState(false);
 
-  const [
-    score,
-    setScore,
-  ] = useState(0);
+  const [score, setScore] =
+    useState(0);
 
-  const [
-    lives,
-    setLives,
-  ] = useState(TOTAL_LIVES);
+  const [lives, setLives] =
+    useState(TOTAL_LIVES);
 
-  const [
-    objects,
-    setObjects,
-  ] = useState<GameObject[]>(
-    []
-  );
+  const [objects, setObjects] =
+    useState<GameObject[]>([]);
 
-  const [
-    popups,
-    setPopups,
-  ] = useState<ScorePopup[]>(
-    []
-  );
+  const [popups, setPopups] =
+    useState<ScorePopup[]>([]);
 
-  const [
-    completed,
-    setCompleted,
-  ] = useState(false);
+  const [completed, setCompleted] =
+    useState(false);
 
-  const [
-    gameOver,
-    setGameOver,
-  ] = useState(false);
+  const [gameOver, setGameOver] =
+    useState(false);
 
-  const [
-    correctCount,
-    setCorrectCount,
-  ] = useState(0);
+  const [correctCount, setCorrectCount] =
+    useState(0);
 
-  const [
-    wrongCount,
-    setWrongCount,
-  ] = useState(0);
+  const [wrongCount, setWrongCount] =
+    useState(0);
 
-  const [
-    adaptiveResult,
-    setAdaptiveResult,
-  ] = useState<
-    'up' | 'down' | 'same' | null
-  >(null);
+  const [adaptiveResult, setAdaptiveResult] =
+    useState<'up' | 'down' | 'same' | null>(null);
 
-  const [
-    playFieldWidth,
-    setPlayFieldWidth,
-  ] = useState(0);
+  const [playFieldWidth, setPlayFieldWidth] =
+    useState(0);
 
-  const [
-    playFieldHeight,
-    setPlayFieldHeight,
-  ] = useState(0);
+  const [playFieldHeight, setPlayFieldHeight] =
+    useState(0);
 
   /* ================================================================
      REFS
   ================================================================= */
 
-  const mounted =
-    useRef(true);
+  const mounted = useRef(true);
 
-  const objectId =
-    useRef(0);
+  /*
+   * VERY IMPORTANT
+   *
+   * Prevents the Android hardware BackHandler and the UI back
+   * button from executing navigation twice.
+   */
+  const isLeavingRef = useRef(false);
 
-  const popupId =
-    useRef(0);
+  const objectId = useRef(0);
 
-  const livesRef =
-    useRef(TOTAL_LIVES);
+  const popupId = useRef(0);
 
-  const scoreRef =
-    useRef(0);
+  const livesRef = useRef(TOTAL_LIVES);
 
-  const correctRef =
-    useRef(0);
+  const scoreRef = useRef(0);
 
-  const wrongRef =
-    useRef(0);
+  const correctRef = useRef(0);
+
+  const wrongRef = useRef(0);
 
   const removingIds =
-    useRef<Set<number>>(
-      new Set()
-    );
+    useRef<Set<number>>(new Set());
 
   const objectTimers =
     useRef<
-      Map<
-        number,
-        ReturnType<typeof setTimeout>
-      >
+      Map<number, ReturnType<typeof setTimeout>>
     >(new Map());
 
   const spawnTimer =
-    useRef<
-      ReturnType<typeof setInterval> | null
-    >(null);
+    useRef<ReturnType<typeof setInterval> | null>(
+      null
+    );
 
   const gameTimer =
-    useRef<
-      ReturnType<typeof setTimeout> | null
-    >(null);
+    useRef<ReturnType<typeof setTimeout> | null>(
+      null
+    );
 
   const flashAnimation =
-    useRef(
-      new Animated.Value(0)
-    ).current;
+    useRef(new Animated.Value(0)).current;
 
   /* ================================================================
      CONFIG
@@ -598,7 +435,9 @@ export default function LastSurvivalScreen() {
           DIFFICULTIES.length - 1
         )
       )
-    ];
+    ] as DifficultyConfig & {
+      dangerProbability: number;
+    };
 
   const difficultyName =
     language === 'fa'
@@ -611,53 +450,51 @@ export default function LastSurvivalScreen() {
 
   useEffect(() => {
     mounted.current = true;
+    isLeavingRef.current = false;
 
-    const loadState =
-      async () => {
-        try {
-          const raw =
-            await AsyncStorage.getItem(
-              STORAGE_KEY
-            );
+    const loadState = async () => {
+      try {
+        const raw =
+          await AsyncStorage.getItem(
+            STORAGE_KEY
+          );
 
-          if (!raw) {
-            return;
-          }
+        if (!raw || !mounted.current) {
+          return;
+        }
 
-          const saved =
-            JSON.parse(raw);
+        const saved = JSON.parse(raw);
 
-          if (
-            typeof saved.difficulty ===
-            'number'
-          ) {
-            setDifficulty(
-              Math.max(
-                MIN_DIFFICULTY,
-
-                Math.min(
-                  MAX_DIFFICULTY,
-                  saved.difficulty
-                )
+        if (
+          typeof saved.difficulty ===
+          'number'
+        ) {
+          setDifficulty(
+            Math.max(
+              MIN_DIFFICULTY,
+              Math.min(
+                MAX_DIFFICULTY,
+                saved.difficulty
               )
-            );
-          }
-
-          if (
-            typeof saved.accuracy ===
-            'number'
-          ) {
-            setPreviousAccuracy(
-              saved.accuracy
-            );
-          }
-        } catch (error) {
-          console.log(
-            '[LastSurvival] Load error:',
-            error
+            )
           );
         }
-      };
+
+        if (
+          typeof saved.accuracy ===
+          'number'
+        ) {
+          setPreviousAccuracy(
+            saved.accuracy
+          );
+        }
+      } catch (error) {
+        console.log(
+          '[LastSurvival] Load error:',
+          error
+        );
+      }
+    };
 
     loadState();
 
@@ -672,26 +509,20 @@ export default function LastSurvivalScreen() {
 
   const clearAllTimers =
     useCallback(() => {
-      if (
-        spawnTimer.current
-      ) {
+      if (spawnTimer.current) {
         clearInterval(
           spawnTimer.current
         );
 
-        spawnTimer.current =
-          null;
+        spawnTimer.current = null;
       }
 
-      if (
-        gameTimer.current
-      ) {
+      if (gameTimer.current) {
         clearTimeout(
           gameTimer.current
         );
 
-        gameTimer.current =
-          null;
+        gameTimer.current = null;
       }
 
       objectTimers.current.forEach(
@@ -702,6 +533,32 @@ export default function LastSurvivalScreen() {
 
       objectTimers.current.clear();
     }, []);
+
+  /* ================================================================
+     CLEAN GAME
+  ================================================================= */
+
+  const cleanupGame =
+    useCallback(() => {
+      clearAllTimers();
+
+      removingIds.current.clear();
+
+      setPlaying(false);
+
+      setObjects([]);
+
+      setPopups([]);
+
+      /*
+       * Stop current flash animation.
+       */
+      flashAnimation.stopAnimation();
+      flashAnimation.setValue(0);
+    }, [
+      clearAllTimers,
+      flashAnimation,
+    ]);
 
   /* ================================================================
      SAVE
@@ -719,15 +576,11 @@ export default function LastSurvivalScreen() {
             JSON.stringify({
               difficulty:
                 nextDifficulty,
-
               accuracy,
-
               correct:
                 correctRef.current,
-
               wrong:
                 wrongRef.current,
-
               updatedAt:
                 Date.now(),
             })
@@ -762,16 +615,16 @@ export default function LastSurvivalScreen() {
           );
         }
 
-        removingIds.current.delete(
-          id
-        );
+        removingIds.current.delete(id);
 
-        setObjects(
-          previous =>
-            previous.filter(
-              item =>
-                item.id !== id
-            )
+        if (!mounted.current) {
+          return;
+        }
+
+        setObjects(previous =>
+          previous.filter(
+            item => item.id !== id
+          )
         );
       },
       []
@@ -788,6 +641,13 @@ export default function LastSurvivalScreen() {
         y: number,
         value: number
       ) => {
+        if (
+          !mounted.current ||
+          isLeavingRef.current
+        ) {
+          return;
+        }
+
         const opacity =
           new Animated.Value(0);
 
@@ -799,67 +659,55 @@ export default function LastSurvivalScreen() {
 
         const popup: ScorePopup = {
           id,
-
           x,
-
           y,
-
           value,
-
           opacity,
-
           translateY,
         };
 
-        setPopups(
-          previous => [
-            ...previous,
-            popup,
-          ]
-        );
+        setPopups(previous => [
+          ...previous,
+          popup,
+        ]);
 
         Animated.parallel([
-          Animated.timing(
-            opacity,
-            {
-              toValue: 1,
-
-              duration: 100,
-
-              useNativeDriver: true,
-            }
-          ),
+          Animated.timing(opacity, {
+            toValue: 1,
+            duration: 100,
+            useNativeDriver: true,
+          }),
 
           Animated.timing(
             translateY,
             {
               toValue: -45,
-
               duration: 600,
-
               useNativeDriver: true,
             }
           ),
         ]).start(() => {
-          Animated.timing(
-            opacity,
-            {
-              toValue: 0,
+          if (
+            !mounted.current ||
+            isLeavingRef.current
+          ) {
+            return;
+          }
 
-              duration: 220,
-
-              useNativeDriver: true,
-            }
-          ).start(() => {
+          Animated.timing(opacity, {
+            toValue: 0,
+            duration: 220,
+            useNativeDriver: true,
+          }).start(() => {
             if (
-              mounted.current
+              mounted.current &&
+              !isLeavingRef.current
             ) {
-              setPopups(
-                previous =>
-                  previous.filter(
-                    item =>
-                      item.id !== id
-                  )
+              setPopups(previous =>
+                previous.filter(
+                  item =>
+                    item.id !== id
+                )
               );
             }
           });
@@ -874,6 +722,14 @@ export default function LastSurvivalScreen() {
 
   const spawnObject =
     useCallback(() => {
+      if (
+        !mounted.current ||
+        isLeavingRef.current ||
+        !playing
+      ) {
+        return;
+      }
+
       if (
         playFieldWidth <= 0 ||
         playFieldHeight <= 0
@@ -923,32 +779,22 @@ export default function LastSurvivalScreen() {
 
       const object: GameObject = {
         id,
-
         isDanger,
-
         x,
-
         y,
-
         scale,
-
         opacity,
       };
 
-      setObjects(
-        previous => [
-          ...previous,
-          object,
-        ]
-      );
+      setObjects(previous => [
+        ...previous,
+        object,
+      ]);
 
       Animated.spring(scale, {
         toValue: 1,
-
         friction: 6,
-
         tension: 70,
-
         useNativeDriver: true,
       }).start();
 
@@ -956,41 +802,33 @@ export default function LastSurvivalScreen() {
         setTimeout(() => {
           if (
             !mounted.current ||
-            removingIds.current.has(
-              id
-            )
+            isLeavingRef.current ||
+            removingIds.current.has(id)
           ) {
             return;
           }
 
-          removingIds.current.add(
-            id
-          );
+          removingIds.current.add(id);
 
           Animated.parallel([
-            Animated.timing(
-              scale,
-              {
-                toValue: 0,
+            Animated.timing(scale, {
+              toValue: 0,
+              duration: 180,
+              useNativeDriver: true,
+            }),
 
-                duration: 180,
-
-                useNativeDriver: true,
-              }
-            ),
-
-            Animated.timing(
-              opacity,
-              {
-                toValue: 0,
-
-                duration: 180,
-
-                useNativeDriver: true,
-              }
-            ),
+            Animated.timing(opacity, {
+              toValue: 0,
+              duration: 180,
+              useNativeDriver: true,
+            }),
           ]).start(() => {
-            removeObject(id);
+            if (
+              mounted.current &&
+              !isLeavingRef.current
+            ) {
+              removeObject(id);
+            }
           });
         }, currentConfig.lifeTime);
 
@@ -999,6 +837,7 @@ export default function LastSurvivalScreen() {
         timer
       );
     }, [
+      playing,
       playFieldWidth,
       playFieldHeight,
       currentConfig,
@@ -1011,10 +850,12 @@ export default function LastSurvivalScreen() {
 
   const handleObjectPress =
     useCallback(
-      (
-        object: GameObject
-      ) => {
-        if (!playing) {
+      (object: GameObject) => {
+        if (
+          !playing ||
+          isLeavingRef.current ||
+          !mounted.current
+        ) {
           return;
         }
 
@@ -1040,15 +881,11 @@ export default function LastSurvivalScreen() {
             currentConfig.objectSize /
               2 -
             15,
-
           object.y,
-
           delta
         );
 
-        if (
-          object.isDanger
-        ) {
+        if (object.isDanger) {
           wrongRef.current += 1;
 
           setWrongCount(
@@ -1076,9 +913,7 @@ export default function LastSurvivalScreen() {
               flashAnimation,
               {
                 toValue: 1,
-
                 duration: 70,
-
                 useNativeDriver: true,
               }
             ),
@@ -1087,9 +922,7 @@ export default function LastSurvivalScreen() {
               flashAnimation,
               {
                 toValue: 0,
-
                 duration: 260,
-
                 useNativeDriver: true,
               }
             ),
@@ -1116,9 +949,7 @@ export default function LastSurvivalScreen() {
                 object.isDanger
                   ? 1.25
                   : 1.15,
-
               duration: 80,
-
               useNativeDriver: true,
             }
           ),
@@ -1127,27 +958,26 @@ export default function LastSurvivalScreen() {
             object.opacity,
             {
               toValue: 0,
-
               duration: 220,
-
               useNativeDriver: true,
             }
           ),
         ]).start(() => {
-          removeObject(
-            object.id
-          );
+          if (
+            mounted.current &&
+            !isLeavingRef.current
+          ) {
+            removeObject(
+              object.id
+            );
+          }
         });
       },
       [
         playing,
-
         showPopup,
-
         currentConfig.objectSize,
-
         flashAnimation,
-
         removeObject,
       ]
     );
@@ -1161,6 +991,18 @@ export default function LastSurvivalScreen() {
       async (
         successful: boolean
       ) => {
+        /*
+         * If user already pressed Back, never allow
+         * the game completion logic to update the
+         * screen after navigation.
+         */
+        if (
+          !mounted.current ||
+          isLeavingRef.current
+        ) {
+          return;
+        }
+
         clearAllTimers();
 
         setPlaying(false);
@@ -1170,8 +1012,11 @@ export default function LastSurvivalScreen() {
         setPopups([]);
 
         if (!successful) {
-          setGameOver(true);
+          if (!mounted.current) {
+            return;
+          }
 
+          setGameOver(true);
           setCompleted(false);
 
           return;
@@ -1219,6 +1064,13 @@ export default function LastSurvivalScreen() {
           result = 'down';
         }
 
+        if (
+          !mounted.current ||
+          isLeavingRef.current
+        ) {
+          return;
+        }
+
         setPreviousAccuracy(
           accuracy
         );
@@ -1235,15 +1087,12 @@ export default function LastSurvivalScreen() {
 
         await saveAdaptiveState(
           nextDifficulty,
-
           accuracy
         );
       },
       [
         clearAllTimers,
-
         difficulty,
-
         saveAdaptiveState,
       ]
     );
@@ -1254,6 +1103,8 @@ export default function LastSurvivalScreen() {
 
   const startGame =
     useCallback(() => {
+      isLeavingRef.current = false;
+
       clearAllTimers();
 
       removingIds.current.clear();
@@ -1289,19 +1140,158 @@ export default function LastSurvivalScreen() {
 
       setGameOver(false);
 
-      setAdaptiveResult(
-        null
-      );
+      setAdaptiveResult(null);
+
+      flashAnimation.stopAnimation();
+      flashAnimation.setValue(0);
 
       setPlaying(true);
-    }, [clearAllTimers]);
+    }, [
+      clearAllTimers,
+      flashAnimation,
+    ]);
+
+  /* ================================================================
+     BACK / EXIT
+  ================================================================= */
+
+  const handleBack =
+    useCallback(() => {
+      /*
+       * This is the most important guard.
+       *
+       * Android BackHandler can sometimes fire more than
+       * once during a transition. We allow only one exit.
+       */
+      if (isLeavingRef.current) {
+        return;
+      }
+
+      isLeavingRef.current = true;
+
+      /*
+       * Stop the game BEFORE navigation.
+       */
+      cleanupGame();
+
+      /*
+       * Reset animations.
+       */
+      flashAnimation.stopAnimation();
+      flashAnimation.setValue(0);
+
+      /*
+       * Android / iOS navigation.
+       *
+       * If there is a route in the stack, go back.
+       * Otherwise go safely to the app root instead of
+       * allowing Android to close the Activity.
+       */
+      try {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/');
+        }
+      } catch (error) {
+        console.log(
+          '[LastSurvival] Navigation error:',
+          error
+        );
+
+        /*
+         * Emergency fallback.
+         *
+         * This prevents the screen from remaining in
+         * an invalid state if navigation throws.
+         */
+        try {
+          router.replace('/');
+        } catch (fallbackError) {
+          console.log(
+            '[LastSurvival] Navigation fallback error:',
+            fallbackError
+          );
+        }
+      }
+    }, [
+      cleanupGame,
+      flashAnimation,
+      router,
+    ]);
+
+  /* ================================================================
+     ANDROID HARDWARE BACK
+  ================================================================= */
+
+  useEffect(() => {
+    /*
+     * Web does not need Android BackHandler.
+     */
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
+    /*
+     * This handler is registered while this screen is mounted.
+     *
+     * Returning TRUE tells Android:
+     *
+     * "The back press has been handled."
+     *
+     * Therefore Android must NOT close the Activity.
+     */
+    const subscription =
+      BackHandler.addEventListener(
+        'hardwareBackPress',
+        () => {
+          if (
+            isLeavingRef.current
+          ) {
+            return true;
+          }
+
+          handleBack();
+
+          return true;
+        }
+      );
+
+    return () => {
+      subscription.remove();
+    };
+  }, [handleBack]);
+
+  /* ================================================================
+     UNMOUNT CLEANUP
+  ================================================================= */
+
+  useEffect(() => {
+    return () => {
+      mounted.current = false;
+
+      isLeavingRef.current = true;
+
+      clearAllTimers();
+
+      removingIds.current.clear();
+
+      flashAnimation.stopAnimation();
+    };
+  }, [
+    clearAllTimers,
+    flashAnimation,
+  ]);
 
   /* ================================================================
      GAME TIMER
   ================================================================= */
 
   useEffect(() => {
-    if (!playing) {
+    if (
+      !playing ||
+      isLeavingRef.current
+    ) {
       return;
     }
 
@@ -1314,30 +1304,28 @@ export default function LastSurvivalScreen() {
 
     gameTimer.current =
       setTimeout(() => {
-        finishGame(true);
+        if (
+          mounted.current &&
+          !isLeavingRef.current
+        ) {
+          finishGame(true);
+        }
       }, currentConfig.duration);
 
     return () => {
-      if (
-        gameTimer.current
-      ) {
+      if (gameTimer.current) {
         clearTimeout(
           gameTimer.current
         );
 
-        gameTimer.current =
-          null;
+        gameTimer.current = null;
       }
     };
   }, [
     playing,
-
     playFieldWidth,
-
     playFieldHeight,
-
     currentConfig.duration,
-
     finishGame,
   ]);
 
@@ -1346,7 +1334,10 @@ export default function LastSurvivalScreen() {
   ================================================================= */
 
   useEffect(() => {
-    if (!playing) {
+    if (
+      !playing ||
+      isLeavingRef.current
+    ) {
       return;
     }
 
@@ -1359,31 +1350,41 @@ export default function LastSurvivalScreen() {
 
     const initialTimer =
       setTimeout(() => {
-        spawnObject();
+        if (
+          mounted.current &&
+          !isLeavingRef.current
+        ) {
+          spawnObject();
+        }
       }, 100);
 
     spawnTimer.current =
       setInterval(() => {
         if (
-          !mounted.current
+          !mounted.current ||
+          isLeavingRef.current
         ) {
           return;
         }
 
-        setObjects(
-          previous => {
-            if (
-              previous.length >=
-              currentConfig.maxObjects
-            ) {
-              return previous;
-            }
-
-            spawnObject();
-
+        /*
+         * Do NOT update state merely to decide
+         * whether we can spawn.
+         *
+         * This also avoids nested state updates.
+         */
+        setObjects(previous => {
+          if (
+            previous.length >=
+            currentConfig.maxObjects
+          ) {
             return previous;
           }
-        );
+
+          spawnObject();
+
+          return previous;
+        });
       }, currentConfig.spawnInterval);
 
     return () => {
@@ -1398,21 +1399,15 @@ export default function LastSurvivalScreen() {
           spawnTimer.current
         );
 
-        spawnTimer.current =
-          null;
+        spawnTimer.current = null;
       }
     };
   }, [
     playing,
-
     playFieldWidth,
-
     playFieldHeight,
-
     currentConfig.spawnInterval,
-
     currentConfig.maxObjects,
-
     spawnObject,
   ]);
 
@@ -1423,11 +1418,17 @@ export default function LastSurvivalScreen() {
   useEffect(() => {
     if (
       playing &&
-      lives <= 0
+      lives <= 0 &&
+      !isLeavingRef.current
     ) {
       const timer =
         setTimeout(() => {
-          finishGame(false);
+          if (
+            mounted.current &&
+            !isLeavingRef.current
+          ) {
+            finishGame(false);
+          }
         }, 100);
 
       return () =>
@@ -1437,37 +1438,9 @@ export default function LastSurvivalScreen() {
     return undefined;
   }, [
     lives,
-
     playing,
-
     finishGame,
   ]);
-
-  /* ================================================================
-     BACK
-  ================================================================= */
-
-  const handleBack =
-    useCallback(() => {
-      clearAllTimers();
-
-      setPlaying(false);
-
-      setObjects([]);
-
-      setPopups([]);
-
-      if (
-        router.canGoBack()
-      ) {
-        router.back();
-      } else {
-        router.replace('/');
-      }
-    }, [
-      clearAllTimers,
-      router,
-    ]);
 
   /* ================================================================
      START SCREEN
@@ -1493,14 +1466,10 @@ export default function LastSurvivalScreen() {
           subtitle={
             text.noLevelSelection
           }
-          onBack={
-            handleBack
-          }
+          onBack={handleBack}
           colors={colors}
           isRTL={isRTL}
-          backLabel={
-            text.back
-          }
+          backLabel={text.back}
         />
 
         <ScrollView
@@ -1558,9 +1527,7 @@ export default function LastSurvivalScreen() {
                 },
               ]}
             >
-              {
-                text.instruction
-              }
+              {text.instruction}
             </Text>
 
             <View
@@ -1569,7 +1536,6 @@ export default function LastSurvivalScreen() {
                 {
                   backgroundColor:
                     colors.surface,
-
                   borderColor:
                     colors.border,
                 },
@@ -1604,7 +1570,6 @@ export default function LastSurvivalScreen() {
                     {
                       color:
                         colors.text,
-
                       textAlign:
                         isRTL
                           ? 'right'
@@ -1612,9 +1577,7 @@ export default function LastSurvivalScreen() {
                     },
                   ]}
                 >
-                  {
-                    text.adaptive
-                  }
+                  {text.adaptive}
                 </Text>
 
                 <Text
@@ -1623,7 +1586,6 @@ export default function LastSurvivalScreen() {
                     {
                       color:
                         colors.textSecondary,
-
                       textAlign:
                         isRTL
                           ? 'right'
@@ -1631,9 +1593,7 @@ export default function LastSurvivalScreen() {
                     },
                   ]}
                 >
-                  {
-                    text.adaptiveInfo
-                  }
+                  {text.adaptiveInfo}
                 </Text>
               </View>
             </View>
@@ -1645,7 +1605,6 @@ export default function LastSurvivalScreen() {
                   backgroundColor:
                     colors.primary +
                     '0D',
-
                   borderColor:
                     colors.primary +
                     '25',
@@ -1659,7 +1618,6 @@ export default function LastSurvivalScreen() {
                     {
                       color:
                         colors.textSecondary,
-
                       textAlign:
                         isRTL
                           ? 'right'
@@ -1667,9 +1625,7 @@ export default function LastSurvivalScreen() {
                     },
                   ]}
                 >
-                  {
-                    text.difficulty
-                  }
+                  {text.difficulty}
                 </Text>
 
                 <Text
@@ -1678,7 +1634,6 @@ export default function LastSurvivalScreen() {
                     {
                       color:
                         colors.primary,
-
                       textAlign:
                         isRTL
                           ? 'right'
@@ -1686,9 +1641,7 @@ export default function LastSurvivalScreen() {
                     },
                   ]}
                 >
-                  {
-                    difficultyName
-                  }
+                  {difficultyName}
                 </Text>
               </View>
 
@@ -1708,7 +1661,6 @@ export default function LastSurvivalScreen() {
                   {
                     backgroundColor:
                       colors.surface,
-
                     borderColor:
                       colors.border,
                   },
@@ -1732,7 +1684,6 @@ export default function LastSurvivalScreen() {
                       {
                         color:
                           colors.textSecondary,
-
                         textAlign:
                           isRTL
                             ? 'right'
@@ -1740,9 +1691,7 @@ export default function LastSurvivalScreen() {
                       },
                     ]}
                   >
-                    {
-                      text.accuracy
-                    }
+                    {text.accuracy}
                   </Text>
 
                   <Text
@@ -1751,7 +1700,6 @@ export default function LastSurvivalScreen() {
                       {
                         color:
                           colors.text,
-
                         textAlign:
                           isRTL
                             ? 'right'
@@ -1759,10 +1707,7 @@ export default function LastSurvivalScreen() {
                       },
                     ]}
                   >
-                    {
-                      previousAccuracy
-                    }
-                    %
+                    {previousAccuracy}%
                   </Text>
                 </View>
               </View>
@@ -1770,9 +1715,7 @@ export default function LastSurvivalScreen() {
 
             <TouchableOpacity
               activeOpacity={0.85}
-              onPress={
-                startGame
-              }
+              onPress={startGame}
               style={[
                 styles.startButton,
                 {
@@ -1816,20 +1759,12 @@ export default function LastSurvivalScreen() {
         ]}
       >
         <PageHeader
-          title={
-            text.gameOver
-          }
-          subtitle={
-            text.title
-          }
-          onBack={
-            handleBack
-          }
+          title={text.gameOver}
+          subtitle={text.title}
+          onBack={handleBack}
           colors={colors}
           isRTL={isRTL}
-          backLabel={
-            text.back
-          }
+          backLabel={text.back}
         />
 
         <ScrollView
@@ -1873,9 +1808,7 @@ export default function LastSurvivalScreen() {
                 },
               ]}
             >
-              {
-                text.gameOver
-              }
+              {text.gameOver}
             </Text>
 
             <Text
@@ -1908,7 +1841,6 @@ export default function LastSurvivalScreen() {
                 {
                   backgroundColor:
                     colors.surface,
-
                   borderColor:
                     colors.border,
                 },
@@ -1935,9 +1867,7 @@ export default function LastSurvivalScreen() {
                     },
                   ]}
                 >
-                  {
-                    correctCount
-                  }
+                  {correctCount}
                 </Text>
 
                 <Text
@@ -1949,9 +1879,7 @@ export default function LastSurvivalScreen() {
                     },
                   ]}
                 >
-                  {
-                    text.correct
-                  }
+                  {text.correct}
                 </Text>
               </View>
 
@@ -1974,9 +1902,7 @@ export default function LastSurvivalScreen() {
                     },
                   ]}
                 >
-                  {
-                    wrongCount
-                  }
+                  {wrongCount}
                 </Text>
 
                 <Text
@@ -1988,18 +1914,14 @@ export default function LastSurvivalScreen() {
                     },
                   ]}
                 >
-                  {
-                    text.wrong
-                  }
+                  {text.wrong}
                 </Text>
               </View>
             </View>
 
             <TouchableOpacity
               activeOpacity={0.85}
-              onPress={
-                startGame
-              }
+              onPress={startGame}
               style={[
                 styles.startButton,
                 {
@@ -2018,9 +1940,7 @@ export default function LastSurvivalScreen() {
                   styles.startButtonText
                 }
               >
-                {
-                  text.playAgain
-                }
+                {text.playAgain}
               </Text>
             </TouchableOpacity>
           </View>
@@ -2069,20 +1989,12 @@ export default function LastSurvivalScreen() {
         ]}
       >
         <PageHeader
-          title={
-            text.completed
-          }
-          subtitle={
-            text.title
-          }
-          onBack={
-            handleBack
-          }
+          title={text.completed}
+          subtitle={text.title}
+          onBack={handleBack}
           colors={colors}
           isRTL={isRTL}
-          backLabel={
-            text.back
-          }
+          backLabel={text.back}
         />
 
         <ScrollView
@@ -2128,9 +2040,7 @@ export default function LastSurvivalScreen() {
                 },
               ]}
             >
-              {
-                text.completed
-              }
+              {text.completed}
             </Text>
 
             <Text
@@ -2163,7 +2073,6 @@ export default function LastSurvivalScreen() {
                 {
                   backgroundColor:
                     colors.surface,
-
                   borderColor:
                     colors.border,
                 },
@@ -2190,9 +2099,7 @@ export default function LastSurvivalScreen() {
                   },
                 ]}
               >
-                {
-                  text.accuracy
-                }
+                {text.accuracy}
               </Text>
             </View>
 
@@ -2202,7 +2109,6 @@ export default function LastSurvivalScreen() {
                 {
                   backgroundColor:
                     colors.surface,
-
                   borderColor:
                     colors.border,
                 },
@@ -2229,9 +2135,7 @@ export default function LastSurvivalScreen() {
                     },
                   ]}
                 >
-                  {
-                    correctCount
-                  }
+                  {correctCount}
                 </Text>
 
                 <Text
@@ -2243,9 +2147,7 @@ export default function LastSurvivalScreen() {
                     },
                   ]}
                 >
-                  {
-                    text.correct
-                  }
+                  {text.correct}
                 </Text>
               </View>
 
@@ -2268,9 +2170,7 @@ export default function LastSurvivalScreen() {
                     },
                   ]}
                 >
-                  {
-                    wrongCount
-                  }
+                  {wrongCount}
                 </Text>
 
                 <Text
@@ -2282,9 +2182,7 @@ export default function LastSurvivalScreen() {
                     },
                   ]}
                 >
-                  {
-                    text.wrong
-                  }
+                  {text.wrong}
                 </Text>
               </View>
             </View>
@@ -2295,7 +2193,6 @@ export default function LastSurvivalScreen() {
                 {
                   backgroundColor:
                     colors.surface,
-
                   borderColor:
                     colors.border,
                 },
@@ -2319,7 +2216,6 @@ export default function LastSurvivalScreen() {
                     {
                       color:
                         colors.text,
-
                       textAlign:
                         isRTL
                           ? 'right'
@@ -2327,9 +2223,7 @@ export default function LastSurvivalScreen() {
                     },
                   ]}
                 >
-                  {
-                    text.adaptive
-                  }
+                  {text.adaptive}
                 </Text>
 
                 <Text
@@ -2338,7 +2232,6 @@ export default function LastSurvivalScreen() {
                     {
                       color:
                         colors.textSecondary,
-
                       textAlign:
                         isRTL
                           ? 'right'
@@ -2364,7 +2257,6 @@ export default function LastSurvivalScreen() {
                   backgroundColor:
                     colors.primary +
                     '0D',
-
                   borderColor:
                     colors.primary +
                     '25',
@@ -2377,7 +2269,6 @@ export default function LastSurvivalScreen() {
                   {
                     color:
                       colors.textSecondary,
-
                     textAlign:
                       isRTL
                         ? 'right'
@@ -2385,9 +2276,7 @@ export default function LastSurvivalScreen() {
                   },
                 ]}
               >
-                {
-                  text.difficulty
-                }
+                {text.difficulty}
               </Text>
 
               <Text
@@ -2396,7 +2285,6 @@ export default function LastSurvivalScreen() {
                   {
                     color:
                       colors.primary,
-
                     textAlign:
                       isRTL
                         ? 'right'
@@ -2412,9 +2300,7 @@ export default function LastSurvivalScreen() {
 
             <TouchableOpacity
               activeOpacity={0.85}
-              onPress={
-                startGame
-              }
+              onPress={startGame}
               style={[
                 styles.startButton,
                 {
@@ -2433,9 +2319,7 @@ export default function LastSurvivalScreen() {
                   styles.startButtonText
                 }
               >
-                {
-                  text.playAgain
-                }
+                {text.playAgain}
               </Text>
             </TouchableOpacity>
           </View>
@@ -2461,14 +2345,10 @@ export default function LastSurvivalScreen() {
       <PageHeader
         title={text.title}
         subtitle={`${text.level} ${difficultyName}`}
-        onBack={
-          handleBack
-        }
+        onBack={handleBack}
         colors={colors}
         isRTL={isRTL}
-        backLabel={
-          text.back
-        }
+        backLabel={text.back}
       />
 
       {/* HUD */}
@@ -2479,7 +2359,6 @@ export default function LastSurvivalScreen() {
           {
             backgroundColor:
               colors.surface,
-
             borderColor:
               colors.border,
           },
@@ -2563,7 +2442,6 @@ export default function LastSurvivalScreen() {
           {
             backgroundColor:
               colors.surface,
-
             borderColor:
               colors.border,
           },
@@ -2582,7 +2460,6 @@ export default function LastSurvivalScreen() {
             {
               color:
                 colors.text,
-
               textAlign:
                 isRTL
                   ? 'right'
@@ -2590,9 +2467,7 @@ export default function LastSurvivalScreen() {
             },
           ]}
         >
-          {
-            text.instruction
-          }
+          {text.instruction}
         </Text>
       </View>
 
@@ -2605,7 +2480,6 @@ export default function LastSurvivalScreen() {
         onLayout={event => {
           const {
             width: fieldWidth,
-
             height: fieldHeight,
           } =
             event.nativeEvent.layout;
@@ -2622,28 +2496,20 @@ export default function LastSurvivalScreen() {
         {objects.map(
           object => (
             <Animated.View
-              key={
-                object.id
-              }
+              key={object.id}
               style={[
                 styles.objectWrapper,
-
                 {
                   left:
                     object.x,
-
                   top:
                     object.y,
-
                   width:
                     currentConfig.objectSize,
-
                   height:
                     currentConfig.objectSize,
-
                   opacity:
                     object.opacity,
-
                   transform: [
                     {
                       scale:
@@ -2683,23 +2549,17 @@ export default function LastSurvivalScreen() {
         {popups.map(
           popup => (
             <Animated.View
-              key={
-                popup.id
-              }
+              key={popup.id}
               pointerEvents="none"
               style={[
                 styles.popup,
-
                 {
                   left:
                     popup.x,
-
                   top:
                     popup.y,
-
                   opacity:
                     popup.opacity,
-
                   transform: [
                     {
                       translateY:
@@ -2721,13 +2581,10 @@ export default function LastSurvivalScreen() {
                   },
                 ]}
               >
-                {popup.value >
-                0
+                {popup.value > 0
                   ? '+'
                   : ''}
-                {
-                  popup.value
-                }
+                {popup.value}
               </Text>
             </Animated.View>
           )
@@ -2748,7 +2605,6 @@ export default function LastSurvivalScreen() {
                     0,
                     1,
                   ],
-
                   outputRange: [
                     0,
                     0.12,
@@ -2774,79 +2630,49 @@ const styles =
 
     gameContainer: {
       flex: 1,
-
       overflow: 'hidden',
     },
 
-    /* ============================================================
-       HEADER
-    ============================================================ */
-
     pageHeader: {
       width: '100%',
-
       paddingHorizontal:
         Spacing.lg,
-
       paddingTop: 58,
-
       paddingBottom: 14,
-
       flexDirection: 'row',
-
       alignItems: 'center',
-
       borderBottomWidth:
         StyleSheet.hairlineWidth,
-
       zIndex: 50,
     },
 
     backButton: {
       width: 44,
-
       height: 44,
-
       borderRadius: 22,
-
       borderWidth: 1,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
+      alignItems: 'center',
+      justifyContent: 'center',
       marginRight: 12,
-
       flexShrink: 0,
     },
 
     headerTextContainer: {
       flex: 1,
-
       minWidth: 0,
     },
 
     headerTitle: {
       fontSize: 21,
-
       fontWeight: '800',
-
       lineHeight: 27,
     },
 
     headerSubtitle: {
       fontSize: 12,
-
       marginTop: 3,
-
       lineHeight: 18,
     },
-
-    /* ============================================================
-       START
-    ============================================================ */
 
     startScroll: {
       flex: 1,
@@ -2854,88 +2680,58 @@ const styles =
 
     startScrollContent: {
       flexGrow: 1,
-
       paddingBottom: 40,
     },
 
     startContent: {
       paddingHorizontal:
         Spacing.lg,
-
       alignItems: 'center',
-
       paddingTop: 30,
-
       paddingBottom: 30,
     },
 
     heroIcon: {
       width: 86,
-
       height: 86,
-
       borderRadius: 28,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
+      alignItems: 'center',
+      justifyContent: 'center',
       marginBottom: 14,
     },
 
     heroTitle: {
       fontSize: 27,
-
       fontWeight: '900',
-
       textAlign: 'center',
     },
 
     heroDescription: {
       fontSize: 14,
-
       lineHeight: 22,
-
       textAlign: 'center',
-
       marginTop: 9,
-
       maxWidth: 340,
     },
 
     adaptiveCard: {
       width: '100%',
-
       marginTop: 22,
-
       padding: Spacing.md,
-
       borderRadius:
         BorderRadius.lg,
-
       borderWidth: 1,
-
       flexDirection: 'row',
-
       alignItems: 'center',
-
       gap: 12,
     },
 
     adaptiveIcon: {
       width: 44,
-
       height: 44,
-
       borderRadius: 14,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
 
     adaptiveText: {
@@ -2944,39 +2740,27 @@ const styles =
 
     adaptiveTitle: {
       fontSize: 14,
-
       fontWeight: '800',
     },
 
     adaptiveDescription: {
       fontSize: 11,
-
       lineHeight: 18,
-
       marginTop: 3,
     },
 
     currentLevelCard: {
       width: '100%',
-
       marginTop: 12,
-
       paddingHorizontal:
         Spacing.md,
-
       paddingVertical: 13,
-
       borderRadius:
         BorderRadius.lg,
-
       borderWidth: 1,
-
       flexDirection: 'row',
-
       alignItems: 'center',
-
-      justifyContent:
-        'space-between',
+      justifyContent: 'space-between',
     },
 
     levelLabel: {
@@ -2985,28 +2769,19 @@ const styles =
 
     levelValue: {
       fontSize: 18,
-
       fontWeight: '900',
-
       marginTop: 2,
     },
 
     previousCard: {
       width: '100%',
-
       marginTop: 12,
-
       padding: Spacing.md,
-
       borderRadius:
         BorderRadius.lg,
-
       borderWidth: 1,
-
       flexDirection: 'row',
-
       alignItems: 'center',
-
       gap: 12,
     },
 
@@ -3020,76 +2795,47 @@ const styles =
 
     previousValue: {
       fontSize: 20,
-
       fontWeight: '900',
-
       marginTop: 2,
     },
 
     startButton: {
       width: '100%',
-
       flexDirection: 'row',
-
       alignItems: 'center',
-
       justifyContent: 'center',
-
       gap: 8,
-
       paddingVertical: 16,
-
       borderRadius:
         BorderRadius.full,
-
       marginTop: 18,
     },
 
     startButtonText: {
       color: '#FFFFFF',
-
       fontSize: 16,
-
       fontWeight: '800',
     },
 
-    /* ============================================================
-       HUD
-    ============================================================ */
-
     hud: {
       position: 'absolute',
-
       top: 112,
-
       left: 12,
-
       right: 12,
-
       zIndex: 30,
-
       height: 58,
-
       borderRadius:
         BorderRadius.lg,
-
       borderWidth: 1,
-
       flexDirection: 'row',
-
       alignItems: 'center',
-
-      justifyContent:
-        'space-between',
-
+      justifyContent: 'space-between',
       paddingHorizontal: 14,
     },
 
     hudItem: {
       flexDirection: 'row',
-
       alignItems: 'center',
-
       gap: 8,
     },
 
@@ -3099,177 +2845,104 @@ const styles =
 
     hudValue: {
       fontSize: 17,
-
       fontWeight: '900',
-
       marginTop: 1,
     },
 
     livesContainer: {
       flexDirection: 'row',
-
       alignItems: 'center',
-
       gap: 5,
     },
 
-    /* ============================================================
-       INSTRUCTION
-    ============================================================ */
-
     instructionCard: {
       position: 'absolute',
-
       top: 177,
-
       left: 18,
-
       right: 18,
-
       zIndex: 30,
-
       minHeight: 42,
-
       borderRadius:
         BorderRadius.lg,
-
       borderWidth: 1,
-
       flexDirection: 'row',
-
       alignItems: 'center',
-
       justifyContent: 'center',
-
       gap: 8,
-
       paddingHorizontal: 12,
-
       paddingVertical: 8,
     },
 
     instructionText: {
       fontSize: 12,
-
       lineHeight: 18,
-
       flexShrink: 1,
     },
 
-    /* ============================================================
-       GAME FIELD
-    ============================================================ */
-
     playField: {
       position: 'absolute',
-
       top: 225,
-
       left: 0,
-
       right: 0,
-
       bottom: 0,
-
       overflow: 'hidden',
-
       zIndex: 5,
     },
 
     objectWrapper: {
       position: 'absolute',
-
       alignItems: 'center',
-
       justifyContent: 'center',
     },
 
     imageButton: {
       width: '100%',
-
       height: '100%',
-
       alignItems: 'center',
-
       justifyContent: 'center',
-
       backgroundColor:
         'transparent',
-
       borderWidth: 0,
-
       padding: 0,
-
       margin: 0,
     },
 
     gameImage: {
       width: '100%',
-
       height: '100%',
-
       borderWidth: 0,
     },
 
-    /* ============================================================
-       POPUP
-    ============================================================ */
-
     popup: {
       position: 'absolute',
-
       zIndex: 100,
-
       minWidth: 40,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
 
     popupText: {
       fontSize: 22,
-
       fontWeight: '900',
-
       textShadowColor:
         'rgba(0,0,0,0.15)',
-
       textShadowOffset: {
         width: 0,
-
         height: 1,
       },
-
       textShadowRadius: 2,
     },
 
-    /* ============================================================
-       FLASH
-    ============================================================ */
-
     flashOverlay: {
       position: 'absolute',
-
       top: 0,
-
       left: 0,
-
       right: 0,
-
       bottom: 0,
-
       backgroundColor:
         '#EF4444',
-
       zIndex: 200,
     },
-
-    /* ============================================================
-       RESULT
-    ============================================================ */
 
     resultScroll: {
       flex: 1,
@@ -3277,142 +2950,100 @@ const styles =
 
     resultScrollContent: {
       flexGrow: 1,
-
       paddingBottom: 50,
     },
 
     resultContent: {
       paddingHorizontal:
         Spacing.lg,
-
       alignItems: 'center',
-
       paddingTop: 28,
-
       paddingBottom: 30,
     },
 
     resultIcon: {
       width: 84,
-
       height: 84,
-
       borderRadius: 28,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
+      alignItems: 'center',
+      justifyContent: 'center',
       marginBottom: 14,
     },
 
     resultTitle: {
       fontSize: 24,
-
       fontWeight: '900',
-
       textAlign: 'center',
     },
 
     resultScore: {
       fontSize: 50,
-
       fontWeight: '900',
-
       marginTop: 14,
     },
 
     resultLabel: {
       fontSize: 13,
-
       marginTop: -3,
     },
 
     accuracyCard: {
       width: '100%',
-
       marginTop: 18,
-
       paddingVertical: 14,
-
       borderRadius:
         BorderRadius.lg,
-
       borderWidth: 1,
-
       alignItems: 'center',
     },
 
     accuracyValue: {
       fontSize: 28,
-
       fontWeight: '900',
     },
 
     accuracyLabel: {
       fontSize: 11,
-
       marginTop: 2,
     },
 
     statsCard: {
       width: '100%',
-
       marginTop: 12,
-
       paddingVertical: 16,
-
       borderRadius:
         BorderRadius.lg,
-
       borderWidth: 1,
-
       flexDirection: 'row',
-
       alignItems: 'center',
-
-      justifyContent:
-        'space-around',
+      justifyContent: 'space-around',
     },
 
     statItem: {
       alignItems: 'center',
-
       minWidth: 80,
     },
 
     statValue: {
       fontSize: 20,
-
       fontWeight: '900',
-
       marginTop: 5,
     },
 
     statLabel: {
       fontSize: 10,
-
       marginTop: 2,
     },
 
     adaptiveResultCard: {
       width: '100%',
-
       marginTop: 12,
-
       padding: Spacing.md,
-
       borderRadius:
         BorderRadius.lg,
-
       borderWidth: 1,
-
       flexDirection: 'row',
-
       alignItems: 'center',
-
       gap: 10,
     },
 
@@ -3422,28 +3053,21 @@ const styles =
 
     adaptiveResultTitle: {
       fontSize: 14,
-
       fontWeight: '800',
     },
 
     adaptiveResultDescription: {
       fontSize: 11,
-
       lineHeight: 18,
-
       marginTop: 3,
     },
 
     nextLevelCard: {
       width: '100%',
-
       marginTop: 12,
-
       padding: Spacing.md,
-
       borderRadius:
         BorderRadius.lg,
-
       borderWidth: 1,
     },
 
@@ -3453,9 +3077,7 @@ const styles =
 
     nextLevelValue: {
       fontSize: 18,
-
       fontWeight: '900',
-
       marginTop: 3,
     },
   });

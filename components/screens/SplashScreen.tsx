@@ -65,49 +65,82 @@ const SECOND_TAGLINE_FA =
 
 /* ================================================================
    TIMING
+
+   Sequence:
+
+   0
+   │
+   ├── First logo enters
+   ├── IPS enters
+   ├── First subtitle enters
+   │
+   ├── pause
+   │
+   ├── First logo exits
+   ├── IPS exits
+   ├── First subtitle exits
+   │
+   ├── transition gap
+   │
+   ├── Second logo enters
+   ├── Neurolia enters
+   └── tagline enters
 ================================================================ */
 
 const TIMING = {
-  FIRST_IN: 650,
+  /* ---------------- FIRST BRAND ---------------- */
 
-  FIRST_OUT_START: 1450,
+  FIRST_LOGO_IN: 650,
 
-  FIRST_OUT: 480,
+  FIRST_WORD_DELAY: 150,
+  FIRST_WORD_IN: 460,
 
-  SECOND_START: 1660,
+  FIRST_SUBTITLE_DELAY: 270,
+  FIRST_SUBTITLE_IN: 500,
 
-  SECOND_LOGO_IN: 620,
+  /* Start of complete first-brand exit */
+  FIRST_OUT_START: 1750,
 
-  WORD_STAGGER: 52,
+  FIRST_LOGO_OUT: 500,
+  FIRST_WORD_OUT: 400,
+  FIRST_SUBTITLE_OUT: 400,
 
-  WORD_IN: 460,
+  /* Gap between first exit and second entrance */
+  SECOND_START: 2380,
 
-  TAGLINE_DELAY: 280,
+  /* ---------------- SECOND BRAND ---------------- */
 
-  TAGLINE_IN: 520,
+  SECOND_LOGO_IN: 650,
 
-  COMPLETE: 3500,
+  SECOND_WORD_DELAY: 180,
+  SECOND_WORD_STAGGER: 55,
+  SECOND_WORD_IN: 460,
+
+  SECOND_TAGLINE_DELAY: 430,
+  SECOND_TAGLINE_IN: 520,
+
+  /* ---------------- COMPLETE ---------------- */
+
+  COMPLETE: 4250,
 };
 
 /* ================================================================
    EASING
 ================================================================ */
 
-const EASE_ENTER =
-  Easing.bezier(
-    0.22,
-    1,
-    0.36,
-    1
-  );
+const EASE_ENTER = Easing.bezier(
+  0.22,
+  1,
+  0.36,
+  1
+);
 
-const EASE_EXIT =
-  Easing.bezier(
-    0.55,
-    0,
-    0.78,
-    0
-  );
+const EASE_EXIT = Easing.bezier(
+  0.55,
+  0,
+  0.78,
+  0
+);
 
 /* ================================================================
    SPARK CONFIG
@@ -120,11 +153,8 @@ type SparkConfig = {
   right?: `${number}%`;
 
   size: number;
-
   delay: number;
-
   duration: number;
-
   opacity: number;
 };
 
@@ -137,7 +167,6 @@ const SPARKS: SparkConfig[] = [
     duration: 2600,
     opacity: 0.42,
   },
-
   {
     top: '29%',
     right: '16%',
@@ -146,7 +175,6 @@ const SPARKS: SparkConfig[] = [
     duration: 2900,
     opacity: 0.32,
   },
-
   {
     bottom: '27%',
     left: '23%',
@@ -155,7 +183,6 @@ const SPARKS: SparkConfig[] = [
     duration: 2500,
     opacity: 0.36,
   },
-
   {
     bottom: '23%',
     right: '20%',
@@ -164,7 +191,6 @@ const SPARKS: SparkConfig[] = [
     duration: 2800,
     opacity: 0.4,
   },
-
   {
     top: '49%',
     left: '9%',
@@ -173,7 +199,6 @@ const SPARKS: SparkConfig[] = [
     duration: 3100,
     opacity: 0.28,
   },
-
   {
     top: '39%',
     right: '8%',
@@ -192,7 +217,6 @@ export interface SplashScreenProps {
   onComplete?: () => void;
 
   logo1?: ImageSourcePropType;
-
   logo2?: ImageSourcePropType;
 }
 
@@ -200,9 +224,7 @@ export interface SplashScreenProps {
    HELPERS
 ================================================================ */
 
-function createAnimatedValue(
-  value = 0
-) {
+function createAnimatedValue(value = 0) {
   return new Animated.Value(value);
 }
 
@@ -215,34 +237,26 @@ function Sparkle({
   animation,
 }: {
   config: SparkConfig;
-
   animation: Animated.Value;
 }) {
-  const opacity =
-    animation.interpolate({
-      inputRange: [0, 0.5, 1],
-      outputRange: [
-        0,
-        config.opacity,
-        0,
-      ],
-    });
+  const opacity = animation.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [
+      0,
+      config.opacity,
+      0,
+    ],
+  });
 
-  const translateY =
-    animation.interpolate({
-      inputRange: [0, 0.5, 1],
-      outputRange: [4, -4, 4],
-    });
+  const translateY = animation.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [4, -4, 4],
+  });
 
-  const scale =
-    animation.interpolate({
-      inputRange: [0, 0.5, 1],
-      outputRange: [
-        0.75,
-        1,
-        0.75,
-      ],
-    });
+  const scale = animation.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.75, 1, 0.75],
+  });
 
   return (
     <Animated.Text
@@ -254,11 +268,8 @@ function Sparkle({
           bottom: config.bottom,
           left: config.left,
           right: config.right,
-
           fontSize: config.size,
-
           opacity,
-
           transform: [
             {
               translateY,
@@ -289,45 +300,57 @@ function FirstBrand({
   logo: ImageSourcePropType;
 
   logoLife: Animated.Value;
-
   letterLives: Animated.Value[];
-
   subtitleLife: Animated.Value;
 
   isRTL: boolean;
 }) {
+  /* --------------------------------------------------------------
+     LOGO
+
+     0 = hidden
+     1 = visible
+     2 = exited
+  -------------------------------------------------------------- */
+
   const logoOpacity =
     logoLife.interpolate({
-      inputRange: [0, 1, 2],
-      outputRange: [0, 1, 0],
+      inputRange: [0, 0.35, 1, 1.65, 2],
+      outputRange: [0, 0.8, 1, 0.8, 0],
     });
 
   const logoTranslateY =
     logoLife.interpolate({
       inputRange: [0, 1, 2],
-      outputRange: [18, 0, -18],
+      outputRange: [24, 0, -26],
     });
 
   const logoScale =
     logoLife.interpolate({
-      inputRange: [0, 1, 2],
-      outputRange: [
-        0.9,
-        1,
-        0.96,
-      ],
+      inputRange: [0, 0.45, 1, 2],
+      outputRange: [0.88, 1.015, 1, 0.96],
     });
+
+  /* --------------------------------------------------------------
+     SUBTITLE
+  -------------------------------------------------------------- */
 
   const subtitleOpacity =
     subtitleLife.interpolate({
-      inputRange: [0, 1, 2],
-      outputRange: [0, 1, 0],
+      inputRange: [0, 0.35, 1, 1.7, 2],
+      outputRange: [0, 0.75, 1, 0.75, 0],
     });
 
   const subtitleTranslateY =
     subtitleLife.interpolate({
       inputRange: [0, 1, 2],
-      outputRange: [10, 0, -10],
+      outputRange: [12, 0, -14],
+    });
+
+  const subtitleScale =
+    subtitleLife.interpolate({
+      inputRange: [0, 1, 2],
+      outputRange: [0.96, 1, 0.98],
     });
 
   const subtitle =
@@ -340,25 +363,21 @@ function FirstBrand({
       pointerEvents="none"
       style={styles.brandLayer}
     >
-      {/* ======================================================
+      {/* ==========================================================
           FIRST LOGO
-      ====================================================== */}
+      ========================================================== */}
 
       <Animated.View
         style={[
           styles.firstLogoContainer,
-
           {
             opacity: logoOpacity,
-
             transform: [
               {
-                translateY:
-                  logoTranslateY,
+                translateY: logoTranslateY,
               },
               {
-                scale:
-                  logoScale,
+                scale: logoScale,
               },
             ],
           },
@@ -371,15 +390,14 @@ function FirstBrand({
         />
       </Animated.View>
 
-      {/* ======================================================
+      {/* ==========================================================
           IPS
-      ====================================================== */}
+      ========================================================== */}
 
       <View
         style={[
           styles.firstWordmark,
-          isRTL &&
-            styles.rtlWordmark,
+          isRTL && styles.rtlWordmark,
         ]}
       >
         {FIRST_WORD.split('').map(
@@ -391,27 +409,37 @@ function FirstBrand({
               life.interpolate({
                 inputRange: [
                   0,
+                  0.35,
                   1,
+                  1.7,
                   2,
                 ],
                 outputRange: [
                   0,
+                  0.75,
                   1,
+                  0.7,
                   0,
                 ],
               });
 
             const translateY =
               life.interpolate({
-                inputRange: [
-                  0,
-                  1,
-                  2,
-                ],
+                inputRange: [0, 1, 2],
                 outputRange: [
-                  10,
+                  14,
                   0,
-                  -10,
+                  -14,
+                ],
+              });
+
+            const scale =
+              life.interpolate({
+                inputRange: [0, 1, 2],
+                outputRange: [
+                  0.94,
+                  1,
+                  0.98,
                 ],
               });
 
@@ -422,10 +450,12 @@ function FirstBrand({
                   styles.firstWordLetter,
                   {
                     opacity,
-
                     transform: [
                       {
                         translateY,
+                      },
+                      {
+                        scale,
                       },
                     ],
                   },
@@ -438,9 +468,9 @@ function FirstBrand({
         )}
       </View>
 
-      {/* ======================================================
+      {/* ==========================================================
           FIRST SUBTITLE
-      ====================================================== */}
+      ========================================================== */}
 
       <Animated.Text
         style={[
@@ -457,6 +487,10 @@ function FirstBrand({
               {
                 translateY:
                   subtitleTranslateY,
+              },
+              {
+                scale:
+                  subtitleScale,
               },
             ],
           },
@@ -482,44 +516,51 @@ function SecondBrand({
   logo: ImageSourcePropType;
 
   logoProgress: Animated.Value;
-
   letterProgresses: Animated.Value[];
-
   taglineProgress: Animated.Value;
 
   isRTL: boolean;
 }) {
+  /* --------------------------------------------------------------
+     SECOND LOGO
+  -------------------------------------------------------------- */
+
   const logoOpacity =
     logoProgress.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 1],
+      inputRange: [0, 0.3, 1],
+      outputRange: [0, 0.75, 1],
     });
 
   const logoTranslateY =
     logoProgress.interpolate({
       inputRange: [0, 1],
-      outputRange: [16, 0],
+      outputRange: [22, 0],
     });
 
   const logoScale =
     logoProgress.interpolate({
-      inputRange: [0, 1],
+      inputRange: [0, 0.45, 1],
       outputRange: [
-        0.92,
+        0.88,
+        1.015,
         1,
       ],
     });
 
+  /* --------------------------------------------------------------
+     TAGLINE
+  -------------------------------------------------------------- */
+
   const taglineOpacity =
     taglineProgress.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 1],
+      inputRange: [0, 0.4, 1],
+      outputRange: [0, 0.8, 1],
     });
 
   const taglineTranslateY =
     taglineProgress.interpolate({
       inputRange: [0, 1],
-      outputRange: [9, 0],
+      outputRange: [11, 0],
     });
 
   const secondWord =
@@ -537,19 +578,19 @@ function SecondBrand({
       pointerEvents="none"
       style={styles.brandLayer}
     >
-      {/* ======================================================
+      {/* ==========================================================
           SECOND LOGO
 
-          No circle.
-          No glow.
-          No border.
-          No animated background.
-      ====================================================== */}
+          Important:
+          No circle
+          No border
+          No glow
+          No background
+      ========================================================== */}
 
       <Animated.View
         style={[
           styles.secondLogoContainer,
-
           {
             opacity: logoOpacity,
 
@@ -573,14 +614,13 @@ function SecondBrand({
         />
       </Animated.View>
 
-      {/* ======================================================
+      {/* ==========================================================
           SECOND WORD
-      ====================================================== */}
+      ========================================================== */}
 
       <View
         style={[
           styles.secondWordmark,
-
           isRTL &&
             styles.rtlWordmark,
         ]}
@@ -601,10 +641,12 @@ function SecondBrand({
                 progress.interpolate({
                   inputRange: [
                     0,
+                    0.35,
                     1,
                   ],
                   outputRange: [
                     0,
+                    0.75,
                     1,
                   ],
                 });
@@ -616,8 +658,20 @@ function SecondBrand({
                     1,
                   ],
                   outputRange: [
-                    12,
+                    14,
                     0,
+                  ],
+                });
+
+              const scale =
+                progress.interpolate({
+                  inputRange: [
+                    0,
+                    1,
+                  ],
+                  outputRange: [
+                    0.95,
+                    1,
                   ],
                 });
 
@@ -637,6 +691,9 @@ function SecondBrand({
                         {
                           translateY,
                         },
+                        {
+                          scale,
+                        },
                       ],
                     },
                   ]}
@@ -648,9 +705,9 @@ function SecondBrand({
           )}
       </View>
 
-      {/* ======================================================
+      {/* ==========================================================
           TAGLINE
-      ====================================================== */}
+      ========================================================== */}
 
       <Animated.Text
         style={[
@@ -686,7 +743,6 @@ export function SplashScreen({
   onComplete,
 
   logo1 = require('../../assets/logo1.png'),
-
   logo2 = require('../../assets/logo2.png'),
 }: SplashScreenProps) {
   const {
@@ -719,6 +775,8 @@ export function SplashScreen({
       createAnimatedValue(0)
     ).current;
 
+  /* ---------------- FIRST BRAND ---------------- */
+
   const firstLogoLife =
     useRef(
       createAnimatedValue(0)
@@ -726,16 +784,19 @@ export function SplashScreen({
 
   const firstLetterLives =
     useRef(
-      FIRST_WORD.split('').map(
-        () =>
+      FIRST_WORD
+        .split('')
+        .map(() =>
           createAnimatedValue(0)
-      )
+        )
     ).current;
 
   const firstSubtitleLife =
     useRef(
       createAnimatedValue(0)
     ).current;
+
+  /* ---------------- SECOND BRAND ---------------- */
 
   const secondLogoProgress =
     useRef(
@@ -763,6 +824,8 @@ export function SplashScreen({
     useRef(
       createAnimatedValue(0)
     ).current;
+
+  /* ---------------- SPARKS ---------------- */
 
   const sparkValues =
     useRef(
@@ -815,9 +878,9 @@ export function SplashScreen({
           ? 0.001
           : 1;
 
-      /* ----------------------------------------------------------
+      /* ==========================================================
          RESET
-      ---------------------------------------------------------- */
+      ========================================================== */
 
       backgroundProgress.setValue(0);
 
@@ -846,9 +909,9 @@ export function SplashScreen({
           value.setValue(0)
       );
 
-      /* ----------------------------------------------------------
-         BACKGROUND FADE
-      ---------------------------------------------------------- */
+      /* ==========================================================
+         BACKGROUND
+      ========================================================== */
 
       Animated.timing(
         backgroundProgress,
@@ -867,9 +930,9 @@ export function SplashScreen({
         }
       ).start();
 
-      /* ----------------------------------------------------------
+      /* ==========================================================
          SPARKLES
-      ---------------------------------------------------------- */
+      ========================================================== */
 
       SPARKS.forEach(
         (
@@ -935,9 +998,9 @@ export function SplashScreen({
         }
       );
 
-      /* ----------------------------------------------------------
-         FIRST LOGO
-      ---------------------------------------------------------- */
+      /* ==========================================================
+         FIRST BRAND — LOGO IN
+      ========================================================== */
 
       Animated.timing(
         firstLogoLife,
@@ -945,7 +1008,8 @@ export function SplashScreen({
           toValue: 1,
 
           duration:
-            TIMING.FIRST_IN * d,
+            TIMING.FIRST_LOGO_IN *
+            d,
 
           easing:
             EASE_ENTER,
@@ -954,9 +1018,9 @@ export function SplashScreen({
         }
       ).start();
 
-      /* ----------------------------------------------------------
-         IPS LETTERS
-      ---------------------------------------------------------- */
+      /* ==========================================================
+         FIRST BRAND — IPS IN
+      ========================================================== */
 
       firstLetterLives.forEach(
         (
@@ -969,27 +1033,27 @@ export function SplashScreen({
               toValue: 1,
 
               duration:
-                480 * d,
+                TIMING.FIRST_WORD_IN *
+                d,
 
               delay:
-                (110 +
-                  index *
-                    65) *
-                d,
+                (
+                  TIMING.FIRST_WORD_DELAY +
+                  index * 60
+                ) * d,
 
               easing:
                 EASE_ENTER,
 
-              useNativeDriver:
-                true,
+              useNativeDriver: true,
             }
           ).start();
         }
       );
 
-      /* ----------------------------------------------------------
-         FIRST SUBTITLE
-      ---------------------------------------------------------- */
+      /* ==========================================================
+         FIRST BRAND — SUBTITLE IN
+      ========================================================== */
 
       Animated.timing(
         firstSubtitleLife,
@@ -997,10 +1061,12 @@ export function SplashScreen({
           toValue: 1,
 
           duration:
-            520 * d,
+            TIMING.FIRST_SUBTITLE_IN *
+            d,
 
           delay:
-            190 * d,
+            TIMING.FIRST_SUBTITLE_DELAY *
+            d,
 
           easing:
             EASE_ENTER,
@@ -1009,76 +1075,98 @@ export function SplashScreen({
         }
       ).start();
 
-      /* ----------------------------------------------------------
-         FIRST BRAND EXIT
-      ---------------------------------------------------------- */
+      /* ==========================================================
+         FIRST BRAND — EXIT
+
+         مهم:
+         همه اجزای برند اول اینجا با هم خارج می‌شوند.
+         بنابراین دیگر هیچ چیزی از برند اول زیر لوگوی دوم
+         باقی نمی‌ماند.
+      ========================================================== */
 
       timers.current.push(
         setTimeout(
           () => {
-            Animated.parallel([
+            /* ---------------- LOGO OUT ---------------- */
+
+            const logoExit =
               Animated.timing(
                 firstLogoLife,
                 {
                   toValue: 2,
 
                   duration:
-                    TIMING.FIRST_OUT *
+                    TIMING.FIRST_LOGO_OUT *
                     d,
 
                   easing:
                     EASE_EXIT,
 
-                  useNativeDriver:
-                    true,
+                  useNativeDriver: true,
                 }
-              ),
+              );
 
-              ...firstLetterLives.map(
-                (
-                  value,
-                  index
-                ) =>
-                  Animated.timing(
+            /* ---------------- IPS OUT ---------------- */
+
+            const wordExit =
+              Animated.parallel(
+                firstLetterLives.map(
+                  (
                     value,
-                    {
-                      toValue: 2,
+                    index
+                  ) =>
+                    Animated.timing(
+                      value,
+                      {
+                        toValue: 2,
 
-                      duration:
-                        340 * d,
+                        duration:
+                          TIMING.FIRST_WORD_OUT *
+                          d,
 
-                      delay:
-                        index *
-                        22 *
-                        d,
+                        delay:
+                          index * 28 * d,
 
-                      easing:
-                        EASE_EXIT,
+                        easing:
+                          EASE_EXIT,
 
-                      useNativeDriver:
-                        true,
-                    }
-                  )
-              ),
+                        useNativeDriver:
+                          true,
+                      }
+                    )
+                )
+              );
 
+            /* ---------------- SUBTITLE OUT ---------------- */
+
+            const subtitleExit =
               Animated.timing(
                 firstSubtitleLife,
                 {
                   toValue: 2,
 
                   duration:
-                    350 * d,
+                    TIMING.FIRST_SUBTITLE_OUT *
+                    d,
 
                   delay:
-                    25 * d,
+                    30 * d,
 
                   easing:
                     EASE_EXIT,
 
-                  useNativeDriver:
-                    true,
+                  useNativeDriver: true,
                 }
-              ),
+              );
+
+            /* ====================================================
+               RUN ALL FIRST-BRAND EXITS TOGETHER
+            ==================================================== */
+
+            Animated.parallel([
+              logoExit,
+              wordExit,
+              subtitleExit,
             ]).start();
           },
 
@@ -1087,19 +1175,19 @@ export function SplashScreen({
         )
       );
 
-      /* ----------------------------------------------------------
+      /* ==========================================================
          SECOND BRAND
-      ---------------------------------------------------------- */
+
+         شروع دوم عمداً بعد از پایان خروج اول است.
+         این قسمت مهم‌ترین اصلاح است.
+      ========================================================== */
 
       timers.current.push(
         setTimeout(
           () => {
-            /* ----------------------------------------------------
-               SECOND LOGO
-
-               فقط خود لوگو وارد می‌شود.
-               هیچ circle / glow / background animation ندارد.
-            ---------------------------------------------------- */
+            /* ====================================================
+               SECOND LOGO IN
+            ==================================================== */
 
             Animated.timing(
               secondLogoProgress,
@@ -1118,9 +1206,9 @@ export function SplashScreen({
               }
             ).start();
 
-            /* ----------------------------------------------------
-               SECOND WORD
-            ---------------------------------------------------- */
+            /* ====================================================
+               SECOND WORD IN
+            ==================================================== */
 
             secondLetterProgresses.forEach(
               (
@@ -1133,14 +1221,15 @@ export function SplashScreen({
                     toValue: 1,
 
                     duration:
-                      TIMING.WORD_IN *
+                      TIMING.SECOND_WORD_IN *
                       d,
 
                     delay:
-                      (100 +
+                      (
+                        TIMING.SECOND_WORD_DELAY +
                         index *
-                          TIMING.WORD_STAGGER) *
-                      d,
+                          TIMING.SECOND_WORD_STAGGER
+                      ) * d,
 
                     easing:
                       EASE_ENTER,
@@ -1152,9 +1241,9 @@ export function SplashScreen({
               }
             );
 
-            /* ----------------------------------------------------
-               TAGLINE
-            ---------------------------------------------------- */
+            /* ====================================================
+               TAGLINE IN
+            ==================================================== */
 
             Animated.timing(
               secondTaglineProgress,
@@ -1162,11 +1251,11 @@ export function SplashScreen({
                 toValue: 1,
 
                 duration:
-                  TIMING.TAGLINE_IN *
+                  TIMING.SECOND_TAGLINE_IN *
                   d,
 
                 delay:
-                  TIMING.TAGLINE_DELAY *
+                  TIMING.SECOND_TAGLINE_DELAY *
                   d,
 
                 easing:
@@ -1182,9 +1271,9 @@ export function SplashScreen({
         )
       );
 
-      /* ----------------------------------------------------------
+      /* ==========================================================
          COMPLETE
-      ---------------------------------------------------------- */
+      ========================================================== */
 
       timers.current.push(
         setTimeout(
@@ -1242,11 +1331,35 @@ export function SplashScreen({
         value =>
           value.stopAnimation()
       );
+
+      firstLogoLife.stopAnimation();
+
+      firstLetterLives.forEach(
+        value =>
+          value.stopAnimation()
+      );
+
+      firstSubtitleLife.stopAnimation();
+
+      secondLogoProgress.stopAnimation();
+
+      secondLetterProgresses.forEach(
+        value =>
+          value.stopAnimation()
+      );
+
+      secondTaglineProgress.stopAnimation();
     };
   }, [
     clearTimers,
     play,
     sparkValues,
+    firstLogoLife,
+    firstLetterLives,
+    firstSubtitleLife,
+    secondLogoProgress,
+    secondLetterProgresses,
+    secondTaglineProgress,
   ]);
 
   /* ==============================================================
@@ -1256,6 +1369,7 @@ export function SplashScreen({
   const backgroundOpacity =
     backgroundProgress.interpolate({
       inputRange: [0, 1],
+
       outputRange: [0, 1],
     });
 
@@ -1275,10 +1389,6 @@ export function SplashScreen({
     >
       {/* ==========================================================
           FULL SCREEN GRADIENT
-
-          No border.
-          No rectangle.
-          No animated circle.
       ========================================================== */}
 
       <Animated.View
@@ -1321,8 +1431,9 @@ export function SplashScreen({
       {/* ==========================================================
           VERY SUBTLE TOP LIGHT
 
-          This is NOT a circle.
-          It is a transparent gradient layer.
+          Not a circle.
+          Not a border.
+          Not an animated background.
       ========================================================== */}
 
       <LinearGradient
@@ -1413,6 +1524,10 @@ export function SplashScreen({
 ================================================================ */
 
 const styles = StyleSheet.create({
+  /* ==============================================================
+     CONTAINER
+  ============================================================== */
+
   container: {
     flex: 1,
 
@@ -1434,11 +1549,13 @@ const styles = StyleSheet.create({
   spark: {
     position: 'absolute',
 
-    color: COLORS.star,
+    color:
+      COLORS.star,
 
     fontWeight: '300',
 
-    includeFontPadding: false,
+    includeFontPadding:
+      false,
 
     textShadowColor:
       'rgba(195,155,239,0.45)',
@@ -1459,14 +1576,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
 
     left: 0,
-
     right: 0,
-
     top: 0,
-
     bottom: 0,
 
-    alignItems: 'center',
+    alignItems:
+      'center',
 
     justifyContent:
       'center',
@@ -1478,10 +1593,10 @@ const styles = StyleSheet.create({
 
   firstLogoContainer: {
     width: 132,
-
     height: 132,
 
-    alignItems: 'center',
+    alignItems:
+      'center',
 
     justifyContent:
       'center',
@@ -1489,12 +1604,10 @@ const styles = StyleSheet.create({
 
   firstLogo: {
     width: 116,
-
     height: 116,
 
-    /* Important:
-       explicitly ImageStyle */
-    overflow: 'hidden',
+    overflow:
+      'hidden',
   },
 
   /* ==============================================================
@@ -1502,9 +1615,11 @@ const styles = StyleSheet.create({
   ============================================================== */
 
   firstWordmark: {
-    flexDirection: 'row',
+    flexDirection:
+      'row',
 
-    alignItems: 'center',
+    alignItems:
+      'center',
 
     justifyContent:
       'center',
@@ -1513,21 +1628,25 @@ const styles = StyleSheet.create({
   },
 
   rtlWordmark: {
-    flexDirection: 'row-reverse',
+    flexDirection:
+      'row-reverse',
   },
 
   firstWordLetter: {
-    color: COLORS.fg,
+    color:
+      COLORS.fg,
 
     fontSize: 50,
 
     lineHeight: 55,
 
-    fontWeight: '800',
+    fontWeight:
+      '800',
 
     letterSpacing: 7,
 
-    includeFontPadding: false,
+    includeFontPadding:
+      false,
   },
 
   /* ==============================================================
@@ -1537,22 +1656,26 @@ const styles = StyleSheet.create({
   firstSubtitle: {
     marginTop: 10,
 
-    color: COLORS.accentHi,
+    color:
+      COLORS.accentHi,
 
     fontSize: 12,
 
     lineHeight: 18,
 
-    fontWeight: '600',
+    fontWeight:
+      '600',
 
     letterSpacing: 1.5,
 
     textTransform:
       'uppercase',
 
-    textAlign: 'center',
+    textAlign:
+      'center',
 
-    includeFontPadding: false,
+    includeFontPadding:
+      false,
   },
 
   persianFirstSubtitle: {
@@ -1560,14 +1683,16 @@ const styles = StyleSheet.create({
 
     lineHeight: 22,
 
-    fontWeight: '500',
+    fontWeight:
+      '500',
 
     letterSpacing: 0,
 
     textTransform:
       'none',
 
-    writingDirection: 'rtl',
+    writingDirection:
+      'rtl',
   },
 
   /* ==============================================================
@@ -1576,10 +1701,10 @@ const styles = StyleSheet.create({
 
   secondLogoContainer: {
     width: 132,
-
     height: 132,
 
-    alignItems: 'center',
+    alignItems:
+      'center',
 
     justifyContent:
       'center',
@@ -1587,12 +1712,10 @@ const styles = StyleSheet.create({
 
   secondLogo: {
     width: 116,
-
     height: 116,
 
-    /* Explicit ImageStyle.
-       This fixes TS2322. */
-    overflow: 'hidden',
+    overflow:
+      'hidden',
   },
 
   /* ==============================================================
@@ -1600,9 +1723,11 @@ const styles = StyleSheet.create({
   ============================================================== */
 
   secondWordmark: {
-    flexDirection: 'row',
+    flexDirection:
+      'row',
 
-    alignItems: 'center',
+    alignItems:
+      'center',
 
     justifyContent:
       'center',
@@ -1611,17 +1736,20 @@ const styles = StyleSheet.create({
   },
 
   secondWordLetter: {
-    color: COLORS.fg,
+    color:
+      COLORS.fg,
 
     fontSize: 50,
 
     lineHeight: 56,
 
-    fontWeight: '800',
+    fontWeight:
+      '800',
 
     letterSpacing: -1,
 
-    includeFontPadding: false,
+    includeFontPadding:
+      false,
   },
 
   persianWordLetter: {
@@ -1629,13 +1757,16 @@ const styles = StyleSheet.create({
 
     lineHeight: 57,
 
-    fontWeight: '700',
+    fontWeight:
+      '700',
 
     letterSpacing: 0,
 
-    includeFontPadding: false,
+    includeFontPadding:
+      false,
 
-    writingDirection: 'rtl',
+    writingDirection:
+      'rtl',
   },
 
   /* ==============================================================
@@ -1645,19 +1776,23 @@ const styles = StyleSheet.create({
   tagline: {
     marginTop: 15,
 
-    color: COLORS.muted,
+    color:
+      COLORS.muted,
 
     fontSize: 14,
 
     lineHeight: 20,
 
-    fontWeight: '500',
+    fontWeight:
+      '500',
 
     letterSpacing: 0.15,
 
-    textAlign: 'center',
+    textAlign:
+      'center',
 
-    includeFontPadding: false,
+    includeFontPadding:
+      false,
 
     paddingHorizontal: 24,
   },
@@ -1665,19 +1800,23 @@ const styles = StyleSheet.create({
   persianTagline: {
     marginTop: 14,
 
-    color: COLORS.muted,
+    color:
+      COLORS.muted,
 
     fontSize: 15,
 
     lineHeight: 24,
 
-    fontWeight: '500',
+    fontWeight:
+      '500',
 
     letterSpacing: 0,
 
-    writingDirection: 'rtl',
+    writingDirection:
+      'rtl',
 
-    textAlign: 'center',
+    textAlign:
+      'center',
 
     paddingHorizontal: 30,
   },
