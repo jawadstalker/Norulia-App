@@ -14,11 +14,11 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { AppText as Text } from '../ui/AppText';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 

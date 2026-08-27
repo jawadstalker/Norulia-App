@@ -681,7 +681,7 @@ export default function AssistantScreen() {
                 >
                   <Image
                     source={require(
-                      '../../assets/avatars/Head.png'
+                      '../../assets/avatars/model8.png'
                     )}
                     style={
                       styles.welcomeAvatar

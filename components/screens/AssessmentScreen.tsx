@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
+import { AppText as Text } from '../ui/AppText';
 
 import {
   MotiView,

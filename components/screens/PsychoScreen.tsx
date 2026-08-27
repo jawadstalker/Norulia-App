@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react';
 
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   Image,
   TouchableOpacity,
 } from 'react-native';
+import { AppText as Text } from '../ui/AppText';
 
 import { useRouter, useLocalSearchParams } from 'expo-router';
 

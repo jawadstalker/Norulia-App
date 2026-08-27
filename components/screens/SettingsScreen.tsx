@@ -2,11 +2,11 @@ import React from 'react';
 
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { AppText as Text } from '../ui/AppText';
 
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';

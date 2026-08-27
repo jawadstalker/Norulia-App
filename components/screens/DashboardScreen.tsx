@@ -7,7 +7,6 @@ import React, {
 
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
@@ -15,6 +14,7 @@ import {
   TouchableOpacity,
   useWindowDimensions,
 } from 'react-native';
+import { AppText as Text } from '../ui/AppText';
 
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -47,10 +47,6 @@ import {
   TrendingUp,
   LayoutGrid,
 } from 'lucide-react-native';
-
-/* =========================================================
-   MENU ITEMS
-   ========================================================= */
 
 const menuItems = [
   {
@@ -90,10 +86,6 @@ const menuItems = [
     route: '/(tabs)/profile',
   },
 ];
-
-/* =========================================================
-   SHINE EFFECT
-   ========================================================= */
 
 interface ShineEffectProps {
   color?: string;
@@ -215,10 +207,6 @@ function ShineEffect({
   );
 }
 
-/* =========================================================
-   GLOW LAYER
-   ========================================================= */
-
 interface GlowLayerProps {
   color: string;
   opacity?: number;
@@ -242,10 +230,6 @@ function GlowLayer({
   );
 }
 
-/* =========================================================
-   DASHBOARD
-   ========================================================= */
-
 export function DashboardScreen() {
   const {
     colors,
@@ -265,10 +249,6 @@ export function DashboardScreen() {
 
   const [refreshing, setRefreshing] =
     useState(false);
-
-  /* =======================================================
-     NORULIA WELCOME TYPING
-     ======================================================= */
 
   const [typedWelcome, setTypedWelcome] =
     useState('');
@@ -313,10 +293,6 @@ export function DashboardScreen() {
         );
     };
 
-    /*
-     * Avatar enters first.
-     * Bubble starts typing shortly after.
-     */
     typingTimerRef.current =
       setTimeout(
         typeNextCharacter,
@@ -345,10 +321,6 @@ export function DashboardScreen() {
     };
   }, []);
 
-  /* =======================================================
-     REFRESH
-     ======================================================= */
-
   const refreshTimerRef =
     useRef<ReturnType<typeof setTimeout> | null>(
       null,
@@ -356,10 +328,6 @@ export function DashboardScreen() {
 
   const isVerySmallScreen =
     width < 350;
-
-  /* =======================================================
-     THEME COLORS
-     ======================================================= */
 
   const themeColor = isAthlete
     ? '#22C55E'
@@ -381,10 +349,6 @@ export function DashboardScreen() {
       ? 'rgba(73, 194, 226, 0.15)'
       : 'rgba(107,90,166,0.07)';
 
-  /* =======================================================
-     REFRESH HANDLER
-     ======================================================= */
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
 
@@ -404,10 +368,6 @@ export function DashboardScreen() {
       }
     };
   }, []);
-
-  /* =======================================================
-     MENU CARD
-     ======================================================= */
 
   const renderMenuCard = (
     item: (typeof menuItems)[number],
@@ -552,10 +512,6 @@ export function DashboardScreen() {
     );
   };
 
-  /* =======================================================
-     RENDER
-     ======================================================= */
-
   return (
     <View
       style={[
@@ -586,10 +542,6 @@ export function DashboardScreen() {
           />
         }
       >
-        {/* ===================================================
-            NORULIA CHARACTER
-            =================================================== */}
-
         <MotiView
           from={{
             opacity: 0,
@@ -615,27 +567,11 @@ export function DashboardScreen() {
                 styles.characterWrapper
               }
             >
-              {/* =================================================
-                  IMPORTANT:
-                  ALWAYS LTR PHYSICAL LAYOUT
-
-                  Avatar = LEFT
-                  Bubble = RIGHT
-
-                  RTL only affects text inside bubble.
-                  ================================================= */}
-
               <View
                 style={
                   styles.avatarRow
                 }
               >
-                {/* ===============================================
-                    AVATAR
-                    ALWAYS LEFT
-                    ENTERS FROM LEFT
-                    =============================================== */}
-
                 <MotiView
                   from={{
                     opacity: 0,
@@ -666,12 +602,6 @@ export function DashboardScreen() {
                     }
                   />
                 </MotiView>
-
-                {/* ===============================================
-                    SPEECH BUBBLE
-                    ALWAYS RIGHT
-                    ENTERS FROM RIGHT
-                    =============================================== */}
 
                 <MotiView
                   from={{
@@ -711,12 +641,6 @@ export function DashboardScreen() {
                       },
                     ]}
                   >
-                    {/* =========================================
-                        BUBBLE TAIL
-                        ALWAYS POINTS LEFT
-                        TOWARD AVATAR
-                        ========================================= */}
-
                     <View
                       pointerEvents="none"
                       style={[
@@ -731,14 +655,6 @@ export function DashboardScreen() {
                         },
                       ]}
                     />
-
-                    {/* =========================================
-                        DIALOG TEXT
-
-                        Position does NOT change.
-
-                        Only text direction changes.
-                        ========================================= */}
 
                     <Text
                       style={[
@@ -778,10 +694,6 @@ export function DashboardScreen() {
                 </MotiView>
               </View>
 
-              {/* =================================================
-                  MAIN CHARACTER TITLE
-                  ================================================= */}
-
               <Text
                 style={[
                   styles.characterTitle,
@@ -807,10 +719,6 @@ export function DashboardScreen() {
             </View>
           </View>
         </MotiView>
-
-        {/* =====================================================
-            PROGRESS
-            ===================================================== */}
 
         <MotiView
           from={{
@@ -1015,10 +923,6 @@ export function DashboardScreen() {
           </Card>
         </MotiView>
 
-        {/* =====================================================
-            QUICK ACCESS
-            ===================================================== */}
-
         <MotiView
           from={{
             opacity: 0,
@@ -1095,10 +999,6 @@ export function DashboardScreen() {
   );
 }
 
-/* ===========================================================
-   STYLES
-   =========================================================== */
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -1108,10 +1008,6 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.xxl,
     paddingBottom: 40,
   },
-
-  /* =========================================================
-     SHINE
-     ========================================================= */
 
   shineContainer: {
     position: 'absolute',
@@ -1135,10 +1031,6 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
 
-  /* =========================================================
-     CHARACTER
-     ========================================================= */
-
   characterCard: {
     width: '100%',
     marginBottom: Spacing.lg,
@@ -1150,17 +1042,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.md,
   },
-
-  /*
-   * IMPORTANT:
-   *
-   * This row is ALWAYS physical LTR.
-   *
-   * LEFT  -> Avatar
-   * RIGHT -> Speech Bubble
-   *
-   * Do NOT add isRTL here.
-   */
 
   avatarRow: {
     width: '100%',
@@ -1183,10 +1064,6 @@ const styles = StyleSheet.create({
     height: 200,
     resizeMode: 'contain',
   },
-
-  /* =========================================================
-     SPEECH BUBBLE
-     ========================================================= */
 
   speechBubbleWrapper: {
     flex: 1,
@@ -1219,18 +1096,12 @@ const styles = StyleSheet.create({
   },
 
   speechBubbleText: {
+    fontFamily: 'EstedadMedium',
     fontSize: 13.5,
-    lineHeight: 20,
-    fontWeight: '700',
-    letterSpacing: 0.1,
+    lineHeight: 22,
+    fontWeight: '500',
+    letterSpacing: 0,
   },
-
-  /*
-   * Tail is ALWAYS on the LEFT side of the bubble.
-   *
-   * Avatar is always on the left,
-   * therefore the tail always points toward Avatar.
-   */
 
   speechBubbleTail: {
     position: 'absolute',
@@ -1255,10 +1126,6 @@ const styles = StyleSheet.create({
     left: -6,
   },
 
-  /* =========================================================
-     CHARACTER TITLE
-     ========================================================= */
-
   characterTitle: {
     paddingTop: 20,
     width: '100%',
@@ -1269,11 +1136,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
 
     marginTop: Spacing.md,
-  },
 
-  /* =========================================================
-     PROGRESS
-     ========================================================= */
+    fontFamily: 'EstedadMedium',
+  },
 
   progressCard: {
     marginBottom: Spacing.lg,
@@ -1317,6 +1182,8 @@ const styles = StyleSheet.create({
     lineHeight: 21,
 
     fontWeight: '600',
+
+    fontFamily: 'EstedadMedium',
   },
 
   progressPercent: {
@@ -1362,11 +1229,9 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 11,
     lineHeight: 17,
-  },
 
-  /* =========================================================
-     MENU
-     ========================================================= */
+    fontFamily: 'EstedadMedium',
+  },
 
   menuSectionHeader: {
     width: '100%',
@@ -1386,6 +1251,8 @@ const styles = StyleSheet.create({
     lineHeight: 20,
 
     fontWeight: '700',
+
+    fontFamily: 'EstedadMedium',
   },
 
   menuGrid: {
@@ -1452,6 +1319,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
 
     textAlign: 'center',
+
+    fontFamily: 'EstedadMedium',
   },
 
   bottomSpace: {

@@ -5,11 +5,12 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { AppText as Text } from '../ui/AppText';
+import { Fonts } from '../../constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   ArrowLeft,
@@ -843,7 +844,7 @@ export default function QuranScreen() {
                       wrong ? <XCircle size={17} color="#FF6B81" /> :
                       <Text style={[styles.optionIndexText, { color: textColor }]}>{String.fromCharCode(1575 + index)}</Text>}
                   </View>
-                  <Text style={[styles.optionText, { color: textColor, textAlign: isRTL ? 'right' : 'left' }, currentQuestion.type === 'continuation' && { fontFamily: 'serif', lineHeight: 32 }]}>
+                  <Text style={[styles.optionText, { color: textColor, textAlign: isRTL ? 'right' : 'left' }, currentQuestion.type === 'continuation' && { fontFamily: Fonts.persian, lineHeight: 32 }]}>
                     {String(option)}
                   </Text>
                 </TouchableOpacity>
@@ -1232,12 +1233,12 @@ const styles = StyleSheet.create({
   quranDayText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   ornamentalBorder: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', borderRadius: 20, padding: 16 },
   surahTitleBox: { alignSelf: 'center', paddingHorizontal: 27, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', backgroundColor: 'rgba(255,255,255,0.06)', marginBottom: 11 },
-  surahTitle: { fontSize: 21, fontWeight: '800', fontFamily: 'serif' },
-  basmala: { textAlign: 'center', fontSize: 18, lineHeight: 35, marginBottom: 13, fontFamily: 'serif' },
+  surahTitle: { fontSize: 21, fontWeight: '800', fontFamily: Fonts.persian },
+  basmala: { textAlign: 'center', fontSize: 18, lineHeight: 35, marginBottom: 13, fontFamily: Fonts.persian },
   ayahList: { gap: 5 },
   ayahRow: { alignItems: 'center', gap: 9, paddingVertical: 4 },
   ayahBlurred: { opacity: 0.14 },
-  ayahText: { flex: 1, fontFamily: 'serif', fontSize: 18, lineHeight: 34 },
+  ayahText: { flex: 1, fontFamily: Fonts.persian, fontSize: 18, lineHeight: 34 },
   ayahNumber: { width: 27, height: 27, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   ayahNumberText: { fontSize: 10, fontWeight: '800' },
   audioRow: { alignItems: 'center', borderWidth: 1, borderRadius: 19, padding: 11, marginBottom: 12 },
@@ -1262,7 +1263,7 @@ const styles = StyleSheet.create({
   reviewItem: { alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1 },
   reviewNumber: { width: 31, height: 31, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   reviewRef: { fontSize: 10, fontWeight: '900' },
-  reviewText: { flex: 1, fontFamily: 'serif', fontSize: 17, lineHeight: 30 },
+  reviewText: { flex: 1, fontFamily: Fonts.persian, fontSize: 17, lineHeight: 30 },
   actionSectionHeader: { alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   actionSectionTitle: { fontSize: 15, fontWeight: '900' },
   actionSectionSubtitle: { fontSize: 10, marginTop: 4 },
@@ -1304,7 +1305,7 @@ const styles = StyleSheet.create({
   promptText: { flex: 1, fontSize: 12, lineHeight: 22, fontWeight: '700' },
   displayCard: { padding: 16, borderWidth: 1, borderRadius: 16, marginBottom: 12 },
   displayLabel: { fontSize: 9, marginBottom: 8, fontWeight: '700' },
-  displayText: { textAlign: 'center', fontFamily: 'serif', fontSize: 19, lineHeight: 36 },
+  displayText: { textAlign: 'center', fontFamily: Fonts.persian, fontSize: 19, lineHeight: 36 },
   input: { height: 54, borderWidth: 1, borderRadius: 15, paddingHorizontal: 15, fontSize: 15, marginBottom: 12 },
   optionsContainer: { gap: 9 },
   option: { minHeight: 56, borderWidth: 1, borderRadius: 16, paddingHorizontal: 11, paddingVertical: 8, alignItems: 'center', gap: 10 },

@@ -1,12 +1,12 @@
 import React from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   Image,
   TouchableOpacity,
 } from 'react-native';
+import { AppText as Text } from '../ui/AppText';
 import { useRouter } from 'expo-router';
 import {
   ArrowLeft,

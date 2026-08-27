@@ -12,10 +12,10 @@ import {
   ImageSourcePropType,
   I18nManager,
   StyleSheet,
-  Text,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { AppText as Text } from '../ui/AppText';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
