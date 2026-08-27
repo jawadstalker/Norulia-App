@@ -38,9 +38,7 @@ export default function ConsultationScreen() {
   const { colors, isDark } = useTheme();
   const { isRTL } = useLanguage();
 
-  // ============================================================
-  // TEXTS
-  // ============================================================
+  const iconColor = 'rgba(73, 194, 226, 1)';
 
   const TEXTS = {
     headerTitle: isRTL
@@ -90,10 +88,6 @@ export default function ConsultationScreen() {
       : 'To receive expert consultation and follow up on treatment',
   };
 
-  // ============================================================
-  // BACK
-  // ============================================================
-
   const handleBack = () => {
     Haptics.impactAsync(
       Haptics.ImpactFeedbackStyle.Light,
@@ -106,10 +100,6 @@ export default function ConsultationScreen() {
     }
   };
 
-  // ============================================================
-  // CONSULTATION
-  // ============================================================
-
   const handleRequestConsultation = () => {
     Haptics.notificationAsync(
       Haptics.NotificationFeedbackType.Success,
@@ -120,15 +110,6 @@ export default function ConsultationScreen() {
     ).catch(() => {});
   };
 
-  // ============================================================
-  // COLOR HELPERS
-  // ============================================================
-
-  /**
-   * از رنگ اصلی تم برای ساخت یک نسخه شفاف استفاده می‌کنیم.
-   * این باعث می‌شود در Light و Dark هر دو با پالت اصلی اپ
-   * هماهنگ باقی بماند.
-   */
   const primarySoft = isDark
     ? `${colors.primary}20`
     : `${colors.primary}12`;
@@ -147,10 +128,6 @@ export default function ConsultationScreen() {
         colors.background,
       ];
 
-  // ============================================================
-  // RENDER
-  // ============================================================
-
   return (
     <LinearGradient
       colors={backgroundGradient}
@@ -162,10 +139,6 @@ export default function ConsultationScreen() {
         style={styles.safeArea}
         edges={['top', 'bottom']}
       >
-        {/* ======================================================
-            HEADER
-        ====================================================== */}
-
         <MotiView
           from={{
             opacity: 0,
@@ -219,15 +192,11 @@ export default function ConsultationScreen() {
           >
             <ArrowLeft
               size={23}
-              color={colors.text}
+              color={iconColor}
               strokeWidth={2.4}
             />
           </TouchableOpacity>
         </MotiView>
-
-        {/* ======================================================
-            CONTENT
-        ====================================================== */}
 
         <ScrollView
           contentContainerStyle={[
@@ -240,10 +209,6 @@ export default function ConsultationScreen() {
           ]}
           showsVerticalScrollIndicator={false}
         >
-          {/* ====================================================
-              HERO
-          ==================================================== */}
-
           <MotiView
             from={{
               opacity: 0,
@@ -260,18 +225,14 @@ export default function ConsultationScreen() {
             }}
             style={styles.hero}
           >
-            {/* Avatar */}
-
             <View
               style={[
                 styles.avatarWrap,
                 {
-                  borderColor:
-                    colors.primary,
+                  borderColor: iconColor,
                   backgroundColor:
                     colors.surface,
-                  shadowColor:
-                    colors.primary,
+                  shadowColor: iconColor,
                 },
               ]}
             >
@@ -281,8 +242,6 @@ export default function ConsultationScreen() {
                 resizeMode="cover"
               />
             </View>
-
-            {/* Speech Bubble */}
 
             <View
               style={[
@@ -307,8 +266,7 @@ export default function ConsultationScreen() {
                 {TEXTS.speechHello}{' '}
                 <Text
                   style={{
-                    color:
-                      colors.primary,
+                    color: iconColor,
                   }}
                 >
                   {TEXTS.speechName}
@@ -329,10 +287,6 @@ export default function ConsultationScreen() {
               </Text>
             </View>
           </MotiView>
-
-          {/* ====================================================
-              CONSULTATION CARD
-          ==================================================== */}
 
           <MotiView
             from={{
@@ -355,13 +309,10 @@ export default function ConsultationScreen() {
               {
                 backgroundColor:
                   colors.surface,
-                shadowColor:
-                  colors.primary,
+                shadowColor: iconColor,
               },
             ]}
           >
-            {/* Card Title */}
-
             <View
               style={styles.titleRow}
             >
@@ -378,9 +329,7 @@ export default function ConsultationScreen() {
               >
                 <Stethoscope
                   size={24}
-                  color={
-                    colors.primary
-                  }
+                  color={iconColor}
                   strokeWidth={2}
                 />
               </View>
@@ -398,8 +347,6 @@ export default function ConsultationScreen() {
               </Text>
             </View>
 
-            {/* Description */}
-
             <Text
               style={[
                 styles.cardDesc,
@@ -412,10 +359,6 @@ export default function ConsultationScreen() {
               {TEXTS.cardDesc}
             </Text>
 
-            {/* ==================================================
-                REQUEST BUTTON
-            ================================================== */}
-
             <TouchableOpacity
               onPress={
                 handleRequestConsultation
@@ -424,15 +367,14 @@ export default function ConsultationScreen() {
               style={[
                 styles.requestButtonWrap,
                 {
-                  shadowColor:
-                    colors.primary,
+                  shadowColor: iconColor,
                 },
               ]}
             >
               <LinearGradient
                 colors={[
-                  colors.primary,
-                  colors.primary,
+                  iconColor,
+                  iconColor,
                 ]}
                 start={{
                   x: 0,
@@ -468,18 +410,12 @@ export default function ConsultationScreen() {
               </LinearGradient>
             </TouchableOpacity>
 
-            {/* ==================================================
-                HOURS
-            ================================================== */}
-
             <View
               style={styles.hoursRow}
             >
               <Clock
                 size={14}
-                color={
-                  colors.textTertiary
-                }
+                color={iconColor}
                 strokeWidth={2}
               />
 
@@ -496,8 +432,7 @@ export default function ConsultationScreen() {
 
                 <Text
                   style={{
-                    color:
-                      colors.primary,
+                    color: iconColor,
                   }}
                 >
                   {TEXTS.hoursDays}
@@ -506,10 +441,6 @@ export default function ConsultationScreen() {
                 {TEXTS.hoursTime}
               </Text>
             </View>
-
-            {/* ==================================================
-                INFO BOX
-            ================================================== */}
 
             <View
               style={[
@@ -567,10 +498,6 @@ export default function ConsultationScreen() {
             </View>
           </MotiView>
 
-          {/* ====================================================
-              SMALL FOOTER
-          ==================================================== */}
-
           <MotiView
             from={{
               opacity: 0,
@@ -615,10 +542,6 @@ export default function ConsultationScreen() {
   );
 }
 
-// ============================================================
-// STYLES
-// ============================================================
-
 const styles = StyleSheet.create({
   container: {
     paddingTop: 40,
@@ -628,10 +551,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-
-  // ==========================================================
-  // HEADER
-  // ==========================================================
 
   header: {
     minHeight: 58,
@@ -702,10 +621,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
-  // ==========================================================
-  // SCROLL
-  // ==========================================================
-
   scrollContent: {
     paddingHorizontal:
       Spacing.md,
@@ -716,10 +631,6 @@ const styles = StyleSheet.create({
     alignItems:
       'center',
   },
-
-  // ==========================================================
-  // HERO
-  // ==========================================================
 
   hero: {
     flexDirection:
@@ -813,10 +724,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  // ==========================================================
-  // CARD
-  // ==========================================================
-
   card: {
     width: '100%',
 
@@ -892,10 +799,6 @@ const styles = StyleSheet.create({
       Spacing.xs,
   },
 
-  // ==========================================================
-  // BUTTON
-  // ==========================================================
-
   requestButtonWrap: {
     borderRadius:
       BorderRadius.full,
@@ -951,10 +854,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // ==========================================================
-  // HOURS
-  // ==========================================================
-
   hoursRow: {
     flexDirection:
       'row-reverse',
@@ -977,10 +876,6 @@ const styles = StyleSheet.create({
 
     textAlign: 'center',
   },
-
-  // ==========================================================
-  // INFO BOX
-  // ==========================================================
 
   infoBox: {
     flexDirection:
@@ -1025,10 +920,6 @@ const styles = StyleSheet.create({
 
     textAlign: 'right',
   },
-
-  // ==========================================================
-  // FOOTER
-  // ==========================================================
 
   footer: {
     width: '100%',

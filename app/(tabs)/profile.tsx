@@ -42,23 +42,17 @@ export default function ProfileScreen() {
 
   const ChevronIcon = isRTL ? ChevronLeft : ChevronRight;
 
-  const heroGradient: [string, string] = isDark
-    ? ['#342660', '#21104F']
-    : ['#F2EEFF', '#D8CEFA'];
-
-  // رنگ آیکون‌ها بر اساس تم
   const iconColor = isAthlete
-    ? '#22C55E' // تم ورزشکار (سبز)
+    ? '#22C55E'
     : isDark
-    ? 'rgba(73, 194, 226, 1)' // تم تاریک (آبی)
-    : '#6B5AA6'; // تم روشن (بنفش)
+    ? 'rgba(73, 194, 226, 1)'
+    : '#6B5AA6';
 
-  // رنگ پس‌زمینه آیکون‌ها بر اساس تم
   const bgColor = isAthlete
-    ? 'rgba(34,197,94,0.10)' // تم ورزشکار (سبز)
+    ? 'rgba(34,197,94,0.10)'
     : isDark
-    ? 'rgba(73, 194, 226, 0.15)' // تم تاریک (آبی)
-    : 'rgba(107,90,166,0.10)'; // تم روشن (بنفش)
+    ? 'rgba(73, 194, 226, 0.15)'
+    : 'rgba(107,90,166,0.10)';
 
   const stats = [
     {
@@ -90,7 +84,7 @@ export default function ProfileScreen() {
       showsVerticalScrollIndicator={false}
     >
       <LinearGradient
-        colors={heroGradient}
+        colors={['rgba(73, 194, 226, 1)', 'rgba(73, 194, 226, 0.7)']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[
@@ -98,10 +92,10 @@ export default function ProfileScreen() {
           {
             borderColor: isDark
               ? 'rgba(255,255,255,0.10)'
-              : 'rgba(107,90,166,0.06)',
-            shadowColor: isDark ? '#000000' : '#6B5AA6',
-            shadowOpacity: isDark ? 0.20 : 0.08,
-            elevation: isDark ? 8 : 3,
+              : 'rgba(73, 194, 226, 0.20)',
+            shadowColor: '#000000',
+            shadowOpacity: isDark ? 0.20 : 0.15,
+            elevation: isDark ? 8 : 5,
           },
         ]}
       >
@@ -126,7 +120,7 @@ export default function ProfileScreen() {
             style={styles.characterWrapper}
           >
             <Image
-              source={require('../../assets/avatars/blue.png')}
+              source={require('../../assets/avatars/model8.png')}
               style={styles.characterHead}
             />
           </MotiView>
@@ -152,7 +146,7 @@ export default function ProfileScreen() {
             style={[
               styles.userName,
               {
-                color: isDark ? '#FFFFFF' : '#29213F',
+                color: '#FFFFFF',
               },
             ]}
           >
@@ -163,9 +157,7 @@ export default function ProfileScreen() {
             style={[
               styles.email,
               {
-                color: isDark
-                  ? 'rgba(255,255,255,0.72)'
-                  : 'rgba(41,33,63,0.62)',
+                color: 'rgba(255,255,255,0.85)',
               },
             ]}
           >
@@ -176,9 +168,7 @@ export default function ProfileScreen() {
             style={[
               styles.profileAccent,
               {
-                backgroundColor: isDark
-                  ? 'rgba(255,255,255,0.22)'
-                  : 'rgba(41,33,63,0.16)',
+                backgroundColor: 'rgba(255,255,255,0.30)',
               },
             ]}
           >
@@ -186,7 +176,7 @@ export default function ProfileScreen() {
               style={[
                 styles.profileAccentDot,
                 {
-                  backgroundColor: iconColor,
+                  backgroundColor: '#FFFFFF',
                 },
               ]}
             />
@@ -442,7 +432,6 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,

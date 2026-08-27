@@ -407,11 +407,9 @@ export default function ProtocolScreen() {
   const rowDirection = fa ? 'row-reverse' : 'row';
   const contentAlign = fa ? 'flex-end' : 'flex-start';
 
-  // Hero از رنگ اصلی استفاده می‌کند
-  const heroAccent = colors.primary;
-  const heroAccentStrong = colors.primaryDark || colors.primary;
+  const heroAccent = 'rgba(73, 194, 226, 1)';
+  const heroAccentStrong = 'rgba(73, 194, 226, 1)';
 
-  // رنگ بر اساس تم
   const accent = isAthlete
     ? '#22C55E'
     : isDark
@@ -2492,18 +2490,6 @@ export default function ProtocolScreen() {
                           ]}
                         />
                       </View>
-
-                      <Text
-                        style={[
-                          styles.reportDayLabel,
-                          {
-                            color: colors.textSecondary || colors.text + '80',
-                            textAlign: 'center',
-                          },
-                        ]}
-                      >
-                        {index + 1}
-                      </Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -3389,7 +3375,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    height: 120,
+    height: 100,
     paddingTop: 8,
   },
 
@@ -3410,11 +3396,6 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 10,
     minHeight: 4,
-  },
-
-  reportDayLabel: {
-    fontSize: 10,
-    marginTop: 6,
   },
 
   summaryCard: {

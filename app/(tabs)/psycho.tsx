@@ -170,6 +170,7 @@ export default function PsychoScreen() {
   const textAlignStyle = isRTL ? 'right' : 'left';
 
   const iconColor = isDark ? 'rgba(73, 194, 226, 1)' : colors.text;
+  const buttonColor = 'rgba(73, 194, 226, 1)';
 
   useEffect(() => {
     if (category === 'stress') {
@@ -594,7 +595,7 @@ export default function PsychoScreen() {
                 style={[
                   styles.button,
                   {
-                    backgroundColor: colors.primary,
+                    backgroundColor: buttonColor,
                   },
                 ]}
                 onPress={() => {

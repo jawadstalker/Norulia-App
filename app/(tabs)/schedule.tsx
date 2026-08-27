@@ -401,15 +401,13 @@ export default function ScheduleScreen() {
 
   const { user } = useAuth();
 
-  // فقط رنگ آیکون‌ها بر اساس تم
   const iconColor = isAthlete
     ? '#22C55E'
     : isDark
     ? 'rgba(73, 194, 226, 1)'
     : colors.primary;
 
-  // دکمه FAB از رنگ primary استفاده می‌کند (دست نمی‌زنیم)
-  const primary = colors.primary;
+  const primary = 'rgba(73, 194, 226, 1)';
 
   const green =
     isDark
@@ -945,11 +943,7 @@ export default function ScheduleScreen() {
       >
 
         <LinearGradient
-          colors={
-            isDark
-              ? ['#342660', '#21104F']
-              : ['#F2EEFF', '#D8CEFA']
-          }
+          colors={['rgba(73, 194, 226, 1)', 'rgba(73, 194, 226, 0.7)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[
@@ -957,19 +951,17 @@ export default function ScheduleScreen() {
             {
               borderColor: isDark
                 ? 'rgba(255,255,255,0.10)'
-                : 'rgba(107,90,166,0.06)',
+                : 'rgba(73, 194, 226, 0.20)',
 
-              shadowColor: isDark
-                ? '#000000'
-                : '#6B5AA6',
+              shadowColor: '#000000',
 
               shadowOpacity: isDark
                 ? 0.20
-                : 0.08,
+                : 0.15,
 
               elevation: isDark
                 ? 8
-                : 3,
+                : 5,
             },
           ]}
         >
@@ -1022,9 +1014,7 @@ export default function ScheduleScreen() {
               style={[
                 styles.scheduleHeroTitle,
                 {
-                  color: isDark
-                    ? '#FFFFFF'
-                    : '#29213F',
+                  color: '#FFFFFF',
                 },
               ]}
             >
@@ -1035,9 +1025,7 @@ export default function ScheduleScreen() {
               style={[
                 styles.scheduleHeroSubtitle,
                 {
-                  color: isDark
-                    ? 'rgba(255,255,255,0.72)'
-                    : 'rgba(41,33,63,0.62)',
+                  color: 'rgba(255,255,255,0.85)',
                 },
               ]}
             >
@@ -1050,9 +1038,7 @@ export default function ScheduleScreen() {
               style={[
                 styles.scheduleHeroAccent,
                 {
-                  backgroundColor: isDark
-                    ? 'rgba(255,255,255,0.22)'
-                    : 'rgba(41,33,63,0.16)',
+                  backgroundColor: 'rgba(255,255,255,0.30)',
                 },
               ]}
             >
@@ -1060,7 +1046,7 @@ export default function ScheduleScreen() {
                 style={[
                   styles.scheduleHeroAccentDot,
                   {
-                    backgroundColor: iconColor,
+                    backgroundColor: '#FFFFFF',
                   },
                 ]}
               />

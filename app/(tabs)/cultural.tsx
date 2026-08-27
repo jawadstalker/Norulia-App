@@ -306,7 +306,7 @@ function PageHeader({
             style={[
               styles.headerEyebrow,
               {
-                color: colors.primary,
+                color: iconColor,
                 textAlign: isRTL ? 'right' : 'left',
               },
             ]}
@@ -328,7 +328,7 @@ function PageHeader({
               style={[
                 styles.headerIcon,
                 {
-                  backgroundColor: isDark ? 'rgba(167,139,250,0.16)' : 'rgba(124,58,237,0.09)',
+                  backgroundColor: isDark ? 'rgba(73,194,226,0.16)' : 'rgba(73,194,226,0.09)',
                 },
               ]}
             >
@@ -453,8 +453,8 @@ export default function CulturalScreen() {
               style={[
                 styles.introCard,
                 {
-                  backgroundColor: isDark ? 'rgba(167,139,250,0.10)' : 'rgba(124,58,237,0.055)',
-                  borderColor: isDark ? 'rgba(167,139,250,0.18)' : 'rgba(124,58,237,0.10)',
+                  backgroundColor: isDark ? 'rgba(73,194,226,0.10)' : 'rgba(73,194,226,0.055)',
+                  borderColor: isDark ? 'rgba(73,194,226,0.18)' : 'rgba(73,194,226,0.10)',
                 },
               ]}
             >
@@ -462,7 +462,7 @@ export default function CulturalScreen() {
                 style={[
                   styles.introIcon,
                   {
-                    backgroundColor: colors.primary,
+                    backgroundColor: iconColor,
                   },
                 ]}
               >
@@ -553,10 +553,10 @@ export default function CulturalScreen() {
                           styles.weekNumberCircle,
                           {
                             backgroundColor: isCurrent
-                              ? colors.primary
+                              ? iconColor
                               : isDark
-                              ? 'rgba(167,139,250,0.14)'
-                              : 'rgba(124,58,237,0.08)',
+                              ? 'rgba(73,194,226,0.14)'
+                              : 'rgba(73,194,226,0.08)',
                           },
                         ]}
                       >
@@ -564,7 +564,7 @@ export default function CulturalScreen() {
                           style={[
                             styles.weekNumber,
                             {
-                              color: isCurrent ? '#FFFFFF' : colors.primary,
+                              color: isCurrent ? '#FFFFFF' : iconColor,
                             },
                           ]}
                         >
@@ -578,8 +578,8 @@ export default function CulturalScreen() {
                             styles.currentBadge,
                             {
                               backgroundColor: isDark
-                                ? 'rgba(167,139,250,0.14)'
-                                : 'rgba(124,58,237,0.08)',
+                                ? 'rgba(73,194,226,0.14)'
+                                : 'rgba(73,194,226,0.08)',
                             },
                           ]}
                         >
@@ -587,7 +587,7 @@ export default function CulturalScreen() {
                             style={[
                               styles.currentBadgeText,
                               {
-                                color: colors.primary,
+                                color: iconColor,
                               },
                             ]}
                           >
@@ -613,7 +613,7 @@ export default function CulturalScreen() {
                       style={[
                         styles.weekCardTheme,
                         {
-                          color: colors.primary,
+                          color: iconColor,
                           textAlign: isRTL ? 'right' : 'left',
                         },
                       ]}
@@ -758,7 +758,7 @@ export default function CulturalScreen() {
                 style={[
                   styles.progressSegment,
                   {
-                    backgroundColor: index <= selectedWeek ? colors.primary : isDark
+                    backgroundColor: index <= selectedWeek ? iconColor : isDark
                       ? 'rgba(255,255,255,0.10)'
                       : '#E8E3F0',
                   },
@@ -781,7 +781,7 @@ export default function CulturalScreen() {
               styles.weekBadge,
               {
                 flexDirection: isRTL ? 'row-reverse' : 'row',
-                backgroundColor: isDark ? 'rgba(167,139,250,0.13)' : 'rgba(124,58,237,0.08)',
+                backgroundColor: isDark ? 'rgba(73,194,226,0.13)' : 'rgba(73,194,226,0.08)',
               },
             ]}
           >
@@ -790,7 +790,7 @@ export default function CulturalScreen() {
               style={[
                 styles.weekBadgeText,
                 {
-                  color: colors.primary,
+                  color: iconColor,
                 },
               ]}
             >
@@ -862,7 +862,7 @@ export default function CulturalScreen() {
                 style={[
                   styles.mediaLabel,
                   {
-                    backgroundColor: isDark ? 'rgba(167,139,250,0.13)' : 'rgba(124,58,237,0.08)',
+                    backgroundColor: isDark ? 'rgba(73,194,226,0.13)' : 'rgba(73,194,226,0.08)',
                     flexDirection: isRTL ? 'row-reverse' : 'row',
                   },
                 ]}
@@ -872,7 +872,7 @@ export default function CulturalScreen() {
                   style={[
                     styles.mediaLabelText,
                     {
-                      color: colors.primary,
+                      color: iconColor,
                     },
                   ]}
                 >
@@ -992,7 +992,7 @@ export default function CulturalScreen() {
                 style={[
                   styles.primaryButton,
                   {
-                    backgroundColor: colors.primary,
+                    backgroundColor: iconColor,
                     flexDirection: isRTL ? 'row-reverse' : 'row',
                   },
                 ]}
@@ -1050,7 +1050,7 @@ export default function CulturalScreen() {
                 style={[
                   styles.mediaLabel,
                   {
-                    backgroundColor: isDark ? 'rgba(167,139,250,0.13)' : 'rgba(124,58,237,0.08)',
+                    backgroundColor: isDark ? 'rgba(73,194,226,0.13)' : 'rgba(73,194,226,0.08)',
                     flexDirection: isRTL ? 'row-reverse' : 'row',
                   },
                 ]}
@@ -1060,7 +1060,7 @@ export default function CulturalScreen() {
                   style={[
                     styles.mediaLabelText,
                     {
-                      color: colors.primary,
+                      color: iconColor,
                     },
                   ]}
                 >
@@ -1158,7 +1158,7 @@ export default function CulturalScreen() {
               style={[
                 styles.secondaryButton,
                 {
-                  borderColor: colors.primary,
+                  borderColor: iconColor,
                   flexDirection: isRTL ? 'row-reverse' : 'row',
                 },
               ]}
@@ -1168,7 +1168,7 @@ export default function CulturalScreen() {
                 style={[
                   styles.secondaryButtonText,
                   {
-                    color: colors.primary,
+                    color: iconColor,
                     marginLeft: isRTL ? 0 : 8,
                     marginRight: isRTL ? 8 : 0,
                   },
@@ -1186,8 +1186,8 @@ export default function CulturalScreen() {
           style={[
             styles.reasonCard,
             {
-              backgroundColor: isDark ? 'rgba(167,139,250,0.10)' : 'rgba(124,58,237,0.055)',
-              borderColor: isDark ? 'rgba(167,139,250,0.18)' : 'rgba(124,58,237,0.11)',
+              backgroundColor: isDark ? 'rgba(73,194,226,0.10)' : 'rgba(73,194,226,0.055)',
+              borderColor: isDark ? 'rgba(73,194,226,0.18)' : 'rgba(73,194,226,0.11)',
               flexDirection: isRTL ? 'row-reverse' : 'row',
             },
           ]}
@@ -1196,7 +1196,7 @@ export default function CulturalScreen() {
             style={[
               styles.reasonIcon,
               {
-                backgroundColor: colors.primary,
+                backgroundColor: iconColor,
               },
             ]}
           >
@@ -1285,7 +1285,7 @@ export default function CulturalScreen() {
               style={[
                 styles.nextButton,
                 {
-                  backgroundColor: colors.primary,
+                  backgroundColor: iconColor,
                 },
               ]}
             >

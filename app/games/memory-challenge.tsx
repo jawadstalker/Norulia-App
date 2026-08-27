@@ -48,12 +48,6 @@ type Shape = {
   color: string;
 };
 
-/*
- * ============================================================
- * GAME CONFIG
- * ============================================================
- */
-
 const TOTAL_ROUNDS = 5;
 
 const MIN_DIFFICULTY = 1;
@@ -61,8 +55,6 @@ const MAX_DIFFICULTY = 4;
 
 const STORAGE_KEY =
   'neurolia_memory_challenge_adaptive_v2';
-
-
 
 const difficultyConfig = {
   1: {
@@ -86,12 +78,6 @@ const difficultyConfig = {
   },
 } as const;
 
-/*
- * ============================================================
- * SHAPES
- * ============================================================
- */
-
 const shapeTypes: ShapeType[] = [
   'circle',
   'square',
@@ -110,267 +96,95 @@ const shapeColors = [
   '#EC4899',
 ];
 
-/*
- * ============================================================
- * LOCAL TEXT
- * ============================================================
- */
-
 const text = {
   fa: {
     title: 'چالش حافظه',
-
-    subtitle:
-      'شکل و رنگ صحیح را پیدا کنید',
-
-    instruction:
-      'شکل صحیح را پیدا کنید',
-
-    start:
-      'شروع بازی',
-
-    gameCompleted:
-      'بازی تمام شد',
-
-    tryAgain:
-      'دوباره بازی کنید',
-
-    back:
-      'بازگشت',
-
-    round:
-      'مرحله',
-
-    score:
-      'امتیاز',
-
-    correct:
-      'صحیح',
-
-    correctAnswers:
-      'پاسخ صحیح',
-
-    answers:
-      'پاسخ',
-
-    of:
-      'از',
-
-    adaptive:
-      'سختی تطبیقی',
-
-    adaptiveUp:
-      'عملکرد شما عالی بود. مرحله بعد کمی سخت‌تر خواهد بود.',
-
-    adaptiveDown:
-      'این مرحله کمی دشوار بود. مرحله بعد کمی آسان‌تر خواهد بود.',
-
-    adaptiveSame:
-      'عملکرد شما مناسب بود. سختی بازی حفظ می‌شود.',
-
-    adaptiveInfo:
-      'سختی بازی بر اساس عملکرد واقعی شما به‌صورت خودکار تنظیم می‌شود.',
-
-    previousPerformance:
-      'عملکرد قبلی',
-
-    difficulty:
-      'سختی فعلی',
-
-    noSelection:
-      'نیازی به انتخاب سطح نیست',
-
-    excellent:
-      'عالی!',
-
-    veryGood:
-      'خیلی خوب!',
-
-    good:
-      'خوب بود!',
-
-    keepPracticing:
-      'به تمرین ادامه دهید!',
-
-    easy:
-      'آسان',
-
-    medium:
-      'متوسط',
-
-    hard:
-      'سخت',
-
-    expert:
-      'حرفه‌ای',
-
-    circle:
-      'دایره',
-
-    square:
-      'مربع',
-
-    triangle:
-      'مثلث',
-
-    diamond:
-      'لوزی',
-
-    star:
-      'ستاره',
-
-    hexagon:
-      'شش‌ضلعی',
-
-    red:
-      'قرمز',
-
-    blue:
-      'آبی',
-
-    green:
-      'سبز',
-
-    yellow:
-      'زرد',
-
-    purple:
-      'بنفش',
-
-    pink:
-      'صورتی',
+    subtitle: 'شکل و رنگ صحیح را پیدا کنید',
+    instruction: 'شکل صحیح را پیدا کنید',
+    start: 'شروع بازی',
+    gameCompleted: 'بازی تمام شد',
+    tryAgain: 'دوباره بازی کنید',
+    back: 'بازگشت',
+    round: 'مرحله',
+    score: 'امتیاز',
+    correct: 'صحیح',
+    correctAnswers: 'پاسخ صحیح',
+    answers: 'پاسخ',
+    of: 'از',
+    adaptive: 'سختی تطبیقی',
+    adaptiveUp: 'عملکرد شما عالی بود. مرحله بعد کمی سخت‌تر خواهد بود.',
+    adaptiveDown: 'این مرحله کمی دشوار بود. مرحله بعد کمی آسان‌تر خواهد بود.',
+    adaptiveSame: 'عملکرد شما مناسب بود. سختی بازی حفظ می‌شود.',
+    adaptiveInfo: 'سختی بازی بر اساس عملکرد واقعی شما به‌صورت خودکار تنظیم می‌شود.',
+    previousPerformance: 'عملکرد قبلی',
+    difficulty: 'سختی فعلی',
+    noSelection: 'نیازی به انتخاب سطح نیست',
+    excellent: 'عالی!',
+    veryGood: 'خیلی خوب!',
+    good: 'خوب بود!',
+    keepPracticing: 'به تمرین ادامه دهید!',
+    easy: 'آسان',
+    medium: 'متوسط',
+    hard: 'سخت',
+    expert: 'حرفه‌ای',
+    circle: 'دایره',
+    square: 'مربع',
+    triangle: 'مثلث',
+    diamond: 'لوزی',
+    star: 'ستاره',
+    hexagon: 'شش‌ضلعی',
+    red: 'قرمز',
+    blue: 'آبی',
+    green: 'سبز',
+    yellow: 'زرد',
+    purple: 'بنفش',
+    pink: 'صورتی',
   },
 
   en: {
     title: 'Memory Challenge',
-
-    subtitle:
-      'Find the correct shape and color',
-
-    instruction:
-      'Find the correct shape',
-
-    start:
-      'Start Game',
-
-    gameCompleted:
-      'Game Completed',
-
-    tryAgain:
-      'Try Again',
-
-    back:
-      'Back',
-
-    round:
-      'Round',
-
-    score:
-      'Score',
-
-    correct:
-      'correct',
-
-    correctAnswers:
-      'Correct Answers',
-
-    answers:
-      'answers',
-
-    of:
-      'of',
-
-    adaptive:
-      'Adaptive Difficulty',
-
-    adaptiveUp:
-      'Excellent performance. The next session will be slightly harder.',
-
-    adaptiveDown:
-      'This session was challenging. The next session will be slightly easier.',
-
-    adaptiveSame:
-      'Good performance. The difficulty will remain stable.',
-
-    adaptiveInfo:
-      'Game difficulty automatically adapts to your actual performance.',
-
-    previousPerformance:
-      'Previous Performance',
-
-    difficulty:
-      'Current Difficulty',
-
-    noSelection:
-      'No level selection required',
-
-    excellent:
-      'Excellent!',
-
-    veryGood:
-      'Very Good!',
-
-    good:
-      'Good Job!',
-
-    keepPracticing:
-      'Keep Practicing!',
-
-    easy:
-      'Easy',
-
-    medium:
-      'Medium',
-
-    hard:
-      'Hard',
-
-    expert:
-      'Expert',
-
-    circle:
-      'Circle',
-
-    square:
-      'Square',
-
-    triangle:
-      'Triangle',
-
-    diamond:
-      'Diamond',
-
-    star:
-      'Star',
-
-    hexagon:
-      'Hexagon',
-
-    red:
-      'Red',
-
-    blue:
-      'Blue',
-
-    green:
-      'Green',
-
-    yellow:
-      'Yellow',
-
-    purple:
-      'Purple',
-
-    pink:
-      'Pink',
+    subtitle: 'Find the correct shape and color',
+    instruction: 'Find the correct shape',
+    start: 'Start Game',
+    gameCompleted: 'Game Completed',
+    tryAgain: 'Try Again',
+    back: 'Back',
+    round: 'Round',
+    score: 'Score',
+    correct: 'correct',
+    correctAnswers: 'Correct Answers',
+    answers: 'answers',
+    of: 'of',
+    adaptive: 'Adaptive Difficulty',
+    adaptiveUp: 'Excellent performance. The next session will be slightly harder.',
+    adaptiveDown: 'This session was challenging. The next session will be slightly easier.',
+    adaptiveSame: 'Good performance. The difficulty will remain stable.',
+    adaptiveInfo: 'Game difficulty automatically adapts to your actual performance.',
+    previousPerformance: 'Previous Performance',
+    difficulty: 'Current Difficulty',
+    noSelection: 'No level selection required',
+    excellent: 'Excellent!',
+    veryGood: 'Very Good!',
+    good: 'Good Job!',
+    keepPracticing: 'Keep Practicing!',
+    easy: 'Easy',
+    medium: 'Medium',
+    hard: 'Hard',
+    expert: 'Expert',
+    circle: 'Circle',
+    square: 'Square',
+    triangle: 'Triangle',
+    diamond: 'Diamond',
+    star: 'Star',
+    hexagon: 'Hexagon',
+    red: 'Red',
+    blue: 'Blue',
+    green: 'Green',
+    yellow: 'Yellow',
+    purple: 'Purple',
+    pink: 'Pink',
   },
 };
-
-/*
- * ============================================================
- * RANDOM HELPERS
- * ============================================================
- */
 
 function randomItem<T>(
   array: T[]
@@ -390,20 +204,12 @@ function shuffle<T>(
   );
 }
 
-/*
- * ============================================================
- * TARGET
- * ============================================================
- */
-
 function generateRandomTarget(): Shape {
   return {
     shape: randomItem(shapeTypes),
     color: randomItem(shapeColors),
   };
 }
-
-
 
 function generateOptions(
   target: Shape,
@@ -415,8 +221,6 @@ function generateOptions(
     ] || difficultyConfig[1];
 
   const options: Shape[] = [];
-
-
 
   options.push({
     shape: target.shape,
@@ -447,20 +251,10 @@ function generateOptions(
     let newShape: ShapeType;
     let newColor: string;
 
-    /*
-     * Similar distractors.
-     */
-
     if (
       Math.random() <
       config.similarity
     ) {
-      /*
-       * Same shape + different color
-       * OR
-       * different shape + same color
-       */
-
       if (
         Math.random() < 0.5
       ) {
@@ -481,11 +275,6 @@ function generateOptions(
           target.color;
       }
     } else {
-      /*
-       * Completely different
-       * shape + color.
-       */
-
       newShape =
         randomItem(
           availableShapes
@@ -516,12 +305,6 @@ function generateOptions(
 
   return shuffle(options);
 }
-
-/*
- * ============================================================
- * SHAPE COMPONENT
- * ============================================================
- */
 
 function ShapeComponent({
   type,
@@ -646,12 +429,6 @@ function ShapeComponent({
   }
 }
 
-/*
- * ============================================================
- * PAGE HEADER
- * ============================================================
- */
-
 interface PageHeaderProps {
   title: string;
   subtitle?: string;
@@ -669,6 +446,8 @@ function PageHeader({
   isRTL,
   backLabel,
 }: PageHeaderProps) {
+  const iconColor = 'rgba(73, 194, 226, 1)';
+
   return (
     <View
       style={[
@@ -697,13 +476,9 @@ function PageHeader({
         ]}
       >
         <MaterialCommunityIcons
-          name={
-            isRTL
-              ? 'arrow-left'
-              : 'arrow-right'
-          }
+          name="arrow-left"
           size={23}
-          color={colors.text}
+          color={iconColor}
         />
       </TouchableOpacity>
 
@@ -756,12 +531,6 @@ function PageHeader({
   );
 }
 
-/*
- * ============================================================
- * MAIN SCREEN
- * ============================================================
- */
-
 export default function MemoryChallenge() {
   const router = useRouter();
 
@@ -774,16 +543,12 @@ export default function MemoryChallenge() {
     language,
   } = useLanguage();
 
+  const iconColor = 'rgba(73, 194, 226, 1)';
+
   const currentText =
     language === 'fa'
       ? text.fa
       : text.en;
-
-  /*
-   * Adaptive difficulty.
-   *
-   * User NEVER changes this manually.
-   */
 
   const [
     difficulty,
@@ -796,10 +561,6 @@ export default function MemoryChallenge() {
   ] = useState<number | null>(
     null
   );
-
-  /*
-   * Game state.
-   */
 
   const [
     gameStarted,
@@ -844,12 +605,6 @@ export default function MemoryChallenge() {
   ] = useState<
     'up' | 'down' | 'same' | null
   >(null);
-
-  /*
-   * ============================================================
-   * LOAD ADAPTIVE DATA
-   * ============================================================
-   */
 
   useEffect(() => {
     loadAdaptiveState();
@@ -903,12 +658,6 @@ export default function MemoryChallenge() {
     }
   }
 
-  /*
-   * ============================================================
-   * SAVE ADAPTIVE DATA
-   * ============================================================
-   */
-
   async function saveAdaptiveState(
     nextDifficulty: number,
     accuracy: number
@@ -940,12 +689,6 @@ export default function MemoryChallenge() {
     }
   }
 
-  /*
-   * ============================================================
-   * START GAME
-   * ============================================================
-   */
-
   function startGame() {
     const newTarget =
       generateRandomTarget();
@@ -970,12 +713,6 @@ export default function MemoryChallenge() {
 
     setAdaptiveResult(null);
   }
-
-  /*
-   * ============================================================
-   * SELECT ANSWER
-   * ============================================================
-   */
 
   function selectShape(
     selectedShape: Shape
@@ -1003,10 +740,6 @@ export default function MemoryChallenge() {
       );
     }
 
-    /*
-     * Finish after the final round.
-     */
-
     if (
       currentRound >=
       TOTAL_ROUNDS
@@ -1017,10 +750,6 @@ export default function MemoryChallenge() {
 
       return;
     }
-
-    /*
-     * Next round.
-     */
 
     const nextRound =
       currentRound + 1;
@@ -1042,12 +771,6 @@ export default function MemoryChallenge() {
     );
   }
 
-  /*
-   * ============================================================
-   * FINISH GAME
-   * ============================================================
-   */
-
   async function finishGame(
     finalCorrectAnswers: number
   ) {
@@ -1065,14 +788,6 @@ export default function MemoryChallenge() {
       | 'down'
       | 'same' =
       'same';
-
-    /*
-     * Adaptive rules.
-     *
-     * 80-100% -> harder
-     * 40-79%  -> same
-     * 0-39%   -> easier
-     */
 
     if (
       accuracy >= 80 &&
@@ -1114,18 +829,7 @@ export default function MemoryChallenge() {
     );
   }
 
-  /*
-   * ============================================================
-   * RESET / PLAY AGAIN
-   * ============================================================
-   */
-
   function resetGame() {
-    /*
-     * IMPORTANT:
-     * Start from the NEW adaptive difficulty.
-     */
-
     const newTarget =
       generateRandomTarget();
 
@@ -1150,12 +854,6 @@ export default function MemoryChallenge() {
 
     setAdaptiveResult(null);
   }
-
-  /*
-   * ============================================================
-   * BACK
-   * ============================================================
-   */
 
   function handleBack() {
     if (
@@ -1183,12 +881,6 @@ export default function MemoryChallenge() {
       );
     }
   }
-
-  /*
-   * ============================================================
-   * HELPERS
-   * ============================================================
-   */
 
   function getShapeName(
     shape: ShapeType
@@ -1249,12 +941,6 @@ export default function MemoryChallenge() {
     return currentText.keepPracticing;
   }
 
-  /*
-   * ============================================================
-   * START SCREEN
-   * ============================================================
-   */
-
   if (
     !gameStarted &&
     !gameFinished
@@ -1308,8 +994,6 @@ export default function MemoryChallenge() {
               duration: 450,
             }}
           >
-            {/* Game intro */}
-
             <View
               style={[
                 styles.introCard,
@@ -1368,8 +1052,6 @@ export default function MemoryChallenge() {
                 {currentText.adaptiveInfo}
               </Text>
             </View>
-
-            {/* Adaptive information */}
 
             <View
               style={[
@@ -1444,8 +1126,6 @@ export default function MemoryChallenge() {
               </View>
             </View>
 
-            {/* Previous performance */}
-
             {previousAccuracy !==
               null && (
               <View
@@ -1508,8 +1188,6 @@ export default function MemoryChallenge() {
               </View>
             )}
 
-            {/* Start */}
-
             <TouchableOpacity
               onPress={
                 startGame
@@ -1519,7 +1197,7 @@ export default function MemoryChallenge() {
                 styles.startButton,
                 {
                   backgroundColor:
-                    colors.primary,
+                    iconColor,
                 },
               ]}
             >
@@ -1542,12 +1220,6 @@ export default function MemoryChallenge() {
       </View>
     );
   }
-
-  /*
-   * ============================================================
-   * RESULT SCREEN
-   * ============================================================
-   */
 
   if (gameFinished) {
     const maxScore =
@@ -1608,8 +1280,6 @@ export default function MemoryChallenge() {
               damping: 18,
             }}
           >
-            {/* Result icon */}
-
             <View
               style={[
                 styles.resultIconBox,
@@ -1642,8 +1312,6 @@ export default function MemoryChallenge() {
                 currentText.gameCompleted
               }
             </Text>
-
-            {/* Score */}
 
             <View
               style={[
@@ -1681,8 +1349,6 @@ export default function MemoryChallenge() {
               </Text>
             </View>
 
-            {/* Correct answers */}
-
             <Text
               style={[
                 styles.resultDescription,
@@ -1700,8 +1366,6 @@ export default function MemoryChallenge() {
               }
             </Text>
 
-            {/* Feedback */}
-
             <Text
               style={[
                 styles.feedbackText,
@@ -1715,8 +1379,6 @@ export default function MemoryChallenge() {
                 percentage
               )}
             </Text>
-
-            {/* Percentage */}
 
             <View
               style={[
@@ -1744,8 +1406,6 @@ export default function MemoryChallenge() {
                 ]}
               />
             </View>
-
-            {/* Adaptive result */}
 
             <View
               style={[
@@ -1824,8 +1484,6 @@ export default function MemoryChallenge() {
               </View>
             </View>
 
-            {/* New difficulty */}
-
             <View
               style={[
                 styles.nextDifficultyCard,
@@ -1876,8 +1534,6 @@ export default function MemoryChallenge() {
               </Text>
             </View>
 
-            {/* Try again */}
-
             <TouchableOpacity
               onPress={
                 resetGame
@@ -1887,7 +1543,7 @@ export default function MemoryChallenge() {
                 styles.startButton,
                 {
                   backgroundColor:
-                    colors.primary,
+                    iconColor,
                   marginTop:
                     Spacing.lg,
                 },
@@ -1914,12 +1570,6 @@ export default function MemoryChallenge() {
       </View>
     );
   }
-
-  /*
-   * ============================================================
-   * GAME SCREEN
-   * ============================================================
-   */
 
   const targetShapeName =
     getShapeName(
@@ -1955,8 +1605,6 @@ export default function MemoryChallenge() {
           currentText.back
         }
       />
-
-      {/* Progress */}
 
       <View
         style={
@@ -2022,8 +1670,6 @@ export default function MemoryChallenge() {
         </View>
       </View>
 
-      {/* Game */}
-
       <View
         style={
           styles.gameContent
@@ -2045,18 +1691,6 @@ export default function MemoryChallenge() {
           }
         </Text>
 
-        {/*
-         * IMPORTANT:
-         *
-         * This is the original core mechanic.
-         *
-         * Example:
-         * "Red Circle"
-         *
-         * User must find exactly:
-         * Circle + Red
-         */}
-
         <Text
           style={[
             styles.targetText,
@@ -2072,8 +1706,6 @@ export default function MemoryChallenge() {
             ? `${targetShapeName} ${targetColorName}`
             : `${targetColorName} ${targetShapeName}`}
         </Text>
-
-        {/* Options */}
 
         <View
           style={
@@ -2146,21 +1778,11 @@ export default function MemoryChallenge() {
   );
 }
 
-/*
- * ============================================================
- * STYLES
- * ============================================================
- */
-
 const styles =
   StyleSheet.create({
     container: {
       flex: 1,
     },
-
-    /*
-     * HEADER
-     */
 
     pageHeader: {
       width: '100%',
@@ -2202,10 +1824,6 @@ const styles =
       lineHeight: 18,
     },
 
-    /*
-     * CONTENT
-     */
-
     content: {
       paddingTop: 20,
       paddingHorizontal:
@@ -2218,10 +1836,6 @@ const styles =
         Spacing.lg,
       paddingBottom: 100,
     },
-
-    /*
-     * INTRO
-     */
 
     introCard: {
       borderWidth: 1,
@@ -2250,10 +1864,6 @@ const styles =
       lineHeight: 22,
       marginTop: 9,
     },
-
-    /*
-     * ADAPTIVE
-     */
 
     adaptiveCard: {
       marginTop: Spacing.md,
@@ -2315,10 +1925,6 @@ const styles =
       marginTop: 2,
     },
 
-    /*
-     * BUTTON
-     */
-
     startButton: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -2336,10 +1942,6 @@ const styles =
       fontSize: 16,
       fontWeight: '700',
     },
-
-    /*
-     * PROGRESS
-     */
 
     progressContainer: {
       paddingHorizontal:
@@ -2373,10 +1975,6 @@ const styles =
       borderRadius:
         BorderRadius.full,
     },
-
-    /*
-     * GAME
-     */
 
     gameContent: {
       flex: 1,
@@ -2418,10 +2016,6 @@ const styles =
       justifyContent: 'center',
     },
 
-    /*
-     * SHAPES
-     */
-
     circleShape: {
       borderRadius: 999,
     },
@@ -2450,10 +2044,6 @@ const styles =
       textAlign: 'center',
       lineHeight: 55,
     },
-
-    /*
-     * RESULT
-     */
 
     resultIconBox: {
       width: 82,
@@ -2529,10 +2119,6 @@ const styles =
       borderRadius:
         BorderRadius.full,
     },
-
-    /*
-     * ADAPTIVE RESULT
-     */
 
     adaptiveResultCard: {
       borderWidth: 1,
