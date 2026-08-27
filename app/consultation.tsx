@@ -49,7 +49,7 @@ export default function ConsultationScreen() {
       ? 'سلام، من'
       : "Hello, I'm",
 
-    speechName: 'نورولیا',
+    speechName: 'Neurolia',
 
     speechSub: isRTL
       ? 'در این بخش مشاوره تخصصی در انتظار شماست'
