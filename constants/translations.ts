@@ -3,7 +3,7 @@ import { Brain } from "lucide-react-native";
 export const translations = {
   fa: {
     protocol: 'پروتکل',
-neurolia: 'نورولیا',
+    neurolia: 'نورولیا',
     // ===== General =====
     appName: 'نورولیا',
     welcome: 'خوش آمدید',
@@ -159,8 +159,8 @@ neurolia: 'نورولیا',
     saving: 'در حال ذخیره...',
     noMedicationHistory: 'تاریخچه دارویی وجود ندارد',
     noMedicationHistoryMessage: 'هنوز هیچ دارویی ثبت نشده است. اولین داروی خود را اضافه کنید.',
-      "type": "نوع",
-  "ok": "تأیید",
+    type: "نوع",
+    ok: "تأیید",
     // ===== Profile =====
     profile: 'پروفایل',
     editProfile: 'ویرایش پروفایل',
@@ -280,7 +280,6 @@ neurolia: 'نورولیا',
     moviesBasedOnInterests: 'فیلم‌های متناسب با علایق شما',
     seeAll: 'مشاهده همه',
 
-    // 🎬 فیلم‌های جدید
     weeklyMovieTitle: 'اودیسه',
     weeklyMovieYear: '۲۰۲۶',
     weeklyMovieGenre: 'ماجراجویی • حماسی • فانتزی',
@@ -345,6 +344,7 @@ neurolia: 'نورولیا',
   en: {
     // ===== General =====
     appName: 'NeuroLia',
+    neurolia: 'NeuroLia',
     welcome: 'Welcome',
     login: 'Login',
     register: 'Register',
@@ -393,29 +393,28 @@ neurolia: 'نورولیا',
     completed: 'Completed',
     pending: 'Pending',
     medications: 'Medications',
-// ===== PLUS MODULES =====
 
-modulesBadge: 'Smart Learning',
-modulesTitle: 'Modules',
-modulesSubtitle: 'Choose your favorite learning path',
-modulesComingSoon: 'Coming Soon',
-back: 'Back',
+    modulesBadge: 'Smart Learning',
+    modulesTitle: 'Modules',
+    modulesSubtitle: 'Choose your favorite learning path',
+    modulesComingSoon: 'Coming Soon',
+    back: 'Back',
 
-quranModuleTitle: 'Quran Memorization',
-quranModuleDescription:
-  'Memorize verses and surahs with smart practice',
+    quranModuleTitle: 'Quran Memorization',
+    quranModuleDescription:
+      'Memorize verses and surahs with smart practice',
 
-gamesModuleTitle: 'Bilingual Games',
-gamesModuleDescription:
-  'Learn and train your mind with fun games',
+    gamesModuleTitle: 'Bilingual Games',
+    gamesModuleDescription:
+      'Learn and train your mind with fun games',
 
-poemsModuleTitle: 'Poem Memorization',
-poemsModuleDescription:
-  'Improve memory, literature and understanding',
+    poemsModuleTitle: 'Poem Memorization',
+    poemsModuleDescription:
+      'Improve memory, literature and understanding',
 
-sportsModuleTitle: 'Sports',
-sportsModuleDescription:
-  'Improve brain and body performance through sports training',
+    sportsModuleTitle: 'Sports',
+    sportsModuleDescription:
+      'Improve brain and body performance through sports training',
     // ===== Common Actions =====
     add: 'Add',
     delete: 'Delete',
@@ -501,8 +500,7 @@ sportsModuleDescription:
     startGame: 'Start Game',
     pauseGame: 'Pause Game',
     gameCompleted: 'Game Completed',
-// en
-home: 'Home',
+    home: 'Home',
 
     // ===== Dashboard =====
     cognitiveHealth: 'Cognitive Health',
@@ -515,7 +513,7 @@ home: 'Home',
     dashboardSubtitle: 'Your personal cognitive wellness assistant',
     dashboardReadyHelp: 'Ready to help you today',
     dashboardWellnessJourney: 'AI guided wellness journey',
-    dashboardWelcomeBubble: 'Welcome to Norulia',
+    dashboardWelcomeBubble: 'Welcome to Neurolia',
     dashboardCognitiveProgress: 'Cognitive wellness progress',
     dashboardKeepGoing: 'Almost there, keep going',
     quickAccess: 'Quick access',
@@ -564,98 +562,74 @@ home: 'Home',
     supplement: 'Supplement',
     missed: 'Missed',
     noMedicationsToday: 'No medications scheduled for today',
-// ===== Navigation =====
-// home: 'خانه',
-nextStep: 'مرحله بعد',
-previous: 'قبلی',
-done: 'انجام شد',
+    nextStep: 'Next Step',
+    previous: 'Previous',
+    done: 'Done',
 
-// ===== Forms =====
-required: 'الزامی',
-optional: 'اختیاری',
-confirm: 'تأیید',
-submit: 'ثبت',
-update: 'به‌روزرسانی',
-reset: 'بازنشانی',
-neurolia: 'Neurolia',
-// ===== PLUS MODULES =====
+    // ===== Forms =====
+    required: 'Required',
+    optional: 'Optional',
+    confirm: 'Confirm',
+    submit: 'Submit',
+    update: 'Update',
+    reset: 'Reset',
 
-// modulesBadge: 'یادگیری هوشمند',
-// modulesTitle: 'ماژول‌ها',
-// modulesSubtitle: 'مسیر یادگیری مورد علاقه‌ات را انتخاب کن',
-// modulesComingSoon: 'به‌زودی',
+    // ===== Messages =====
+    successMessage: 'Operation completed successfully.',
+    errorMessage: 'An error occurred. Please try again.',
+    pleaseTryAgain: 'Please try again.',
+    operationFailed: 'Operation failed.',
+    changesSaved: 'Changes saved successfully.',
 
-// quranModuleTitle: 'حفظ قرآن',
-// quranModuleDescription:
-//   'حفظ آیات و سوره‌ها با تمرین هوشمند',
+    // ===== Games =====
+    gameInstructions: 'Game Instructions',
+    gameOver: 'Game Over',
+    yourScore: 'Your Score',
+    finalScore: 'Final Score',
+    highScore: 'High Score',
+    restartGame: 'Restart Game',
+    resumeGame: 'Resume Game',
+    quitGame: 'Quit Game',
+    continueGame: 'Continue Game',
+    correct: 'Correct',
+    incorrect: 'Incorrect',
+    timeRemaining: 'Time Remaining',
+    seconds: 'seconds',
+    levelComplete: 'Level Complete',
+    wellDone: 'Well Done',
+    Protocol: 'Protocol',
 
-// gamesModuleTitle: 'بازی‌های دوزبانه',
-// gamesModuleDescription:
-//   'یادگیری و تقویت ذهن با بازی‌های جذاب',
+    // ===== Medication =====
+    medicationDetails: 'Medication Details',
+    editMedication: 'Edit Medication',
+    deleteMedication: 'Delete Medication',
+    confirmDelete: 'Confirm Delete',
+    medicationAdded: 'Medication added successfully.',
+    medicationUpdated: 'Medication updated successfully.',
+    medicationDeleted: 'Medication deleted successfully.',
+    noMedications: 'No medications registered.',
 
-// poemsModuleTitle: 'حفظ اشعار',
-// poemsModuleDescription:
-//   'حافظه، ادبیات و درک معنا را تقویت کن',
+    // ===== Schedule =====
+    addActivity: 'Add Activity',
+    activityName: 'Activity Name',
+    activityType: 'Activity Type',
+    startTime: 'Start Time',
+    endTime: 'End Time',
+    saveActivity: 'Save Activity',
+    activityAdded: 'Activity added successfully.',
+    noActivities: 'No activities to display.',
 
-// sportsModuleTitle: 'ورزش',
-// sportsModuleDescription:
-//   'تقویت عملکرد مغز و بدن با تمرین‌های ورزشی',
-// ===== Messages =====
-successMessage: 'عملیات با موفقیت انجام شد.',
-errorMessage: 'خطایی رخ داد. لطفاً دوباره تلاش کنید.',
-pleaseTryAgain: 'لطفاً دوباره تلاش کنید.',
-operationFailed: 'عملیات ناموفق بود.',
-changesSaved: 'تغییرات با موفقیت ذخیره شد.',
+    // ===== Consultation =====
+    consultationTitle: 'Consultation Session',
+    bookConsultation: 'Book Consultation',
+    consultationDate: 'Consultation Date',
+    consultationTime: 'Consultation Time',
+    consultant: 'Consultant',
+    confirmBooking: 'Confirm Booking',
+    bookingSuccessful: 'Session booked successfully.',
+    noConsultations: 'No consultation sessions.',
 
-// ===== Games =====
-gameInstructions: 'دستورالعمل بازی',
-gameOver: 'بازی تمام شد',
-yourScore: 'امتیاز شما',
-finalScore: 'امتیاز نهایی',
-highScore: 'بالاترین امتیاز',
-restartGame: 'شروع مجدد',
-resumeGame: 'ادامه بازی',
-quitGame: 'خروج از بازی',
-continueGame: 'ادامه بازی',
-correct: 'درست',
-incorrect: 'نادرست',
-timeRemaining: 'زمان باقی‌مانده',
-seconds: 'ثانیه',
-levelComplete: 'مرحله تکمیل شد',
-wellDone: 'آفرین',
-Protocol: 'پروتکل',
-Neurolia: 'نورولیا',
-
-// ===== Medication =====
-medicationDetails: 'جزئیات دارو',
-editMedication: 'ویرایش دارو',
-deleteMedication: 'حذف دارو',
-confirmDelete: 'تأیید حذف',
-medicationAdded: 'دارو با موفقیت اضافه شد.',
-medicationUpdated: 'دارو با موفقیت به‌روزرسانی شد.',
-medicationDeleted: 'دارو با موفقیت حذف شد.',
-noMedications: 'دارویی ثبت نشده است.',
-
-// ===== Schedule =====
-addActivity: 'افزودن فعالیت',
-activityName: 'نام فعالیت',
-activityType: 'نوع فعالیت',
-startTime: 'زمان شروع',
-endTime: 'زمان پایان',
-saveActivity: 'ذخیره فعالیت',
-activityAdded: 'فعالیت با موفقیت اضافه شد.',
-noActivities: 'فعالیتی برای نمایش وجود ندارد.',
-// ===== Consultation =====
-consultationTitle: 'جلسه مشاوره',
-bookConsultation: 'رزرو جلسه مشاوره',
-consultationDate: 'تاریخ جلسه',
-consultationTime: 'زمان جلسه',
-consultant: 'مشاور',
-confirmBooking: 'تأیید رزرو',
-bookingSuccessful: 'جلسه با موفقیت رزرو شد.',
-noConsultations: 'جلسه مشاوره‌ای وجود ندارد.',
     // ===== Add Medication =====
-
     addMedicationTitle: 'Add Medication ',
     medicationName: 'Medication Name',
     medicationNamePlaceholder: 'e.g., Donepezil',
@@ -693,8 +667,6 @@ noConsultations: 'جلسه مشاوره‌ای وجود ندارد.',
     checkAnswer: 'Check Answer',
     orderVerses: 'Order the verses',
     checkOrder: 'Check Order',
-    // correct: '✅ Correct!',
-    // incorrect: '❌ Incorrect',
     
     // ===== NEW KEYS FOR DAILY PLAN =====
     dailyPlan: 'Daily Plan',
@@ -705,7 +677,6 @@ noConsultations: 'جلسه مشاوره‌ای وجود ندارد.',
     poetryMemory: 'Persian Poetry Memory',
     memoryLiterature: 'Memory + Literature + Meaning',
     searchPoems: 'Search poems...',
-    // back: 'Back',
     meaning: 'Meaning',
     meaningQuestion: 'What is the meaning of "Saqi"?',
     backToList: 'Back to List',
@@ -714,7 +685,6 @@ noConsultations: 'جلسه مشاوره‌ای وجود ندارد.',
     howToPlay: 'How to play',
 
     // ===== BOTTOM NAV BAR =====
-    // home: 'Home',
     brain: 'Brain',
     plan: 'Plan',
 
@@ -728,7 +698,6 @@ noConsultations: 'جلسه مشاوره‌ای وجود ندارد.',
     moviesBasedOnInterests: 'Movies selected based on your interests',
     seeAll: 'See all',
 
-    // 🎬 New Movies
     weeklyMovieTitle: 'The Odyssey',
     weeklyMovieYear: '2026',
     weeklyMovieGenre: 'Adventure • Epic • Fantasy',
@@ -774,7 +743,7 @@ noConsultations: 'جلسه مشاوره‌ای وجود ندارد.',
     // ================================================================
 
     // Cultural Journey Section
-    Brain: 'پروتکل',
+    Brain: 'Protocol',
     monthlyJourney: 'Your 4-Week Journey',
     chooseWeek: "Explore this month's cultural recommendations",
     week: 'Week',
@@ -788,6 +757,5 @@ noConsultations: 'جلسه مشاوره‌ای وجود ندارد.',
     current: 'START',
     explore: 'Explore',
     recommendations: 'Your weekly recommendations',
-    // previous: 'Previous',
   }
 };

@@ -182,9 +182,6 @@ export default function AssistantScreen() {
       ? 'سلام، روز بخیر !\nمن نورولیا هستم.\nراجع به چیزی دوست داری با هم صحبت کنیم؟'
       : 'Hello, good day \nI am Neurolia.\nIs there something you would like to talk about?';
 
-  /*
-   * Welcome typing animation
-   */
   useEffect(() => {
     if (hasStarted) {
       return;
@@ -382,9 +379,6 @@ export default function AssistantScreen() {
         setRequestError(false);
         setInputText('');
 
-        /*
-         * Start chat.
-         */
         if (!hasStarted) {
           setHasStarted(true);
 
@@ -503,9 +497,6 @@ export default function AssistantScreen() {
       handleSend,
     ]);
 
-  /*
-   * Auto scroll.
-   */
   useEffect(() => {
     if (
       messages.length === 0
@@ -524,9 +515,6 @@ export default function AssistantScreen() {
       clearTimeout(timer);
   }, [messages]);
 
-  /*
-   * Cleanup.
-   */
   useEffect(() => {
     return () => {
       abortController.current?.abort();
@@ -580,6 +568,8 @@ export default function AssistantScreen() {
       ? 'rgba(255,255,255,0.055)'
       : 'rgba(0,0,0,0.035)';
 
+  const iconColor = isDark ? 'rgba(73, 194, 226, 1)' : colors.text;
+
   return (
     <LinearGradient
       colors={backgroundGradient}
@@ -599,10 +589,6 @@ export default function AssistantScreen() {
         }
       >
 
-        {/* =====================================================
-            MAIN CONTENT
-            ===================================================== */}
-
         <View
           style={[
             styles.mainContent,
@@ -614,10 +600,6 @@ export default function AssistantScreen() {
             },
           ]}
         >
-
-          {/* =====================================================
-              WELCOME SCENE
-              ===================================================== */}
 
           <AnimatePresence>
             {!hasStarted && (
@@ -640,8 +622,6 @@ export default function AssistantScreen() {
                 ]}
                 pointerEvents="box-none"
               >
-
-                {/* Avatar */}
 
                 <MotiView
                   from={{
@@ -704,8 +684,6 @@ export default function AssistantScreen() {
                     ]}
                   />
                 </MotiView>
-
-                {/* Dialog */}
 
                 <MotiView
                   from={{
@@ -773,31 +751,28 @@ export default function AssistantScreen() {
                     >
                       <View
                         style={[
-                          styles.noruliaDot,
+                          styles.neuroliaDot,
                           {
-                            backgroundColor:
-                              colors.primary,
+                            backgroundColor: iconColor,
                           },
                         ]}
                       />
 
                       <Text
                         style={[
-                          styles.noruliaName,
+                          styles.neuroliaName,
                           {
                             color:
                               colors.text,
                           },
                         ]}
                       >
-                        Norulia
+                        Neurolia
                       </Text>
 
                       <Sparkles
                         size={15}
-                        color={
-                          colors.primary
-                        }
+                        color={iconColor}
                         strokeWidth={2.2}
                       />
                     </View>
@@ -851,10 +826,6 @@ export default function AssistantScreen() {
             )}
           </AnimatePresence>
 
-          {/* =====================================================
-              CHAT HEADER
-              ===================================================== */}
-
           <AnimatePresence>
             {hasStarted && (
               <MotiView
@@ -894,18 +865,10 @@ export default function AssistantScreen() {
                   ]}
                 >
 
-                  <View
-                    style={[
-                      styles.headerAvatar,
-                      {
-                        borderColor:
-                          colors.primary,
-                      },
-                    ]}
-                  >
+                  <View style={styles.headerAvatarContainer}>
                     <Image
                       source={require(
-                        '../../assets/avatars/modell.png'
+                        '../../assets/avatars/model8.png'
                       )}
                       style={
                         styles.headerAvatarImage
@@ -944,7 +907,7 @@ export default function AssistantScreen() {
                           },
                         ]}
                       >
-                        Norulia
+                        Neurolia
                       </Text>
 
                       <View
@@ -960,9 +923,7 @@ export default function AssistantScreen() {
                       >
                         <Sparkles
                           size={11}
-                          color={
-                            colors.primary
-                          }
+                          color={iconColor}
                         />
                       </View>
                     </View>
@@ -1002,10 +963,6 @@ export default function AssistantScreen() {
               </MotiView>
             )}
           </AnimatePresence>
-
-          {/* =====================================================
-              CHAT AREA
-              ===================================================== */}
 
           {hasStarted && (
             <View
@@ -1065,18 +1022,10 @@ export default function AssistantScreen() {
                     >
 
                       {!message.isUser && (
-                        <View
-                          style={[
-                            styles.messageAvatar,
-                            {
-                              borderColor:
-                                colors.primary,
-                            },
-                          ]}
-                        >
+                        <View style={styles.messageAvatarContainer}>
                           <Image
                             source={require(
-                              '../../assets/avatars/modell.png'
+                              '../../assets/avatars/model8.png'
                             )}
                             style={
                               styles.messageAvatarImage
@@ -1177,18 +1126,10 @@ export default function AssistantScreen() {
                       },
                     ]}
                   >
-                    <View
-                      style={[
-                        styles.messageAvatar,
-                        {
-                          borderColor:
-                            colors.primary,
-                        },
-                      ]}
-                    >
+                    <View style={styles.messageAvatarContainer}>
                       <Image
                         source={require(
-                          '../../assets/avatars/modell.png'
+                          '../../assets/avatars/model8.png'
                         )}
                         style={
                           styles.messageAvatarImage
@@ -1261,9 +1202,7 @@ export default function AssistantScreen() {
                   >
                     <RotateCcw
                       size={15}
-                      color={
-                        colors.primary
-                      }
+                      color={iconColor}
                     />
 
                     <Text
@@ -1337,12 +1276,6 @@ export default function AssistantScreen() {
 
         </View>
 
-        {/* =====================================================
-            FIXED INPUT AREA
-            این قسمت عمداً خارج از welcomeScene است
-            و همیشه پایین صفحه می‌ماند.
-            ===================================================== */}
-
         <View
           style={[
             styles.inputArea,
@@ -1355,10 +1288,6 @@ export default function AssistantScreen() {
 
               paddingHorizontal: 14,
 
-              /*
-               * مهم:
-               * Input همیشه بالاتر از Welcome Scene باشد.
-               */
               zIndex: 100,
               elevation: 100,
             },
@@ -1390,9 +1319,7 @@ export default function AssistantScreen() {
             >
               <Mic
                 size={21}
-                color={
-                  colors.textSecondary
-                }
+                color={iconColor}
               />
             </TouchableOpacity>
 
@@ -1405,7 +1332,7 @@ export default function AssistantScreen() {
               placeholder={
                 language === 'fa'
                   ? 'پیامت را بنویس...'
-                  : 'Message Norulia...'
+                  : 'Message Neurolia...'
               }
               placeholderTextColor={
                 colors.textSecondary
@@ -1462,7 +1389,7 @@ export default function AssistantScreen() {
                   color={
                     inputText.trim()
                       ? '#FFFFFF'
-                      : colors.textSecondary
+                      : iconColor
                   }
                   strokeWidth={2.4}
                 />
@@ -1486,22 +1413,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  /*
-   * کل محتوای بالایی.
-   * Input دیگر داخل این بخش نیست.
-   */
   mainContent: {
     flex: 1,
     position: 'relative',
   },
 
-  /*
-   * WELCOME
-   *
-   * نکته مهم:
-   * absoluteFillObject حذف شده.
-   * بنابراین Welcome دیگر کل صفحه را نمی‌پوشاند.
-   */
   welcomeScene: {
     position: 'absolute',
 
@@ -1516,10 +1432,6 @@ const styles = StyleSheet.create({
 
     paddingHorizontal: 18,
 
-    /*
-     * فضای امن برای Input پایین.
-     * باعث می‌شود آواتار و دیالوگ وارد ناحیه چت‌باکس نشوند.
-     */
     paddingBottom: 100,
   },
 
@@ -1589,14 +1501,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  noruliaDot: {
+  neuroliaDot: {
     width: 7,
     height: 7,
 
     borderRadius: 4,
   },
 
-  noruliaName: {
+  neuroliaName: {
     fontSize: 13,
 
     fontWeight: '800',
@@ -1635,10 +1547,6 @@ const styles = StyleSheet.create({
     left: 28,
   },
 
-  /*
-   * HEADER
-   */
-
   chatHeader: {
     zIndex: 20,
 
@@ -1653,24 +1561,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  headerAvatar: {
+  headerAvatarContainer: {
     width: 46,
     height: 46,
-
-    borderRadius: 23,
-
-    borderWidth: 1.5,
-
-    overflow: 'hidden',
-
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
 
   headerAvatarImage: {
     width: 44,
     height: 44,
-
     resizeMode: 'contain',
   },
 
@@ -1723,10 +1623,6 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
 
-  /*
-   * CHAT
-   */
-
   chatArea: {
     flex: 1,
 
@@ -1755,24 +1651,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 
-  messageAvatar: {
+  messageAvatarContainer: {
     width: 32,
     height: 32,
-
-    borderRadius: 16,
-
-    borderWidth: 1,
-
-    overflow: 'hidden',
-
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
 
   messageAvatarImage: {
     width: 31,
     height: 31,
-
     resizeMode: 'contain',
   },
 
@@ -1902,21 +1790,11 @@ const styles = StyleSheet.create({
     marginTop: -3,
   },
 
-  /*
-   * INPUT
-   *
-   * این بخش در پایین KeyboardAvoidingView قرار دارد
-   * و هیچ‌وقت داخل Welcome Scene نیست.
-   */
-
   inputArea: {
     width: '100%',
 
     paddingTop: 8,
 
-    /*
-     * مهم‌ترین قسمت:
-     */
     position: 'relative',
 
     zIndex: 100,

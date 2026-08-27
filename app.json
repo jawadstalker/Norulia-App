@@ -24,7 +24,7 @@
 
     "android": {
       "notification": {
-  "icon": "./assets/avatars/blue.png",
+  "icon": "./assets/avatars/model8.png",
   "color": "#7C5CFC"
 },
       "adaptiveIcon": {

@@ -425,7 +425,7 @@ export default function CulturalScreen() {
             <PageHeader
               title={t.weeklyCinema || 'سفر فرهنگی'}
               subtitle={t.weeklyCinemaSubtitle || 'یک فیلم و یک کتاب متناسب با سلامت شناختی شما'}
-              icon={<Film size={20} color={colors.primary} strokeWidth={2.4} />}
+              icon={<Film size={20} color={iconColor} strokeWidth={2.4} />}
               onBack={handleBack}
               colors={colors}
               isDark={isDark}
