@@ -1,6 +1,6 @@
 # NeuroLia App
 
-A modern cross-platform mobile application built with React Native and Expo.
+A modern cross-platform mobile application built with React Native and Expo with some open source libraries.
 
 NeuroLia is designed with a modular and scalable architecture, combining Expo Router, TypeScript, Redux Toolkit, React Hook Form, and a collection of React Native libraries to provide a solid foundation for building a production-ready mobile experience.
 
