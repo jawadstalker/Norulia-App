@@ -36,6 +36,11 @@ import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Spacing, BorderRadius } from '../../constants/theme';
 
+// ============================================================
+// اضافه کردن import برای saveGameResult
+// ============================================================
+import { saveGameResult } from './gameResults';
+
 const TOTAL_TRIALS = 20;
 const MIN_LEVEL = 1;
 const MAX_LEVEL = 5;
@@ -151,8 +156,11 @@ const getConfig = (
 export default function VisualFlowScreen() {
   const router = useRouter();
 
-  const { colors } = useTheme();
+  const { colors, isAthlete } = useTheme();
   const { language, isRTL } = useLanguage();
+
+  // تعیین رنگ اصلی بر اساس تم
+  const primaryColor = isAthlete ? '#22C55E' : colors.primary;
 
   const text = useMemo(
     () =>
@@ -1007,6 +1015,229 @@ export default function VisualFlowScreen() {
         setDots([]);
 
         /*
+         * ============================================================
+         * محاسبه و ذخیره نتایج بازی
+         * ============================================================
+         */
+
+        const averageResponseTime =
+          finalResults
+            .filter(item => item.correct && item.rt > 0)
+            .reduce(
+              (sum, item) => sum + item.rt,
+              0
+            ) /
+          Math.max(
+            1,
+            finalResults.filter(
+              item => item.correct && item.rt > 0
+            ).length
+          );
+
+        const correctCount =
+          finalResults.filter(
+            item => item.correct
+          ).length;
+
+        const timeoutCount =
+          finalResults.filter(
+            item => item.rt === 0
+          ).length;
+
+        /*
+         * Visual Processing Speed
+         *
+         * Faster response + higher accuracy
+         * = higher score.
+         */
+        const speedScore = Math.round(
+          Math.min(
+            100,
+            Math.max(
+              0,
+              accuracy * 0.55 +
+                Math.max(
+                  0,
+                  100 -
+                    (averageResponseTime /
+                      2600) *
+                      100
+                ) *
+                  0.45
+            )
+          )
+        );
+
+        /*
+         * Visual Attention
+         *
+         * Mainly based on accuracy and
+         * resistance to timeout.
+         */
+        const attentionScore = Math.round(
+          Math.min(
+            100,
+            Math.max(
+              0,
+              accuracy * 0.8 +
+                ((TOTAL_TRIALS -
+                  timeoutCount) /
+                  TOTAL_TRIALS) *
+                  100 *
+                  0.2
+            )
+          )
+        );
+
+        /*
+         * Movement Accuracy
+         */
+        const movementAccuracy = Math.round(
+          Math.min(
+            100,
+            Math.max(0, accuracy)
+          )
+        );
+
+        /*
+         * Response Consistency
+         *
+         * Measures how stable response
+         * times are between trials.
+         */
+        const validResponseTimes =
+          finalResults
+            .filter(
+              item =>
+                item.correct &&
+                item.rt > 0
+            )
+            .map(item => item.rt);
+
+        let consistencyScore = 50;
+
+        if (
+          validResponseTimes.length >= 2
+        ) {
+          const mean =
+            validResponseTimes.reduce(
+              (sum, value) =>
+                sum + value,
+              0
+            ) /
+            validResponseTimes.length;
+
+          const variance =
+            validResponseTimes.reduce(
+              (sum, value) =>
+                sum +
+                Math.pow(
+                  value - mean,
+                  2
+                ),
+              0
+            ) /
+            validResponseTimes.length;
+
+          const standardDeviation =
+            Math.sqrt(variance);
+
+          const coefficient =
+            mean > 0
+              ? standardDeviation / mean
+              : 1;
+
+          consistencyScore = Math.round(
+            Math.min(
+              100,
+              Math.max(
+                0,
+                100 -
+                  coefficient * 100
+              )
+            )
+          );
+        }
+
+        /*
+         * Save the actual game result.
+         */
+        saveGameResult({
+          gameId: 'visual-flow',
+          gameName:
+            language === 'fa'
+              ? 'جریان بصری'
+              : 'Visual Flow',
+          timestamp: Date.now(),
+          score: scoreRef.current,
+
+          metrics: [
+            {
+              id: 'visual_processing_speed',
+              label:
+                language === 'fa'
+                  ? 'سرعت پردازش بصری'
+                  : 'Visual Processing Speed',
+              value: speedScore,
+              unit: '/100',
+            },
+
+            {
+              id: 'visual_attention',
+              label:
+                language === 'fa'
+                  ? 'توجه بصری'
+                  : 'Visual Attention',
+              value: attentionScore,
+              unit: '/100',
+            },
+
+            {
+              id: 'movement_accuracy',
+              label:
+                language === 'fa'
+                  ? 'دقت تشخیص حرکت'
+                  : 'Movement Accuracy',
+              value: movementAccuracy,
+              unit: '/100',
+            },
+
+            {
+              id: 'response_consistency',
+              label:
+                language === 'fa'
+                  ? 'ثبات پاسخ‌دهی'
+                  : 'Response Consistency',
+              value: consistencyScore,
+              unit: '/100',
+            },
+
+            {
+              id: 'average_response_time',
+              label:
+                language === 'fa'
+                  ? 'میانگین زمان پاسخ'
+                  : 'Average Response Time',
+              value: Math.round(
+                averageResponseTime
+              ),
+              unit: 'ms',
+            },
+          ],
+        }).catch(error => {
+          console.warn(
+            '[VisualFlow] Result save failed:',
+            error
+          );
+        });
+
+        /*
+         * ============================================================
+         * پایان بخش ذخیره نتایج
+         * ============================================================
+         */
+
+        /*
          * SHOW RESULT IMMEDIATELY
          */
 
@@ -1032,6 +1263,7 @@ export default function VisualFlowScreen() {
       [
         clearTimers,
         saveProgress,
+        language,
       ]
     );
 
@@ -1583,6 +1815,7 @@ export default function VisualFlowScreen() {
           onBack={handleBack}
           colors={colors}
           isRTL={isRTL}
+          primaryColor={primaryColor}
         />
 
         <ScrollView
@@ -1599,14 +1832,14 @@ export default function VisualFlowScreen() {
               styles.heroIcon,
               {
                 backgroundColor:
-                  colors.primary +
+                  primaryColor +
                   '15',
               },
             ]}
           >
             <Brain
               size={43}
-              color={colors.primary}
+              color={primaryColor}
             />
           </View>
 
@@ -1660,7 +1893,7 @@ export default function VisualFlowScreen() {
                       styles.previewDot,
                       {
                         backgroundColor:
-                          colors.primary,
+                          primaryColor,
                         opacity:
                           0.45 +
                           (index % 4) *
@@ -1701,14 +1934,14 @@ export default function VisualFlowScreen() {
                 styles.infoIcon,
                 {
                   backgroundColor:
-                    colors.primary +
+                    primaryColor +
                     '15',
                 },
               ]}
             >
               <Sparkles
                 size={22}
-                color={colors.primary}
+                color={primaryColor}
               />
             </View>
 
@@ -1758,10 +1991,10 @@ export default function VisualFlowScreen() {
               styles.levelCard,
               {
                 backgroundColor:
-                  colors.primary +
+                  primaryColor +
                   '0D',
                 borderColor:
-                  colors.primary +
+                  primaryColor +
                   '25',
               },
             ]}
@@ -1788,7 +2021,7 @@ export default function VisualFlowScreen() {
                   styles.levelValue,
                   {
                     color:
-                      colors.primary,
+                      primaryColor,
                     textAlign:
                       isRTL
                         ? 'right'
@@ -1802,7 +2035,7 @@ export default function VisualFlowScreen() {
 
             <TrendingUp
               size={24}
-              color={colors.primary}
+              color={primaryColor}
             />
           </View>
 
@@ -1821,7 +2054,7 @@ export default function VisualFlowScreen() {
             >
               <Trophy
                 size={21}
-                color={colors.primary}
+                color={primaryColor}
               />
 
               <Text
@@ -1862,7 +2095,7 @@ export default function VisualFlowScreen() {
               styles.primaryButton,
               {
                 backgroundColor:
-                  colors.primary,
+                  primaryColor,
               },
             ]}
           >
@@ -1905,6 +2138,7 @@ export default function VisualFlowScreen() {
           onBack={handleBack}
           colors={colors}
           isRTL={isRTL}
+          primaryColor={primaryColor}
         />
 
         <ScrollView
@@ -1921,14 +2155,14 @@ export default function VisualFlowScreen() {
               styles.resultIcon,
               {
                 backgroundColor:
-                  colors.primary +
+                  primaryColor +
                   '15',
               },
             ]}
           >
             <Trophy
               size={46}
-              color={colors.primary}
+              color={primaryColor}
             />
           </View>
 
@@ -1960,7 +2194,7 @@ export default function VisualFlowScreen() {
                 styles.scoreValue,
                 {
                   color:
-                    colors.primary,
+                    primaryColor,
                 },
               ]}
             >
@@ -2083,7 +2317,7 @@ export default function VisualFlowScreen() {
           >
             <Target
               size={22}
-              color={colors.primary}
+              color={primaryColor}
             />
 
             <View
@@ -2134,7 +2368,7 @@ export default function VisualFlowScreen() {
           >
             <Clock
               size={22}
-              color={colors.primary}
+              color={primaryColor}
             />
 
             <View
@@ -2186,7 +2420,7 @@ export default function VisualFlowScreen() {
           >
             <Sparkles
               size={23}
-              color={colors.primary}
+              color={primaryColor}
             />
 
             <View
@@ -2239,10 +2473,10 @@ export default function VisualFlowScreen() {
               styles.levelCard,
               {
                 backgroundColor:
-                  colors.primary +
+                  primaryColor +
                   '0D',
                 borderColor:
-                  colors.primary +
+                  primaryColor +
                   '25',
               },
             ]}
@@ -2269,7 +2503,7 @@ export default function VisualFlowScreen() {
                   styles.levelValue,
                   {
                     color:
-                      colors.primary,
+                      primaryColor,
                     textAlign:
                       isRTL
                         ? 'right'
@@ -2283,7 +2517,7 @@ export default function VisualFlowScreen() {
 
             <TrendingUp
               size={24}
-              color={colors.primary}
+              color={primaryColor}
             />
           </View>
 
@@ -2294,7 +2528,7 @@ export default function VisualFlowScreen() {
               styles.primaryButton,
               {
                 backgroundColor:
-                  colors.primary,
+                  primaryColor,
               },
             ]}
           >
@@ -2346,6 +2580,7 @@ export default function VisualFlowScreen() {
         onBack={handleBack}
         colors={colors}
         isRTL={isRTL}
+        primaryColor={primaryColor}
       />
 
       <View
@@ -2364,7 +2599,7 @@ export default function VisualFlowScreen() {
         >
           <Zap
             size={17}
-            color={colors.primary}
+            color={primaryColor}
           />
 
           <View>
@@ -2412,7 +2647,7 @@ export default function VisualFlowScreen() {
         >
           <Brain
             size={17}
-            color={colors.primary}
+            color={primaryColor}
           />
 
           <Text
@@ -2442,7 +2677,7 @@ export default function VisualFlowScreen() {
       >
         <Target
           size={20}
-          color={colors.primary}
+          color={primaryColor}
         />
 
         <Text
@@ -2477,7 +2712,7 @@ export default function VisualFlowScreen() {
             {
               width: timerWidth,
               backgroundColor:
-                colors.primary,
+                primaryColor,
             },
           ]}
         />
@@ -2555,7 +2790,7 @@ export default function VisualFlowScreen() {
                         dot.size /
                           2,
                       backgroundColor:
-                        colors.primary,
+                        primaryColor,
                     },
                   ]}
                 />
@@ -2644,6 +2879,7 @@ export default function VisualFlowScreen() {
             }
             colors={colors}
             disabled={!ready}
+            primaryColor={primaryColor}
           />
         </View>
 
@@ -2660,6 +2896,7 @@ export default function VisualFlowScreen() {
             }
             colors={colors}
             disabled={!ready}
+            primaryColor={primaryColor}
           />
 
           <View
@@ -2683,6 +2920,7 @@ export default function VisualFlowScreen() {
             }
             colors={colors}
             disabled={!ready}
+            primaryColor={primaryColor}
           />
         </View>
 
@@ -2699,6 +2937,7 @@ export default function VisualFlowScreen() {
             }
             colors={colors}
             disabled={!ready}
+            primaryColor={primaryColor}
           />
         </View>
       </View>
@@ -2716,12 +2955,14 @@ function Header({
   onBack,
   colors,
   isRTL,
+  primaryColor,
 }: {
   title: string;
   subtitle: string;
   onBack: () => void;
   colors: any;
   isRTL: boolean;
+  primaryColor: string;
 }) {
   return (
     <View
@@ -2806,6 +3047,7 @@ function DirectionButton({
   onPress,
   colors,
   disabled,
+  primaryColor,
 }: {
   label: string;
   icon:
@@ -2816,19 +3058,19 @@ function DirectionButton({
   onPress: () => void;
   colors: any;
   disabled: boolean;
+  primaryColor: string;
 }) {
-  const Icon =
-    icon === 'up'
-      ? require('lucide-react-native')
-          .ChevronUp
-      : icon === 'down'
-      ? require('lucide-react-native')
-          .ChevronDown
-      : icon === 'left'
-      ? require('lucide-react-native')
-          .ChevronLeft
-      : require('lucide-react-native')
-          .ChevronRight;
+  let IconComponent;
+  
+  if (icon === 'up') {
+    IconComponent = require('lucide-react-native').ChevronUp;
+  } else if (icon === 'down') {
+    IconComponent = require('lucide-react-native').ChevronDown;
+  } else if (icon === 'left') {
+    IconComponent = require('lucide-react-native').ChevronLeft;
+  } else {
+    IconComponent = require('lucide-react-native').ChevronRight;
+  }
 
   return (
     <TouchableOpacity
@@ -2841,16 +3083,17 @@ function DirectionButton({
           backgroundColor:
             colors.surface,
           borderColor:
-            colors.border,
+            disabled ? colors.border : primaryColor,
+          borderWidth: disabled ? 1 : 2,
           opacity: disabled
             ? 0.45
             : 1,
         },
       ]}
     >
-      <Icon
+      <IconComponent
         size={24}
-        color={colors.text}
+        color={disabled ? colors.text : primaryColor}
         strokeWidth={2.5}
       />
 
@@ -2858,8 +3101,7 @@ function DirectionButton({
         style={[
           styles.directionLabel,
           {
-            color:
-              colors.text,
+            color: disabled ? colors.text : primaryColor,
           },
         ]}
       >
@@ -2892,7 +3134,7 @@ const styles =
       width: '100%',
       paddingHorizontal:
         Spacing.lg,
-      paddingTop: 30,
+      paddingTop: 56,
       paddingBottom: 14,
       flexDirection: 'row',
       alignItems: 'center',

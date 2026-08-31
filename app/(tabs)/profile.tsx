@@ -86,7 +86,7 @@ export default function ProfileScreen() {
       <LinearGradient
         colors={isDark 
           ? ['rgba(73, 194, 226, 0.12)', 'rgba(73, 194, 226, 0.12)']
-          : ['rgba(73, 194, 226, 1)', 'rgba(73, 194, 226, 0.7)']
+          : ['rgba(220, 240, 250, 0.95)', 'rgba(73, 194, 226, 0.25)']
         }
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -149,7 +149,7 @@ export default function ProfileScreen() {
             style={[
               styles.userName,
               {
-                color: isDark ? colors.text : '#FFFFFF',
+                color: isDark ? colors.text : '#1A1A1A',
               },
             ]}
           >
@@ -160,7 +160,7 @@ export default function ProfileScreen() {
             style={[
               styles.email,
               {
-                color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.85)',
+                color: isDark ? colors.textSecondary : 'rgba(0,0,0,0.65)',
               },
             ]}
           >
@@ -173,7 +173,7 @@ export default function ProfileScreen() {
               {
                 backgroundColor: isDark 
                   ? colors.border 
-                  : 'rgba(255,255,255,0.30)',
+                  : 'rgba(0,0,0,0.15)',
               },
             ]}
           >
@@ -181,7 +181,7 @@ export default function ProfileScreen() {
               style={[
                 styles.profileAccentDot,
                 {
-                  backgroundColor: isDark ? iconColor : '#FFFFFF',
+                  backgroundColor: isDark ? iconColor : '#1A1A1A',
                 },
               ]}
             />
