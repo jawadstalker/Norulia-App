@@ -1,0 +1,879 @@
+diff --git a/app/games/admin-results.tsx b/app/games/admin-results.tsx
+new file mode 100644
+index 0000000..349a48a
+--- /dev/null
++++ b/app/games/admin-results.tsx
+@@ -0,0 +1,410 @@
++/*
++ * ================================================================
++ * admin-results.tsx
++ * ================================================================
++ *
++ * صفحه‌ی مدیریتی: لیست همه‌ی کاربرهایی که روی همین دستگاه با آن‌ها
++ * وارد اپ شده‌اید و برایشان فایل نتیجه ساخته شده، به همراه نتایج
++ * هر بازی برای هرکدام (نام بازی، هدف بازی، امتیاز، شاخص‌ها). از
++ * دکمه‌ی «اشتراک‌گذاری» می‌توانید فایل JSON خام هر کاربر را برای
++ * خودتان (ایمیل/تلگرام/...) بفرستید.
++ *
++ * مسیر این صفحه: /games/admin-results
++ */
++
++import React, {
++  useCallback,
++  useEffect,
++  useState,
++} from 'react';
++
++import {
++  ActivityIndicator,
++  RefreshControl,
++  ScrollView,
++  StyleSheet,
++  Text,
++  TouchableOpacity,
++  View,
++} from 'react-native';
++
++import { useRouter } from 'expo-router';
++import { ArrowLeft, Share2, Trash2, Users } from 'lucide-react-native';
++
++import { useTheme } from '../../context/ThemeContext';
++import { useLanguage } from '../../context/LanguageContext';
++import { Spacing, BorderRadius } from '../../constants/theme';
++
++import {
++  UserGameFile,
++  deleteUserGameFile,
++  getUserGameFile,
++  listUserGameFiles,
++  shareUserGameFile,
++} from './userGameFiles';
++
++export default function AdminResultsScreen() {
++  const router = useRouter();
++
++  const { colors } = useTheme();
++  const { language, isRTL } = useLanguage();
++
++  const [usernames, setUsernames] = useState<string[]>([]);
++  const [filesByUser, setFilesByUser] = useState<
++    Record<string, UserGameFile>
++  >({});
++  const [expanded, setExpanded] = useState<string | null>(null);
++  const [loading, setLoading] = useState(true);
++  const [refreshing, setRefreshing] = useState(false);
++
++  const text =
++    language === 'fa'
++      ? {
++          title: 'نتایج کاربران',
++          subtitle:
++            'فایل نتایج هر کاربری که با آن وارد اپ شده‌اید',
++          empty: 'هنوز هیچ کاربری بازی‌ای انجام نداده است.',
++          back: 'بازگشت',
++          share: 'اشتراک‌گذاری فایل',
++          delete: 'حذف فایل',
++          sessions: 'نوبت بازی',
++          goal: 'هدف',
++          score: 'امتیاز',
++        }
++      : {
++          title: 'User Results',
++          subtitle:
++            'The result file for each user you have logged in as',
++          empty: 'No user has played a game yet.',
++          back: 'Back',
++          share: 'Share file',
++          delete: 'Delete file',
++          sessions: 'sessions',
++          goal: 'Goal',
++          score: 'Score',
++        };
++
++  const loadAll = useCallback(async () => {
++    try {
++      const users = await listUserGameFiles();
++
++      setUsernames(users);
++
++      const entries = await Promise.all(
++        users.map(async (username) => {
++          const file = await getUserGameFile(username);
++
++          return [username, file] as const;
++        })
++      );
++
++      setFilesByUser(Object.fromEntries(entries));
++    } catch (error) {
++      console.warn(
++        '[AdminResults] Failed to load user files:',
++        error
++      );
++    } finally {
++      setLoading(false);
++      setRefreshing(false);
++    }
++  }, []);
++
++  useEffect(() => {
++    loadAll();
++  }, [loadAll]);
++
++  const onRefresh = useCallback(() => {
++    setRefreshing(true);
++    loadAll();
++  }, [loadAll]);
++
++  const handleShare = useCallback(
++    async (username: string) => {
++      try {
++        await shareUserGameFile(username);
++      } catch (error) {
++        console.warn('[AdminResults] Share failed:', error);
++      }
++    },
++    []
++  );
++
++  const handleDelete = useCallback(
++    async (username: string) => {
++      await deleteUserGameFile(username);
++      await loadAll();
++    },
++    [loadAll]
++  );
++
++  return (
++    <View
++      style={[
++        styles.container,
++        { backgroundColor: colors.background },
++      ]}
++    >
++      {/* HEADER */}
++      <View style={styles.header}>
++        <TouchableOpacity
++          activeOpacity={0.75}
++          onPress={() => router.back()}
++          style={[
++            styles.backButton,
++            { backgroundColor: colors.surface },
++          ]}
++        >
++          <ArrowLeft
++            size={20}
++            color={colors.text}
++            style={
++              isRTL ? { transform: [{ scaleX: -1 }] } : undefined
++            }
++          />
++        </TouchableOpacity>
++
++        <View style={{ flex: 1 }}>
++          <Text style={[styles.title, { color: colors.text }]}>
++            {text.title}
++          </Text>
++          <Text
++            style={[
++              styles.subtitle,
++              { color: colors.textSecondary },
++            ]}
++          >
++            {text.subtitle}
++          </Text>
++        </View>
++      </View>
++
++      {loading ? (
++        <View style={styles.centered}>
++          <ActivityIndicator color={colors.primary} />
++        </View>
++      ) : usernames.length === 0 ? (
++        <View style={styles.centered}>
++          <Users size={40} color={colors.textSecondary} />
++          <Text
++            style={[
++              styles.emptyText,
++              { color: colors.textSecondary },
++            ]}
++          >
++            {text.empty}
++          </Text>
++        </View>
++      ) : (
++        <ScrollView
++          contentContainerStyle={styles.scrollContent}
++          refreshControl={
++            <RefreshControl
++              refreshing={refreshing}
++              onRefresh={onRefresh}
++              tintColor={colors.primary}
++            />
++          }
++        >
++          {usernames.map((username) => {
++            const file = filesByUser[username];
++            const isOpen = expanded === username;
++
++            return (
++              <View
++                key={username}
++                style={[
++                  styles.card,
++                  {
++                    backgroundColor: colors.surface,
++                    borderColor: colors.border,
++                  },
++                ]}
++              >
++                <TouchableOpacity
++                  activeOpacity={0.8}
++                  onPress={() =>
++                    setExpanded(isOpen ? null : username)
++                  }
++                  style={styles.cardHeader}
++                >
++                  <Text
++                    style={[
++                      styles.username,
++                      { color: colors.text },
++                    ]}
++                  >
++                    {username}
++                  </Text>
++                  <Text
++                    style={[
++                      styles.count,
++                      { color: colors.textSecondary },
++                    ]}
++                  >
++                    {file?.results.length || 0} {text.sessions}
++                  </Text>
++                </TouchableOpacity>
++
++                {isOpen &&
++                  file?.results
++                    .slice()
++                    .reverse()
++                    .map((record, index) => (
++                      <View
++                        key={`${record.gameId}_${record.timestamp}_${index}`}
++                        style={[
++                          styles.recordRow,
++                          { borderColor: colors.border },
++                        ]}
++                      >
++                        <Text
++                          style={[
++                            styles.recordGame,
++                            { color: colors.text },
++                          ]}
++                        >
++                          {record.gameName}
++                        </Text>
++                        <Text
++                          style={[
++                            styles.recordLine,
++                            { color: colors.textSecondary },
++                          ]}
++                        >
++                          {text.goal}: {record.goal}
++                        </Text>
++                        <Text
++                          style={[
++                            styles.recordLine,
++                            { color: colors.textSecondary },
++                          ]}
++                        >
++                          {text.score}: {record.score}
++                        </Text>
++                        <Text
++                          style={[
++                            styles.recordDate,
++                            { color: colors.textSecondary },
++                          ]}
++                        >
++                          {new Date(
++                            record.timestamp
++                          ).toLocaleString(
++                            language === 'fa' ? 'fa-IR' : 'en-US'
++                          )}
++                        </Text>
++                      </View>
++                    ))}
++
++                <View style={styles.actions}>
++                  <TouchableOpacity
++                    activeOpacity={0.8}
++                    onPress={() => handleShare(username)}
++                    style={[
++                      styles.actionButton,
++                      { backgroundColor: colors.primary },
++                    ]}
++                  >
++                    <Share2 size={16} color="#fff" />
++                    <Text style={styles.actionText}>
++                      {text.share}
++                    </Text>
++                  </TouchableOpacity>
++
++                  <TouchableOpacity
++                    activeOpacity={0.8}
++                    onPress={() => handleDelete(username)}
++                    style={[
++                      styles.actionButton,
++                      styles.deleteButton,
++                    ]}
++                  >
++                    <Trash2 size={16} color="#ef4444" />
++                    <Text
++                      style={[
++                        styles.actionText,
++                        { color: '#ef4444' },
++                      ]}
++                    >
++                      {text.delete}
++                    </Text>
++                  </TouchableOpacity>
++                </View>
++              </View>
++            );
++          })}
++        </ScrollView>
++      )}
++    </View>
++  );
++}
++
++const styles = StyleSheet.create({
++  container: { flex: 1 },
++  header: {
++    flexDirection: 'row',
++    alignItems: 'center',
++    gap: Spacing.md,
++    padding: Spacing.lg,
++  },
++  backButton: {
++    width: 40,
++    height: 40,
++    borderRadius: BorderRadius.md,
++    alignItems: 'center',
++    justifyContent: 'center',
++  },
++  title: { fontSize: 20, fontWeight: '700' },
++  subtitle: { fontSize: 13, marginTop: 2 },
++  centered: {
++    flex: 1,
++    alignItems: 'center',
++    justifyContent: 'center',
++    gap: Spacing.sm,
++    padding: Spacing.xl,
++  },
++  emptyText: { fontSize: 14, textAlign: 'center' },
++  scrollContent: {
++    padding: Spacing.lg,
++    gap: Spacing.md,
++  },
++  card: {
++    borderRadius: BorderRadius.lg,
++    borderWidth: 1,
++    padding: Spacing.md,
++    marginBottom: Spacing.md,
++  },
++  cardHeader: {
++    flexDirection: 'row',
++    justifyContent: 'space-between',
++    alignItems: 'center',
++  },
++  username: { fontSize: 16, fontWeight: '700' },
++  count: { fontSize: 12 },
++  recordRow: {
++    borderTopWidth: 1,
++    paddingVertical: Spacing.sm,
++    marginTop: Spacing.sm,
++  },
++  recordGame: { fontSize: 14, fontWeight: '600' },
++  recordLine: { fontSize: 12, marginTop: 2 },
++  recordDate: { fontSize: 11, marginTop: 4, opacity: 0.8 },
++  actions: {
++    flexDirection: 'row',
++    gap: Spacing.sm,
++    marginTop: Spacing.md,
++  },
++  actionButton: {
++    flexDirection: 'row',
++    alignItems: 'center',
++    gap: 6,
++    paddingVertical: 8,
++    paddingHorizontal: 12,
++    borderRadius: BorderRadius.md,
++  },
++  deleteButton: {
++    backgroundColor: 'rgba(239,68,68,0.1)',
++  },
++  actionText: { color: '#fff', fontSize: 12, fontWeight: '600' },
++});
+diff --git a/app/games/gameResults.ts b/app/games/gameResults.ts
+index 3a3d213..439e476 100644
+--- a/app/games/gameResults.ts
++++ b/app/games/gameResults.ts
+@@ -1,5 +1,7 @@
+ import AsyncStorage from '@react-native-async-storage/async-storage';
+ 
++import { appendUserGameResult } from './userGameFiles';
++
+ export type GameMetric = {
+   id: string;
+   label: string;
+@@ -13,6 +15,20 @@ export type GameResult = {
+   timestamp: number;
+   score?: number;
+   metrics: GameMetric[];
++
++  /*
++   * هدف/مهارتی که این بازی می‌سنجد، مثلاً «قدرت بینایی».
++   * اختیاری است تا بازی‌های قدیمی‌تر که این فیلد را نمی‌فرستند
++   * خراب نشوند.
++   */
++  goal?: string;
++
++  /*
++   * نام/شناسه‌ی کاربری که این بازی را انجام داده. وقتی این مقدار
++   * داده شود، علاوه بر ذخیره‌ی معمول، یک فایل JSON مخصوص همان
++   * کاربر هم در app/games/userGameFiles.ts به‌روزرسانی می‌شود.
++   */
++  userId?: string;
+ };
+ 
+ const STORAGE_KEY = 'norulia_game_results_v1';
+@@ -20,6 +36,28 @@ const STORAGE_KEY = 'norulia_game_results_v1';
+ export async function saveGameResult(
+   result: GameResult
+ ): Promise<void> {
++  /*
++   * اگر شناسه‌ی کاربر مشخص شده باشد، نتیجه را در فایل
++   * مخصوص همان کاربر هم ذخیره می‌کنیم (برای دسترسی خودتان).
++   */
++  if (result.userId) {
++    try {
++      await appendUserGameResult(result.userId, {
++        gameId: result.gameId,
++        gameName: result.gameName,
++        goal: result.goal || result.gameName,
++        score: result.score ?? 0,
++        metrics: result.metrics,
++        timestamp: result.timestamp,
++      });
++    } catch (error) {
++      console.warn(
++        '[GameResults] Failed to save per-user file:',
++        error
++      );
++    }
++  }
++
+   try {
+     const stored =
+       await AsyncStorage.getItem(STORAGE_KEY);
+diff --git a/app/games/userGameFiles.ts b/app/games/userGameFiles.ts
+new file mode 100644
+index 0000000..1438ec8
+--- /dev/null
++++ b/app/games/userGameFiles.ts
+@@ -0,0 +1,267 @@
++/*
++ * ================================================================
++ * userGameFiles.ts
++ * ================================================================
++ *
++ * برای هر کاربر (بر اساس نام/ایمیلی که با آن وارد اپ شده) یک فایل
++ * JSON جداگانه روی حافظه‌ی دستگاه ساخته می‌شود. هر بار که کاربر
++ * یک بازی را تمام می‌کند، یک رکورد جدید به فایل همان کاربر اضافه
++ * می‌شود.
++ *
++ * این فایل‌ها داخل پوشه‌ی زیر ذخیره می‌شوند:
++ *
++ *   FileSystem.documentDirectory/norulia-game-results/<username>.json
++ *
++ * چون فعلاً سروری در کار نیست، این فایل‌ها فقط روی همان دستگاه
++ * (شبیه‌ساز/گوشی) قابل مشاهده‌اند. از صفحه‌ی مدیریت نتایج
++ * (app/games/admin-results.tsx) می‌توانید لیست کاربرها، محتوای هر
++ * فایل و دکمه‌ی «اشتراک‌گذاری» را ببینید تا فایل JSON را از طریق
++ * ایمیل/تلگرام/... برای خودتان بفرستید.
++ *
++ * توجه: برای کار کردن این فایل باید دو پکیج زیر نصب باشند:
++ *
++ *   npx expo install expo-file-system expo-sharing
++ */
++
++import * as FileSystem from 'expo-file-system';
++import * as Sharing from 'expo-sharing';
++
++/* ================================================================
++   TYPES
++================================================================ */
++
++export type UserGameRecord = {
++  /* شناسه‌ی بازی، مثلاً 'visual-flow' */
++  gameId: string;
++
++  /* نام قابل نمایش بازی، مثلاً 'جریان بصری' */
++  gameName: string;
++
++  /* هدف/مهارتی که این بازی می‌سنجد، مثلاً 'قدرت بینایی' */
++  goal: string;
++
++  /* امتیاز نهایی این نوبت بازی */
++  score: number;
++
++  /* شاخص‌های ریزتر عملکرد (اختیاری) */
++  metrics?: {
++    id: string;
++    label: string;
++    value: number;
++    unit?: string;
++  }[];
++
++  /* زمان ثبت این نتیجه */
++  timestamp: number;
++};
++
++export type UserGameFile = {
++  /* نام/شناسه‌ی کاربر، همانی که با آن وارد اپ شده */
++  username: string;
++
++  /* همه‌ی نتایج بازی‌های این کاربر، جدیدترین در انتها */
++  results: UserGameRecord[];
++
++  updatedAt: number;
++};
++
++/* ================================================================
++   PATHS
++================================================================ */
++
++const RESULTS_DIR = `${FileSystem.documentDirectory}norulia-game-results/`;
++
++const sanitizeUsername = (username: string): string => {
++  const trimmed = String(username || 'anonymous').trim();
++
++  return (
++    trimmed.replace(/[^a-zA-Z0-9_.@-]/g, '_') || 'anonymous'
++  );
++};
++
++const getUserFileUri = (username: string): string => {
++  const safeUsername = sanitizeUsername(username);
++
++  return `${RESULTS_DIR}${safeUsername}.json`;
++};
++
++const ensureResultsDir = async (): Promise<void> => {
++  try {
++    const dirInfo = await FileSystem.getInfoAsync(RESULTS_DIR);
++
++    if (!dirInfo.exists) {
++      await FileSystem.makeDirectoryAsync(RESULTS_DIR, {
++        intermediates: true,
++      });
++    }
++  } catch (error) {
++    console.warn(
++      '[UserGameFiles] Failed to ensure results directory:',
++      error
++    );
++  }
++};
++
++/* ================================================================
++   READ ONE USER FILE
++================================================================ */
++
++export async function getUserGameFile(
++  username: string
++): Promise<UserGameFile> {
++  const safeUsername = sanitizeUsername(username);
++
++  try {
++    const fileUri = getUserFileUri(username);
++
++    const fileInfo = await FileSystem.getInfoAsync(fileUri);
++
++    if (!fileInfo.exists) {
++      return {
++        username: safeUsername,
++        results: [],
++        updatedAt: Date.now(),
++      };
++    }
++
++    const content = await FileSystem.readAsStringAsync(fileUri);
++
++    const parsed = JSON.parse(content);
++
++    if (
++      parsed &&
++      typeof parsed === 'object' &&
++      Array.isArray(parsed.results)
++    ) {
++      return parsed as UserGameFile;
++    }
++
++    return {
++      username: safeUsername,
++      results: [],
++      updatedAt: Date.now(),
++    };
++  } catch (error) {
++    console.warn(
++      '[UserGameFiles] Failed to read user file:',
++      error
++    );
++
++    return {
++      username: safeUsername,
++      results: [],
++      updatedAt: Date.now(),
++    };
++  }
++}
++
++/* ================================================================
++   APPEND A NEW RESULT
++================================================================ */
++
++export async function appendUserGameResult(
++  username: string,
++  record: UserGameRecord
++): Promise<UserGameFile> {
++  await ensureResultsDir();
++
++  const safeUsername = sanitizeUsername(username);
++
++  const current = await getUserGameFile(username);
++
++  const nextFile: UserGameFile = {
++    username: safeUsername,
++    results: [...current.results, record],
++    updatedAt: Date.now(),
++  };
++
++  try {
++    await FileSystem.writeAsStringAsync(
++      getUserFileUri(username),
++      JSON.stringify(nextFile, null, 2)
++    );
++  } catch (error) {
++    console.warn(
++      '[UserGameFiles] Failed to write user file:',
++      error
++    );
++  }
++
++  return nextFile;
++}
++
++/* ================================================================
++   LIST ALL USERS THAT HAVE A FILE
++================================================================ */
++
++export async function listUserGameFiles(): Promise<string[]> {
++  await ensureResultsDir();
++
++  try {
++    const entries = await FileSystem.readDirectoryAsync(
++      RESULTS_DIR
++    );
++
++    return entries
++      .filter((name) => name.endsWith('.json'))
++      .map((name) => name.replace(/\.json$/, ''))
++      .sort();
++  } catch (error) {
++    console.warn(
++      '[UserGameFiles] Failed to list user files:',
++      error
++    );
++
++    return [];
++  }
++}
++
++/* ================================================================
++   SHARE / EXPORT ONE USER FILE
++================================================================ */
++
++export async function shareUserGameFile(
++  username: string
++): Promise<void> {
++  const fileUri = getUserFileUri(username);
++
++  const fileInfo = await FileSystem.getInfoAsync(fileUri);
++
++  if (!fileInfo.exists) {
++    throw new Error(`No result file found for "${username}"`);
++  }
++
++  const isAvailable = await Sharing.isAvailableAsync();
++
++  if (!isAvailable) {
++    throw new Error('Sharing is not available on this device');
++  }
++
++  await Sharing.shareAsync(fileUri, {
++    mimeType: 'application/json',
++    dialogTitle: `Norulia results - ${username}`,
++  });
++}
++
++/* ================================================================
++   DELETE ONE USER FILE
++================================================================ */
++
++export async function deleteUserGameFile(
++  username: string
++): Promise<void> {
++  try {
++    const fileUri = getUserFileUri(username);
++
++    const fileInfo = await FileSystem.getInfoAsync(fileUri);
++
++    if (fileInfo.exists) {
++      await FileSystem.deleteAsync(fileUri);
++    }
++  } catch (error) {
++    console.warn(
++      '[UserGameFiles] Failed to delete user file:',
++      error
++    );
++  }
++}
+diff --git a/app/games/visual-flow.tsx b/app/games/visual-flow.tsx
+index 087c514..4a59867 100644
+--- a/app/games/visual-flow.tsx
++++ b/app/games/visual-flow.tsx
+@@ -34,6 +34,7 @@ import {
+ 
+ import { useTheme } from '../../context/ThemeContext';
+ import { useLanguage } from '../../context/LanguageContext';
++import { useAuth } from '../../context/AuthContext';
+ import { Spacing, BorderRadius } from '../../constants/theme';
+ 
+ // ============================================================
+@@ -158,6 +159,7 @@ export default function VisualFlowScreen() {
+ 
+   const { colors, isAthlete } = useTheme();
+   const { language, isRTL } = useLanguage();
++  const { user } = useAuth();
+ 
+   // تعیین رنگ اصلی بر اساس تم
+   const primaryColor = isAthlete ? '#22C55E' : colors.primary;
+@@ -1168,6 +1170,12 @@ export default function VisualFlowScreen() {
+             language === 'fa'
+               ? 'جریان بصری'
+               : 'Visual Flow',
++          goal:
++            language === 'fa'
++              ? 'قدرت بینایی'
++              : 'Visual Power',
++          userId:
++            user?.name || user?.email || undefined,
+           timestamp: Date.now(),
+           score: scoreRef.current,
+ 
+diff --git a/app/settings.tsx b/app/settings.tsx
+index 24b6155..17554e9 100644
+--- a/app/settings.tsx
++++ b/app/settings.tsx
+@@ -77,6 +77,33 @@ export default function SettingsRoute() {
+         </View>
+       </View>
+ 
++      {/* ================================
++          ADMIN — نتایج کاربران
++          فقط برای دسترسی خود شما به فایل
++          نتایج بازی هر کاربری که با آن
++          وارد شده‌اید.
++         ================================ */}
++      <TouchableOpacity
++        activeOpacity={0.8}
++        onPress={() => router.push('/games/admin-results')}
++        style={[
++          styles.adminButton,
++          {
++            backgroundColor: colors.surface,
++            borderColor: colors.border,
++          },
++        ]}
++      >
++        <Text
++          style={[
++            styles.adminButtonText,
++            { color: colors.text },
++          ]}
++        >
++          نتایج کاربران (ادمین)
++        </Text>
++      </TouchableOpacity>
++
+       {/* ================================
+           CONTENT
+          ================================ */}
+@@ -158,6 +185,23 @@ const styles = StyleSheet.create({
+     includeFontPadding: false,
+   },
+ 
++  /* =================================
++     ADMIN BUTTON
++     ================================= */
++  adminButton: {
++    marginHorizontal: Spacing.lg,
++    marginBottom: Spacing.sm,
++    paddingVertical: 12,
++    paddingHorizontal: Spacing.md,
++    borderRadius: BorderRadius.md,
++    borderWidth: 1,
++    alignItems: 'center',
++  },
++  adminButtonText: {
++    fontSize: 14,
++    fontWeight: '600',
++  },
++
+   /* =================================
+      CONTENT
+      ================================= */
+diff --git a/context/AuthContext.tsx b/context/AuthContext.tsx
+index 591e75a..1106a4f 100644
+--- a/context/AuthContext.tsx
++++ b/context/AuthContext.tsx
+@@ -122,9 +122,17 @@ export function AuthProvider({
+           setTimeout(resolve, 1500);
+         });
+ 
++        /*
++         * نام کاربر را از روی ایمیل می‌سازیم (قبل از @) تا وقتی
++         * با ایمیل‌های مختلف وارد می‌شوید، هر کدام فایل نتایج
++         * جدا و مشخص خودشان را داشته باشند.
++         */
++        const derivedName =
++          email.split('@')[0] || email;
++
+         const mockUser: User = {
+-          id: '1',
+-          name: 'کاربر نورولیا',
++          id: derivedName,
++          name: derivedName,
+           email,
+           level: 5,
+           xp: 1250,
+@@ -168,7 +176,7 @@ export function AuthProvider({
+         });
+ 
+         const mockUser: User = {
+-          id: '1',
++          id: name,
+           name,
+           email,
+           level: 1,

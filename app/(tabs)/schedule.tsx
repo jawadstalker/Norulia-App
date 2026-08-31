@@ -1969,9 +1969,9 @@ export default function ScheduleScreen() {
             styles.fab,
             {
               backgroundColor:
-                primary,  // استفاده از primary
+                isDark ? '#8B5CF6' : primary,  // بنفش برای تم تاریک، رنگ اصلی برای سایر تم‌ها
               shadowColor:
-                primary,  // استفاده از primary
+                isDark ? '#8B5CF6' : primary,  // بنفش برای تم تاریک، رنگ اصلی برای سایر تم‌ها
               transform: [
                 {
                   scale:
