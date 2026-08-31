@@ -1,3 +1,4 @@
+
 import React, {
   useCallback,
   useEffect,
@@ -8,6 +9,7 @@ import React, {
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -31,11 +33,17 @@ import {
 } from 'lucide-react-native';
 
 import { useRouter } from 'expo-router';
+
+// IMPORTANT:
+// This project uses expo-file-system ~18.x.
+// The legacy API is used here for compatibility with the
+// existing Expo SDK 53 project.
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+
 import {
   BorderRadius,
   Spacing,
@@ -76,6 +84,9 @@ export default function GameResultsScreen({
     useState(true);
 
   const [refreshing, setRefreshing] =
+    useState(false);
+
+  const [exporting, setExporting] =
     useState(false);
 
   const text = useMemo(
@@ -168,19 +179,28 @@ export default function GameResultsScreen({
               'اطلاعات عملکردی ثبت نشده است.',
 
             exportData:
-              'خروجی گرفتن (JSON)',
+              'دانلود نتایج (JSON)',
 
             exportSuccess:
-              'فایل نتایج آماده شد.',
+              'فایل نتایج با موفقیت ذخیره شد.',
 
             exportError:
-              'خروجی گرفتن با خطا مواجه شد.',
+              'ذخیره فایل نتایج با خطا مواجه شد.',
 
             exportEmpty:
-              'هنوز داده‌ای برای خروجی گرفتن وجود ندارد.',
+              'هنوز داده‌ای برای دانلود وجود ندارد.',
 
             exportUnavailable:
-              'اشتراک‌گذاری فایل روی این دستگاه در دسترس نیست.',
+              'امکان ذخیره فایل روی این دستگاه در دسترس نیست.',
+
+            chooseFolder:
+              'انتخاب محل ذخیره',
+
+            save:
+              'ذخیره',
+
+            cancelled:
+              'ذخیره فایل لغو شد.',
           }
         : {
             title: 'Performance Results',
@@ -270,19 +290,28 @@ export default function GameResultsScreen({
               'No performance data recorded.',
 
             exportData:
-              'Export Data (JSON)',
+              'Download Results (JSON)',
 
             exportSuccess:
-              'Results file is ready.',
+              'Results file was saved successfully.',
 
             exportError:
-              'Failed to export data.',
+              'Failed to save results file.',
 
             exportEmpty:
-              'There is no data to export yet.',
+              'There is no data to download yet.',
 
             exportUnavailable:
-              'File sharing is not available on this device.',
+              'File saving is not available on this device.',
+
+            chooseFolder:
+              'Choose Save Location',
+
+            save:
+              'Save',
+
+            cancelled:
+              'File saving was cancelled.',
           },
     [language]
   );
@@ -316,89 +345,398 @@ export default function GameResultsScreen({
     loadResults();
   }, [loadResults]);
 
-  const [exporting, setExporting] =
-    useState(false);
+  /**
+   * Create the JSON payload.
+   */
+  const createExportPayload =
+    useCallback(() => {
+      return {
+        exportedAt:
+          new Date().toISOString(),
+        count: results.length,
+        results,
+      };
+    }, [results]);
 
-  const exportResults = useCallback(
-    async () => {
-      if (exporting) {
-        return;
-      }
+  /**
+   * Create a stable filename.
+   */
+  const createExportFilename =
+    useCallback(() => {
+      const stamp =
+        new Date()
+          .toISOString()
+          .replace(/[:.]/g, '-');
 
-      if (!results.length) {
-        Alert.alert(
-          text.exportData,
-          text.exportEmpty
-        );
-        return;
-      }
+      return `norulia_game_results_${stamp}.json`;
+    }, []);
 
-      setExporting(true);
-
-      try {
-        const isAvailable =
-          await Sharing.isAvailableAsync();
-
-        if (!isAvailable) {
-          Alert.alert(
-            text.exportData,
-            text.exportUnavailable
+  /**
+   * WEB
+   *
+   * Use a real browser download instead of
+   * expo-sharing because expo-sharing's local-file
+   * support is limited on web.
+   */
+  const exportOnWeb =
+    useCallback(
+      async (
+        json: string,
+        filename: string
+      ) => {
+        if (
+          typeof document ===
+            'undefined' ||
+          typeof URL ===
+            'undefined'
+        ) {
+          throw new Error(
+            'Browser download API is unavailable.'
           );
-          return;
         }
 
-        const payload = {
-          exportedAt:
-            new Date().toISOString(),
-          count: results.length,
-          results,
-        };
+        const blob =
+          new Blob(
+            [json],
+            {
+              type:
+                'application/json;charset=utf-8',
+            }
+          );
+
+        const url =
+          URL.createObjectURL(blob);
+
+        try {
+          const anchor =
+            document.createElement(
+              'a'
+            );
+
+          anchor.href = url;
+          anchor.download = filename;
+          anchor.style.display =
+            'none';
+
+          document.body.appendChild(
+            anchor
+          );
+
+          anchor.click();
+
+          document.body.removeChild(
+            anchor
+          );
+        } finally {
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+          }, 1000);
+        }
+      },
+      []
+    );
+
+  /**
+   * ANDROID
+   *
+   * Use Android's Storage Access Framework.
+   *
+   * This is important because simply writing into
+   * cacheDirectory does NOT create a user-visible
+   * downloaded file.
+   */
+  const exportOnAndroid =
+    useCallback(
+      async (
+        json: string,
+        filename: string
+      ) => {
+        if (
+          !FileSystem.StorageAccessFramework
+        ) {
+          throw new Error(
+            'Android Storage Access Framework is unavailable.'
+          );
+        }
+
+        const permission =
+          await FileSystem
+            .StorageAccessFramework
+            .requestDirectoryPermissionsAsync();
+
+        if (
+          !permission.granted ||
+          !permission.directoryUri
+        ) {
+          return false;
+        }
 
         const fileUri =
-          FileSystem.cacheDirectory +
-          `norulia_game_results_${Date.now()}.json`;
+          await FileSystem
+            .StorageAccessFramework
+            .createFileAsync(
+              permission.directoryUri,
+              filename,
+              'application/json'
+            );
 
         await FileSystem.writeAsStringAsync(
           fileUri,
-          JSON.stringify(
-            payload,
-            null,
-            2
-          ),
+          json,
           {
             encoding:
               FileSystem.EncodingType.UTF8,
           }
         );
 
+        return true;
+      },
+      []
+    );
+
+  /**
+   * IOS
+   *
+   * iOS does not expose an Android-style public
+   * Downloads folder through this API.
+   *
+   * We create a real file in the app's document
+   * directory and then open the native share/save
+   * sheet so the user can choose Files / Save to Files.
+   */
+  const exportOnIOS =
+    useCallback(
+      async (
+        json: string,
+        filename: string
+      ) => {
+        const baseDirectory =
+          FileSystem.documentDirectory ||
+          FileSystem.cacheDirectory;
+
+        if (!baseDirectory) {
+          throw new Error(
+            'No writable file directory is available.'
+          );
+        }
+
+        const fileUri =
+          `${baseDirectory}${filename}`;
+
+        await FileSystem.writeAsStringAsync(
+          fileUri,
+          json,
+          {
+            encoding:
+              FileSystem.EncodingType.UTF8,
+          }
+        );
+
+        const available =
+          await Sharing.isAvailableAsync();
+
+        if (!available) {
+          return fileUri;
+        }
+
         await Sharing.shareAsync(
           fileUri,
           {
-            mimeType: 'application/json',
-            dialogTitle: text.exportData,
-            UTI: 'public.json',
+            mimeType:
+              'application/json',
+            dialogTitle:
+              text.exportData,
+            UTI:
+              'public.json',
           }
         );
-      } catch (error) {
-        console.warn(
-          '[Results] Export failed:',
-          error
+
+        return fileUri;
+      },
+      [text.exportData]
+    );
+
+  /**
+   * Fallback for other native platforms.
+   */
+  const exportWithSharing =
+    useCallback(
+      async (
+        json: string,
+        filename: string
+      ) => {
+        const baseDirectory =
+          FileSystem.documentDirectory ||
+          FileSystem.cacheDirectory;
+
+        if (!baseDirectory) {
+          throw new Error(
+            'No writable file directory is available.'
+          );
+        }
+
+        const fileUri =
+          `${baseDirectory}${filename}`;
+
+        await FileSystem.writeAsStringAsync(
+          fileUri,
+          json,
+          {
+            encoding:
+              FileSystem.EncodingType.UTF8,
+          }
         );
 
-        Alert.alert(
-          text.exportData,
-          text.exportError
+        const available =
+          await Sharing.isAvailableAsync();
+
+        if (!available) {
+          throw new Error(
+            'File sharing is unavailable.'
+          );
+        }
+
+        await Sharing.shareAsync(
+          fileUri,
+          {
+            mimeType:
+              'application/json',
+            dialogTitle:
+              text.exportData,
+            UTI:
+              'public.json',
+          }
         );
-      } finally {
-        setExporting(false);
-      }
-    },
-    [
-      exporting,
-      results,
-      text,
-    ]
-  );
+
+        return true;
+      },
+      [text.exportData]
+    );
+
+  /**
+   * Main export function.
+   */
+  const exportResults =
+    useCallback(
+      async () => {
+        if (exporting) {
+          return;
+        }
+
+        if (!results.length) {
+          Alert.alert(
+            text.exportData,
+            text.exportEmpty
+          );
+          return;
+        }
+
+        setExporting(true);
+
+        try {
+          const payload =
+            createExportPayload();
+
+          const json =
+            JSON.stringify(
+              payload,
+              null,
+              2
+            );
+
+          const filename =
+            createExportFilename();
+
+          /*
+           * WEB
+           */
+          if (
+            Platform.OS === 'web'
+          ) {
+            await exportOnWeb(
+              json,
+              filename
+            );
+
+            return;
+          }
+
+          /*
+           * ANDROID
+           */
+          if (
+            Platform.OS === 'android'
+          ) {
+            const saved =
+              await exportOnAndroid(
+                json,
+                filename
+              );
+
+            if (!saved) {
+              Alert.alert(
+                text.exportData,
+                text.cancelled
+              );
+
+              return;
+            }
+
+            Alert.alert(
+              text.exportData,
+              text.exportSuccess
+            );
+
+            return;
+          }
+
+          /*
+           * IOS
+           */
+          if (
+            Platform.OS === 'ios'
+          ) {
+            await exportOnIOS(
+              json,
+              filename
+            );
+
+            return;
+          }
+
+          /*
+           * Fallback
+           */
+          await exportWithSharing(
+            json,
+            filename
+          );
+        } catch (error) {
+          console.warn(
+            '[Results] Export failed:',
+            error
+          );
+
+          Alert.alert(
+            text.exportData,
+            text.exportError
+          );
+        } finally {
+          setExporting(false);
+        }
+      },
+      [
+        exporting,
+        results,
+        text,
+        createExportPayload,
+        createExportFilename,
+        exportOnWeb,
+        exportOnAndroid,
+        exportOnIOS,
+        exportWithSharing,
+      ]
+    );
 
   const latest =
     results.length > 0
@@ -415,59 +753,88 @@ export default function GameResultsScreen({
   const latestMetrics =
     useMemo(() => {
       const map =
-        new Map<string, GameMetric>();
+        new Map<
+          string,
+          GameMetric
+        >();
 
-      results.forEach(result => {
-        result.metrics.forEach(metric => {
-          map.set(metric.id, metric);
-        });
-      });
+      results.forEach(
+        result => {
+          result.metrics.forEach(
+            metric => {
+              map.set(
+                metric.id,
+                metric
+              );
+            }
+          );
+        }
+      );
 
-      return Array.from(map.values());
+      return Array.from(
+        map.values()
+      );
     }, [results]);
 
   /*
-   * Overall performance
+   * Overall performance.
    */
   const overallScore =
     useMemo(() => {
-      if (!latestMetrics.length) {
+      if (
+        !latestMetrics.length
+      ) {
         return 0;
       }
 
       const total =
         latestMetrics.reduce(
-          (sum, metric) =>
-            sum + metric.value,
+          (
+            sum,
+            metric
+          ) =>
+            sum +
+            metric.value,
           0
         );
 
       return Math.round(
-        total / latestMetrics.length
+        total /
+          latestMetrics.length
       );
     }, [latestMetrics]);
 
   const strongestMetric =
     useMemo(() => {
-      if (!latestMetrics.length) {
+      if (
+        !latestMetrics.length
+      ) {
         return null;
       }
 
-      return [...latestMetrics].sort(
+      return [
+        ...latestMetrics,
+      ].sort(
         (a, b) =>
-          b.value - a.value
+          b.value -
+          a.value
       )[0];
     }, [latestMetrics]);
 
   const weakestMetric =
     useMemo(() => {
-      if (!latestMetrics.length) {
+      if (
+        !latestMetrics.length
+      ) {
         return null;
       }
 
-      return [...latestMetrics].sort(
+      return [
+        ...latestMetrics,
+      ].sort(
         (a, b) =>
-          a.value - b.value
+          a.value -
+          b.value
       )[0];
     }, [latestMetrics]);
 
@@ -509,14 +876,18 @@ export default function GameResultsScreen({
       const date =
         new Date(timestamp);
 
-      const now = new Date();
+      const now =
+        new Date();
 
       const diff =
         now.getTime() -
         date.getTime();
 
       const day =
-        24 * 60 * 60 * 1000;
+        24 *
+        60 *
+        60 *
+        1000;
 
       if (diff < day) {
         return text.today;
@@ -526,17 +897,18 @@ export default function GameResultsScreen({
         return text.yesterday;
       }
 
-      const days = Math.floor(
-        diff / day
-      );
+      const days =
+        Math.floor(
+          diff / day
+        );
 
-      return language === 'fa'
-        ? `${days} ${text.daysAgo}`
-        : `${days} ${text.daysAgo}`;
+      return `${days} ${text.daysAgo}`;
     };
 
   const goBack = () => {
-    if (router.canGoBack()) {
+    if (
+      router.canGoBack()
+    ) {
       router.back();
     } else {
       router.replace(
@@ -577,7 +949,9 @@ export default function GameResultsScreen({
         >
           <ActivityIndicator
             size="large"
-            color={colors.primary}
+            color={
+              colors.primary
+            }
           />
         </View>
       </View>
@@ -598,8 +972,12 @@ export default function GameResultsScreen({
         title={text.title}
         subtitle={text.subtitle}
         onBack={goBack}
-        onExport={exportResults}
-        exporting={exporting}
+        onExport={
+          exportResults
+        }
+        exporting={
+          exporting
+        }
         colors={colors}
         isRTL={isRTL}
       />
@@ -614,41 +992,58 @@ export default function GameResultsScreen({
         }
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
+            refreshing={
+              refreshing
+            }
+            onRefresh={
+              onRefresh
+            }
             tintColor={
               colors.primary
             }
           />
         }
       >
-        {results.length === 0 ? (
+        {results.length ===
+        0 ? (
           <EmptyState
             text={text}
             colors={colors}
-            onStart={openGames}
+            onStart={
+              openGames
+            }
           />
         ) : (
           <>
-            {/* ========================= */}
             {/* LATEST RESULT */}
-            {/* ========================= */}
 
             {latest && (
               <View>
                 <SectionHeader
-                  title={text.latest}
-                  colors={colors}
-                  isRTL={isRTL}
+                  title={
+                    text.latest
+                  }
+                  colors={
+                    colors
+                  }
+                  isRTL={
+                    isRTL
+                  }
                 />
 
                 <LatestResult
-                  result={latest}
-                  title={getGameName(
+                  result={
                     latest
-                  )}
+                  }
+                  title={
+                    getGameName(
+                      latest
+                    )
+                  }
                   performanceText={getPerformanceText(
-                    latest.metrics.length
+                    latest
+                      .metrics
+                      .length
                       ? Math.round(
                           latest.metrics.reduce(
                             (
@@ -665,17 +1060,23 @@ export default function GameResultsScreen({
                         )
                       : 0
                   )}
-                  colors={colors}
-                  isRTL={isRTL}
-                  text={text}
-                  getIcon={getIcon}
+                  colors={
+                    colors
+                  }
+                  isRTL={
+                    isRTL
+                  }
+                  text={
+                    text
+                  }
+                  getIcon={
+                    getIcon
+                  }
                 />
               </View>
             )}
 
-            {/* ========================= */}
             {/* OVERALL PROFILE */}
-            {/* ========================= */}
 
             {latestMetrics.length >
               0 && (
@@ -684,8 +1085,12 @@ export default function GameResultsScreen({
                   title={
                     text.cognitiveProfile
                   }
-                  colors={colors}
-                  isRTL={isRTL}
+                  colors={
+                    colors
+                  }
+                  isRTL={
+                    isRTL
+                  }
                 />
 
                 <View
@@ -721,7 +1126,9 @@ export default function GameResultsScreen({
                       ]}
                     >
                       <Brain
-                        size={25}
+                        size={
+                          25
+                        }
                         color={
                           colors.primary
                         }
@@ -746,7 +1153,9 @@ export default function GameResultsScreen({
                           },
                         ]}
                       >
-                        {text.overall}
+                        {
+                          text.overall
+                        }
                       </Text>
 
                       <Text
@@ -765,6 +1174,7 @@ export default function GameResultsScreen({
                         {
                           overallScore
                         }
+
                         <Text
                           style={[
                             styles.overallOutOf,
@@ -781,7 +1191,9 @@ export default function GameResultsScreen({
                     </View>
 
                     <TrendingUp
-                      size={23}
+                      size={
+                        23
+                      }
                       color={
                         colors.primary
                       }
@@ -838,7 +1250,9 @@ export default function GameResultsScreen({
                   <ProfileHighlight
                     icon={
                       <Trophy
-                        size={20}
+                        size={
+                          20
+                        }
                         color={
                           colors.primary
                         }
@@ -850,8 +1264,12 @@ export default function GameResultsScreen({
                     metric={
                       strongestMetric
                     }
-                    colors={colors}
-                    isRTL={isRTL}
+                    colors={
+                      colors
+                    }
+                    isRTL={
+                      isRTL
+                    }
                   />
                 )}
 
@@ -861,7 +1279,9 @@ export default function GameResultsScreen({
                     <ProfileHighlight
                       icon={
                         <Target
-                          size={20}
+                          size={
+                            20
+                          }
                           color={
                             colors.primary
                           }
@@ -873,49 +1293,76 @@ export default function GameResultsScreen({
                       metric={
                         weakestMetric
                       }
-                      colors={colors}
-                      isRTL={isRTL}
+                      colors={
+                        colors
+                      }
+                      isRTL={
+                        isRTL
+                      }
                     />
                   )}
               </View>
             )}
 
-            {/* ========================= */}
             {/* HISTORY */}
-            {/* ========================= */}
 
             <SectionHeader
               title={
                 text.allResults
               }
-              colors={colors}
-              isRTL={isRTL}
+              colors={
+                colors
+              }
+              isRTL={
+                isRTL
+              }
             />
 
             {[...results]
               .reverse()
               .map(
-                (result, index) => (
+                (
+                  result,
+                  index
+                ) => (
                   <HistoryCard
                     key={`${result.gameId}-${result.timestamp}-${index}`}
-                    result={result}
-                    title={getGameName(
+                    result={
                       result
-                    )}
-                    date={formatDate(
-                      result.timestamp
-                    )}
-                    colors={colors}
-                    isRTL={isRTL}
-                    text={text}
-                    getIcon={getIcon}
+                    }
+                    title={
+                      getGameName(
+                        result
+                      )
+                    }
+                    date={
+                      formatDate(
+                        result.timestamp
+                      )
+                    }
+                    colors={
+                      colors
+                    }
+                    isRTL={
+                      isRTL
+                    }
+                    text={
+                      text
+                    }
+                    getIcon={
+                      getIcon
+                    }
                   />
                 )
               )}
 
             <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={openGames}
+              activeOpacity={
+                0.85
+              }
+              onPress={
+                openGames
+              }
               style={[
                 styles.startButton,
                 {
@@ -925,7 +1372,9 @@ export default function GameResultsScreen({
               ]}
             >
               <Gamepad2
-                size={20}
+                size={
+                  20
+                }
                 color="#FFFFFF"
               />
 
@@ -934,7 +1383,9 @@ export default function GameResultsScreen({
                   styles.startButtonText
                 }
               >
-                {text.startGame}
+                {
+                  text.startGame
+                }
               </Text>
             </TouchableOpacity>
 
@@ -982,8 +1433,12 @@ function Header({
       ]}
     >
       <TouchableOpacity
-        activeOpacity={0.75}
-        onPress={onBack}
+        activeOpacity={
+          0.75
+        }
+        onPress={
+          onBack
+        }
         style={[
           styles.backButton,
           {
@@ -995,14 +1450,22 @@ function Header({
         ]}
       >
         <ArrowLeft
-          size={21}
-          color={colors.text}
-          strokeWidth={2.5}
+          size={
+            21
+          }
+          color={
+            colors.text
+          }
+          strokeWidth={
+            2.5
+          }
         />
       </TouchableOpacity>
 
       <View
-        style={styles.headerText}
+        style={
+          styles.headerText
+        }
       >
         <Text
           style={[
@@ -1016,7 +1479,9 @@ function Header({
                   : 'left',
             },
           ]}
-          numberOfLines={1}
+          numberOfLines={
+            1
+          }
         >
           {title}
         </Text>
@@ -1033,17 +1498,31 @@ function Header({
                   : 'left',
             },
           ]}
-          numberOfLines={1}
+          numberOfLines={
+            1
+          }
         >
-          {subtitle}
+          {
+            subtitle
+          }
         </Text>
       </View>
 
       {onExport ? (
         <TouchableOpacity
-          activeOpacity={0.75}
-          onPress={onExport}
-          disabled={exporting}
+          activeOpacity={
+            0.75
+          }
+          onPress={
+            onExport
+          }
+          disabled={
+            exporting
+          }
+          accessibilityRole="button"
+          accessibilityLabel={
+            'Download game results'
+          }
           style={[
             styles.backButton,
             {
@@ -1051,22 +1530,31 @@ function Header({
                 colors.surface,
               borderColor:
                 colors.border,
-              opacity: exporting
-                ? 0.5
-                : 1,
+              opacity:
+                exporting
+                  ? 0.5
+                  : 1,
             },
           ]}
         >
           {exporting ? (
             <ActivityIndicator
               size="small"
-              color={colors.text}
+              color={
+                colors.text
+              }
             />
           ) : (
             <Download
-              size={20}
-              color={colors.text}
-              strokeWidth={2.5}
+              size={
+                20
+              }
+              color={
+                colors.text
+              }
+              strokeWidth={
+                2.5
+              }
             />
           )}
         </TouchableOpacity>
@@ -1104,7 +1592,8 @@ function SectionHeader({
         style={[
           styles.sectionTitle,
           {
-            color: colors.text,
+            color:
+              colors.text,
             textAlign:
               isRTL
                 ? 'right'
@@ -1142,17 +1631,25 @@ function LatestResult({
   ) => React.ComponentType<any>;
 }) {
   const Icon =
-    getIcon(result.gameId);
+    getIcon(
+      result.gameId
+    );
 
   const average =
     result.metrics.length
       ? Math.round(
           result.metrics.reduce(
-            (sum, metric) =>
-              sum + metric.value,
+            (
+              sum,
+              metric
+            ) =>
+              sum +
+              metric.value,
             0
           ) /
-            result.metrics.length
+            result
+              .metrics
+              .length
         )
       : 0;
 
@@ -1191,7 +1688,9 @@ function LatestResult({
           ]}
         >
           <Icon
-            size={28}
+            size={
+              28
+            }
             color={
               colors.primary
             }
@@ -1216,7 +1715,9 @@ function LatestResult({
               },
             ]}
           >
-            {title}
+            {
+              title
+            }
           </Text>
 
           <Text
@@ -1232,7 +1733,9 @@ function LatestResult({
               },
             ]}
           >
-            {text.completed}
+            {
+              text.completed
+            }
           </Text>
         </View>
 
@@ -1255,7 +1758,9 @@ function LatestResult({
               },
             ]}
           >
-            {average}
+            {
+              average
+            }
           </Text>
 
           <Text
@@ -1287,7 +1792,9 @@ function LatestResult({
         ]}
       >
         <CheckCircle
-          size={17}
+          size={
+            17
+          }
           color={
             colors.primary
           }
@@ -1302,7 +1809,9 @@ function LatestResult({
             },
           ]}
         >
-          {performanceText}
+          {
+            performanceText
+          }
         </Text>
       </View>
 
@@ -1310,7 +1819,8 @@ function LatestResult({
         style={[
           styles.metricsTitle,
           {
-            color: colors.text,
+            color:
+              colors.text,
             textAlign:
               isRTL
                 ? 'right'
@@ -1318,16 +1828,26 @@ function LatestResult({
           },
         ]}
       >
-        {text.metrics}
+        {
+          text.metrics
+        }
       </Text>
 
       {result.metrics.map(
         metric => (
           <MetricRow
-            key={metric.id}
-            metric={metric}
-            colors={colors}
-            isRTL={isRTL}
+            key={
+              metric.id
+            }
+            metric={
+              metric
+            }
+            colors={
+              colors
+            }
+            isRTL={
+              isRTL
+            }
           />
         )
       )}
@@ -1348,10 +1868,14 @@ function MetricRow({
   colors: any;
   isRTL: boolean;
 }) {
-  const value = Math.min(
-    100,
-    Math.max(0, metric.value)
-  );
+  const value =
+    Math.min(
+      100,
+      Math.max(
+        0,
+        metric.value
+      )
+    );
 
   return (
     <View
@@ -1394,7 +1918,9 @@ function MetricRow({
               },
             ]}
           >
-            {metric.label}
+            {
+              metric.label
+            }
           </Text>
 
           <Text
@@ -1406,7 +1932,10 @@ function MetricRow({
               },
             ]}
           >
-            {metric.value}
+            {
+              metric.value
+            }
+
             {metric.unit
               ? ` ${metric.unit}`
               : ''}
@@ -1426,7 +1955,8 @@ function MetricRow({
             style={[
               styles.metricFill,
               {
-                width: `${value}%`,
+                width:
+                  `${value}%`,
                 backgroundColor:
                   colors.primary,
               },
@@ -1481,7 +2011,9 @@ function ProfileHighlight({
           },
         ]}
       >
-        {icon}
+        {
+          icon
+        }
       </View>
 
       <View
@@ -1502,7 +2034,9 @@ function ProfileHighlight({
             },
           ]}
         >
-          {title}
+          {
+            title
+          }
         </Text>
 
         <Text
@@ -1518,7 +2052,9 @@ function ProfileHighlight({
             },
           ]}
         >
-          {metric.label}
+          {
+            metric.label
+          }
         </Text>
       </View>
 
@@ -1531,7 +2067,9 @@ function ProfileHighlight({
           },
         ]}
       >
-        {metric.value}
+        {
+          metric.value
+        }
       </Text>
     </View>
   );
@@ -1561,17 +2099,25 @@ function HistoryCard({
   ) => React.ComponentType<any>;
 }) {
   const Icon =
-    getIcon(result.gameId);
+    getIcon(
+      result.gameId
+    );
 
   const average =
     result.metrics.length
       ? Math.round(
           result.metrics.reduce(
-            (sum, metric) =>
-              sum + metric.value,
+            (
+              sum,
+              metric
+            ) =>
+              sum +
+              metric.value,
             0
           ) /
-            result.metrics.length
+            result
+              .metrics
+              .length
         )
       : 0;
 
@@ -1609,7 +2155,9 @@ function HistoryCard({
           ]}
         >
           <Icon
-            size={20}
+            size={
+              20
+            }
             color={
               colors.primary
             }
@@ -1633,9 +2181,13 @@ function HistoryCard({
                     : 'left',
               },
             ]}
-            numberOfLines={1}
+            numberOfLines={
+              1
+            }
           >
-            {title}
+            {
+              title
+            }
           </Text>
 
           <Text
@@ -1651,7 +2203,9 @@ function HistoryCard({
               },
             ]}
           >
-            {date}
+            {
+              date
+            }
           </Text>
         </View>
 
@@ -1669,7 +2223,9 @@ function HistoryCard({
               },
             ]}
           >
-            {average}
+            {
+              average
+            }
           </Text>
 
           <Text
@@ -1693,43 +2249,53 @@ function HistoryCard({
       >
         {result.metrics
           .slice(0, 3)
-          .map(metric => (
-            <View
-              key={metric.id}
-              style={
-                styles.historyMetric
-              }
-            >
-              <Text
-                style={[
-                  styles.historyMetricLabel,
-                  {
-                    color:
-                      colors.textSecondary,
-                    textAlign:
-                      isRTL
-                        ? 'right'
-                        : 'left',
-                  },
-                ]}
-                numberOfLines={1}
+          .map(
+            metric => (
+              <View
+                key={
+                  metric.id
+                }
+                style={
+                  styles.historyMetric
+                }
               >
-                {metric.label}
-              </Text>
+                <Text
+                  style={[
+                    styles.historyMetricLabel,
+                    {
+                      color:
+                        colors.textSecondary,
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
+                  ]}
+                  numberOfLines={
+                    1
+                  }
+                >
+                  {
+                    metric.label
+                  }
+                </Text>
 
-              <Text
-                style={[
-                  styles.historyMetricValue,
+                <Text
+                  style={[
+                    styles.historyMetricValue,
+                    {
+                      color:
+                        colors.text,
+                    },
+                  ]}
+                >
                   {
-                    color:
-                      colors.text,
-                  },
-                ]}
-              >
-                {metric.value}
-              </Text>
-            </View>
-          ))}
+                    metric.value
+                  }
+                </Text>
+              </View>
+            )
+          )}
       </View>
     </View>
   );
@@ -1765,7 +2331,9 @@ function EmptyState({
         ]}
       >
         <Gamepad2
-          size={42}
+          size={
+            42
+          }
           color={
             colors.primary
           }
@@ -1781,7 +2349,9 @@ function EmptyState({
           },
         ]}
       >
-        {text.noResults}
+        {
+          text.noResults
+        }
       </Text>
 
       <Text
@@ -1793,12 +2363,18 @@ function EmptyState({
           },
         ]}
       >
-        {text.noResultsDescription}
+        {
+          text.noResultsDescription
+        }
       </Text>
 
       <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={onStart}
+        activeOpacity={
+          0.85
+        }
+        onPress={
+          onStart
+        }
         style={[
           styles.startButton,
           {
@@ -1808,7 +2384,9 @@ function EmptyState({
         ]}
       >
         <Gamepad2
-          size={20}
+          size={
+            20
+          }
           color="#FFFFFF"
         />
 
@@ -1817,7 +2395,9 @@ function EmptyState({
             styles.startButtonText
           }
         >
-          {text.startGame}
+          {
+            text.startGame
+          }
         </Text>
       </TouchableOpacity>
     </View>
@@ -1853,8 +2433,10 @@ const styles =
       paddingBottom: 12,
       borderBottomWidth:
         StyleSheet.hairlineWidth,
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+      alignItems:
+        'center',
       gap: 12,
     },
 
@@ -1863,7 +2445,8 @@ const styles =
       height: 44,
       borderRadius: 22,
       borderWidth: 1,
-      alignItems: 'center',
+      alignItems:
+        'center',
       justifyContent:
         'center',
     },
@@ -1875,7 +2458,8 @@ const styles =
 
     headerTitle: {
       fontSize: 20,
-      fontWeight: '800',
+      fontWeight:
+        '800',
     },
 
     headerSubtitle: {
@@ -1885,7 +2469,8 @@ const styles =
 
     loadingContainer: {
       flex: 1,
-      alignItems: 'center',
+      alignItems:
+        'center',
       justifyContent:
         'center',
     },
@@ -1898,7 +2483,8 @@ const styles =
     sectionTitle: {
       flex: 1,
       fontSize: 17,
-      fontWeight: '800',
+      fontWeight:
+        '800',
     },
 
     latestCard: {
@@ -1906,12 +2492,14 @@ const styles =
       borderWidth: 1,
       borderRadius:
         BorderRadius.lg,
-      padding: Spacing.md,
+      padding:
+        Spacing.md,
       marginBottom: 18,
     },
 
     latestTop: {
-      alignItems: 'center',
+      alignItems:
+        'center',
       gap: 11,
     },
 
@@ -1919,7 +2507,8 @@ const styles =
       width: 52,
       height: 52,
       borderRadius: 17,
-      alignItems: 'center',
+      alignItems:
+        'center',
       justifyContent:
         'center',
     },
@@ -1931,7 +2520,8 @@ const styles =
 
     latestGame: {
       fontSize: 16,
-      fontWeight: '900',
+      fontWeight:
+        '900',
     },
 
     latestCompleted: {
@@ -1943,16 +2533,20 @@ const styles =
       minWidth: 62,
       minHeight: 54,
       borderRadius: 16,
-      alignItems: 'center',
+      alignItems:
+        'center',
       justifyContent:
         'center',
-      flexDirection: 'row',
-      paddingHorizontal: 7,
+      flexDirection:
+        'row',
+      paddingHorizontal:
+        7,
     },
 
     latestScoreValue: {
       fontSize: 24,
-      fontWeight: '900',
+      fontWeight:
+        '900',
     },
 
     latestScoreUnit: {
@@ -1962,23 +2556,29 @@ const styles =
 
     performanceBadge: {
       marginTop: 14,
-      alignSelf: 'flex-start',
-      paddingHorizontal: 11,
-      paddingVertical: 7,
+      alignSelf:
+        'flex-start',
+      paddingHorizontal:
+        11,
+      paddingVertical:
+        7,
       borderRadius:
         BorderRadius.full,
-      alignItems: 'center',
+      alignItems:
+        'center',
       gap: 6,
     },
 
     performanceBadgeText: {
       fontSize: 10,
-      fontWeight: '800',
+      fontWeight:
+        '800',
     },
 
     metricsTitle: {
       fontSize: 12,
-      fontWeight: '800',
+      fontWeight:
+        '800',
       marginTop: 17,
       marginBottom: 8,
     },
@@ -1995,7 +2595,8 @@ const styles =
     metricHeader: {
       justifyContent:
         'space-between',
-      alignItems: 'center',
+      alignItems:
+        'center',
       gap: 10,
     },
 
@@ -2006,7 +2607,8 @@ const styles =
 
     metricValue: {
       fontSize: 12,
-      fontWeight: '900',
+      fontWeight:
+        '900',
     },
 
     metricTrack: {
@@ -2014,7 +2616,8 @@ const styles =
       height: 5,
       borderRadius: 3,
       marginTop: 6,
-      overflow: 'hidden',
+      overflow:
+        'hidden',
     },
 
     metricFill: {
@@ -2027,12 +2630,14 @@ const styles =
       borderWidth: 1,
       borderRadius:
         BorderRadius.lg,
-      padding: Spacing.md,
+      padding:
+        Spacing.md,
       marginBottom: 10,
     },
 
     overallTop: {
-      alignItems: 'center',
+      alignItems:
+        'center',
       gap: 11,
     },
 
@@ -2040,7 +2645,8 @@ const styles =
       width: 49,
       height: 49,
       borderRadius: 16,
-      alignItems: 'center',
+      alignItems:
+        'center',
       justifyContent:
         'center',
     },
@@ -2055,20 +2661,23 @@ const styles =
 
     overallValue: {
       fontSize: 25,
-      fontWeight: '900',
+      fontWeight:
+        '900',
       marginTop: 1,
     },
 
     overallOutOf: {
       fontSize: 11,
-      fontWeight: '500',
+      fontWeight:
+        '500',
     },
 
     progressTrack: {
       width: '100%',
       height: 7,
       borderRadius: 5,
-      overflow: 'hidden',
+      overflow:
+        'hidden',
       marginTop: 15,
     },
 
@@ -2079,7 +2688,8 @@ const styles =
 
     performanceText: {
       fontSize: 10,
-      fontWeight: '800',
+      fontWeight:
+        '800',
       marginTop: 7,
     },
 
@@ -2092,7 +2702,8 @@ const styles =
       paddingHorizontal:
         Spacing.md,
       marginBottom: 10,
-      alignItems: 'center',
+      alignItems:
+        'center',
       gap: 10,
     },
 
@@ -2100,7 +2711,8 @@ const styles =
       width: 40,
       height: 40,
       borderRadius: 13,
-      alignItems: 'center',
+      alignItems:
+        'center',
       justifyContent:
         'center',
     },
@@ -2115,13 +2727,15 @@ const styles =
 
     highlightMetric: {
       fontSize: 12,
-      fontWeight: '800',
+      fontWeight:
+        '800',
       marginTop: 2,
     },
 
     highlightValue: {
       fontSize: 20,
-      fontWeight: '900',
+      fontWeight:
+        '900',
     },
 
     historyCard: {
@@ -2129,12 +2743,14 @@ const styles =
       borderWidth: 1,
       borderRadius:
         BorderRadius.lg,
-      padding: Spacing.md,
+      padding:
+        Spacing.md,
       marginBottom: 10,
     },
 
     historyTop: {
-      alignItems: 'center',
+      alignItems:
+        'center',
       gap: 10,
     },
 
@@ -2142,7 +2758,8 @@ const styles =
       width: 43,
       height: 43,
       borderRadius: 14,
-      alignItems: 'center',
+      alignItems:
+        'center',
       justifyContent:
         'center',
     },
@@ -2154,7 +2771,8 @@ const styles =
 
     historyTitle: {
       fontSize: 13,
-      fontWeight: '800',
+      fontWeight:
+        '800',
     },
 
     historyDate: {
@@ -2163,13 +2781,16 @@ const styles =
     },
 
     historyScore: {
-      flexDirection: 'row',
-      alignItems: 'flex-end',
+      flexDirection:
+        'row',
+      alignItems:
+        'flex-end',
     },
 
     historyScoreValue: {
       fontSize: 21,
-      fontWeight: '900',
+      fontWeight:
+        '900',
     },
 
     historyScoreUnit: {
@@ -2178,7 +2799,8 @@ const styles =
     },
 
     historyMetrics: {
-      flexDirection: 'row',
+      flexDirection:
+        'row',
       marginTop: 12,
       gap: 7,
     },
@@ -2198,7 +2820,8 @@ const styles =
 
     historyMetricValue: {
       fontSize: 13,
-      fontWeight: '800',
+      fontWeight:
+        '800',
       marginTop: 3,
     },
 
@@ -2207,24 +2830,29 @@ const styles =
       minHeight: 54,
       borderRadius:
         BorderRadius.full,
-      alignItems: 'center',
+      alignItems:
+        'center',
       justifyContent:
         'center',
-      flexDirection: 'row',
+      flexDirection:
+        'row',
       gap: 8,
       marginTop: 10,
     },
 
     startButtonText: {
-      color: '#FFFFFF',
+      color:
+        '#FFFFFF',
       fontSize: 15,
-      fontWeight: '800',
+      fontWeight:
+        '800',
     },
 
     emptyContainer: {
       flex: 1,
       minHeight: 520,
-      alignItems: 'center',
+      alignItems:
+        'center',
       justifyContent:
         'center',
       paddingHorizontal: 20,
@@ -2234,7 +2862,8 @@ const styles =
       width: 90,
       height: 90,
       borderRadius: 30,
-      alignItems: 'center',
+      alignItems:
+        'center',
       justifyContent:
         'center',
       marginBottom: 18,
@@ -2242,15 +2871,18 @@ const styles =
 
     emptyTitle: {
       fontSize: 22,
-      fontWeight: '900',
-      textAlign: 'center',
+      fontWeight:
+        '900',
+      textAlign:
+        'center',
     },
 
     emptyDescription: {
       maxWidth: 340,
       fontSize: 12,
       lineHeight: 20,
-      textAlign: 'center',
+      textAlign:
+        'center',
       marginTop: 8,
     },
 
@@ -2258,3 +2890,4 @@ const styles =
       height: 20,
     },
   });
+

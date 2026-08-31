@@ -146,7 +146,7 @@ export default function ProfileScreen() {
             style={styles.characterWrapper}
           >
             <Image
-              source={require('../../assets/avatars/Head.png')}
+              source={require('../../assets/avatars/profile.png')}
               style={styles.characterHead}
             />
           </MotiView>
