@@ -34,6 +34,8 @@ import {
   BorderRadius,
 } from '../../constants/theme';
 
+import { saveGameResult } from './gameResults';
+
 
 type ShapeType =
   | 'circle'
@@ -827,6 +829,36 @@ export default function MemoryChallenge() {
       nextDifficulty,
       accuracy
     );
+
+    await saveGameResult({
+      gameId: 'memory-challenge',
+      gameName:
+        language === 'fa'
+          ? 'چالش حافظه'
+          : 'Memory Challenge',
+      timestamp: Date.now(),
+      score,
+
+      metrics: [
+        {
+          id: 'memory_accuracy',
+          label:
+            language === 'fa'
+              ? 'دقت حافظه'
+              : 'Memory Accuracy',
+          value: accuracy,
+          unit: '%',
+        },
+        {
+          id: 'memory_difficulty',
+          label:
+            language === 'fa'
+              ? 'سطح دشواری'
+              : 'Difficulty Level',
+          value: nextDifficulty,
+        },
+      ],
+    });
   }
 
   function resetGame() {

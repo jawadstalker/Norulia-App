@@ -946,10 +946,11 @@ export default function ScheduleScreen() {
         ]}
       >
 
+        {/* ===== تغییر رنگ پس‌زمینه هیرو برای تم لایت ===== */}
         <LinearGradient
           colors={isDark 
             ? ['rgba(73, 194, 226, 0.12)', 'rgba(73, 194, 226, 0.12)']
-            : ['rgba(73, 194, 226, 1)', 'rgba(73, 194, 226, 0.7)']
+            : ['#F0F4FF', '#E8EEFF']  // ← رنگ‌های جدید برای تم لایت (آبی ملایم)
           }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -1021,7 +1022,7 @@ export default function ScheduleScreen() {
               style={[
                 styles.scheduleHeroTitle,
                 {
-                  color: isDark ? colors.text : '#FFFFFF',
+                  color: isDark ? colors.text : '#1A1A1A',
                 },
               ]}
             >
@@ -1032,7 +1033,7 @@ export default function ScheduleScreen() {
               style={[
                 styles.scheduleHeroSubtitle,
                 {
-                  color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.85)',
+                  color: isDark ? colors.textSecondary : 'rgba(0,0,0,0.65)',
                 },
               ]}
             >
@@ -1047,7 +1048,7 @@ export default function ScheduleScreen() {
                 {
                   backgroundColor: isDark 
                     ? colors.border 
-                    : 'rgba(255,255,255,0.30)',
+                    : 'rgba(0,0,0,0.15)',
                 },
               ]}
             >
@@ -1055,7 +1056,7 @@ export default function ScheduleScreen() {
                 style={[
                   styles.scheduleHeroAccentDot,
                   {
-                    backgroundColor: isDark ? iconColor : '#FFFFFF',
+                    backgroundColor: isDark ? iconColor : '#1A1A1A',
                   },
                 ]}
               />

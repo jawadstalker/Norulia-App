@@ -27,39 +27,29 @@ export default function PlusScreen() {
   const { colors, isDark, isAthlete } = useTheme();
   const { isRTL } = useLanguage();
 
-  // تعیین رنگ‌ها بر اساس تم
+  // ===== تغییر رنگ آیکون‌ها بر اساس تم =====
   const getIconColor = () => {
     if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
     if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
-    return colors.primary; // رنگ پیش‌فرض
+    return colors.primary; // رنگ primary برای تم لایت
   };
 
+  // رنگ آیکون‌های ماژول‌ها
   const getModuleIconColor = (moduleId: string) => {
     if (isAthlete) return '#22C55E'; // همه آیکون‌ها سبز در تم ورزشکار
     if (isDark) return 'rgba(73, 194, 226, 1)'; // همه آیکون‌ها آبی در تم تاریک
     
-    // رنگ‌های اختصاصی در تم روشن
-    const colorsMap: Record<string, string> = {
-      quran: '#22C55E',
-      games: '#F59E0B',
-      poems: '#7C3AED',
-      sports: '#2563EB',
-    };
-    return colorsMap[moduleId] || colors.primary;
+    // در تم لایت همه آیکون‌ها از colors.primary استفاده می‌کنند
+    return colors.primary;
   };
 
+  // رنگ پس‌زمینه آیکون‌های ماژول‌ها
   const getModuleBgColor = (moduleId: string) => {
     if (isAthlete) return '#22C55E' + '18'; // سبز با透明度 برای تم ورزشکار
     if (isDark) return 'rgba(73, 194, 226, 0.15)'; // آبی با透明度 برای تم تاریک
     
-    // رنگ‌های پس‌زمینه اختصاصی در تم روشن
-    const bgMap: Record<string, string> = {
-      quran: '#F0FDF4',
-      games: '#FFF7DD',
-      poems: '#F0EAFE',
-      sports: '#EFF6FF',
-    };
-    return bgMap[moduleId] || '#F0F0F0';
+    // در تم لایت از colors.primary با透明度 استفاده می‌شود
+    return colors.primary + '18';
   };
 
   const iconColor = getIconColor();
@@ -68,7 +58,7 @@ export default function PlusScreen() {
     ? '#22C55E' + '15' 
     : isDark 
       ? 'rgba(73, 194, 226, 0.15)' 
-      : '#F0EAFE';
+      : colors.primary + '15'; // ← تغییر برای تم لایت
   const arrowColor = getIconColor();
 
   const TEXTS = {

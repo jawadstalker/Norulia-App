@@ -188,7 +188,7 @@ const games = [
 ];
 
 export default function PsychoScreen() {
-  const { colors } = useTheme();
+  const { colors, isDark, isAthlete } = useTheme();
   const { t, language, isRTL } = useLanguage();
   const router = useRouter();
   
@@ -202,7 +202,33 @@ export default function PsychoScreen() {
   >(category === 'stress' ? 'stress' : null);
 
   const textAlignStyle = isRTL ? 'right' : 'left';
-  const GREEN_COLOR = '#22C55E'; // رنگ سبز ثابت برای آیکون‌ها
+
+  // ===== تغییر رنگ آیکون‌ها بر اساس تم =====
+  const getIconColor = () => {
+    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
+    if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
+    return colors.primary; // رنگ primary برای تم لایت
+  };
+
+  const iconColor = getIconColor();
+
+  // رنگ پس‌زمینه آیکون‌ها
+  const getIconBgColor = () => {
+    if (isAthlete) return '#22C55E' + '18';
+    if (isDark) return 'rgba(73, 194, 226, 0.18)';
+    return colors.primary + '18';
+  };
+
+  const iconBgColor = getIconBgColor();
+
+  // رنگ دکمه
+  const getButtonColor = () => {
+    if (isAthlete) return '#22C55E';
+    if (isDark) return 'rgba(73, 194, 226, 1)';
+    return colors.primary;
+  };
+
+  const buttonColor = getButtonColor();
 
   useEffect(() => {
     if (
@@ -346,13 +372,13 @@ export default function PsychoScreen() {
                     style={[
                       styles.categoryIcon,
                       {
-                        backgroundColor: GREEN_COLOR + '18', // پس‌زمینه سبز با透明度
+                        backgroundColor: iconBgColor, // ← رنگ پویا برای تم لایت
                       },
                     ]}
                   >
                     <Icon
                       size={34}
-                      color={GREEN_COLOR} // رنگ سبز
+                      color={iconColor} // ← رنگ پویا برای تم لایت
                     />
                   </View>
 
@@ -560,7 +586,7 @@ export default function PsychoScreen() {
                 <View style={styles.detailItem}>
                   <Brain
                     size={16}
-                    color={GREEN_COLOR} // رنگ سبز
+                    color={iconColor} // ← رنگ پویا برای تم لایت
                   />
 
                   <Text
@@ -579,7 +605,7 @@ export default function PsychoScreen() {
                 <View style={styles.detailItem}>
                   <Clock
                     size={16}
-                    color={GREEN_COLOR} // رنگ سبز
+                    color={iconColor} // ← رنگ پویا برای تم لایت
                   />
 
                   <Text
@@ -600,7 +626,7 @@ export default function PsychoScreen() {
                 style={[
                   styles.button,
                   {
-                    backgroundColor: GREEN_COLOR, // پس‌زمینه سبز دکمه
+                    backgroundColor: buttonColor, // ← رنگ پویا برای تم لایت
                   },
                 ]}
                 onPress={() =>

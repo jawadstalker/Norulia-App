@@ -22,6 +22,7 @@ import {
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Spacing, BorderRadius } from '../../constants/theme';
+import { saveGameResult } from './gameResults';
 
 const TOTAL_ROUNDS = 10;
 
@@ -402,6 +403,41 @@ export default function CalmBreathingScreen() {
     round >= TOTAL_ROUNDS &&
     phase === 'exhale' &&
     seconds === 0;
+
+  const resultSavedRef = useRef(false);
+
+  useEffect(() => {
+    if (!isCompleted) {
+      resultSavedRef.current = false;
+      return;
+    }
+
+    if (resultSavedRef.current) {
+      return;
+    }
+
+    resultSavedRef.current = true;
+
+    saveGameResult({
+      gameId: 'calm-breathing',
+      gameName:
+        language === 'fa'
+          ? 'تنفس آرام'
+          : 'Calm Breathing',
+      timestamp: Date.now(),
+
+      metrics: [
+        {
+          id: 'calm_breathing_rounds',
+          label:
+            language === 'fa'
+              ? 'دورهای تکمیل‌شده'
+              : 'Rounds Completed',
+          value: TOTAL_ROUNDS,
+        },
+      ],
+    });
+  }, [isCompleted, language]);
 
   /* ============================================================
      RENDER

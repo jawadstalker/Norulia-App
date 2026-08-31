@@ -328,7 +328,7 @@ function PageHeader({
               style={[
                 styles.headerIcon,
                 {
-                  backgroundColor: isDark ? 'rgba(73,194,226,0.16)' : 'rgba(73,194,226,0.09)',
+                  backgroundColor: isDark ? 'rgba(73,194,226,0.16)' : colors.primary + '10',
                 },
               ]}
             >
@@ -379,11 +379,11 @@ export default function CulturalScreen() {
 
   const currentWeek = selectedWeek !== null ? weeks[selectedWeek] : null;
 
-  // تعیین رنگ آیکون‌ها بر اساس تم
+  // ===== تغییر رنگ آیکون‌ها بر اساس تم =====
   const getIconColor = () => {
     if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
     if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
-    return colors.text; // رنگ پیش‌فرض
+    return colors.primary; // ← تغییر به colors.primary برای تم لایت
   };
 
   const iconColor = getIconColor();
@@ -464,12 +464,12 @@ export default function CulturalScreen() {
                     ? '#22C55E' + '10' 
                     : isDark 
                       ? 'rgba(73,194,226,0.10)' 
-                      : 'rgba(73,194,226,0.055)',
+                      : colors.primary + '08',
                   borderColor: isAthlete 
                     ? '#22C55E' + '20' 
                     : isDark 
                       ? 'rgba(73,194,226,0.18)' 
-                      : 'rgba(73,194,226,0.10)',
+                      : colors.primary + '14',
                 },
               ]}
             >
@@ -571,7 +571,7 @@ export default function CulturalScreen() {
                               ? iconColor
                               : isDark
                               ? 'rgba(73,194,226,0.14)'
-                              : 'rgba(73,194,226,0.08)',
+                              : colors.primary + '10',
                           },
                         ]}
                       >
@@ -594,7 +594,7 @@ export default function CulturalScreen() {
                             {
                               backgroundColor: isDark
                                 ? 'rgba(73,194,226,0.14)'
-                                : 'rgba(73,194,226,0.08)',
+                                : colors.primary + '10',
                             },
                           ]}
                         >
@@ -796,7 +796,7 @@ export default function CulturalScreen() {
               styles.weekBadge,
               {
                 flexDirection: isRTL ? 'row-reverse' : 'row',
-                backgroundColor: isDark ? 'rgba(73,194,226,0.13)' : 'rgba(73,194,226,0.08)',
+                backgroundColor: isDark ? 'rgba(73,194,226,0.13)' : colors.primary + '10',
               },
             ]}
           >
@@ -877,7 +877,7 @@ export default function CulturalScreen() {
                 style={[
                   styles.mediaLabel,
                   {
-                    backgroundColor: isDark ? 'rgba(73,194,226,0.13)' : 'rgba(73,194,226,0.08)',
+                    backgroundColor: isDark ? 'rgba(73,194,226,0.13)' : colors.primary + '10',
                     flexDirection: isRTL ? 'row-reverse' : 'row',
                   },
                 ]}
@@ -1065,7 +1065,7 @@ export default function CulturalScreen() {
                 style={[
                   styles.mediaLabel,
                   {
-                    backgroundColor: isDark ? 'rgba(73,194,226,0.13)' : 'rgba(73,194,226,0.08)',
+                    backgroundColor: isDark ? 'rgba(73,194,226,0.13)' : colors.primary + '10',
                     flexDirection: isRTL ? 'row-reverse' : 'row',
                   },
                 ]}
@@ -1205,12 +1205,12 @@ export default function CulturalScreen() {
                 ? '#22C55E' + '10' 
                 : isDark 
                   ? 'rgba(73,194,226,0.10)' 
-                  : 'rgba(73,194,226,0.055)',
+                  : colors.primary + '08',
               borderColor: isAthlete 
                 ? '#22C55E' + '20' 
                 : isDark 
                   ? 'rgba(73,194,226,0.18)' 
-                  : 'rgba(73,194,226,0.11)',
+                  : colors.primary + '14',
               flexDirection: isRTL ? 'row-reverse' : 'row',
             },
           ]}

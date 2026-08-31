@@ -29,6 +29,7 @@ import {
   Spacing,
   BorderRadius,
 } from '../../constants/theme';
+import { saveGameResult } from './gameResults';
 
 /* ================================================================
    TYPES
@@ -666,11 +667,42 @@ export default function WordGameScreen() {
     -------------------------------------------------------------- */
 
     setGameCompleted(true);
+
+    const finalAccuracy =
+      questions.length > 0
+        ? Math.round(
+            (score / questions.length) * 100,
+          )
+        : 0;
+
+    saveGameResult({
+      gameId: 'word-order',
+      gameName:
+        appLanguage === 'fa'
+          ? 'ترتیب کلمات'
+          : 'Word Order',
+      timestamp: Date.now(),
+      score,
+
+      metrics: [
+        {
+          id: 'word_order_accuracy',
+          label:
+            appLanguage === 'fa'
+              ? 'دقت'
+              : 'Accuracy',
+          value: finalAccuracy,
+          unit: '%',
+        },
+      ],
+    });
   }, [
     answered,
     currentQuestion,
     question,
     questions.length,
+    score,
+    appLanguage,
   ]);
 
   /* ================================================================

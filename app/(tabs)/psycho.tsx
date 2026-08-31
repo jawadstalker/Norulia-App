@@ -22,6 +22,7 @@ import {
   Compass,
   ChevronLeft,
   Play,
+  Trophy,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -160,7 +161,7 @@ const games = [
 ];
 
 export default function PsychoScreen() {
-  const { colors, isDark, isAthlete } = useTheme(); // اضافه کردن isAthlete
+  const { colors, isDark, isAthlete } = useTheme();
   const { t, language, isRTL } = useLanguage();
   const router = useRouter();
   const { category } = useLocalSearchParams<{ category?: string }>();
@@ -169,24 +170,25 @@ export default function PsychoScreen() {
   );
   const textAlignStyle = isRTL ? 'right' : 'left';
 
-  // رنگ آیکون‌ها بر اساس تم
+  // ===== تغییر رنگ آیکون‌ها بر اساس تم =====
   const getIconColor = () => {
-    if (isAthlete) return '#22C55E'; // رنگ سبز برای تم ورزشکار
+    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
     if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
-    return colors.text; // رنگ پیش‌فرض
+    return colors.primary; // ← تغییر به colors.primary برای تم لایت
   };
 
   // رنگ دکمه بر اساس تم
   const getButtonColor = () => {
     if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
-    return 'rgba(73, 194, 226, 1)'; // آبی برای سایر تم‌ها
+    if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
+    return colors.primary; // ← تغییر به colors.primary برای تم لایت
   };
 
   // رنگ پس‌زمینه آیکون‌ها بر اساس تم
   const getIconBgColor = () => {
     if (isAthlete) return '#22C55E' + '18'; // سبز با透明度 برای تم ورزشکار
-    if (isDark) return 'rgba(255,255,255,0.07)';
-    return 'rgba(0,0,0,0.045)';
+    if (isDark) return 'rgba(73, 194, 226, 0.15)'; // آبی با透明度 برای تم تاریک
+    return colors.primary + '14'; // ← تغییر به colors.primary با透明度 برای تم لایت
   };
 
   const iconColor = getIconColor();
@@ -320,6 +322,31 @@ export default function PsychoScreen() {
               {language === 'fa' ? 'دسته مورد نظر خود را انتخاب کنید' : 'Choose a game category'}
             </Text>
           </View>
+
+          {/* دکمه Trophy در سمت راست (همانند کد اصلی) */}
+          <TouchableOpacity
+            onPress={() => router.push('/games/results' as any)}
+            activeOpacity={0.75}
+            accessibilityRole="button"
+            accessibilityLabel={
+              language === 'fa' ? 'نتایج بازی‌ها' : 'Game Results'
+            }
+            style={[
+              styles.unifiedBackButton,
+              {
+                marginRight: 0,
+                marginLeft: isRTL ? 12 : 0,
+                backgroundColor: isDark
+                  ? 'rgba(255,255,255,0.06)'
+                  : colors.surface,
+                borderColor: isDark
+                  ? 'rgba(255,255,255,0.10)'
+                  : colors.border,
+              },
+            ]}
+          >
+            <Trophy size={20} color={iconColor} strokeWidth={2.5} />
+          </TouchableOpacity>
         </View>
 
         <ScrollView
@@ -490,6 +517,31 @@ export default function PsychoScreen() {
             {filteredGames.length} {language === 'fa' ? 'بازی' : 'games'}
           </Text>
         </View>
+
+        {/* دکمه Trophy در سمت راست (همانند کد اصلی) */}
+        <TouchableOpacity
+          onPress={() => router.push('/games/results' as any)}
+          activeOpacity={0.75}
+          accessibilityRole="button"
+          accessibilityLabel={
+            language === 'fa' ? 'نتایج بازی‌ها' : 'Game Results'
+          }
+          style={[
+            styles.unifiedBackButton,
+            {
+              marginRight: 0,
+              marginLeft: isRTL ? 12 : 0,
+              backgroundColor: isDark
+                ? 'rgba(255,255,255,0.06)'
+                : colors.surface,
+              borderColor: isDark
+                ? 'rgba(255,255,255,0.10)'
+                : colors.border,
+            },
+          ]}
+        >
+          <Trophy size={20} color={iconColor} strokeWidth={2.5} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView

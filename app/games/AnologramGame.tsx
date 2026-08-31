@@ -29,6 +29,7 @@ import {
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { saveGameResult } from './gameResults';
 
 type GameLanguage = 'fa' | 'en';
 type LevelConfig = {
@@ -183,7 +184,7 @@ function createScrambledLetters(word: string): LetterItem[] {
 export default function AnagramScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { isRTL } = useLanguage();
+  const { language: appLanguage, isRTL } = useLanguage();
   const { width } = useWindowDimensions();
   const [gameLanguage, setGameLanguage] = useState<GameLanguage>(isRTL ? 'fa' : 'en');
   const [currentLevel, setCurrentLevel] = useState(0);
@@ -329,11 +330,34 @@ export default function AnagramScreen() {
     }
   };
 
+  const reportGameResult = () => {
+    saveGameResult({
+      gameId: 'anologram',
+      gameName: appLanguage === 'fa' ? 'آنولوگرام' : 'Anologram',
+      timestamp: Date.now(),
+      score,
+      metrics: [
+        {
+          id: 'anologram_accuracy',
+          label: appLanguage === 'fa' ? 'دقت' : 'Accuracy',
+          value: accuracy,
+          unit: '%',
+        },
+        {
+          id: 'anologram_words_done',
+          label: appLanguage === 'fa' ? 'کلمات کامل‌شده' : 'Words Completed',
+          value: wordsDone,
+        },
+      ],
+    });
+  };
+
   const goNextLevel = () => {
     if (currentLevel >= LEVEL_CONFIG.length - 1) {
       setGameFinished(true);
       setShowResult(false);
       setIsRunning(false);
+      reportGameResult();
       return;
     }
     const nextLevel = currentLevel + 1;
@@ -352,6 +376,7 @@ export default function AnagramScreen() {
     setShowResult(false);
     setIsRunning(false);
     setGameFinished(true);
+    reportGameResult();
   };
 
   const quitGame = () => {

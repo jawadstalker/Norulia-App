@@ -39,6 +39,8 @@ import {
   BorderRadius,
 } from '../../constants/theme';
 
+import { saveGameResult } from './gameResults';
+
 /* ================================================================
    TYPES
 ================================================================ */
@@ -1031,12 +1033,55 @@ export default function SizeDiscriminationScreen() {
           )
         );
 
+        const avgRt =
+          total === 0
+            ? 0
+            : Math.round(
+                results.reduce(
+                  (sum, item) =>
+                    sum + item.rt,
+                  0
+                ) / total
+              );
+
+        await saveGameResult({
+          gameId: 'size-discrimination',
+          gameName:
+            language === 'fa'
+              ? 'تمایز اندازه'
+              : 'Size Discrimination',
+          timestamp: Date.now(),
+          score: Math.round(accuracy),
+
+          metrics: [
+            {
+              id: 'size_discrimination_accuracy',
+              label:
+                language === 'fa'
+                  ? 'دقت'
+                  : 'Accuracy',
+              value: Math.round(accuracy),
+              unit: '%',
+            },
+            {
+              id: 'size_discrimination_reaction_time',
+              label:
+                language === 'fa'
+                  ? 'زمان پاسخ'
+                  : 'Reaction Time',
+              value: avgRt,
+              unit: 'ms',
+            },
+          ],
+        });
+
         setPhase('result');
       },
       [
         clearTimers,
         level,
         saveAdaptiveState,
+        language,
       ]
     );
 

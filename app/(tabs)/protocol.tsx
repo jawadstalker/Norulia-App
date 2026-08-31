@@ -1085,6 +1085,7 @@ export default function ProtocolScreen() {
               fa ? 'برنامه روزانه شما' : 'Your daily program',
             )}
 
+            {/* ===== تغییر رنگ پس‌زمینه هیرو برای تم لایت ===== */}
             <MotiView
               from={{
                 opacity: 0,
@@ -1105,10 +1106,10 @@ export default function ProtocolScreen() {
                 {
                   backgroundColor: isDark 
                     ? 'rgba(73, 194, 226, 0.12)'
-                    : 'rgba(73, 194, 226, 1)',
+                    : '#F0F4FF',  // ← رنگ جدید برای تم لایت (آبی ملایم)
                   borderColor: isDark
                     ? 'rgba(73, 194, 226, 0.20)'
-                    : 'rgba(73, 194, 226, 0.55)',
+                    : '#D0D9E8',  // ← رنگ حاشیه جدید برای تم لایت
                 },
               ]}
             >
@@ -1119,7 +1120,7 @@ export default function ProtocolScreen() {
                   {
                     backgroundColor: isDark
                       ? 'rgba(73, 194, 226, 0.08)'
-                      : 'rgba(255,255,255,0.20)',
+                      : 'rgba(73, 194, 226, 0.10)',
                   },
                 ]}
               />
@@ -1131,7 +1132,7 @@ export default function ProtocolScreen() {
                   {
                     backgroundColor: isDark
                       ? 'rgba(73, 194, 226, 0.05)'
-                      : 'rgba(255,255,255,0.14)',
+                      : 'rgba(73, 194, 226, 0.06)',
                   },
                 ]}
               />
@@ -1184,14 +1185,14 @@ export default function ProtocolScreen() {
                       {
                         backgroundColor: isDark
                           ? 'rgba(73, 194, 226, 0.20)'
-                          : 'rgba(255,255,255,0.15)',
+                          : 'rgba(73, 194, 226, 0.15)',
                         flexDirection: rowDirection,
                       },
                     ]}
                   >
                     <Sparkles
                       size={14}
-                      color={isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(255,255,255,0.95)')}
+                      color={isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(73, 194, 226, 1)')}
                       strokeWidth={2.2}
                     />
 
@@ -1199,7 +1200,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.heroBadgeText,
                         {
-                          color: isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(255,255,255,0.95)'),
+                          color: isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : '#1A1A1A'),
                           textAlign,
                           writingDirection: textDirection,
                         },
@@ -1213,7 +1214,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.heroTitle,
                       {
-                        color: isDark ? colors.text : '#FFFFFF',
+                        color: isDark ? colors.text : '#1A1A1A',
                         textAlign,
                         writingDirection: textDirection,
                       },
@@ -1226,7 +1227,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.heroDescription,
                       {
-                        color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.82)',
+                        color: isDark ? colors.textSecondary : 'rgba(0,0,0,0.65)',
                         textAlign,
                         writingDirection: textDirection,
                       },
@@ -1243,10 +1244,10 @@ export default function ProtocolScreen() {
                   {
                     backgroundColor: isDark
                       ? 'rgba(0,0,0,0.18)'
-                      : 'rgba(255,255,255,0.13)',
+                      : 'rgba(73, 194, 226, 0.10)',
                     borderColor: isDark
                       ? 'rgba(73, 194, 226, 0.20)'
-                      : 'rgba(255,255,255,0.18)',
+                      : 'rgba(73, 194, 226, 0.20)',
                   },
                 ]}
               >
@@ -1268,7 +1269,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.heroProgressLabel,
                         {
-                          color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.70)',
+                          color: isDark ? colors.textSecondary : 'rgba(0,0,0,0.70)',
                           textAlign,
                           writingDirection: textDirection,
                         },
@@ -1281,7 +1282,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.heroProgressHint,
                         {
-                          color: isDark ? colors.textTertiary : 'rgba(255,255,255,0.55)',
+                          color: isDark ? colors.textTertiary : 'rgba(0,0,0,0.50)',
                           textAlign,
                           writingDirection: textDirection,
                         },
@@ -1297,7 +1298,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.heroProgressValue,
                       {
-                        color: isAthlete ? '#22C55E' : (isDark ? colors.text : '#FFFFFF'),
+                        color: isAthlete ? '#22C55E' : (isDark ? colors.text : '#1A1A1A'),
                       },
                     ]}
                   >
@@ -1311,7 +1312,7 @@ export default function ProtocolScreen() {
                     {
                       backgroundColor: isDark
                         ? 'rgba(73, 194, 226, 0.15)'
-                        : 'rgba(255,255,255,0.18)',
+                        : 'rgba(73, 194, 226, 0.15)',
                     },
                   ]}
                 >
@@ -1329,7 +1330,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.heroProgressFill,
                       {
-                        backgroundColor: isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : '#FFFFFF'),
+                        backgroundColor: isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(73, 194, 226, 1)'),
                       },
                     ]}
                   />
@@ -1350,13 +1351,13 @@ export default function ProtocolScreen() {
                     {
                       borderColor: isDark
                         ? 'rgba(73, 194, 226, 0.15)'
-                        : 'rgba(255,255,255,0.14)',
+                        : 'rgba(73, 194, 226, 0.20)',
                     },
                   ]}
                 >
                   <Target
                     size={17}
-                    color={isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(255,255,255,0.88)')}
+                    color={isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(73, 194, 226, 1)')}
                     strokeWidth={2}
                   />
 
@@ -1365,7 +1366,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.heroStatValue,
                         {
-                          color: isDark ? colors.text : '#FFFFFF',
+                          color: isDark ? colors.text : '#1A1A1A',
                         },
                       ]}
                     >
@@ -1376,7 +1377,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.heroStatLabel,
                         {
-                          color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.58)',
+                          color: isDark ? colors.textSecondary : 'rgba(0,0,0,0.55)',
                           textAlign,
                           writingDirection: textDirection,
                         },
@@ -1393,13 +1394,13 @@ export default function ProtocolScreen() {
                     {
                       borderColor: isDark
                         ? 'rgba(73, 194, 226, 0.15)'
-                        : 'rgba(255,255,255,0.14)',
+                        : 'rgba(73, 194, 226, 0.20)',
                     },
                   ]}
                 >
                   <CheckCircle2
                     size={17}
-                    color={isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(255,255,255,0.88)')}
+                    color={isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(73, 194, 226, 1)')}
                     strokeWidth={2}
                   />
 
@@ -1408,7 +1409,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.heroStatValue,
                         {
-                          color: isDark ? colors.text : '#FFFFFF',
+                          color: isDark ? colors.text : '#1A1A1A',
                         },
                       ]}
                     >
@@ -1419,7 +1420,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.heroStatLabel,
                         {
-                          color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.58)',
+                          color: isDark ? colors.textSecondary : 'rgba(0,0,0,0.55)',
                           textAlign,
                           writingDirection: textDirection,
                         },

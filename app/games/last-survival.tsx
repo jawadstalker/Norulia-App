@@ -45,6 +45,8 @@ import {
   BorderRadius,
 } from '../../constants/theme';
 
+import { saveGameResult } from './gameResults';
+
 /* ================================================================
    IMAGES
 ================================================================ */
@@ -1019,6 +1021,27 @@ export default function LastSurvivalScreen() {
           setGameOver(true);
           setCompleted(false);
 
+          await saveGameResult({
+            gameId: 'last-survival',
+            gameName:
+              language === 'fa'
+                ? 'آخرین بازمانده'
+                : 'Last Survival',
+            timestamp: Date.now(),
+            score: scoreRef.current,
+
+            metrics: [
+              {
+                id: 'last_survival_correct',
+                label:
+                  language === 'fa'
+                    ? 'پاسخ‌های صحیح'
+                    : 'Correct Responses',
+                value: correctRef.current,
+              },
+            ],
+          });
+
           return;
         }
 
@@ -1089,11 +1112,42 @@ export default function LastSurvivalScreen() {
           nextDifficulty,
           accuracy
         );
+
+        await saveGameResult({
+          gameId: 'last-survival',
+          gameName:
+            language === 'fa'
+              ? 'آخرین بازمانده'
+              : 'Last Survival',
+          timestamp: Date.now(),
+          score: scoreRef.current,
+
+          metrics: [
+            {
+              id: 'last_survival_accuracy',
+              label:
+                language === 'fa'
+                  ? 'دقت'
+                  : 'Accuracy',
+              value: accuracy,
+              unit: '%',
+            },
+            {
+              id: 'last_survival_difficulty',
+              label:
+                language === 'fa'
+                  ? 'سطح دشواری'
+                  : 'Difficulty Level',
+              value: nextDifficulty,
+            },
+          ],
+        });
       },
       [
         clearAllTimers,
         difficulty,
         saveAdaptiveState,
+        language,
       ]
     );
 
