@@ -61,6 +61,11 @@ import {
   AssessmentProvider,
 } from '../context/AssessmentContext';
 
+// ============================================================
+// اضافه کردن GameDataProvider
+// ============================================================
+import { GameDataProvider } from '../context/GameDataContext';
+
 import AppSplashScreen from '../components/screens/SplashScreen';
 
 import {
@@ -779,6 +784,9 @@ export default function RootLayout() {
 
   /* ==============================================================
      PROVIDERS
+
+     ترتیب Providerها:
+     ThemeProvider → LanguageProvider → GameDataProvider → AuthProvider → AssessmentProvider
   ============================================================== */
 
   return (
@@ -790,11 +798,17 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ThemeProvider>
           <LanguageProvider>
-            <AuthProvider>
-              <AssessmentProvider>
-                <AppContent />
-              </AssessmentProvider>
-            </AuthProvider>
+            {/* ====================================================
+                GameDataProvider بعد از LanguageProvider قرار می‌گیرد
+                تا از زبان برای نمایش نام بازی‌ها استفاده کند
+            ==================================================== */}
+            <GameDataProvider>
+              <AuthProvider>
+                <AssessmentProvider>
+                  <AppContent />
+                </AssessmentProvider>
+              </AuthProvider>
+            </GameDataProvider>
           </LanguageProvider>
         </ThemeProvider>
       </SafeAreaProvider>

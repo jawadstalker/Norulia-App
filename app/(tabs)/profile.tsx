@@ -83,26 +83,49 @@ export default function ProfileScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <LinearGradient
-        colors={isDark 
-          ? ['rgba(73, 194, 226, 0.12)', 'rgba(73, 194, 226, 0.12)']
-          : ['rgba(220, 240, 250, 0.95)', 'rgba(73, 194, 226, 0.25)']
-        }
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[
-          styles.hero,
-          {
-            borderColor: isDark
-              ? 'rgba(255,255,255,0.10)'
-              : 'rgba(73, 194, 226, 0.20)',
-            shadowColor: '#000000',
-            shadowOpacity: isDark ? 0.20 : 0.15,
-            elevation: isDark ? 8 : 5,
-          },
-        ]}
-      >
-        <View style={styles.characterStage}>
+ <LinearGradient
+  colors={
+    isDark
+      ? [
+          'rgba(167, 139, 250, 0.24)',
+          'rgba(196, 181, 253, 0.16)',
+          'rgba(139, 92, 246, 0.10)',
+        ]
+      : [
+          colors.primary + '18',
+          colors.primary + '0D',
+        ]
+  }
+  start={{ x: 0, y: 0 }}
+  end={{ x: 1, y: 1 }}
+  style={[
+    styles.hero,
+    {
+      borderColor: isDark
+        ? 'rgba(196, 181, 253, 0.30)'
+        : colors.primary + '33',
+
+      shadowColor: isDark
+        ? '#A78BFA'
+        : '#000000',
+
+      shadowOpacity: isDark
+        ? 0.12
+        : 0.06,
+
+      shadowRadius: isDark
+        ? 16
+        : 10,
+
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+
+      elevation: isDark ? 4 : 2,
+    },
+  ]}
+>      <View style={styles.characterStage}>
           <MotiView
             from={{
               opacity: 0,
@@ -123,7 +146,7 @@ export default function ProfileScreen() {
             style={styles.characterWrapper}
           >
             <Image
-              source={require('../../assets/avatars/Head2.png')}
+              source={require('../../assets/avatars/Head.png')}
               style={styles.characterHead}
             />
           </MotiView>
