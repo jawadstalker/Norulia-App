@@ -24,8 +24,52 @@ import { useLanguage } from '../../context/LanguageContext';
 
 export default function PlusScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, isAthlete } = useTheme();
   const { isRTL } = useLanguage();
+
+  // تعیین رنگ‌ها بر اساس تم
+  const getIconColor = () => {
+    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
+    if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
+    return colors.primary; // رنگ پیش‌فرض
+  };
+
+  const getModuleIconColor = (moduleId: string) => {
+    if (isAthlete) return '#22C55E'; // همه آیکون‌ها سبز در تم ورزشکار
+    if (isDark) return 'rgba(73, 194, 226, 1)'; // همه آیکون‌ها آبی در تم تاریک
+    
+    // رنگ‌های اختصاصی در تم روشن
+    const colorsMap: Record<string, string> = {
+      quran: '#22C55E',
+      games: '#F59E0B',
+      poems: '#7C3AED',
+      sports: '#2563EB',
+    };
+    return colorsMap[moduleId] || colors.primary;
+  };
+
+  const getModuleBgColor = (moduleId: string) => {
+    if (isAthlete) return '#22C55E' + '18'; // سبز با透明度 برای تم ورزشکار
+    if (isDark) return 'rgba(73, 194, 226, 0.15)'; // آبی با透明度 برای تم تاریک
+    
+    // رنگ‌های پس‌زمینه اختصاصی در تم روشن
+    const bgMap: Record<string, string> = {
+      quran: '#F0FDF4',
+      games: '#FFF7DD',
+      poems: '#F0EAFE',
+      sports: '#EFF6FF',
+    };
+    return bgMap[moduleId] || '#F0F0F0';
+  };
+
+  const iconColor = getIconColor();
+  const sparkleColor = getIconColor();
+  const arrowBgColor = isAthlete 
+    ? '#22C55E' + '15' 
+    : isDark 
+      ? 'rgba(73, 194, 226, 0.15)' 
+      : '#F0EAFE';
+  const arrowColor = getIconColor();
 
   const TEXTS = {
     fa: {
@@ -61,7 +105,6 @@ export default function PlusScreen() {
   };
 
   const text = isRTL ? TEXTS.fa : TEXTS.en;
-  const iconColor = isDark ? 'rgba(73, 194, 226, 1)' : undefined;
 
   const modules = [
     {
@@ -69,9 +112,6 @@ export default function PlusScreen() {
       title: text.quranTitle,
       description: text.quranDescription,
       icon: BookOpen,
-      iconColor: isDark ? 'rgba(73, 194, 226, 1)' : '#22C55E',
-      backgroundLight: '#F0FDF4',
-      backgroundDark: 'rgba(73, 194, 226, 0.15)',
       enabled: true,
       route: '/quran',
     },
@@ -80,9 +120,6 @@ export default function PlusScreen() {
       title: text.gamesTitle,
       description: text.gamesDescription,
       icon: Gamepad2,
-      iconColor: isDark ? 'rgba(73, 194, 226, 1)' : '#F59E0B',
-      backgroundLight: '#FFF7DD',
-      backgroundDark: 'rgba(73, 194, 226, 0.15)',
       enabled: true,
       route: '/bilingual-games',
     },
@@ -91,9 +128,6 @@ export default function PlusScreen() {
       title: text.poemsTitle,
       description: text.poemsDescription,
       icon: Feather,
-      iconColor: isDark ? 'rgba(73, 194, 226, 1)' : '#7C3AED',
-      backgroundLight: '#F0EAFE',
-      backgroundDark: 'rgba(73, 194, 226, 0.15)',
       enabled: true,
       route: '/poems',
     },
@@ -102,18 +136,12 @@ export default function PlusScreen() {
       title: text.sportsTitle,
       description: text.sportsDescription,
       icon: Dumbbell,
-      iconColor: isDark ? 'rgba(73, 194, 226, 1)' : '#2563EB',
-      backgroundLight: '#EFF6FF',
-      backgroundDark: 'rgba(73, 194, 226, 0.15)',
       enabled: true,
       route: '/sports',
     },
   ];
 
   const ArrowIcon = isRTL ? ChevronLeft : ChevronRight;
-  const sparkleColor = isDark ? 'rgba(73, 194, 226, 1)' : colors.primary;
-  const arrowBgColor = isDark ? 'rgba(73, 194, 226, 0.15)' : '#F0EAFE';
-  const arrowColor = isDark ? 'rgba(73, 194, 226, 1)' : colors.primary;
 
   const handleModulePress = (module: (typeof modules)[number]) => {
     if (!module.enabled || !module.route) return;
@@ -212,6 +240,8 @@ export default function PlusScreen() {
           <View style={styles.modules}>
             {modules.map((module) => {
               const Icon = module.icon;
+              const moduleIconColor = getModuleIconColor(module.id);
+              const moduleBgColor = getModuleBgColor(module.id);
 
               return (
                 <TouchableOpacity
@@ -233,13 +263,13 @@ export default function PlusScreen() {
                     style={[
                       styles.moduleIcon,
                       {
-                        backgroundColor: isDark ? module.backgroundDark : module.backgroundLight,
+                        backgroundColor: moduleBgColor,
                         marginLeft: isRTL ? 13 : 0,
                         marginRight: isRTL ? 0 : 13,
                       },
                     ]}
                   >
-                    <Icon size={25} color={module.iconColor} />
+                    <Icon size={25} color={moduleIconColor} />
                   </View>
 
                   <View

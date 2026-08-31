@@ -80,11 +80,19 @@ const bilingualGames = [
 ];
 
 export default function BilingualGamesScreen() {
-  const { colors } = useTheme();
+  const { colors, isAthlete } = useTheme(); // اضافه کردن isAthlete
   const { t, language, isRTL } = useLanguage();
   const router = useRouter();
 
   const textAlignStyle = isRTL ? 'right' : 'left';
+  
+  // رنگ آیکون‌ها: اگر تم سبز (Athlete) باشد از سبز استفاده کن، در غیر این صورت از colors.primary
+  const iconColor = isAthlete ? '#22C55E' : colors.primary;
+  
+  // پس‌زمینه آیکون‌ها: اگر تم سبز باشد از سبز با透明度 استفاده کن، در غیر این صورت از colors.primary با透明度
+  const iconBgColor = isAthlete 
+    ? '#22C55E' + '18' 
+    : colors.primary + '18';
 
   const getTitle = (game: (typeof bilingualGames)[0]) =>
     language === 'fa' ? game.titleFa : game.title;
@@ -174,13 +182,13 @@ export default function BilingualGamesScreen() {
               style={[
                 styles.headerIcon,
                 {
-                  backgroundColor: colors.primary + '16',
+                  backgroundColor: iconBgColor, // استفاده از رنگ شرطی
                 },
               ]}
             >
               <Languages
                 size={22}
-                color={colors.primary}
+                color={iconColor} // استفاده از رنگ شرطی
               />
             </View>
 
@@ -230,8 +238,8 @@ export default function BilingualGamesScreen() {
         style={[
           styles.introCard,
           {
-            backgroundColor: colors.primary + '0B',
-            borderColor: colors.primary + '20',
+            backgroundColor: isAthlete ? '#22C55E' + '0B' : colors.primary + '0B',
+            borderColor: isAthlete ? '#22C55E' + '20' : colors.primary + '20',
             flexDirection: isRTL
               ? 'row-reverse'
               : 'row',
@@ -242,13 +250,13 @@ export default function BilingualGamesScreen() {
           style={[
             styles.introIcon,
             {
-              backgroundColor: colors.primary + '18',
+              backgroundColor: iconBgColor, // استفاده از رنگ شرطی
             },
           ]}
         >
           <Languages
             size={23}
-            color={colors.primary}
+            color={iconColor} // استفاده از رنگ شرطی
           />
         </View>
 
@@ -320,7 +328,7 @@ export default function BilingualGamesScreen() {
               >
                 <Languages
                   size={13}
-                  color={colors.primary}
+                  color={iconColor} // استفاده از رنگ شرطی
                 />
 
                 <Text
@@ -386,7 +394,7 @@ export default function BilingualGamesScreen() {
                 >
                   <Brain
                     size={15}
-                    color={colors.primary}
+                    color={iconColor} // استفاده از رنگ شرطی
                   />
 
                   <Text
@@ -422,7 +430,7 @@ export default function BilingualGamesScreen() {
                 >
                   <Clock
                     size={15}
-                    color={colors.primary}
+                    color={iconColor} // استفاده از رنگ شرطی
                   />
 
                   <Text
@@ -442,7 +450,7 @@ export default function BilingualGamesScreen() {
                 style={[
                   styles.button,
                   {
-                    backgroundColor: colors.primary,
+                    backgroundColor: isAthlete ? '#22C55E' : colors.primary, // رنگ شرطی برای دکمه
                   },
                 ]}
                 onPress={() =>
@@ -453,8 +461,8 @@ export default function BilingualGamesScreen() {
                 <View style={styles.buttonIcon}>
                   <Play
                     size={14}
-                    color={colors.primary}
-                    fill={colors.primary}
+                    color={isAthlete ? '#22C55E' : colors.primary} // رنگ شرطی برای آیکون پلی
+                    fill={isAthlete ? '#22C55E' : colors.primary} // رنگ پر شدن شرطی
                   />
                 </View>
 

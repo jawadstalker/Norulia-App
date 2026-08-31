@@ -37,7 +37,9 @@ import {
 } from '@expo-google-fonts/inter';
 
 import * as SplashScreen from 'expo-splash-screen';
+
 import * as NavigationBar from 'expo-navigation-bar';
+
 import * as Notifications from 'expo-notifications';
 
 import {
@@ -47,6 +49,7 @@ import {
 
 import {
   LanguageProvider,
+  useLanguage,
 } from '../context/LanguageContext';
 
 import {
@@ -76,19 +79,22 @@ import {
    NATIVE SPLASH
 ================================================================ */
 
-SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen
+  .preventAutoHideAsync()
+  .catch(() => {});
 
 /* ================================================================
    NOTIFICATION CONFIGURATION
 ================================================================ */
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
+  handleNotification:
+    async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
 });
 
 /* ================================================================
@@ -105,10 +111,17 @@ export const FONT_FAMILY = {
   persian: 'EstedadMedium',
 
   english: {
-    regular: 'Inter_400Regular',
-    medium: 'Inter_500Medium',
-    semiBold: 'Inter_600SemiBold',
-    bold: 'Inter_700Bold',
+    regular:
+      'Inter_400Regular',
+
+    medium:
+      'Inter_500Medium',
+
+    semiBold:
+      'Inter_600SemiBold',
+
+    bold:
+      'Inter_700Bold',
   },
 };
 
@@ -144,7 +157,9 @@ function normalizeRoute(
     );
   }
 
-  return normalized || '/';
+  return (
+    normalized || '/'
+  );
 }
 
 /* ================================================================
@@ -187,23 +202,72 @@ async function hideAndroidNavigationBar() {
    WORKOUT REMINDER NOTIFICATION
 ================================================================ */
 
+/**
+ * Creates the workout reminder using the language currently
+ * selected by the user.
+ *
+ * IMPORTANT:
+ *
+ * The language is loaded from AsyncStorage by LanguageContext.
+ * We wait for `isLanguageLoaded` before creating the notification.
+ *
+ * Therefore:
+ *
+ * fa -> Persian notification
+ * en -> English notification
+ */
 function useWorkoutReminderNotification() {
+  const {
+    language,
+    isLanguageLoaded,
+  } = useLanguage();
+
   useEffect(() => {
     let mounted = true;
+
+    let timer:
+      ReturnType<
+        typeof setTimeout
+      > | null = null;
 
     const setupNotification =
       async () => {
         try {
           /*
-           * Android notification channel
+           * -------------------------------------------------------
+           * Wait for the saved language.
+           *
+           * Without this check the application could start with
+           * the default `fa` value while AsyncStorage still
+           * contains `en`, resulting in a wrong notification.
+           * -------------------------------------------------------
            */
           if (
-            Platform.OS === 'android'
+            !isLanguageLoaded
+          ) {
+            return;
+          }
+
+          /*
+           * -------------------------------------------------------
+           * Android notification channel
+           * -------------------------------------------------------
+           */
+          if (
+            Platform.OS ===
+            'android'
           ) {
             await Notifications.setNotificationChannelAsync(
               'daily-reminder',
               {
-                name: 'Daily Reminders',
+                /*
+                 * Channel name follows application language.
+                 */
+                name:
+                  language ===
+                  'fa'
+                    ? 'یادآوری‌های روزانه'
+                    : 'Daily Reminders',
 
                 importance:
                   Notifications
@@ -228,7 +292,9 @@ function useWorkoutReminderNotification() {
           }
 
           /*
+           * -------------------------------------------------------
            * Check notification permission
+           * -------------------------------------------------------
            */
           const currentPermissions =
             await Notifications.getPermissionsAsync();
@@ -237,9 +303,7 @@ function useWorkoutReminderNotification() {
             currentPermissions.status;
 
           /*
-           * Ask the user for permission
-           * when permission has not been
-           * granted yet.
+           * Ask for permission when necessary.
            */
           if (
             permissionStatus !==
@@ -264,38 +328,60 @@ function useWorkoutReminderNotification() {
           }
 
           /*
-           * Wait exactly 10 seconds
-           * after application startup.
+           * -------------------------------------------------------
+           * Wait exactly 10 seconds after application startup.
+           * -------------------------------------------------------
            */
           await new Promise<void>(
             (resolve) => {
-              setTimeout(
-                resolve,
-                10000
-              );
+              timer =
+                setTimeout(
+                  resolve,
+                  10000
+                );
             }
           );
 
           /*
-           * Component/layout was
-           * unmounted during the wait.
+           * Component/layout may have been unmounted
+           * during the 10-second delay.
            */
           if (!mounted) {
             return;
           }
 
           /*
-           * Send local notification.
+           * -------------------------------------------------------
+           * LOCALIZED NOTIFICATION CONTENT
+           * -------------------------------------------------------
+           */
+
+          const notificationTitle =
+            language === 'fa'
+              ? 'نورولیا'
+              : 'Neurolia';
+
+          const notificationBody =
+            language === 'fa'
+              ? 'هنوز تمرین امروزت را کامل نکرده‌ای. فراموش نکن که از بدنت مراقبت کنی!'
+              : "You haven't completed today's workout yet. Don't forget to take care of your body!";
+
+          /*
+           * -------------------------------------------------------
+           * Schedule local notification
+           * -------------------------------------------------------
            */
           await Notifications.scheduleNotificationAsync(
             {
               content: {
-                title: 'Neurolia',
+                title:
+                  notificationTitle,
 
                 body:
-                  "You haven't completed today's workout yet. Don't forget to take care of your body!",
+                  notificationBody,
 
-                sound: 'default',
+                sound:
+                  'default',
 
                 data: {
                   type:
@@ -303,14 +389,20 @@ function useWorkoutReminderNotification() {
 
                   source:
                     'app-launch',
+
+                  /*
+                   * Store the language used to create
+                   * the notification as metadata.
+                   */
+                  language:
+                    language,
                 },
               },
 
               /*
-               * null = send immediately.
-               * The 10 second delay is handled
-               * above so it only happens once
-               * after this app launch.
+               * null means send immediately.
+               *
+               * The 10-second delay is already handled above.
                */
               trigger: null,
             }
@@ -323,16 +415,26 @@ function useWorkoutReminderNotification() {
         }
       };
 
-    setupNotification();
+    void setupNotification();
 
     /*
-     * Cancel the pending operation
-     * when the layout is unmounted.
+     * -------------------------------------------------------------
+     * Cleanup
+     * -------------------------------------------------------------
      */
     return () => {
       mounted = false;
+
+      if (timer) {
+        clearTimeout(
+          timer
+        );
+      }
     };
-  }, []);
+  }, [
+    language,
+    isLanguageLoaded,
+  ]);
 }
 
 /* ================================================================
@@ -342,7 +444,8 @@ function useWorkoutReminderNotification() {
 function AppContent() {
   const {
     isAuthenticated,
-    isLoading: authLoading,
+    isLoading:
+      authLoading,
   } = useAuth();
 
   const {
@@ -362,7 +465,7 @@ function AppContent() {
   ] = useState(true);
 
   /*
-   * Notification reminder
+   * Localized workout reminder.
    */
   useWorkoutReminderNotification();
 
@@ -375,13 +478,13 @@ function AppContent() {
   }, []);
 
   /*
-   * Android can occasionally restore its
-   * navigation bar after focus changes,
-   * dialogs or transitions.
+   * Android can occasionally restore its navigation bar after
+   * focus changes, dialogs or transitions.
    */
   useEffect(() => {
     if (
-      Platform.OS !== 'android'
+      Platform.OS !==
+      'android'
     ) {
       return;
     }
@@ -419,7 +522,9 @@ function AppContent() {
 
   const handleBottomNavigation =
     useCallback(
-      (route: string) => {
+      (
+        route: string
+      ) => {
         if (!route) {
           return;
         }
@@ -430,7 +535,9 @@ function AppContent() {
           );
 
         const target =
-          normalizeRoute(route);
+          normalizeRoute(
+            route
+          );
 
         /*
          * Already on this route.
@@ -442,19 +549,20 @@ function AppContent() {
         }
 
         /*
-         * replace() prevents the
-         * navigation stack from growing.
+         * replace() prevents the navigation stack
+         * from growing.
          */
         router.replace(
           route as any
         );
 
         /*
-         * Restore Android immersive
-         * navigation after route change.
+         * Restore Android immersive navigation
+         * after route change.
          */
         if (
-          Platform.OS === 'android'
+          Platform.OS ===
+          'android'
         ) {
           setTimeout(() => {
             hideAndroidNavigationBar();
@@ -504,7 +612,8 @@ function AppContent() {
       >
         <StatusBar
           style={
-            theme === 'dark'
+            theme ===
+            'dark'
               ? 'light'
               : 'dark'
           }
@@ -537,7 +646,8 @@ function AppContent() {
       >
         <StatusBar
           style={
-            theme === 'dark'
+            theme ===
+            'dark'
               ? 'light'
               : 'dark'
           }
@@ -572,8 +682,6 @@ function AppContent() {
 
       {/* ========================================================
           MAIN ROUTER
-          BottomNavBar is outside Stack
-          and exists exactly once.
       ======================================================== */}
 
       <View
@@ -583,8 +691,11 @@ function AppContent() {
       >
         <Stack
           screenOptions={{
-            headerShown: false,
-            animation: 'none',
+            headerShown:
+              false,
+
+            animation:
+              'none',
           }}
         />
       </View>

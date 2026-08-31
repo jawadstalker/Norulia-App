@@ -202,6 +202,7 @@ export default function PsychoScreen() {
   >(category === 'stress' ? 'stress' : null);
 
   const textAlignStyle = isRTL ? 'right' : 'left';
+  const GREEN_COLOR = '#22C55E'; // رنگ سبز ثابت برای آیکون‌ها
 
   useEffect(() => {
     if (
@@ -345,14 +346,13 @@ export default function PsychoScreen() {
                     style={[
                       styles.categoryIcon,
                       {
-                        backgroundColor:
-                          colors.primary + '18',
+                        backgroundColor: GREEN_COLOR + '18', // پس‌زمینه سبز با透明度
                       },
                     ]}
                   >
                     <Icon
                       size={34}
-                      color={colors.primary}
+                      color={GREEN_COLOR} // رنگ سبز
                     />
                   </View>
 
@@ -560,7 +560,7 @@ export default function PsychoScreen() {
                 <View style={styles.detailItem}>
                   <Brain
                     size={16}
-                    color={colors.primary}
+                    color={GREEN_COLOR} // رنگ سبز
                   />
 
                   <Text
@@ -579,7 +579,7 @@ export default function PsychoScreen() {
                 <View style={styles.detailItem}>
                   <Clock
                     size={16}
-                    color={colors.primary}
+                    color={GREEN_COLOR} // رنگ سبز
                   />
 
                   <Text
@@ -600,8 +600,7 @@ export default function PsychoScreen() {
                 style={[
                   styles.button,
                   {
-                    backgroundColor:
-                      colors.primary,
+                    backgroundColor: GREEN_COLOR, // پس‌زمینه سبز دکمه
                   },
                 ]}
                 onPress={() =>

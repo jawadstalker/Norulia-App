@@ -128,9 +128,26 @@ const normalizeResponseText = (
 };
 
 export default function AssistantScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, isAthlete } = useTheme();
   const { isRTL, language } = useLanguage();
   const insets = useSafeAreaInsets();
+
+  // تعیین رنگ آیکون‌ها بر اساس تم
+  const getIconColor = () => {
+    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
+    if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
+    return colors.text; // رنگ پیش‌فرض
+  };
+
+  const iconColor = getIconColor();
+
+  // تعیین رنگ primary بر اساس تم
+  const getPrimaryColor = () => {
+    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
+    return colors.primary; // رنگ پیش‌فرض
+  };
+
+  const primaryColor = getPrimaryColor();
 
   const [messages, setMessages] =
     useState<Message[]>([]);
@@ -568,8 +585,6 @@ export default function AssistantScreen() {
       ? 'rgba(255,255,255,0.055)'
       : 'rgba(0,0,0,0.035)';
 
-  const iconColor = isDark ? 'rgba(73, 194, 226, 1)' : colors.text;
-
   return (
     <LinearGradient
       colors={backgroundGradient}
@@ -673,8 +688,7 @@ export default function AssistantScreen() {
                     style={[
                       styles.avatarGlow,
                       {
-                        backgroundColor:
-                          colors.primary,
+                        backgroundColor: primaryColor,
 
                         opacity:
                           isDark
@@ -796,8 +810,7 @@ export default function AssistantScreen() {
                       {!welcomeFinished && (
                         <Text
                           style={{
-                            color:
-                              colors.primary,
+                            color: primaryColor,
                           }}
                         >
                           ▌
@@ -1045,14 +1058,14 @@ export default function AssistantScreen() {
                           {
                             backgroundColor:
                               message.isUser
-                                ? colors.primary
+                                ? primaryColor
                                 : isDark
                                 ? 'rgba(255,255,255,0.065)'
                                 : '#FFFFFF',
 
                             borderColor:
                               message.isUser
-                                ? colors.primary
+                                ? primaryColor
                                 : isDark
                                 ? 'rgba(255,255,255,0.09)'
                                 : 'rgba(0,0,0,0.06)',
@@ -1157,8 +1170,7 @@ export default function AssistantScreen() {
                           style={[
                             styles.typingDot,
                             {
-                              backgroundColor:
-                                colors.primary,
+                              backgroundColor: primaryColor,
                             },
                           ]}
                         />
@@ -1167,8 +1179,7 @@ export default function AssistantScreen() {
                           style={[
                             styles.typingDot,
                             {
-                              backgroundColor:
-                                colors.primary,
+                              backgroundColor: primaryColor,
                             },
                           ]}
                         />
@@ -1177,8 +1188,7 @@ export default function AssistantScreen() {
                           style={[
                             styles.typingDot,
                             {
-                              backgroundColor:
-                                colors.primary,
+                              backgroundColor: primaryColor,
                             },
                           ]}
                         />
@@ -1195,8 +1205,7 @@ export default function AssistantScreen() {
                     style={[
                       styles.retryButton,
                       {
-                        borderColor:
-                          colors.primary,
+                        borderColor: primaryColor,
                       },
                     ]}
                   >
@@ -1209,8 +1218,7 @@ export default function AssistantScreen() {
                       style={[
                         styles.retryText,
                         {
-                          color:
-                            colors.primary,
+                          color: primaryColor,
                         },
                       ]}
                     >
@@ -1254,8 +1262,7 @@ export default function AssistantScreen() {
                       style={[
                         styles.scrollButton,
                         {
-                          backgroundColor:
-                            colors.primary,
+                          backgroundColor: primaryColor,
                         },
                       ]}
                     >
@@ -1371,7 +1378,7 @@ export default function AssistantScreen() {
                   backgroundColor:
                     inputText.trim() &&
                     !isTyping
-                      ? colors.primary
+                      ? primaryColor
                       : isDark
                       ? 'rgba(255,255,255,0.08)'
                       : 'rgba(0,0,0,0.07)',

@@ -401,13 +401,17 @@ export default function ScheduleScreen() {
 
   const { user } = useAuth();
 
+  // تعریف رنگ‌ها بر اساس تم
   const iconColor = isAthlete
-    ? '#22C55E'
+    ? '#22C55E'  // سبز برای تم ورزشکار
     : isDark
-    ? 'rgba(73, 194, 226, 1)'
-    : colors.primary;
+    ? 'rgba(73, 194, 226, 1)'  // آبی برای تم تاریک
+    : colors.primary;  // رنگ پیش‌فرض
 
-  const primary = 'rgba(73, 194, 226, 1)';
+  // رنگ اصلی برای FAB و المان‌های اصلی
+  const primary = isAthlete
+    ? '#22C55E'  // سبز برای تم ورزشکار
+    : 'rgba(73, 194, 226, 1)';  // آبی برای سایر تم‌ها
 
   const green =
     isDark
@@ -1965,9 +1969,9 @@ export default function ScheduleScreen() {
             styles.fab,
             {
               backgroundColor:
-                primary,
+                primary,  // استفاده از primary
               shadowColor:
-                primary,
+                primary,  // استفاده از primary
               transform: [
                 {
                   scale:

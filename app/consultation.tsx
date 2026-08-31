@@ -35,10 +35,33 @@ const CONSULT_PHONE = '09037661174';
 
 export default function ConsultationScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, isAthlete } = useTheme();
   const { isRTL } = useLanguage();
 
-  const iconColor = 'rgba(73, 194, 226, 1)';
+  // تعیین رنگ آیکون‌ها بر اساس تم
+  const getIconColor = () => {
+    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
+    if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
+    return 'rgba(73, 194, 226, 1)'; // آبی برای تم روشن (پیش‌فرض)
+  };
+
+  const iconColor = getIconColor();
+
+  // تعیین رنگ‌های پس‌زمینه بر اساس تم
+  const getPrimarySoft = () => {
+    if (isAthlete) return '#22C55E' + '20';
+    if (isDark) return colors.primary + '20';
+    return colors.primary + '12';
+  };
+
+  const getPrimaryMedium = () => {
+    if (isAthlete) return '#22C55E' + '30';
+    if (isDark) return colors.primary + '30';
+    return colors.primary + '18';
+  };
+
+  const primarySoft = getPrimarySoft();
+  const primaryMedium = getPrimaryMedium();
 
   const TEXTS = {
     headerTitle: isRTL
@@ -109,14 +132,6 @@ export default function ConsultationScreen() {
       `tel:${CONSULT_PHONE}`,
     ).catch(() => {});
   };
-
-  const primarySoft = isDark
-    ? `${colors.primary}20`
-    : `${colors.primary}12`;
-
-  const primaryMedium = isDark
-    ? `${colors.primary}30`
-    : `${colors.primary}18`;
 
   const backgroundGradient = isDark
     ? [

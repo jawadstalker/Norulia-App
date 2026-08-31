@@ -160,7 +160,7 @@ const games = [
 ];
 
 export default function PsychoScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, isAthlete } = useTheme(); // اضافه کردن isAthlete
   const { t, language, isRTL } = useLanguage();
   const router = useRouter();
   const { category } = useLocalSearchParams<{ category?: string }>();
@@ -169,8 +169,29 @@ export default function PsychoScreen() {
   );
   const textAlignStyle = isRTL ? 'right' : 'left';
 
-  const iconColor = isDark ? 'rgba(73, 194, 226, 1)' : colors.text;
-  const buttonColor = 'rgba(73, 194, 226, 1)';
+  // رنگ آیکون‌ها بر اساس تم
+  const getIconColor = () => {
+    if (isAthlete) return '#22C55E'; // رنگ سبز برای تم ورزشکار
+    if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
+    return colors.text; // رنگ پیش‌فرض
+  };
+
+  // رنگ دکمه بر اساس تم
+  const getButtonColor = () => {
+    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
+    return 'rgba(73, 194, 226, 1)'; // آبی برای سایر تم‌ها
+  };
+
+  // رنگ پس‌زمینه آیکون‌ها بر اساس تم
+  const getIconBgColor = () => {
+    if (isAthlete) return '#22C55E' + '18'; // سبز با透明度 برای تم ورزشکار
+    if (isDark) return 'rgba(255,255,255,0.07)';
+    return 'rgba(0,0,0,0.045)';
+  };
+
+  const iconColor = getIconColor();
+  const buttonColor = getButtonColor();
+  const iconBgColor = getIconBgColor();
 
   useEffect(() => {
     if (category === 'stress') {
@@ -330,9 +351,7 @@ export default function PsychoScreen() {
                     style={[
                       styles.categoryIcon,
                       {
-                        backgroundColor: isDark
-                          ? 'rgba(255,255,255,0.07)'
-                          : 'rgba(0,0,0,0.045)',
+                        backgroundColor: iconBgColor,
                         borderColor: isDark
                           ? 'rgba(255,255,255,0.10)'
                           : 'rgba(0,0,0,0.07)',
@@ -543,9 +562,7 @@ export default function PsychoScreen() {
                     style={[
                       styles.detailIcon,
                       {
-                        backgroundColor: isDark
-                          ? 'rgba(255,255,255,0.07)'
-                          : 'rgba(0,0,0,0.045)',
+                        backgroundColor: iconBgColor,
                       },
                     ]}
                   >
@@ -569,9 +586,7 @@ export default function PsychoScreen() {
                     style={[
                       styles.detailIcon,
                       {
-                        backgroundColor: isDark
-                          ? 'rgba(255,255,255,0.07)'
-                          : 'rgba(0,0,0,0.045)',
+                        backgroundColor: iconBgColor,
                       },
                     ]}
                   >

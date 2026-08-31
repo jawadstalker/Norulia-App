@@ -371,7 +371,7 @@ function PageHeader({
 }
 
 export default function CulturalScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, isAthlete } = useTheme();
   const { t, isRTL } = useLanguage();
   const router = useRouter();
 
@@ -379,7 +379,14 @@ export default function CulturalScreen() {
 
   const currentWeek = selectedWeek !== null ? weeks[selectedWeek] : null;
 
-  const iconColor = isDark ? 'rgba(73, 194, 226, 1)' : colors.text;
+  // تعیین رنگ آیکون‌ها بر اساس تم
+  const getIconColor = () => {
+    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
+    if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
+    return colors.text; // رنگ پیش‌فرض
+  };
+
+  const iconColor = getIconColor();
 
   const gradientColors: [string, string, string] = isDark
     ? ['#211A38', '#151226', '#100E1B']
@@ -453,8 +460,16 @@ export default function CulturalScreen() {
               style={[
                 styles.introCard,
                 {
-                  backgroundColor: isDark ? 'rgba(73,194,226,0.10)' : 'rgba(73,194,226,0.055)',
-                  borderColor: isDark ? 'rgba(73,194,226,0.18)' : 'rgba(73,194,226,0.10)',
+                  backgroundColor: isAthlete 
+                    ? '#22C55E' + '10' 
+                    : isDark 
+                      ? 'rgba(73,194,226,0.10)' 
+                      : 'rgba(73,194,226,0.055)',
+                  borderColor: isAthlete 
+                    ? '#22C55E' + '20' 
+                    : isDark 
+                      ? 'rgba(73,194,226,0.18)' 
+                      : 'rgba(73,194,226,0.10)',
                 },
               ]}
             >
@@ -1186,8 +1201,16 @@ export default function CulturalScreen() {
           style={[
             styles.reasonCard,
             {
-              backgroundColor: isDark ? 'rgba(73,194,226,0.10)' : 'rgba(73,194,226,0.055)',
-              borderColor: isDark ? 'rgba(73,194,226,0.18)' : 'rgba(73,194,226,0.11)',
+              backgroundColor: isAthlete 
+                ? '#22C55E' + '10' 
+                : isDark 
+                  ? 'rgba(73,194,226,0.10)' 
+                  : 'rgba(73,194,226,0.055)',
+              borderColor: isAthlete 
+                ? '#22C55E' + '20' 
+                : isDark 
+                  ? 'rgba(73,194,226,0.18)' 
+                  : 'rgba(73,194,226,0.11)',
               flexDirection: isRTL ? 'row-reverse' : 'row',
             },
           ]}

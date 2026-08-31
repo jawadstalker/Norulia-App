@@ -1,7 +1,6 @@
 import React from 'react';
 
 import {
-  I18nManager,
   StyleProp,
   StyleSheet,
   Text as RNText,
@@ -13,9 +12,9 @@ import {
   Fonts,
 } from '../../constants/theme';
 
-// =======================================================
-// TYPES
-// =======================================================
+/* =======================================================
+   TYPES
+======================================================= */
 
 export type AppTextVariant =
   | 'display'
@@ -34,16 +33,24 @@ interface AppTextProps
   variant?: AppTextVariant;
 
   style?:
-    StyleProp<TextStyle>;
+    | StyleProp<TextStyle>;
 
+  /**
+   * Force English font even if the text contains
+   * Persian characters.
+   */
   forceEnglish?: boolean;
 
+  /**
+   * Force Persian font even if the text does not
+   * contain Persian characters.
+   */
   forcePersian?: boolean;
 }
 
-// =======================================================
-// PERSIAN CHARACTER DETECTION
-// =======================================================
+/* =======================================================
+   PERSIAN CHARACTER DETECTION
+======================================================= */
 
 function containsPersian(
   value: string,
@@ -52,6 +59,10 @@ function containsPersian(
     value,
   );
 }
+
+/* =======================================================
+   TEXT EXTRACTION
+======================================================= */
 
 function extractText(
   children: React.ReactNode,
@@ -72,18 +83,33 @@ function extractText(
 
   if (Array.isArray(children)) {
     return children
-      .map(child =>
+      .map((child) =>
         extractText(child),
       )
       .join('');
   }
 
+  /*
+   * React elements are intentionally not inspected here.
+   * The explicit forcePersian / forceEnglish props can be
+   * used for dynamic nested content.
+   */
   return '';
 }
 
-// =======================================================
-// DEFAULT VARIANT STYLES
-// =======================================================
+/* =======================================================
+   DEFAULT VARIANT STYLES
+======================================================= */
+
+/*
+ * IMPORTANT:
+ *
+ * Do NOT specify fontWeight for Persian text here.
+ *
+ * Estedad-Medium.ttf is a single physical font file.
+ * Android should use that exact font instead of trying
+ * to resolve a synthetic/other weight.
+ */
 
 const variantStyles: Record<
   AppTextVariant,
@@ -93,62 +119,54 @@ const variantStyles: Record<
     fontFamily: Fonts.persian,
     fontSize: 32,
     lineHeight: 42,
-    fontWeight: '500',
   },
 
   h1: {
     fontFamily: Fonts.persian,
     fontSize: 28,
     lineHeight: 38,
-    fontWeight: '500',
   },
 
   h2: {
     fontFamily: Fonts.persian,
     fontSize: 24,
     lineHeight: 34,
-    fontWeight: '500',
   },
 
   h3: {
     fontFamily: Fonts.persian,
     fontSize: 20,
     lineHeight: 30,
-    fontWeight: '500',
   },
 
   body: {
     fontFamily: Fonts.persian,
     fontSize: 16,
     lineHeight: 27,
-    fontWeight: '500',
   },
 
   bodySmall: {
     fontFamily: Fonts.persian,
     fontSize: 14,
     lineHeight: 23,
-    fontWeight: '500',
   },
 
   caption: {
     fontFamily: Fonts.persian,
     fontSize: 12,
     lineHeight: 20,
-    fontWeight: '500',
   },
 
   button: {
     fontFamily: Fonts.persian,
     fontSize: 15,
     lineHeight: 24,
-    fontWeight: '500',
   },
 };
 
-// =======================================================
-// COMPONENT
-// =======================================================
+/* =======================================================
+   COMPONENT
+======================================================= */
 
 export function AppText({
   children,
@@ -169,9 +187,23 @@ export function AppText({
   const hasPersian =
     containsPersian(text);
 
+  /*
+   * Persian is selected when:
+   *
+   * 1. forcePersian === true
+   *
+   * OR
+   *
+   * 2. the actual text contains Persian characters
+   *
+   * unless forceEnglish is explicitly true.
+   */
   const isPersian =
     forcePersian ||
-    (!forceEnglish && hasPersian);
+    (
+      !forceEnglish &&
+      hasPersian
+    );
 
   const fontFamily =
     isPersian
@@ -190,7 +222,15 @@ export function AppText({
         variantStyles[variant],
 
         {
+          /*
+           * This is deliberately applied directly
+           * to the final native Text style.
+           *
+           * This prevents another style from replacing
+           * the font family before React Native renders it.
+           */
           fontFamily,
+
           writingDirection:
             direction,
 
@@ -198,6 +238,13 @@ export function AppText({
             isPersian
               ? 'right'
               : undefined,
+
+          /*
+           * Never ask Android to synthesize a different
+           * Persian font weight.
+           */
+          fontWeight:
+            undefined,
         },
 
         styles.base,
@@ -210,9 +257,9 @@ export function AppText({
   );
 }
 
-// =======================================================
-// CONVENIENCE COMPONENTS
-// =======================================================
+/* =======================================================
+   PERSIAN TEXT
+======================================================= */
 
 export function PersianText(
   props: Omit<
@@ -228,6 +275,10 @@ export function PersianText(
   );
 }
 
+/* =======================================================
+   ENGLISH TEXT
+======================================================= */
+
 export function EnglishText(
   props: Omit<
     AppTextProps,
@@ -242,14 +293,25 @@ export function EnglishText(
   );
 }
 
-// =======================================================
-// STYLES
-// =======================================================
+/* =======================================================
+   STYLES
+======================================================= */
 
 const styles =
   StyleSheet.create({
     base: {
+      /*
+       * Prevent Android from adding its own
+       * extra top/bottom font padding.
+       */
       includeFontPadding: false,
+
+      /*
+       * Ensure text does not inherit a font weight
+       * that could cause Android to select a fallback.
+       */
+      fontWeight:
+        undefined,
     },
   });
 

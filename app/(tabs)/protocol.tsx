@@ -407,33 +407,39 @@ export default function ProtocolScreen() {
   const rowDirection = fa ? 'row-reverse' : 'row';
   const contentAlign = fa ? 'flex-end' : 'flex-start';
 
-  const accent = isAthlete
-    ? '#22C55E'
-    : isDark
-    ? 'rgba(73, 194, 226, 1)'
-    : colors.primary;
+  // تعیین رنگ‌ها بر اساس تم - فقط برای آیکون‌ها و progressbar
+  const getAccent = () => {
+    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
+    if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
+    return colors.primary; // رنگ پیش‌فرض
+  };
 
-  const accentStrong = isAthlete
-    ? '#22C55E'
-    : isDark
-    ? 'rgba(73, 194, 226, 1)'
-    : (colors.primaryDark || colors.primary);
+  const getAccentStrong = () => {
+    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
+    if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
+    return colors.primaryDark || colors.primary; // رنگ پیش‌فرض
+  };
+
+  const getSoftAccent = () => {
+    if (isAthlete) return 'rgba(34,197,94,0.18)'; // سبز با透明度 برای تم ورزشکار
+    if (isDark) return 'rgba(73, 194, 226, 0.18)'; // آبی با透明度 برای تم تاریک
+    return colors.primary + '12'; // رنگ پیش‌فرض
+  };
+
+  const getSoftAccentStrong = () => {
+    if (isAthlete) return 'rgba(34,197,94,0.28)'; // سبز با透明度 بیشتر برای تم ورزشکار
+    if (isDark) return 'rgba(73, 194, 226, 0.28)'; // آبی با透明度 بیشتر برای تم تاریک
+    return colors.primary + '18'; // رنگ پیش‌فرض
+  };
+
+  const accent = getAccent();
+  const accentStrong = getAccentStrong();
+  const softAccent = getSoftAccent();
+  const softAccentStrong = getSoftAccentStrong();
 
   const background = colors.background;
   const card = colors.surface;
   const cardSecondary = colors.surfaceSecondary;
-
-  const softAccent = isAthlete
-    ? 'rgba(34,197,94,0.18)'
-    : isDark
-    ? 'rgba(73, 194, 226, 0.18)'
-    : colors.primary + '12';
-
-  const softAccentStrong = isAthlete
-    ? 'rgba(34,197,94,0.28)'
-    : isDark
-    ? 'rgba(73, 194, 226, 0.28)'
-    : colors.primary + '18';
 
   const softBorder = isDark
     ? colors.border || 'rgba(255,255,255,0.08)'
@@ -1158,7 +1164,7 @@ export default function ProtocolScreen() {
                   style={styles.heroAvatarWrapper}
                 >
                   <Image
-                    source={require('../../assets/avatars/model8.png')}
+                    source={require('../../assets/avatars/Laptop.png')}
                     style={styles.heroAvatar}
                     resizeMode="contain"
                   />
@@ -1185,7 +1191,7 @@ export default function ProtocolScreen() {
                   >
                     <Sparkles
                       size={14}
-                      color={isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(255,255,255,0.95)'}
+                      color={isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(255,255,255,0.95)')}
                       strokeWidth={2.2}
                     />
 
@@ -1193,7 +1199,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.heroBadgeText,
                         {
-                          color: isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(255,255,255,0.95)',
+                          color: isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(255,255,255,0.95)'),
                           textAlign,
                           writingDirection: textDirection,
                         },
@@ -1291,7 +1297,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.heroProgressValue,
                       {
-                        color: isDark ? colors.text : '#FFFFFF',
+                        color: isAthlete ? '#22C55E' : (isDark ? colors.text : '#FFFFFF'),
                       },
                     ]}
                   >
@@ -1323,7 +1329,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.heroProgressFill,
                       {
-                        backgroundColor: isDark ? 'rgba(73, 194, 226, 1)' : '#FFFFFF',
+                        backgroundColor: isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : '#FFFFFF'),
                       },
                     ]}
                   />
@@ -1350,7 +1356,7 @@ export default function ProtocolScreen() {
                 >
                   <Target
                     size={17}
-                    color={isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(255,255,255,0.88)'}
+                    color={isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(255,255,255,0.88)')}
                     strokeWidth={2}
                   />
 
@@ -1393,7 +1399,7 @@ export default function ProtocolScreen() {
                 >
                   <CheckCircle2
                     size={17}
-                    color={isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(255,255,255,0.88)'}
+                    color={isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(255,255,255,0.88)')}
                     strokeWidth={2}
                   />
 
@@ -2772,8 +2778,8 @@ const styles = StyleSheet.create({
   },
 
   heroAvatar: {
-    width: 80,
-    height: 80,
+    width: 100,
+    height: 100,
     borderRadius: 40,
   },
 
