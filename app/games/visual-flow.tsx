@@ -2892,7 +2892,7 @@ const styles =
       width: '100%',
       paddingHorizontal:
         Spacing.lg,
-      paddingTop: 56,
+      paddingTop: 30,
       paddingBottom: 14,
       flexDirection: 'row',
       alignItems: 'center',

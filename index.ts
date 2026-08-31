@@ -1,1 +1,6 @@
-import 'expo-router/entry';
+import { I18nManager } from 'react-native';
+
+I18nManager.allowRTL(false);
+I18nManager.forceRTL(false);
+
+require('expo-router/entry');

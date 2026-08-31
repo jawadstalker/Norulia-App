@@ -70,6 +70,8 @@ type DifficultyConfig = {
   timeLimit: number;
 
   baseSize: number;
+
+  circleCount: number;
 };
 
 /* ================================================================
@@ -87,6 +89,28 @@ const INITIAL_LEVEL = 1;
 const STORAGE_KEY =
   'neurolia_size_discrimination_adaptive_v2';
 
+/*
+ * Difficulty progression:
+ *
+ * Level 1:
+ *   Easy, but slightly harder than the previous version.
+ *
+ * Level 2:
+ *   Smaller size difference.
+ *
+ * Level 3:
+ *   Fine discrimination.
+ *
+ * Level 4:
+ *   Three circles + small size difference.
+ *
+ * Level 5:
+ *   Four circles + very small size difference.
+ *
+ * The final two levels intentionally contain more
+ * visual distractors so the user cannot simply compare
+ * two isolated circles.
+ */
 const CONFIGS: DifficultyConfig[] = [
   {
     level: 1,
@@ -95,13 +119,15 @@ const CONFIGS: DifficultyConfig[] = [
 
     nameEn: 'Easy',
 
-    minDifference: 0.25,
+    minDifference: 0.21,
 
-    maxDifference: 0.40,
+    maxDifference: 0.34,
 
-    timeLimit: 7000,
+    timeLimit: 6800,
 
     baseSize: 78,
+
+    circleCount: 2,
   },
 
   {
@@ -111,13 +137,15 @@ const CONFIGS: DifficultyConfig[] = [
 
     nameEn: 'Medium',
 
-    minDifference: 0.18,
+    minDifference: 0.15,
 
-    maxDifference: 0.28,
+    maxDifference: 0.24,
 
-    timeLimit: 6500,
+    timeLimit: 6200,
 
     baseSize: 78,
+
+    circleCount: 2,
   },
 
   {
@@ -127,13 +155,15 @@ const CONFIGS: DifficultyConfig[] = [
 
     nameEn: 'Precise',
 
-    minDifference: 0.12,
+    minDifference: 0.095,
 
-    maxDifference: 0.20,
+    maxDifference: 0.16,
 
-    timeLimit: 6000,
+    timeLimit: 5700,
 
     baseSize: 78,
+
+    circleCount: 2,
   },
 
   {
@@ -143,13 +173,15 @@ const CONFIGS: DifficultyConfig[] = [
 
     nameEn: 'Hard',
 
-    minDifference: 0.075,
+    minDifference: 0.055,
 
-    maxDifference: 0.14,
+    maxDifference: 0.105,
 
-    timeLimit: 5500,
+    timeLimit: 5200,
 
-    baseSize: 78,
+    baseSize: 74,
+
+    circleCount: 3,
   },
 
   {
@@ -159,13 +191,15 @@ const CONFIGS: DifficultyConfig[] = [
 
     nameEn: 'Expert',
 
-    minDifference: 0.045,
+    minDifference: 0.028,
 
-    maxDifference: 0.09,
+    maxDifference: 0.065,
 
-    timeLimit: 5000,
+    timeLimit: 4700,
 
-    baseSize: 78,
+    baseSize: 72,
+
+    circleCount: 4,
   },
 ];
 
@@ -193,6 +227,95 @@ const getConfig = (
       )
     )
   ];
+
+/*
+ * Creates a set of visually similar circle sizes.
+ *
+ * The first value is the largest target.
+ * Other circles are deliberately kept close to it
+ * on the final two levels.
+ */
+const generateCircleSizes = (
+  config: DifficultyConfig,
+  difference: number
+) => {
+  const base =
+    config.baseSize;
+
+  const largest =
+    base *
+    (1 + difference);
+
+  const sizes: number[] = [
+    largest,
+  ];
+
+  /*
+   * Distractor circles are always smaller than
+   * the target, but increasingly close to it
+   * at higher difficulty levels.
+   */
+  for (
+    let i = 1;
+    i < config.circleCount;
+    i += 1
+  ) {
+    const closeness =
+      config.level >= 5
+        ? randomBetween(
+            0.60,
+            0.94
+          )
+        : config.level >= 4
+          ? randomBetween(
+              0.48,
+              0.88
+            )
+          : randomBetween(
+              0.20,
+              0.70
+            );
+
+    const distractorDifference =
+      difference *
+      closeness;
+
+    const distractor =
+      base *
+      (1 + distractorDifference);
+
+    sizes.push(
+      distractor
+    );
+  }
+
+  /*
+   * Shuffle the circles so that the largest
+   * circle is not always in the first position.
+   */
+  for (
+    let i =
+      sizes.length - 1;
+    i > 0;
+    i -= 1
+  ) {
+    const j =
+      Math.floor(
+        Math.random() *
+          (i + 1)
+      );
+
+    [
+      sizes[i],
+      sizes[j],
+    ] = [
+      sizes[j],
+      sizes[i],
+    ];
+  }
+
+  return sizes;
+};
 
 /* ================================================================
    SCREEN
@@ -314,7 +437,7 @@ export default function SizeDiscriminationScreen() {
               'عملکرد',
 
             startDescription:
-              'دو دایره با اندازه‌های نزدیک نمایش داده می‌شوند. دایره بزرگ‌تر را سریع و دقیق انتخاب کن.',
+              'دایره‌هایی با اندازه‌های نزدیک نمایش داده می‌شوند. دایره بزرگ‌تر را سریع و دقیق انتخاب کن.',
           }
         : {
             title: 'Size Guess',
@@ -416,7 +539,7 @@ export default function SizeDiscriminationScreen() {
               'Performance',
 
             startDescription:
-              'Two circles with similar sizes will appear. Choose the bigger one as quickly and accurately as possible.',
+              'Circles with similar sizes will appear. Choose the bigger one as quickly and accurately as possible.',
           },
     [language]
   );
@@ -459,20 +582,22 @@ export default function SizeDiscriminationScreen() {
     []
   );
 
+  /*
+   * Instead of only two values, the game now
+   * supports 2 / 3 / 4 circles depending on level.
+   */
   const [
-    leftSize,
-    setLeftSize,
-  ] = useState(90);
+    circleSizes,
+    setCircleSizes,
+  ] = useState<number[]>([
+    90,
+    70,
+  ]);
 
   const [
-    rightSize,
-    setRightSize,
-  ] = useState(70);
-
-  const [
-    correctSide,
-    setCorrectSide,
-  ] = useState<Side>('left');
+    correctIndex,
+    setCorrectIndex,
+  ] = useState(0);
 
   const [
     ready,
@@ -495,16 +620,6 @@ export default function SizeDiscriminationScreen() {
   ] = useState<
     number | null
   >(null);
-
-  const [
-    playAreaWidth,
-    setPlayAreaWidth,
-  ] = useState(0);
-
-  const [
-    playAreaHeight,
-    setPlayAreaHeight,
-  ] = useState(0);
 
   const [
     adaptiveResult,
@@ -671,7 +786,8 @@ export default function SizeDiscriminationScreen() {
           await AsyncStorage.setItem(
             STORAGE_KEY,
             JSON.stringify({
-              level: nextLevel,
+              level:
+                nextLevel,
 
               accuracy,
 
@@ -705,53 +821,70 @@ export default function SizeDiscriminationScreen() {
         null
       );
 
+      /*
+       * Randomize the difference inside the
+       * current difficulty range.
+       */
       const difference =
         randomBetween(
           config.minDifference,
           config.maxDifference
         );
 
-      const base =
-        config.baseSize;
+      const sizes =
+        generateCircleSizes(
+          config,
+          difference
+        );
 
-      const larger =
-        base *
-        (1 + difference);
+      /*
+       * Find the largest circle after
+       * randomization.
+       */
+      let largestIndex = 0;
 
-      const largerOnLeft =
-        Math.random() <
-        0.5;
-
-      if (largerOnLeft) {
-        setLeftSize(larger);
-
-        setRightSize(base);
-
-        setCorrectSide('left');
-      } else {
-        setLeftSize(base);
-
-        setRightSize(larger);
-
-        setCorrectSide('right');
+      for (
+        let i = 1;
+        i < sizes.length;
+        i += 1
+      ) {
+        if (
+          sizes[i] >
+          sizes[largestIndex]
+        ) {
+          largestIndex = i;
+        }
       }
+
+      setCircleSizes(
+        sizes
+      );
+
+      setCorrectIndex(
+        largestIndex
+      );
 
       currentDifference.current =
         difference;
 
       pulse.setValue(0);
 
-      Animated.spring(pulse, {
-        toValue: 1,
+      Animated.spring(
+        pulse,
+        {
+          toValue: 1,
 
-        friction: 7,
+          friction: 7,
 
-        tension: 65,
+          tension: 65,
 
-        useNativeDriver: true,
-      }).start();
+          useNativeDriver: true,
+        }
+      ).start();
 
-      timerAnimation.setValue(1);
+      timerAnimation.setValue(
+        1
+      );
 
       Animated.timing(
         timerAnimation,
@@ -952,7 +1085,7 @@ export default function SizeDiscriminationScreen() {
 
   const answer =
     useCallback(
-      (side: Side) => {
+      (index: number) => {
         if (
           !ready ||
           answered.current
@@ -981,8 +1114,8 @@ export default function SizeDiscriminationScreen() {
           startTime.current;
 
         const isCorrect =
-          side ===
-          correctSide;
+          index ===
+          correctIndex;
 
         const result: TrialResult =
           {
@@ -1006,14 +1139,10 @@ export default function SizeDiscriminationScreen() {
         );
 
         setResponses(
-          previous => {
-            const updated = [
-              ...previous,
-              result,
-            ];
-
-            return updated;
-          }
+          previous => [
+            ...previous,
+            result,
+          ]
         );
 
         if (isCorrect) {
@@ -1028,9 +1157,22 @@ export default function SizeDiscriminationScreen() {
               )
             );
 
+          /*
+           * Harder levels reward slightly more
+           * for correct responses because the
+           * discrimination task is more difficult.
+           */
+          const difficultyBonus =
+            Math.max(
+              0,
+              (config.level - 1) *
+                2
+            );
+
           const points =
             10 +
-            speedBonus;
+            speedBonus +
+            difficultyBonus;
 
           setScore(
             previous =>
@@ -1039,18 +1181,19 @@ export default function SizeDiscriminationScreen() {
           );
         }
 
-        const currentResults = [
-          ...responses,
-          result,
-        ];
+        const currentResults =
+          [
+            ...responses,
+            result,
+          ];
 
         nextTrial(
           currentResults
         );
       },
       [
-        config.timeLimit,
-        correctSide,
+        config,
+        correctIndex,
         nextTrial,
         ready,
         responses,
@@ -1095,10 +1238,11 @@ export default function SizeDiscriminationScreen() {
         ]
       );
 
-      const currentResults = [
-        ...responses,
-        result,
-      ];
+      const currentResults =
+        [
+          ...responses,
+          result,
+        ];
 
       nextTrial(
         currentResults
@@ -1365,32 +1509,58 @@ export default function SizeDiscriminationScreen() {
                 styles.previewArea
               }
             >
-              <View
-                style={[
-                  styles.previewCircle,
-                  {
-                    width: 76,
-                    height: 76,
+              {Array.from(
+                {
+                  length:
+                    Math.min(
+                      config.circleCount,
+                      4
+                    ),
+                }
+              ).map(
+                (
+                  _,
+                  index
+                ) => {
+                  const previewSizes =
+                    [
+                      76,
+                      62,
+                      53,
+                      47,
+                    ];
 
-                    backgroundColor:
-                      colors.primary,
-                  },
-                ]}
-              />
+                  return (
+                    <View
+                      key={
+                        `preview-${index}`
+                      }
+                      style={[
+                        styles.previewCircle,
+                        {
+                          width:
+                            previewSizes[
+                              index
+                            ],
 
-              <View
-                style={[
-                  styles.previewCircle,
-                  {
-                    width: 55,
-                    height: 55,
+                          height:
+                            previewSizes[
+                              index
+                            ],
 
-                    backgroundColor:
-                      colors.primary +
-                      '55',
-                  },
-                ]}
-              />
+                          backgroundColor:
+                            colors.primary,
+
+                          opacity:
+                            1 -
+                            index *
+                              0.12,
+                        },
+                      ]}
+                    />
+                  );
+                }
+              )}
             </View>
 
             <Text
@@ -2262,22 +2432,57 @@ export default function SizeDiscriminationScreen() {
      GAME SCREEN
   ================================================================= */
 
-  const leftDiameter =
-    Math.min(
-      leftSize,
-      150
+  /*
+   * We now render a dynamic number of circles.
+   *
+   * Level 1-3 -> 2 circles
+   * Level 4   -> 3 circles
+   * Level 5   -> 4 circles
+   */
+
+  const renderedCircleSizes =
+    circleSizes.map(
+      size =>
+        Math.min(
+          size,
+          132
+        )
     );
 
-  const rightDiameter =
-    Math.min(
-      rightSize,
-      150
+  const maxCircleSize =
+    Math.max(
+      ...renderedCircleSizes,
+      72
     );
+
+  const choiceAreaWidth =
+    config.circleCount >= 4
+      ? Math.max(
+          78,
+          Math.min(
+            110,
+            maxCircleSize +
+              22
+          )
+        )
+      : Math.max(
+          maxCircleSize +
+            50,
+          130
+        );
+
+  const choiceAreaHeight =
+    config.circleCount >= 4
+      ? 170
+      : 190;
 
   const timerWidth =
     timerAnimation.interpolate(
       {
-        inputRange: [0, 1],
+        inputRange: [
+          0,
+          1,
+        ],
 
         outputRange: [
           '0%',
@@ -2548,26 +2753,23 @@ export default function SizeDiscriminationScreen() {
         style={
           styles.playAreaWrapper
         }
-        onLayout={event => {
-          const {
-            width: areaWidth,
-            height: areaHeight,
-          } =
-            event.nativeEvent.layout;
-
-          setPlayAreaWidth(
-            areaWidth
-          );
-
-          setPlayAreaHeight(
-            areaHeight
-          );
-        }}
       >
         <Animated.View
           style={[
             styles.circleRow,
             {
+              flexWrap:
+                config.circleCount >=
+                4
+                  ? 'wrap'
+                  : 'nowrap',
+
+              maxWidth:
+                config.circleCount >=
+                4
+                  ? 370
+                  : '100%',
+
               transform: [
                 {
                   scale:
@@ -2579,7 +2781,7 @@ export default function SizeDiscriminationScreen() {
                         ],
 
                         outputRange: [
-                          0.85,
+                          0.88,
                           1,
                         ],
                       }
@@ -2589,129 +2791,103 @@ export default function SizeDiscriminationScreen() {
             },
           ]}
         >
-          <TouchableOpacity
-            activeOpacity={
-              0.78
+          {renderedCircleSizes.map(
+            (
+              size,
+              index
+            ) => {
+              const isCorrect =
+                index ===
+                correctIndex;
+
+              return (
+                <TouchableOpacity
+                  key={
+                    `circle-${index}-${trialIndex}`
+                  }
+                  activeOpacity={
+                    0.78
+                  }
+                  disabled={
+                    !ready
+                  }
+                  onPress={() =>
+                    answer(
+                      index
+                    )
+                  }
+                  style={[
+                    styles.choiceArea,
+                    {
+                      width:
+                        choiceAreaWidth,
+
+                      height:
+                        choiceAreaHeight,
+
+                      marginHorizontal:
+                        config.circleCount >=
+                        4
+                          ? 4
+                          : 0,
+
+                      marginVertical:
+                        config.circleCount >=
+                        4
+                          ? 2
+                          : 0,
+                    },
+                  ]}
+                >
+                  <Animated.View
+                    style={[
+                      styles.circle,
+                      {
+                        width:
+                          size,
+
+                        height:
+                          size,
+
+                        borderRadius:
+                          size /
+                          2,
+
+                        backgroundColor:
+                          colors.primary,
+
+                        opacity:
+                          feedback ===
+                            'wrong' &&
+                          !ready &&
+                          isCorrect
+                            ? 0.95
+                            : 1,
+                      },
+                    ]}
+                  />
+
+                  {config.circleCount <=
+                    2 && (
+                    <Text
+                      style={[
+                        styles.choiceLabel,
+                        {
+                          color:
+                            colors.textSecondary,
+                        },
+                      ]}
+                    >
+                      {index ===
+                      0
+                        ? text.left
+                        : text.right}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              );
             }
-            disabled={!ready}
-            onPress={() =>
-              answer('left')
-            }
-            style={[
-              styles.choiceArea,
-              {
-                width:
-                  Math.max(
-                    leftDiameter +
-                      70,
-                    130
-                  ),
-
-                height:
-                  Math.max(
-                    leftDiameter +
-                      70,
-                    180
-                  ),
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.circle,
-                {
-                  width:
-                    leftDiameter,
-
-                  height:
-                    leftDiameter,
-
-                  borderRadius:
-                    leftDiameter /
-                    2,
-
-                  backgroundColor:
-                    colors.primary,
-                },
-              ]}
-            />
-
-            <Text
-              style={[
-                styles.choiceLabel,
-                {
-                  color:
-                    colors.textSecondary,
-                },
-              ]}
-            >
-              {
-                text.left
-              }
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={
-              0.78
-            }
-            disabled={!ready}
-            onPress={() =>
-              answer('right')
-            }
-            style={[
-              styles.choiceArea,
-              {
-                width:
-                  Math.max(
-                    rightDiameter +
-                      70,
-                    130
-                  ),
-
-                height:
-                  Math.max(
-                    rightDiameter +
-                      70,
-                    180
-                  ),
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.circle,
-                {
-                  width:
-                    rightDiameter,
-
-                  height:
-                    rightDiameter,
-
-                  borderRadius:
-                    rightDiameter /
-                    2,
-
-                  backgroundColor:
-                    colors.primary,
-                },
-              ]}
-            />
-
-            <Text
-              style={[
-                styles.choiceLabel,
-                {
-                  color:
-                    colors.textSecondary,
-                },
-              ]}
-            >
-              {
-                text.right
-              }
-            </Text>
-          </TouchableOpacity>
+          )}
         </Animated.View>
       </View>
 
@@ -2841,7 +3017,8 @@ const styles =
     gameContainer: {
       flex: 1,
 
-      overflow: 'hidden',
+      overflow:
+        'hidden',
     },
 
     scroll: {
@@ -2862,9 +3039,11 @@ const styles =
 
       paddingBottom: 14,
 
-      flexDirection: 'row',
+      flexDirection:
+        'row',
 
-      alignItems: 'center',
+      alignItems:
+        'center',
 
       borderBottomWidth:
         StyleSheet.hairlineWidth,
@@ -2953,7 +3132,8 @@ const styles =
 
       fontWeight: '900',
 
-      textAlign: 'center',
+      textAlign:
+        'center',
     },
 
     heroDescription: {
@@ -2963,7 +3143,8 @@ const styles =
 
       lineHeight: 23,
 
-      textAlign: 'center',
+      textAlign:
+        'center',
 
       marginTop: 9,
     },
@@ -2985,17 +3166,23 @@ const styles =
     },
 
     previewArea: {
-      height: 135,
+      height: 145,
 
       width: '100%',
 
-      flexDirection: 'row',
+      flexDirection:
+        'row',
 
       alignItems:
         'center',
 
       justifyContent:
         'space-evenly',
+
+      flexWrap:
+        'wrap',
+
+      gap: 4,
     },
 
     previewCircle: {
@@ -3009,7 +3196,8 @@ const styles =
 
       marginTop: 8,
 
-      textAlign: 'center',
+      textAlign:
+        'center',
     },
 
     adaptiveCard: {
@@ -3017,16 +3205,19 @@ const styles =
 
       marginTop: 12,
 
-      padding: Spacing.md,
+      padding:
+        Spacing.md,
 
       borderWidth: 1,
 
       borderRadius:
         BorderRadius.lg,
 
-      flexDirection: 'row',
+      flexDirection:
+        'row',
 
-      alignItems: 'center',
+      alignItems:
+        'center',
 
       gap: 12,
     },
@@ -3078,9 +3269,11 @@ const styles =
       borderRadius:
         BorderRadius.lg,
 
-      flexDirection: 'row',
+      flexDirection:
+        'row',
 
-      alignItems: 'center',
+      alignItems:
+        'center',
 
       justifyContent:
         'space-between',
@@ -3103,16 +3296,19 @@ const styles =
 
       marginTop: 12,
 
-      padding: Spacing.md,
+      padding:
+        Spacing.md,
 
       borderWidth: 1,
 
       borderRadius:
         BorderRadius.lg,
 
-      flexDirection: 'row',
+      flexDirection:
+        'row',
 
-      alignItems: 'center',
+      alignItems:
+        'center',
 
       gap: 12,
     },
@@ -3136,7 +3332,8 @@ const styles =
     noSelection: {
       fontSize: 10,
 
-      textAlign: 'center',
+      textAlign:
+        'center',
 
       marginTop: 12,
     },
@@ -3151,7 +3348,8 @@ const styles =
       borderRadius:
         BorderRadius.full,
 
-      flexDirection: 'row',
+      flexDirection:
+        'row',
 
       alignItems:
         'center',
@@ -3211,7 +3409,8 @@ const styles =
 
       fontWeight: '900',
 
-      textAlign: 'center',
+      textAlign:
+        'center',
     },
 
     resultSubtitle: {
@@ -3219,7 +3418,8 @@ const styles =
 
       marginTop: 5,
 
-      textAlign: 'center',
+      textAlign:
+        'center',
     },
 
     scoreCard: {
@@ -3253,7 +3453,8 @@ const styles =
     statsRow: {
       width: '100%',
 
-      flexDirection: 'row',
+      flexDirection:
+        'row',
 
       gap: 10,
 
@@ -3306,9 +3507,11 @@ const styles =
       borderRadius:
         BorderRadius.lg,
 
-      flexDirection: 'row',
+      flexDirection:
+        'row',
 
-      alignItems: 'center',
+      alignItems:
+        'center',
 
       gap: 12,
     },
@@ -3334,16 +3537,19 @@ const styles =
 
       marginTop: 10,
 
-      padding: Spacing.md,
+      padding:
+        Spacing.md,
 
       borderWidth: 1,
 
       borderRadius:
         BorderRadius.lg,
 
-      flexDirection: 'row',
+      flexDirection:
+        'row',
 
-      alignItems: 'center',
+      alignItems:
+        'center',
 
       gap: 10,
     },
@@ -3395,9 +3601,11 @@ const styles =
       borderRadius:
         BorderRadius.lg,
 
-      flexDirection: 'row',
+      flexDirection:
+        'row',
 
-      alignItems: 'center',
+      alignItems:
+        'center',
 
       justifyContent:
         'space-between',
@@ -3437,18 +3645,22 @@ const styles =
 
       paddingHorizontal: 14,
 
-      flexDirection: 'row',
+      flexDirection:
+        'row',
 
-      alignItems: 'center',
+      alignItems:
+        'center',
 
       justifyContent:
         'space-between',
     },
 
     hudItem: {
-      flexDirection: 'row',
+      flexDirection:
+        'row',
 
-      alignItems: 'center',
+      alignItems:
+        'center',
 
       gap: 7,
 
@@ -3507,9 +3719,11 @@ const styles =
       borderRadius:
         BorderRadius.lg,
 
-      flexDirection: 'row',
+      flexDirection:
+        'row',
 
-      alignItems: 'center',
+      alignItems:
+        'center',
 
       justifyContent:
         'center',
@@ -3536,7 +3750,8 @@ const styles =
 
       borderRadius: 2,
 
-      overflow: 'hidden',
+      overflow:
+        'hidden',
     },
 
     timerProgress: {
@@ -3556,7 +3771,8 @@ const styles =
 
       minHeight: 250,
 
-      overflow: 'hidden',
+      overflow:
+        'hidden',
 
       alignItems:
         'center',
@@ -3568,13 +3784,14 @@ const styles =
     circleRow: {
       width: '100%',
 
-      flexDirection: 'row',
+      flexDirection:
+        'row',
 
       alignItems:
         'center',
 
       justifyContent:
-        'space-evenly',
+        'center',
 
       paddingHorizontal: 4,
     },
@@ -3586,7 +3803,8 @@ const styles =
       justifyContent:
         'center',
 
-      overflow: 'hidden',
+      overflow:
+        'hidden',
     },
 
     circle: {
@@ -3635,9 +3853,11 @@ const styles =
       borderRadius:
         BorderRadius.full,
 
-      flexDirection: 'row',
+      flexDirection:
+        'row',
 
-      alignItems: 'center',
+      alignItems:
+        'center',
 
       justifyContent:
         'center',
