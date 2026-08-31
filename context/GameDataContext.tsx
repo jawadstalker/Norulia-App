@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   ReactNode,
@@ -11,21 +10,14 @@ import React, {
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-/*
-|--------------------------------------------------------------------------
-| Types
-|--------------------------------------------------------------------------
-*/
+/* ================================================================
+   TYPES
+================================================================ */
 
 export type GameMetric = {
   key: string;
   value: number;
   unit?: string;
-
-  /*
-   * Optional normalized score from 0 to 100.
-   * This is useful for the global results screen.
-   */
   score?: number;
 };
 
@@ -33,59 +25,36 @@ export type GameResult = {
   gameId: string;
   gameName: string;
 
-  /*
-   * Raw calculated metrics of the game.
-   */
   metrics: Record<string, number>;
 
-  /*
-   * Human-readable metrics for UI.
-   */
   metricItems?: GameMetric[];
 
-  /*
-   * Overall score of this game.
-   */
   overallScore?: number;
 
-  /*
-   * Number of times this game has been completed.
-   */
   sessions: number;
 
-  /*
-   * Last completion time.
-   */
   updatedAt: number;
 
-  /*
-   * First completion time.
-   */
   createdAt: number;
 };
 
 export type GameDatabase = {
   version: 1;
 
-  /*
-   * Every game is stored under its own gameId.
-   */
+  userId: string;
+
   games: Record<string, GameResult>;
 
-  /*
-   * Global statistics.
-   */
   totalGames: number;
+
   totalSessions: number;
 
   updatedAt: number;
 };
 
-/*
-|--------------------------------------------------------------------------
-| Context
-|--------------------------------------------------------------------------
-*/
+/* ================================================================
+   INPUT
+================================================================ */
 
 type SaveGameResultInput = {
   gameId: string;
@@ -98,12 +67,18 @@ type SaveGameResultInput = {
   overallScore?: number;
 };
 
+/* ================================================================
+   CONTEXT TYPE
+================================================================ */
+
 type GameDataContextValue = {
   database: GameDatabase;
 
   games: GameResult[];
 
   loading: boolean;
+
+  userId: string | null;
 
   saveGameResult: (
     result: SaveGameResultInput
@@ -125,210 +100,471 @@ type GameDataContextValue = {
   clearAllGameResults: () => Promise<void>;
 
   refreshGameData: () => Promise<void>;
+
+  setGameUser: (
+    nextUserId: string | null
+  ) => Promise<void>;
 };
 
+/* ================================================================
+   CONTEXT
+================================================================ */
+
 const GameDataContext =
-  createContext<GameDataContextValue | undefined>(
-    undefined
-  );
+  createContext<
+    GameDataContextValue | undefined
+  >(undefined);
+
+/* ================================================================
+   STORAGE KEYS
+================================================================ */
 
 /*
-|--------------------------------------------------------------------------
-| Storage
-|--------------------------------------------------------------------------
-*/
-
-const STORAGE_KEY =
-  'norulia_user_game_database_v1';
+ * آخرین کاربری که GameDataContext با آن کار کرده است.
+ */
+const ACTIVE_USER_KEY =
+  '@norulia_active_game_user';
 
 /*
-|--------------------------------------------------------------------------
-| Empty database
-|--------------------------------------------------------------------------
-*/
+ * Prefix دیتابیس بازی‌ها.
+ *
+ * نتیجه نهایی:
+ *
+ * @norulia_game_database_user123
+ *
+ * @norulia_game_database_user456
+ */
+const STORAGE_PREFIX =
+  '@norulia_game_database_';
 
-const createEmptyDatabase =
-  (): GameDatabase => ({
+/* ================================================================
+   EMPTY DATABASE
+================================================================ */
+
+const createEmptyDatabase = (
+  userId: string
+): GameDatabase => ({
+  version: 1,
+
+  userId,
+
+  games: {},
+
+  totalGames: 0,
+
+  totalSessions: 0,
+
+  updatedAt: Date.now(),
+});
+
+/* ================================================================
+   STORAGE KEY
+================================================================ */
+
+const getStorageKey = (
+  userId: string
+) => {
+  /*
+   * User ID را برای کلید Storage
+   * کمی sanitize می‌کنیم تا کاراکتر
+   * نامناسب وارد کلید نشود.
+   */
+
+  const safeUserId =
+    String(userId)
+      .trim()
+      .replace(
+        /[^a-zA-Z0-9_.:@-]/g,
+        '_'
+      );
+
+  return `${STORAGE_PREFIX}${safeUserId}`;
+};
+
+/* ================================================================
+   NORMALIZE DATABASE
+================================================================ */
+
+const normalizeDatabase = (
+  parsed: any,
+  userId: string
+): GameDatabase => {
+  if (
+    !parsed ||
+    typeof parsed !== 'object'
+  ) {
+    return createEmptyDatabase(
+      userId
+    );
+  }
+
+  const games =
+    parsed.games &&
+    typeof parsed.games ===
+      'object'
+      ? parsed.games
+      : {};
+
+  const totalGames =
+    Object.keys(games).length;
+
+  const totalSessions =
+    Object.values(games).reduce(
+      (
+        total: number,
+        game: any
+      ) =>
+        total +
+        (typeof game?.sessions ===
+        'number'
+          ? game.sessions
+          : 0),
+      0
+    );
+
+  return {
     version: 1,
 
-    games: {},
+    userId,
 
-    totalGames: 0,
+    games,
 
-    totalSessions: 0,
+    totalGames,
 
-    updatedAt: Date.now(),
-  });
+    totalSessions,
 
-/*
-|--------------------------------------------------------------------------
-| Provider
-|--------------------------------------------------------------------------
-*/
+    updatedAt:
+      typeof parsed.updatedAt ===
+      'number'
+        ? parsed.updatedAt
+        : Date.now(),
+  };
+};
+
+/* ================================================================
+   PROVIDER
+================================================================ */
 
 export function GameDataProvider({
   children,
 }: {
   children: ReactNode;
 }) {
-  const [database, setDatabase] =
-    useState<GameDatabase>(
-      createEmptyDatabase()
-    );
+  /*
+   * --------------------------------------------------------------
+   * Current user
+   * --------------------------------------------------------------
+   */
+
+  const [userId, setUserId] =
+    useState<string | null>(null);
+
+  /*
+   * --------------------------------------------------------------
+   * Database
+   * --------------------------------------------------------------
+   */
+
+  const [
+    database,
+    setDatabase,
+  ] = useState<GameDatabase>(
+    createEmptyDatabase('anonymous')
+  );
+
+  /*
+   * --------------------------------------------------------------
+   * Loading
+   * --------------------------------------------------------------
+   */
 
   const [loading, setLoading] =
     useState(true);
 
-  /*
-   * --------------------------------------------------------------
-   * Load database
-   * --------------------------------------------------------------
-   */
+  /* ==============================================================
+     LOAD USER ID
+  ============================================================== */
 
-  const loadDatabase =
+  const loadActiveUser =
     useCallback(async () => {
       try {
-        setLoading(true);
-
-        const stored =
+        const savedUserId =
           await AsyncStorage.getItem(
-            STORAGE_KEY
+            ACTIVE_USER_KEY
           );
 
-        if (!stored) {
-          const empty =
-            createEmptyDatabase();
+        if (
+          savedUserId &&
+          savedUserId.trim()
+        ) {
+          setUserId(
+            savedUserId
+          );
 
-          setDatabase(empty);
-
-          return;
+          return savedUserId;
         }
-
-        const parsed =
-          JSON.parse(stored);
 
         /*
-         * Basic validation.
+         * هنوز User ID مشخص نیست.
          */
 
-        if (
-          !parsed ||
-          typeof parsed !==
-            'object' ||
-          !parsed.games ||
-          typeof parsed.games !==
-            'object'
-        ) {
-          const empty =
-            createEmptyDatabase();
+        setUserId(null);
 
-          setDatabase(empty);
-
-          return;
-        }
-
-        const normalized: GameDatabase =
-          {
-            version: 1,
-
-            games:
-              parsed.games || {},
-
-            totalGames:
-              typeof parsed.totalGames ===
-              'number'
-                ? parsed.totalGames
-                : Object.keys(
-                    parsed.games || {}
-                  ).length,
-
-            totalSessions:
-              typeof parsed.totalSessions ===
-              'number'
-                ? parsed.totalSessions
-                : Object.values(
-                    parsed.games || {}
-                  ).reduce(
-                    (
-                      total: number,
-                      game: any
-                    ) =>
-                      total +
-                      (typeof game.sessions ===
-                      'number'
-                        ? game.sessions
-                        : 0),
-                    0
-                  ),
-
-            updatedAt:
-              typeof parsed.updatedAt ===
-              'number'
-                ? parsed.updatedAt
-                : Date.now(),
-          };
-
-        setDatabase(normalized);
+        return null;
       } catch (error) {
         console.warn(
-          '[GameData] Failed to load database:',
+          '[GameData] Failed to load active user:',
           error
         );
 
-        setDatabase(
-          createEmptyDatabase()
-        );
-      } finally {
-        setLoading(false);
+        setUserId(null);
+
+        return null;
       }
     }, []);
 
-  /*
-   * Load once when Provider mounts.
-   */
+  /* ==============================================================
+     LOAD USER DATABASE
+  ============================================================== */
+
+  const loadDatabaseForUser =
+    useCallback(
+      async (
+        targetUserId: string
+      ) => {
+        try {
+          setLoading(true);
+
+          const storageKey =
+            getStorageKey(
+              targetUserId
+            );
+
+          const stored =
+            await AsyncStorage.getItem(
+              storageKey
+            );
+
+          if (!stored) {
+            setDatabase(
+              createEmptyDatabase(
+                targetUserId
+              )
+            );
+
+            return;
+          }
+
+          let parsed: any;
+
+          try {
+            parsed =
+              JSON.parse(stored);
+          } catch {
+            parsed = null;
+          }
+
+          const normalized =
+            normalizeDatabase(
+              parsed,
+              targetUserId
+            );
+
+          setDatabase(
+            normalized
+          );
+        } catch (error) {
+          console.warn(
+            '[GameData] Failed to load user database:',
+            error
+          );
+
+          setDatabase(
+            createEmptyDatabase(
+              targetUserId
+            )
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+      []
+    );
+
+  /* ==============================================================
+     INITIAL LOAD
+  ============================================================== */
 
   useEffect(() => {
-    loadDatabase();
-  }, [loadDatabase]);
+    let mounted = true;
 
-  /*
-   * --------------------------------------------------------------
-   * Persist database
-   * --------------------------------------------------------------
-   */
+    const initialize =
+      async () => {
+        const activeUser =
+          await loadActiveUser();
+
+        if (
+          !mounted
+        ) {
+          return;
+        }
+
+        if (
+          activeUser
+        ) {
+          await loadDatabaseForUser(
+            activeUser
+          );
+        } else {
+          setLoading(false);
+        }
+      };
+
+    void initialize();
+
+    return () => {
+      mounted = false;
+    };
+  }, [
+    loadActiveUser,
+    loadDatabaseForUser,
+  ]);
+
+  /* ==============================================================
+     SET GAME USER
+  ============================================================== */
+
+  const setGameUser =
+    useCallback(
+      async (
+        nextUserId: string | null
+      ) => {
+        /*
+         * Logout / no user.
+         */
+
+        if (
+          !nextUserId ||
+          !nextUserId.trim()
+        ) {
+          setUserId(null);
+
+          setDatabase(
+            createEmptyDatabase(
+              'anonymous'
+            )
+          );
+
+          setLoading(false);
+
+          await AsyncStorage.removeItem(
+            ACTIVE_USER_KEY
+          );
+
+          return;
+        }
+
+        const normalizedUserId =
+          String(
+            nextUserId
+          ).trim();
+
+        /*
+         * Save active user.
+         */
+
+        await AsyncStorage.setItem(
+          ACTIVE_USER_KEY,
+          normalizedUserId
+        );
+
+        /*
+         * Update context.
+         */
+
+        setUserId(
+          normalizedUserId
+        );
+
+        /*
+         * Load THIS user's
+         * game database.
+         */
+
+        await loadDatabaseForUser(
+          normalizedUserId
+        );
+      },
+      [
+        loadDatabaseForUser,
+      ]
+    );
+
+  /* ==============================================================
+     PERSIST DATABASE
+  ============================================================== */
 
   const persistDatabase =
     useCallback(
-      async (nextDatabase: GameDatabase) => {
+      async (
+        nextDatabase: GameDatabase
+      ) => {
+        if (
+          !nextDatabase.userId ||
+          nextDatabase.userId ===
+            'anonymous'
+        ) {
+          return;
+        }
+
         try {
+          const storageKey =
+            getStorageKey(
+              nextDatabase.userId
+            );
+
           await AsyncStorage.setItem(
-            STORAGE_KEY,
+            storageKey,
             JSON.stringify(
               nextDatabase
             )
           );
         } catch (error) {
           console.warn(
-            '[GameData] Failed to save database:',
+            '[GameData] Failed to persist database:',
             error
           );
+
+          throw error;
         }
       },
       []
     );
 
-  /*
-   * --------------------------------------------------------------
-   * Save game result
-   * --------------------------------------------------------------
-   */
+  /* ==============================================================
+     SAVE GAME RESULT
+  ============================================================== */
 
   const saveGameResult =
     useCallback(
       async (
         result: SaveGameResultInput
       ): Promise<GameResult> => {
-        const now = Date.now();
+        /*
+         * بدون User ID اجازه ذخیره
+         * اطلاعات بازی را نمی‌دهیم.
+         */
+
+        if (
+          !userId
+        ) {
+          throw new Error(
+            'Cannot save game result: no active user.'
+          );
+        }
+
+        const now =
+          Date.now();
 
         const previous =
           database.games[
@@ -336,14 +572,14 @@ export function GameDataProvider({
           ];
 
         /*
-         * If this game already exists,
-         * update it instead of creating
-         * another game record.
+         * یک session جدید برای
+         * همین بازی ثبت می‌کنیم.
          */
 
-        const gameResult: GameResult =
-          {
-            gameId: result.gameId,
+        const gameResult:
+          GameResult = {
+            gameId:
+              result.gameId,
 
             gameName:
               result.gameName,
@@ -359,10 +595,12 @@ export function GameDataProvider({
 
             sessions:
               previous
-                ? previous.sessions + 1
+                ? previous.sessions +
+                  1
                 : 1,
 
-            updatedAt: now,
+            updatedAt:
+              now,
 
             createdAt:
               previous?.createdAt ??
@@ -376,11 +614,14 @@ export function GameDataProvider({
             gameResult,
         };
 
-        const nextDatabase: GameDatabase =
-          {
+        const nextDatabase:
+          GameDatabase = {
             version: 1,
 
-            games: nextGames,
+            userId,
+
+            games:
+              nextGames,
 
             totalGames:
               Object.keys(
@@ -400,11 +641,12 @@ export function GameDataProvider({
                 0
               ),
 
-            updatedAt: now,
+            updatedAt:
+              now,
           };
 
         /*
-         * Update React immediately.
+         * UI immediately updates.
          */
 
         setDatabase(
@@ -412,7 +654,7 @@ export function GameDataProvider({
         );
 
         /*
-         * Persist to AsyncStorage.
+         * Save permanently.
          */
 
         await persistDatabase(
@@ -422,34 +664,35 @@ export function GameDataProvider({
         return gameResult;
       },
       [
+        userId,
         database,
         persistDatabase,
       ]
     );
 
-  /*
-   * --------------------------------------------------------------
-   * Get one game
-   * --------------------------------------------------------------
-   */
+  /* ==============================================================
+     GET GAME RESULT
+  ============================================================== */
 
   const getGameResult =
     useCallback(
-      (gameId: string) => {
+      (
+        gameId: string
+      ) => {
         return (
           database.games[
             gameId
-          ] || null
+          ] ?? null
         );
       },
-      [database.games]
+      [
+        database.games,
+      ]
     );
 
-  /*
-   * --------------------------------------------------------------
-   * Get one metric
-   * --------------------------------------------------------------
-   */
+  /* ==============================================================
+     GET METRIC
+  ============================================================== */
 
   const getMetric =
     useCallback(
@@ -476,18 +719,24 @@ export function GameDataProvider({
           ? value
           : null;
       },
-      [database.games]
+      [
+        database.games,
+      ]
     );
 
-  /*
-   * --------------------------------------------------------------
-   * Delete one game
-   * --------------------------------------------------------------
-   */
+  /* ==============================================================
+     CLEAR ONE GAME
+  ============================================================== */
 
   const clearGameResult =
     useCallback(
-      async (gameId: string) => {
+      async (
+        gameId: string
+      ) => {
+        if (!userId) {
+          return;
+        }
+
         const nextGames = {
           ...database.games,
         };
@@ -496,11 +745,14 @@ export function GameDataProvider({
           gameId
         ];
 
-        const nextDatabase: GameDatabase =
-          {
+        const nextDatabase:
+          GameDatabase = {
             version: 1,
 
-            games: nextGames,
+            userId,
+
+            games:
+              nextGames,
 
             totalGames:
               Object.keys(
@@ -533,70 +785,91 @@ export function GameDataProvider({
         );
       },
       [
+        userId,
         database,
         persistDatabase,
       ]
     );
 
-  /*
-   * --------------------------------------------------------------
-   * Delete everything
-   * --------------------------------------------------------------
-   */
+  /* ==============================================================
+     CLEAR ALL
+  ============================================================== */
 
   const clearAllGameResults =
-    useCallback(async () => {
-      const empty =
-        createEmptyDatabase();
+    useCallback(
+      async () => {
+        if (!userId) {
+          return;
+        }
 
-      setDatabase(empty);
+        const empty =
+          createEmptyDatabase(
+            userId
+          );
 
-      try {
-        await AsyncStorage.removeItem(
-          STORAGE_KEY
+        setDatabase(
+          empty
         );
-      } catch (error) {
-        console.warn(
-          '[GameData] Failed to clear database:',
-          error
-        );
-      }
-    }, []);
 
-  /*
-   * --------------------------------------------------------------
-   * Refresh
-   * --------------------------------------------------------------
-   */
+        try {
+          await AsyncStorage.removeItem(
+            getStorageKey(
+              userId
+            )
+          );
+        } catch (error) {
+          console.warn(
+            '[GameData] Failed to clear database:',
+            error
+          );
+        }
+      },
+      [userId]
+    );
+
+  /* ==============================================================
+     REFRESH
+  ============================================================== */
 
   const refreshGameData =
-    useCallback(async () => {
-      await loadDatabase();
-    }, [loadDatabase]);
+    useCallback(
+      async () => {
+        if (!userId) {
+          return;
+        }
 
-  /*
-   * --------------------------------------------------------------
-   * Memoized game list
-   * --------------------------------------------------------------
-   */
+        await loadDatabaseForUser(
+          userId
+        );
+      },
+      [
+        userId,
+        loadDatabaseForUser,
+      ]
+    );
 
-  const games = useMemo(
-    () =>
-      Object.values(
-        database.games
-      ).sort(
-        (a, b) =>
-          b.updatedAt -
-          a.updatedAt
-      ),
-    [database.games]
-  );
+  /* ==============================================================
+     GAMES ARRAY
+  ============================================================== */
 
-  /*
-   * --------------------------------------------------------------
-   * Context value
-   * --------------------------------------------------------------
-   */
+  const games =
+    useMemo(
+      () =>
+        Object.values(
+          database.games
+        ).sort(
+          (a, b) =>
+            b.updatedAt -
+            a.updatedAt
+        ),
+      [
+        database.games,
+      ]
+    );
+
+  /* ==============================================================
+     CONTEXT VALUE
+  ============================================================== */
 
   const value =
     useMemo<GameDataContextValue>(
@@ -607,6 +880,8 @@ export function GameDataProvider({
 
         loading,
 
+        userId,
+
         saveGameResult,
 
         getGameResult,
@@ -618,19 +893,27 @@ export function GameDataProvider({
         clearAllGameResults,
 
         refreshGameData,
+
+        setGameUser,
       }),
       [
         database,
         games,
         loading,
+        userId,
         saveGameResult,
         getGameResult,
         getMetric,
         clearGameResult,
         clearAllGameResults,
         refreshGameData,
+        setGameUser,
       ]
     );
+
+  /* ==============================================================
+     PROVIDER
+  ============================================================== */
 
   return (
     <GameDataContext.Provider
@@ -641,11 +924,9 @@ export function GameDataProvider({
   );
 }
 
-/*
-|--------------------------------------------------------------------------
-| Hook
-|--------------------------------------------------------------------------
-*/
+/* ================================================================
+   HOOK
+================================================================ */
 
 export function useGameData() {
   const context =
