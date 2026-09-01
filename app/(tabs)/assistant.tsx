@@ -34,7 +34,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 
 const CHAT_API_URL =
-  'https://smith-wrongful-punctual.ngrok-free.dev/chat';
+  'https://iliyacore.ir/neurolia/send_message.php';
 
 interface Message {
   id: string;
@@ -44,160 +44,34 @@ interface Message {
 }
 
 interface ChatResponse {
-  response?: unknown;
-  message?: unknown;
+  status?: string;
   reply?: unknown;
-  answer?: unknown;
-  text?: unknown;
-  content?: unknown;
-  data?: unknown;
-  error?: unknown;
+  message?: unknown;
 }
 
-const normalizeResponseText = (
-  value: unknown
-): string | null => {
-  if (typeof value === 'string') {
-    return value.trim() || null;
-  }
-
-  if (
-    typeof value === 'number' ||
-    typeof value === 'boolean'
-  ) {
-    return String(value);
-  }
-
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const result = normalizeResponseText(item);
-
-      if (result) {
-        return result;
-      }
-    }
-  }
-
-  if (
-    value &&
-    typeof value === 'object'
-  ) {
-    const object =
-      value as Record<string, unknown>;
-
-    const keys = [
-      'response',
-      'message',
-      'reply',
-      'answer',
-      'text',
-      'content',
-    ];
-
-    for (const key of keys) {
-      if (key in object) {
-        const result =
-          normalizeResponseText(object[key]);
-
-        if (result) {
-          return result;
-        }
-      }
-    }
-
-    if ('data' in object) {
-      const result =
-        normalizeResponseText(object.data);
-
-      if (result) {
-        return result;
-      }
-    }
-
-    if ('choices' in object) {
-      const result =
-        normalizeResponseText(object.choices);
-
-      if (result) {
-        return result;
-      }
-    }
-  }
-
-  return null;
-};
-
 export default function AssistantScreen() {
-  const { colors, isDark, isAthlete } = useTheme();
+  const { colors, isDark } = useTheme();
   const { isRTL, language } = useLanguage();
   const insets = useSafeAreaInsets();
 
-  // تعیین رنگ آیکون‌ها بر اساس تم
-  const getIconColor = () => {
-    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
-    if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
-    return colors.text; // رنگ پیش‌فرض
-  };
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputText, setInputText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [welcomeText, setWelcomeText] = useState('');
+  const [welcomeFinished, setWelcomeFinished] = useState(false);
+  const [requestError, setRequestError] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
-  const iconColor = getIconColor();
-
-  // تعیین رنگ primary بر اساس تم
-  const getPrimaryColor = () => {
-    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
-    return colors.primary; // رنگ پیش‌فرض
-  };
-
-  const primaryColor = getPrimaryColor();
-
-  const [messages, setMessages] =
-    useState<Message[]>([]);
-
-  const [inputText, setInputText] =
-    useState('');
-
-  const [isTyping, setIsTyping] =
-    useState(false);
-
-  const [hasStarted, setHasStarted] =
-    useState(false);
-
-  const [welcomeText, setWelcomeText] =
-    useState('');
-
-  const [welcomeFinished, setWelcomeFinished] =
-    useState(false);
-
-  const [requestError, setRequestError] =
-    useState(false);
-
-  const [showScrollButton, setShowScrollButton] =
-    useState(false);
-
-  const scrollRef =
-    useRef<ScrollView>(null);
-
-  const inputRef =
-    useRef<TextInput>(null);
-
-  const abortController =
-    useRef<AbortController | null>(null);
-
-  const typingTimer =
-    useRef<ReturnType<typeof setTimeout> | null>(
-      null
-    );
-
-  const conversationId =
-    useRef(
-      `neurolia-${Date.now()}-${Math.random()
-        .toString(36)
-        .slice(2, 8)}`
-    );
+  const scrollRef = useRef<ScrollView>(null);
+  const inputRef = useRef<TextInput>(null);
+  const abortController = useRef<AbortController | null>(null);
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const welcomeMessage =
     language === 'fa'
       ? 'سلام، روز بخیر !\nمن نورولیا هستم.\nراجع به چیزی دوست داری با هم صحبت کنیم؟'
-      : 'Hello, good day \nI am Neurolia.\nIs there something you would like to talk about?';
+      : 'Hello, good day!\nI am Neurolia.\nIs there something you would like to talk about?';
 
   useEffect(() => {
     if (hasStarted) {
@@ -216,317 +90,277 @@ export default function AssistantScreen() {
       }
 
       setWelcomeText(
-        welcomeMessage.slice(
-          0,
-          index + 1
-        )
+        welcomeMessage.slice(0, index + 1)
       );
 
       index += 1;
 
-      typingTimer.current =
-        setTimeout(
-          typeNextCharacter,
-          32
-        );
+      typingTimer.current = setTimeout(
+        typeNextCharacter,
+        32
+      );
     };
 
-    typingTimer.current =
-      setTimeout(
-        typeNextCharacter,
-        500
-      );
+    typingTimer.current = setTimeout(
+      typeNextCharacter,
+      500
+    );
 
     return () => {
       if (typingTimer.current) {
-        clearTimeout(
-          typingTimer.current
-        );
+        clearTimeout(typingTimer.current);
       }
     };
-  }, [
-    language,
-    hasStarted,
-    welcomeMessage,
-  ]);
+  }, [language, hasStarted, welcomeMessage]);
 
-  const getCurrentTime =
-    useCallback(() => {
-      return new Date().toLocaleTimeString(
-        language === 'fa'
-          ? 'fa-IR'
-          : 'en-US',
-        {
-          hour: '2-digit',
-          minute: '2-digit',
-        }
-      );
-    }, [language]);
+  const getCurrentTime = useCallback(() => {
+    return new Date().toLocaleTimeString(
+      language === 'fa' ? 'fa-IR' : 'en-US',
+      {
+        hour: '2-digit',
+        minute: '2-digit',
+      }
+    );
+  }, [language]);
 
-  const lightHaptic =
-    useCallback(() => {
-      Haptics.impactAsync(
-        Haptics.ImpactFeedbackStyle.Light
-      ).catch(() => {});
-    }, []);
+  const lightHaptic = useCallback(() => {
+    Haptics.impactAsync(
+      Haptics.ImpactFeedbackStyle.Light
+    ).catch(() => {});
+  }, []);
 
-  const addMessage =
-    useCallback(
-      (
-        text: string,
-        isUser: boolean
-      ) => {
-        const message: Message = {
-          id: `${Date.now()}-${Math.random()
+  const addMessage = useCallback(
+    (text: string, isUser: boolean) => {
+      const message: Message = {
+        id:
+          `${Date.now()}-${Math.random()
             .toString(36)
             .slice(2, 8)}`,
-          text,
-          isUser,
-          timestamp:
-            getCurrentTime(),
-        };
+        text,
+        isUser,
+        timestamp: getCurrentTime(),
+      };
 
-        setMessages(prev => [
-          ...prev,
-          message,
-        ]);
-      },
-      [getCurrentTime]
-    );
+      setMessages(prev => [
+        ...prev,
+        message,
+      ]);
+    },
+    [getCurrentTime]
+  );
 
-  const requestAssistant =
-    useCallback(
-      async (text: string) => {
-        abortController.current?.abort();
+  const requestAssistant = useCallback(
+    async (text: string) => {
+      abortController.current?.abort();
 
-        const controller =
-          new AbortController();
+      const controller = new AbortController();
 
-        abortController.current =
-          controller;
+      abortController.current = controller;
 
-        const response =
-          await fetch(
-            CHAT_API_URL,
-            {
-              method: 'POST',
+      const response = await fetch(
+        CHAT_API_URL,
+        {
+          method: 'POST',
 
-              headers: {
-                'Content-Type':
-                  'application/json',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
 
-                Accept:
-                  'application/json, text/plain, */*',
-              },
+          body: JSON.stringify({
+            message: text,
+          }),
 
-              body: JSON.stringify({
-                message: text,
+          signal: controller.signal,
+        }
+      );
 
-                conversation_id:
-                  conversationId.current,
+      const raw = await response.text();
 
-                language:
-                  language === 'fa'
-                    ? 'fa'
-                    : 'en',
-              }),
+      console.log(
+        'NEUROLIA SERVER RESPONSE:',
+        raw
+      );
 
-              signal:
-                controller.signal,
-            }
-          );
+      if (!response.ok) {
+        throw new Error(
+          `HTTP ${response.status}: ${raw}`
+        );
+      }
 
-        if (!response.ok) {
+      if (!raw.trim()) {
+        throw new Error(
+          'Empty response from server'
+        );
+      }
+
+      let parsed: ChatResponse;
+
+      try {
+        parsed =
+          JSON.parse(raw) as ChatResponse;
+      } catch {
+        throw new Error(
+          'Invalid JSON response from server'
+        );
+      }
+
+      if (parsed.status !== 'success') {
+        const serverMessage =
+          typeof parsed.message === 'string'
+            ? parsed.message
+            : '';
+
+        throw new Error(
+          serverMessage ||
+          'خطا در دریافت پاسخ از سرور'
+        );
+      }
+
+      const reply =
+        typeof parsed.reply === 'string'
+          ? parsed.reply.trim()
+          : '';
+
+      if (!reply) {
+        throw new Error(
+          'Empty assistant reply'
+        );
+      }
+
+      return reply;
+    },
+    []
+  );
+
+  const handleSend = useCallback(
+    async (value?: string) => {
+      const text = (
+        value ?? inputText
+      ).trim();
+
+      if (!text || isTyping) {
+        return;
+      }
+
+      lightHaptic();
+
+      setRequestError(false);
+      setInputText('');
+
+      if (!hasStarted) {
+        setHasStarted(true);
+
+        await new Promise(resolve =>
+          setTimeout(resolve, 420)
+        );
+      }
+
+      addMessage(text, true);
+
+      setIsTyping(true);
+
+      inputRef.current?.blur();
+
+      try {
+        const answer =
+          await requestAssistant(text);
+
+        if (!answer) {
           throw new Error(
-            `HTTP ${response.status}`
-          );
-        }
-
-        const raw =
-          await response.text();
-
-        if (!raw.trim()) {
-          throw new Error(
-            'Empty response'
-          );
-        }
-
-        try {
-          const parsed =
-            JSON.parse(raw) as ChatResponse;
-
-          const result =
-            normalizeResponseText(
-              parsed
-            );
-
-          if (result) {
-            return result;
-          }
-
-          throw new Error(
-            'Invalid assistant response'
-          );
-        } catch (error) {
-          if (
-            raw.trim().startsWith('{') ||
-            raw.trim().startsWith('[')
-          ) {
-            throw error;
-          }
-
-          return raw.trim();
-        }
-      },
-      [language]
-    );
-
-  const handleSend =
-    useCallback(
-      async (value?: string) => {
-        const text =
-          (value ?? inputText).trim();
-
-        if (!text || isTyping) {
-          return;
-        }
-
-        lightHaptic();
-
-        setRequestError(false);
-        setInputText('');
-
-        if (!hasStarted) {
-          setHasStarted(true);
-
-          await new Promise(resolve =>
-            setTimeout(
-              resolve,
-              420
-            )
+            'Empty assistant answer'
           );
         }
 
         addMessage(
-          text,
-          true
+          answer,
+          false
+        );
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.name === 'AbortError'
+        ) {
+          return;
+        }
+
+        console.error(
+          'NEUROLIA PHP CHAT ERROR:',
+          error
         );
 
-        setIsTyping(true);
+        setRequestError(true);
 
-        inputRef.current?.blur();
-
-        try {
-          const answer =
-            await requestAssistant(
-              text
-            );
-
-          if (!answer) {
-            throw new Error(
-              'Empty assistant answer'
-            );
-          }
-
-          addMessage(
-            answer,
-            false
-          );
-        } catch (error) {
-          if (
-            error instanceof Error &&
-            error.name === 'AbortError'
-          ) {
-            return;
-          }
-
-          console.error(
-            'NEUROLIA AI CHAT ERROR:',
-            error
-          );
-
-          setRequestError(true);
-
-          addMessage(
-            language === 'fa'
-              ? 'در ارتباط با دستیار هوشمند مشکلی پیش آمد. لطفاً اتصال سرور را بررسی کنید و دوباره تلاش کنید.'
-              : 'I could not connect to the AI assistant. Please check the server connection and try again.',
-            false
-          );
-        } finally {
-          setIsTyping(false);
-          abortController.current =
-            null;
-        }
-      },
-      [
-        inputText,
-        isTyping,
-        hasStarted,
-        lightHaptic,
-        addMessage,
-        requestAssistant,
-        language,
-      ]
-    );
-
-  const handleRetry =
-    useCallback(() => {
-      const lastUser =
-        [...messages]
-          .reverse()
-          .find(
-            message =>
-              message.isUser
-          );
-
-      if (!lastUser) {
-        return;
+        addMessage(
+          language === 'fa'
+            ? 'در ارتباط با دستیار هوشمند مشکلی پیش آمد. لطفاً دوباره تلاش کن.'
+            : 'I could not connect to the AI assistant. Please try again.',
+          false
+        );
+      } finally {
+        setIsTyping(false);
+        abortController.current = null;
       }
+    },
+    [
+      inputText,
+      isTyping,
+      hasStarted,
+      lightHaptic,
+      addMessage,
+      requestAssistant,
+      language,
+    ]
+  );
 
-      setMessages(prev => {
-        const lastAssistant =
-          [...prev]
-            .reverse()
-            .find(
-              message =>
-                !message.isUser
-            );
+  const handleRetry = useCallback(() => {
+    const lastUser =
+      [...messages]
+        .reverse()
+        .find(message => message.isUser);
 
-        if (!lastAssistant) {
-          return prev;
-        }
-
-        return prev.filter(
-          message =>
-            message.id !==
-            lastAssistant.id
-        );
-      });
-
-      setRequestError(false);
-
-      handleSend(
-        lastUser.text
-      );
-    }, [
-      messages,
-      handleSend,
-    ]);
-
-  useEffect(() => {
-    if (
-      messages.length === 0
-    ) {
+    if (!lastUser || isTyping) {
       return;
     }
 
-    const timer =
-      setTimeout(() => {
-        scrollRef.current?.scrollToEnd({
-          animated: true,
-        });
-      }, 100);
+    setMessages(prev => {
+      const lastAssistant =
+        [...prev]
+          .reverse()
+          .find(
+            message => !message.isUser
+          );
+
+      if (!lastAssistant) {
+        return prev;
+      }
+
+      return prev.filter(
+        message =>
+          message.id !==
+          lastAssistant.id
+      );
+    });
+
+    setRequestError(false);
+
+    handleSend(lastUser.text);
+  }, [
+    messages,
+    isTyping,
+    handleSend,
+  ]);
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      scrollRef.current?.scrollToEnd({
+        animated: true,
+      });
+    }, 100);
 
     return () =>
       clearTimeout(timer);
@@ -536,9 +370,7 @@ export default function AssistantScreen() {
     return () => {
       abortController.current?.abort();
 
-      if (
-        typingTimer.current
-      ) {
+      if (typingTimer.current) {
         clearTimeout(
           typingTimer.current
         );
@@ -546,28 +378,26 @@ export default function AssistantScreen() {
     };
   }, []);
 
-  const handleScroll =
-    useCallback(
-      (event: any) => {
-        const {
-          contentOffset,
-          contentSize,
-          layoutMeasurement,
-        } =
-          event.nativeEvent;
+  const handleScroll = useCallback(
+    (event: any) => {
+      const {
+        contentOffset,
+        contentSize,
+        layoutMeasurement,
+      } = event.nativeEvent;
 
-        const distance =
-          contentSize.height -
-          contentOffset.y -
-          layoutMeasurement.height;
+      const distance =
+        contentSize.height -
+        contentOffset.y -
+        layoutMeasurement.height;
 
-        setShowScrollButton(
-          distance > 120 &&
-            messages.length > 0
-        );
-      },
-      [messages.length]
-    );
+      setShowScrollButton(
+        distance > 120 &&
+        messages.length > 0
+      );
+    },
+    [messages.length]
+  );
 
   const backgroundGradient =
     isDark
@@ -584,6 +414,11 @@ export default function AssistantScreen() {
     isDark
       ? 'rgba(255,255,255,0.055)'
       : 'rgba(0,0,0,0.035)';
+
+  const iconColor =
+    isDark
+      ? 'rgba(73,194,226,1)'
+      : colors.text;
 
   return (
     <LinearGradient
@@ -603,7 +438,6 @@ export default function AssistantScreen() {
             : 0
         }
       >
-
         <View
           style={[
             styles.mainContent,
@@ -615,7 +449,6 @@ export default function AssistantScreen() {
             },
           ]}
         >
-
           <AnimatePresence>
             {!hasStarted && (
               <MotiView
@@ -632,18 +465,18 @@ export default function AssistantScreen() {
                   type: 'timing',
                   duration: 350,
                 }}
-                style={[
-                  styles.welcomeScene,
-                ]}
+                style={
+                  styles.welcomeScene
+                }
                 pointerEvents="box-none"
               >
-
                 <MotiView
                   from={{
                     opacity: 0,
-                    translateX: isRTL
-                      ? 180
-                      : -180,
+                    translateX:
+                      isRTL
+                        ? 180
+                        : -180,
                     scale: 0.92,
                   }}
                   animate={{
@@ -653,9 +486,10 @@ export default function AssistantScreen() {
                   }}
                   exit={{
                     opacity: 0,
-                    translateX: isRTL
-                      ? 280
-                      : -280,
+                    translateX:
+                      isRTL
+                        ? 280
+                        : -280,
                     scale: 0.88,
                   }}
                   transition={{
@@ -688,8 +522,8 @@ export default function AssistantScreen() {
                     style={[
                       styles.avatarGlow,
                       {
-                        backgroundColor: primaryColor,
-
+                        backgroundColor:
+                          colors.primary,
                         opacity:
                           isDark
                             ? 0.12
@@ -702,9 +536,10 @@ export default function AssistantScreen() {
                 <MotiView
                   from={{
                     opacity: 0,
-                    translateX: isRTL
-                      ? -190
-                      : 190,
+                    translateX:
+                      isRTL
+                        ? -190
+                        : 190,
                     scale: 0.94,
                   }}
                   animate={{
@@ -714,9 +549,10 @@ export default function AssistantScreen() {
                   }}
                   exit={{
                     opacity: 0,
-                    translateX: isRTL
-                      ? -300
-                      : 300,
+                    translateX:
+                      isRTL
+                        ? -300
+                        : 300,
                     scale: 0.92,
                   }}
                   transition={{
@@ -743,7 +579,6 @@ export default function AssistantScreen() {
                           isDark
                             ? 'rgba(255,255,255,0.075)'
                             : 'rgba(255,255,255,0.92)',
-
                         borderColor:
                           isDark
                             ? 'rgba(255,255,255,0.11)'
@@ -751,7 +586,6 @@ export default function AssistantScreen() {
                       },
                     ]}
                   >
-
                     <View
                       style={[
                         styles.dialogHeader,
@@ -767,7 +601,8 @@ export default function AssistantScreen() {
                         style={[
                           styles.neuroliaDot,
                           {
-                            backgroundColor: iconColor,
+                            backgroundColor:
+                              iconColor,
                           },
                         ]}
                       />
@@ -797,7 +632,6 @@ export default function AssistantScreen() {
                         {
                           color:
                             colors.text,
-
                           textAlign:
                             isRTL
                               ? 'right'
@@ -810,7 +644,8 @@ export default function AssistantScreen() {
                       {!welcomeFinished && (
                         <Text
                           style={{
-                            color: primaryColor,
+                            color:
+                              colors.primary,
                           }}
                         >
                           ▌
@@ -834,7 +669,6 @@ export default function AssistantScreen() {
                     />
                   </View>
                 </MotiView>
-
               </MotiView>
             )}
           </AnimatePresence>
@@ -877,8 +711,11 @@ export default function AssistantScreen() {
                     },
                   ]}
                 >
-
-                  <View style={styles.headerAvatarContainer}>
+                  <View
+                    style={
+                      styles.headerAvatarContainer
+                    }
+                  >
                     <Image
                       source={require(
                         '../../assets/avatars/model8.png'
@@ -971,7 +808,6 @@ export default function AssistantScreen() {
                       ]}
                     />
                   </View>
-
                 </View>
               </MotiView>
             )}
@@ -998,126 +834,112 @@ export default function AssistantScreen() {
                 onScroll={
                   handleScroll
                 }
-                scrollEventThrottle={
-                  16
-                }
+                scrollEventThrottle={16}
               >
+                {messages.map(message => (
+                  <MotiView
+                    key={message.id}
+                    from={{
+                      opacity: 0,
+                      translateY: 12,
+                      scale: 0.96,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      translateY: 0,
+                      scale: 1,
+                    }}
+                    transition={{
+                      type: 'timing',
+                      duration: 260,
+                    }}
+                    style={[
+                      styles.messageRow,
+                      {
+                        justifyContent:
+                          message.isUser
+                            ? 'flex-end'
+                            : 'flex-start',
+                      },
+                    ]}
+                  >
+                    {!message.isUser && (
+                      <View
+                        style={
+                          styles.messageAvatarContainer
+                        }
+                      >
+                        <Image
+                          source={require(
+                            '../../assets/avatars/model8.png'
+                          )}
+                          style={
+                            styles.messageAvatarImage
+                          }
+                        />
+                      </View>
+                    )}
 
-                {messages.map(
-                  message => (
-                    <MotiView
-                      key={
-                        message.id
-                      }
-                      from={{
-                        opacity: 0,
-                        translateY: 12,
-                        scale: 0.96,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        translateY: 0,
-                        scale: 1,
-                      }}
-                      transition={{
-                        type: 'timing',
-                        duration: 260,
-                      }}
+                    <View
                       style={[
-                        styles.messageRow,
+                        styles.messageBubble,
+                        message.isUser
+                          ? styles.userBubble
+                          : styles.assistantBubble,
                         {
-                          justifyContent:
+                          backgroundColor:
                             message.isUser
-                              ? 'flex-end'
-                              : 'flex-start',
+                              ? colors.primary
+                              : isDark
+                              ? 'rgba(255,255,255,0.065)'
+                              : '#FFFFFF',
+                          borderColor:
+                            message.isUser
+                              ? colors.primary
+                              : isDark
+                              ? 'rgba(255,255,255,0.09)'
+                              : 'rgba(0,0,0,0.06)',
                         },
                       ]}
                     >
-
-                      {!message.isUser && (
-                        <View style={styles.messageAvatarContainer}>
-                          <Image
-                            source={require(
-                              '../../assets/avatars/model8.png'
-                            )}
-                            style={
-                              styles.messageAvatarImage
-                            }
-                          />
-                        </View>
-                      )}
-
-                      <View
+                      <Text
                         style={[
-                          styles.messageBubble,
-
-                          message.isUser
-                            ? styles.userBubble
-                            : styles.assistantBubble,
-
+                          styles.messageText,
                           {
-                            backgroundColor:
+                            color:
                               message.isUser
-                                ? primaryColor
-                                : isDark
-                                ? 'rgba(255,255,255,0.065)'
-                                : '#FFFFFF',
-
-                            borderColor:
-                              message.isUser
-                                ? primaryColor
-                                : isDark
-                                ? 'rgba(255,255,255,0.09)'
-                                : 'rgba(0,0,0,0.06)',
+                                ? '#FFFFFF'
+                                : colors.text,
+                            textAlign:
+                              isRTL
+                                ? 'right'
+                                : 'left',
                           },
                         ]}
                       >
-                        <Text
-                          style={[
-                            styles.messageText,
-                            {
-                              color:
-                                message.isUser
-                                  ? '#FFFFFF'
-                                  : colors.text,
+                        {message.text}
+                      </Text>
 
-                              textAlign:
-                                isRTL
-                                  ? 'right'
-                                  : 'left',
-                            },
-                          ]}
-                        >
+                      <Text
+                        style={[
+                          styles.timestamp,
                           {
-                            message.text
-                          }
-                        </Text>
-
-                        <Text
-                          style={[
-                            styles.timestamp,
-                            {
-                              color:
-                                message.isUser
-                                  ? 'rgba(255,255,255,0.65)'
-                                  : colors.textSecondary,
-
-                              textAlign:
-                                isRTL
-                                  ? 'right'
-                                  : 'left',
-                            },
-                          ]}
-                        >
-                          {
-                            message.timestamp
-                          }
-                        </Text>
-                      </View>
-
-                    </MotiView>
-                  )
-                )}
+                            color:
+                              message.isUser
+                                ? 'rgba(255,255,255,0.65)'
+                                : colors.textSecondary,
+                            textAlign:
+                              isRTL
+                                ? 'right'
+                                : 'left',
+                          },
+                        ]}
+                      >
+                        {message.timestamp}
+                      </Text>
+                    </View>
+                  </MotiView>
+                ))}
 
                 {isTyping && (
                   <MotiView
@@ -1139,7 +961,11 @@ export default function AssistantScreen() {
                       },
                     ]}
                   >
-                    <View style={styles.messageAvatarContainer}>
+                    <View
+                      style={
+                        styles.messageAvatarContainer
+                      }
+                    >
                       <Image
                         source={require(
                           '../../assets/avatars/model8.png'
@@ -1170,7 +996,8 @@ export default function AssistantScreen() {
                           style={[
                             styles.typingDot,
                             {
-                              backgroundColor: primaryColor,
+                              backgroundColor:
+                                colors.primary,
                             },
                           ]}
                         />
@@ -1179,7 +1006,8 @@ export default function AssistantScreen() {
                           style={[
                             styles.typingDot,
                             {
-                              backgroundColor: primaryColor,
+                              backgroundColor:
+                                colors.primary,
                             },
                           ]}
                         />
@@ -1188,7 +1016,8 @@ export default function AssistantScreen() {
                           style={[
                             styles.typingDot,
                             {
-                              backgroundColor: primaryColor,
+                              backgroundColor:
+                                colors.primary,
                             },
                           ]}
                         />
@@ -1205,7 +1034,8 @@ export default function AssistantScreen() {
                     style={[
                       styles.retryButton,
                       {
-                        borderColor: primaryColor,
+                        borderColor:
+                          colors.primary,
                       },
                     ]}
                   >
@@ -1218,7 +1048,8 @@ export default function AssistantScreen() {
                       style={[
                         styles.retryText,
                         {
-                          color: primaryColor,
+                          color:
+                            colors.primary,
                         },
                       ]}
                     >
@@ -1228,7 +1059,6 @@ export default function AssistantScreen() {
                     </Text>
                   </TouchableOpacity>
                 )}
-
               </ScrollView>
 
               <AnimatePresence>
@@ -1254,15 +1084,15 @@ export default function AssistantScreen() {
                       onPress={() =>
                         scrollRef.current?.scrollToEnd(
                           {
-                            animated:
-                              true,
+                            animated: true,
                           }
                         )
                       }
                       style={[
                         styles.scrollButton,
                         {
-                          backgroundColor: primaryColor,
+                          backgroundColor:
+                            colors.primary,
                         },
                       ]}
                     >
@@ -1277,10 +1107,8 @@ export default function AssistantScreen() {
                   </MotiView>
                 )}
               </AnimatePresence>
-
             </View>
           )}
-
         </View>
 
         <View
@@ -1292,22 +1120,18 @@ export default function AssistantScreen() {
                   insets.bottom,
                   10
                 ),
-
               paddingHorizontal: 14,
-
               zIndex: 100,
               elevation: 100,
             },
           ]}
         >
-
           <View
             style={[
               styles.inputContainer,
               {
                 backgroundColor:
                   inputBackground,
-
                 borderColor:
                   isDark
                     ? 'rgba(255,255,255,0.08)'
@@ -1315,7 +1139,6 @@ export default function AssistantScreen() {
               },
             ]}
           >
-
             <TouchableOpacity
               style={
                 styles.micButton
@@ -1378,7 +1201,7 @@ export default function AssistantScreen() {
                   backgroundColor:
                     inputText.trim() &&
                     !isTyping
-                      ? primaryColor
+                      ? colors.primary
                       : isDark
                       ? 'rgba(255,255,255,0.08)'
                       : 'rgba(0,0,0,0.07)',
@@ -1402,10 +1225,8 @@ export default function AssistantScreen() {
                 />
               )}
             </TouchableOpacity>
-
           </View>
         </View>
-
       </KeyboardAvoidingView>
     </LinearGradient>
   );
@@ -1427,118 +1248,89 @@ const styles = StyleSheet.create({
 
   welcomeScene: {
     position: 'absolute',
-
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-
     zIndex: 10,
-
     justifyContent: 'center',
-
     paddingHorizontal: 18,
-
     paddingBottom: 100,
   },
 
   welcomeAvatarContainer: {
     width: 190,
     height: 300,
-
     justifyContent: 'center',
     alignItems: 'center',
-
     position: 'relative',
-
     zIndex: 2,
   },
 
   welcomeAvatar: {
     width: 190,
     height: 300,
-
     zIndex: 3,
   },
 
   avatarGlow: {
     position: 'absolute',
-
     width: 150,
     height: 150,
-
     borderRadius: 75,
-
     zIndex: 1,
   },
 
   dialogWrapper: {
     width: '72%',
     maxWidth: 390,
-
     marginTop: -70,
-
     zIndex: 4,
   },
 
   dialogBubble: {
     borderWidth: 1,
-
     borderRadius: 24,
-
     paddingHorizontal: 20,
     paddingVertical: 18,
-
     shadowOffset: {
       width: 0,
       height: 10,
     },
-
     shadowOpacity: 0.12,
     shadowRadius: 22,
-
     elevation: 8,
   },
 
   dialogHeader: {
     alignItems: 'center',
-
     gap: 7,
-
     marginBottom: 10,
   },
 
   neuroliaDot: {
     width: 7,
     height: 7,
-
     borderRadius: 4,
   },
 
   neuroliaName: {
     fontSize: 13,
-
     fontWeight: '800',
-
     letterSpacing: 0.2,
   },
 
   welcomeText: {
     fontSize: 18,
-
     lineHeight: 29,
-
     fontWeight: '600',
   },
 
   dialogTail: {
     position: 'absolute',
-
     width: 18,
     height: 18,
-
     bottom: -7,
-
     transform: [
       {
         rotate: '45deg',
@@ -1556,15 +1348,12 @@ const styles = StyleSheet.create({
 
   chatHeader: {
     zIndex: 20,
-
     paddingHorizontal: 16,
-
     paddingBottom: 12,
   },
 
   headerInner: {
     minHeight: 62,
-
     alignItems: 'center',
   },
 
@@ -1583,42 +1372,35 @@ const styles = StyleSheet.create({
 
   headerText: {
     flex: 1,
-
     marginHorizontal: 11,
   },
 
   headerNameRow: {
     alignItems: 'center',
-
     gap: 6,
   },
 
   headerName: {
     fontSize: 17,
-
     fontWeight: '800',
   },
 
   aiPill: {
     width: 22,
     height: 22,
-
     borderRadius: 11,
-
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   headerStatus: {
     fontSize: 11,
-
     marginTop: 2,
   },
 
   headerOnline: {
     width: 28,
     height: 28,
-
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1626,15 +1408,12 @@ const styles = StyleSheet.create({
   onlineDot: {
     width: 9,
     height: 9,
-
     borderRadius: 5,
   },
 
   chatArea: {
     flex: 1,
-
     position: 'relative',
-
     zIndex: 1,
   },
 
@@ -1648,13 +1427,9 @@ const styles = StyleSheet.create({
 
   messageRow: {
     width: '100%',
-
     marginBottom: 12,
-
     flexDirection: 'row',
-
     alignItems: 'flex-end',
-
     gap: 8,
   },
 
@@ -1673,12 +1448,9 @@ const styles = StyleSheet.create({
 
   messageBubble: {
     maxWidth: '78%',
-
     borderWidth: 1,
-
     paddingHorizontal: 14,
     paddingVertical: 11,
-
     borderRadius: 19,
   },
 
@@ -1692,157 +1464,112 @@ const styles = StyleSheet.create({
 
   messageText: {
     fontSize: 15,
-
     lineHeight: 23,
-
     fontWeight: '500',
   },
 
   timestamp: {
     fontSize: 9,
-
     marginTop: 5,
   },
 
   typingRow: {
     marginBottom: 12,
-
     alignItems: 'flex-end',
-
     gap: 8,
   },
 
   typingBubble: {
     minWidth: 66,
-
     minHeight: 42,
-
     paddingHorizontal: 15,
-
     borderRadius: 18,
-
     justifyContent: 'center',
   },
 
   typingDots: {
     flexDirection: 'row',
-
     alignItems: 'center',
-
     gap: 5,
   },
 
   typingDot: {
     width: 6,
     height: 6,
-
     borderRadius: 3,
-
     opacity: 0.7,
   },
 
   retryButton: {
     alignSelf: 'center',
-
     flexDirection: 'row',
-
     alignItems: 'center',
-
     gap: 7,
-
     borderWidth: 1,
-
     borderRadius: 18,
-
     paddingHorizontal: 14,
     paddingVertical: 8,
-
     marginTop: 5,
   },
 
   retryText: {
     fontSize: 12,
-
     fontWeight: '700',
   },
 
   scrollButtonWrapper: {
     position: 'absolute',
-
     right: 16,
     bottom: 14,
-
     zIndex: 20,
   },
 
   scrollButton: {
     width: 38,
     height: 38,
-
     borderRadius: 19,
-
     alignItems: 'center',
     justifyContent: 'center',
-
     elevation: 6,
   },
 
   scrollArrow: {
     color: '#FFFFFF',
-
     fontSize: 20,
-
     fontWeight: '800',
-
     marginTop: -3,
   },
 
   inputArea: {
     width: '100%',
-
     paddingTop: 8,
-
     position: 'relative',
-
     zIndex: 100,
-
     elevation: 100,
   },
 
   inputContainer: {
     minHeight: 58,
-
     borderRadius: 29,
-
     borderWidth: 1,
-
     flexDirection: 'row',
-
     alignItems: 'center',
-
     paddingHorizontal: 6,
   },
 
   input: {
     flex: 1,
-
     maxHeight: 110,
-
     minHeight: 44,
-
     fontSize: 15,
-
     paddingHorizontal: 8,
-
     paddingTop: 11,
-
     paddingBottom: 10,
   },
 
   micButton: {
     width: 42,
     height: 46,
-
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1850,9 +1577,7 @@ const styles = StyleSheet.create({
   sendButton: {
     width: 44,
     height: 44,
-
     borderRadius: 22,
-
     alignItems: 'center',
     justifyContent: 'center',
   },

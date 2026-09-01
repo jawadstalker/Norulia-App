@@ -62,7 +62,7 @@ const MOVIE_API_URL =
   'https://roundness-stuck-stretch.ngrok-free.dev';
 
 const MOVIE_API_KEY =
-  'REPLACE_WITH_CURRENT_API_KEY';
+  '3IhN7vwOx7PIS5SxD5zBzezSVih_Yb6aBheAMq9ypaQKPB3G';
 
 const AUTH_HEADER_NAME =
   'X-API-Key';
@@ -612,15 +612,7 @@ async function requestMovieAPI(
   const endpoint =
     `${MOVIE_API_URL.replace(/\/+$/, '')}/recommend`;
 
-  if (
-    !MOVIE_API_KEY ||
-    MOVIE_API_KEY ===
-      'REPLACE_WITH_CURRENT_API_KEY'
-  ) {
-    throw new Error(
-      'Movie recommendation API key is not configured.'
-    );
-  }
+
 
   console.log(
     '[MovieRecommendation] Request:',
