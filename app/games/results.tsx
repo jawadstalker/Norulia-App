@@ -1,4 +1,3 @@
-
 import React, {
   useCallback,
   useEffect,
@@ -25,19 +24,18 @@ import {
   Clock,
   Download,
   Eye,
+  Film,
   Gamepad2,
   Target,
   TrendingUp,
   Trophy,
   Zap,
+  AlertCircle,
+  Sparkles,
 } from 'lucide-react-native';
 
 import { useRouter } from 'expo-router';
 
-// IMPORTANT:
-// This project uses expo-file-system ~18.x.
-// The legacy API is used here for compatibility with the
-// existing Expo SDK 53 project.
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
@@ -55,9 +53,37 @@ import {
   GameResult,
 } from './gameResults';
 
+import {
+  getMovieRecommendations,
+  MovieRecommendation,
+} from '../../services/movieRecommendation';
+
 type Props = {
   fromGame?: boolean;
 };
+
+/*
+|--------------------------------------------------------------------------
+| Games that form one complete cognitive round
+|--------------------------------------------------------------------------
+|
+| These are the games currently available in app/games.
+|
+| A recommendation request is only sent after the user has
+| completed at least one result for every game below.
+|
+*/
+const REQUIRED_GAME_IDS = [
+  'anologram',
+  'bilingual-sequence',
+  'relaxe',
+  'word',
+  'last-survival',
+  'memory-challenge',
+  'size-discrimination',
+  'stroop',
+  'visual-flow',
+];
 
 const GAME_ICONS: Record<
   string,
@@ -67,7 +93,56 @@ const GAME_ICONS: Record<
   'memory-challenge': Brain,
   'reaction-test': Zap,
   'pattern-match': Target,
+  'last-survival': Trophy,
+  'size-discrimination': Target,
+  'stroop': Zap,
+  'anologram': Brain,
+  'bilingual-sequence': Gamepad2,
+  'relaxe': Brain,
+  'word': Brain,
 };
+
+function normalizeGameId(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/_/g, '-')
+    .replace(/\s+/g, '-');
+}
+
+function getMovieGenres(
+  genres: string | undefined
+): string[] {
+  if (!genres) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(genres);
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .map((item) => item?.name)
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function formatSimilarity(
+  similarity: number
+) {
+  if (!Number.isFinite(similarity)) {
+    return '--';
+  }
+
+  return `${Math.round(
+    Math.max(0, Math.min(1, similarity)) * 100
+  )}%`;
+}
 
 export default function GameResultsScreen({
   fromGame,
@@ -89,15 +164,40 @@ export default function GameResultsScreen({
   const [exporting, setExporting] =
     useState(false);
 
+  const [
+    movieRecommendations,
+    setMovieRecommendations,
+  ] = useState<MovieRecommendation[]>([]);
+
+  const [
+    movieLoading,
+    setMovieLoading,
+  ] = useState(false);
+
+  const [
+    movieError,
+    setMovieError,
+  ] = useState<string | null>(null);
+
+  const [
+    movieRequestCompleted,
+    setMovieRequestCompleted,
+  ] = useState(false);
+
   const text = useMemo(
     () =>
       language === 'fa'
         ? {
             title: 'نتایج عملکرد',
-            subtitle: 'تحلیل عملکرد بازی‌های شما',
 
-            latest: 'آخرین نتیجه',
-            allResults: 'سابقه بازی‌ها',
+            subtitle:
+              'تحلیل عملکرد بازی‌های شما',
+
+            latest:
+              'آخرین نتیجه',
+
+            allResults:
+              'سابقه بازی‌ها',
 
             noResults:
               'هنوز نتیجه‌ای ثبت نشده است.',
@@ -105,19 +205,27 @@ export default function GameResultsScreen({
             noResultsDescription:
               'یک بازی انجام دهید تا اطلاعات عملکرد شما اینجا نمایش داده شود.',
 
-            startGame: 'شروع یک بازی',
+            startGame:
+              'شروع یک بازی',
 
-            score: 'امتیاز',
-            accuracy: 'دقت',
+            score:
+              'امتیاز',
+
+            accuracy:
+              'دقت',
+
             responseTime:
               'زمان پاسخ',
+
             performance:
               'عملکرد',
 
             excellent:
               'عملکرد عالی',
+
             good:
               'عملکرد خوب',
+
             needsPractice:
               'نیاز به تمرین',
 
@@ -190,25 +298,66 @@ export default function GameResultsScreen({
             exportEmpty:
               'هنوز داده‌ای برای دانلود وجود ندارد.',
 
-            exportUnavailable:
-              'امکان ذخیره فایل روی این دستگاه در دسترس نیست.',
-
-            chooseFolder:
-              'انتخاب محل ذخیره',
-
-            save:
-              'ذخیره',
-
             cancelled:
               'ذخیره فایل لغو شد.',
+
+            movieTitle:
+              'پیشنهاد فیلم برای شما',
+
+            movieSubtitle:
+              'بر اساس عملکرد شما در بازی‌های شناختی',
+
+            movieLoading:
+              'در حال تحلیل نتایج و پیدا کردن فیلم‌های مناسب...',
+
+            movieWaiting:
+              'برای دریافت پیشنهاد فیلم، ابتدا یک دور کامل بازی‌ها را انجام دهید.',
+
+            movieError:
+              'دریافت پیشنهاد فیلم در حال حاضر امکان‌پذیر نیست.',
+
+            movieRetry:
+              'تلاش دوباره',
+
+            movieEmpty:
+              'هنوز فیلمی برای پیشنهاد پیدا نشد.',
+
+            movieSimilarity:
+              'تناسب',
+
+            movieOverview:
+              'درباره فیلم',
+
+            movieGenres:
+              'ژانر',
+
+            movieId:
+              'شناسه فیلم',
+
+            recommendationReady:
+              'پیشنهادهای شخصی‌سازی‌شده',
+
+            gamesRequired:
+              'بازی باقی‌مانده',
+
+            allGamesCompleted:
+              'یک دور کامل بازی‌ها تکمیل شده است.',
+
+            noConnection:
+              'اتصال به سرویس پیشنهاد فیلم برقرار نشد.',
           }
         : {
-            title: 'Performance Results',
+            title:
+              'Performance Results',
+
             subtitle:
               'Your game performance analysis',
 
-            latest: 'Latest Result',
-            allResults: 'Game History',
+            latest:
+              'Latest Result',
+
+            allResults:
+              'Game History',
 
             noResults:
               'No results yet.',
@@ -216,19 +365,27 @@ export default function GameResultsScreen({
             noResultsDescription:
               'Complete a game to see your performance data here.',
 
-            startGame: 'Start a Game',
+            startGame:
+              'Start a Game',
 
-            score: 'Score',
-            accuracy: 'Accuracy',
+            score:
+              'Score',
+
+            accuracy:
+              'Accuracy',
+
             responseTime:
               'Response Time',
+
             performance:
               'Performance',
 
             excellent:
               'Excellent Performance',
+
             good:
               'Good Performance',
+
             needsPractice:
               'Needs Practice',
 
@@ -301,20 +458,62 @@ export default function GameResultsScreen({
             exportEmpty:
               'There is no data to download yet.',
 
-            exportUnavailable:
-              'File saving is not available on this device.',
-
-            chooseFolder:
-              'Choose Save Location',
-
-            save:
-              'Save',
-
             cancelled:
               'File saving was cancelled.',
+
+            movieTitle:
+              'Movies Recommended For You',
+
+            movieSubtitle:
+              'Based on your cognitive game performance',
+
+            movieLoading:
+              'Analyzing your results and finding the best movies for you...',
+
+            movieWaiting:
+              'Complete one full round of games to receive movie recommendations.',
+
+            movieError:
+              'Movie recommendations are currently unavailable.',
+
+            movieRetry:
+              'Try Again',
+
+            movieEmpty:
+              'No movie recommendations were found.',
+
+            movieSimilarity:
+              'Match',
+
+            movieOverview:
+              'About the movie',
+
+            movieGenres:
+              'Genres',
+
+            movieId:
+              'Movie ID',
+
+            recommendationReady:
+              'Personalized Recommendations',
+
+            gamesRequired:
+              'games remaining',
+
+            allGamesCompleted:
+              'One complete round of games has been completed.',
+
+            noConnection:
+              'Could not connect to the movie recommendation service.',
           },
     [language]
   );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Load game results
+  |--------------------------------------------------------------------------
+  */
 
   const loadResults = useCallback(
     async () => {
@@ -322,12 +521,18 @@ export default function GameResultsScreen({
         const data =
           await getGameResults();
 
-        setResults(data);
+        setResults(
+          Array.isArray(data)
+            ? data
+            : []
+        );
       } catch (error) {
         console.warn(
-          '[Results] Failed to load:',
+          '[Results] Failed to load results:',
           error
         );
+
+        setResults([]);
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -345,22 +550,166 @@ export default function GameResultsScreen({
     loadResults();
   }, [loadResults]);
 
-  /**
-   * Create the JSON payload.
-   */
+  /*
+  |--------------------------------------------------------------------------
+  | Complete game round detection
+  |--------------------------------------------------------------------------
+  */
+
+  const completedGameIds = useMemo(() => {
+    const set = new Set<string>();
+
+    results.forEach((result) => {
+      set.add(
+        normalizeGameId(
+          result.gameId
+        )
+      );
+    });
+
+    return set;
+  }, [results]);
+
+  const completedRequiredGames =
+    useMemo(() => {
+      return REQUIRED_GAME_IDS.filter(
+        (gameId) =>
+          completedGameIds.has(
+            normalizeGameId(
+              gameId
+            )
+          )
+      );
+    }, [completedGameIds]);
+
+  const remainingRequiredGames =
+    useMemo(() => {
+      return Math.max(
+        0,
+        REQUIRED_GAME_IDS.length -
+          completedRequiredGames.length
+      );
+    }, [completedRequiredGames]);
+
+  const hasCompletedFullRound =
+    completedRequiredGames.length >=
+    REQUIRED_GAME_IDS.length;
+
+  /*
+  |--------------------------------------------------------------------------
+  | Movie recommendation request
+  |--------------------------------------------------------------------------
+  */
+
+  const requestMovieRecommendations =
+    useCallback(
+      async (
+        force = false
+      ) => {
+        if (
+          !hasCompletedFullRound &&
+          !force
+        ) {
+          return;
+        }
+
+        if (!results.length) {
+          return;
+        }
+
+        setMovieLoading(true);
+        setMovieError(null);
+
+        try {
+          /*
+           * Send ALL game sessions.
+           *
+           * The ML service itself builds the cognitive profile.
+           * We do not manually interpret the game results here.
+           */
+          const response =
+            await getMovieRecommendations(
+              results,
+              3
+            );
+
+          const recommendations =
+            Array.isArray(response)
+              ? response
+              : [];
+
+          setMovieRecommendations(
+            recommendations.slice(0, 3)
+          );
+
+          setMovieRequestCompleted(
+            true
+          );
+        } catch (error) {
+          console.warn(
+            '[MovieRecommendation] Request failed:',
+            error
+          );
+
+          setMovieRecommendations([]);
+          setMovieRequestCompleted(
+            false
+          );
+
+          setMovieError(
+            text.noConnection
+          );
+        } finally {
+          setMovieLoading(false);
+        }
+      },
+      [
+        hasCompletedFullRound,
+        results,
+        text.noConnection,
+      ]
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Automatically request recommendations when full round is complete
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
+    if (
+      hasCompletedFullRound &&
+      results.length &&
+      !movieRequestCompleted
+    ) {
+      requestMovieRecommendations();
+    }
+  }, [
+    hasCompletedFullRound,
+    results,
+    movieRequestCompleted,
+    requestMovieRecommendations,
+  ]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Export results
+  |--------------------------------------------------------------------------
+  */
+
   const createExportPayload =
     useCallback(() => {
       return {
         exportedAt:
           new Date().toISOString(),
-        count: results.length,
+
+        count:
+          results.length,
+
         results,
       };
     }, [results]);
 
-  /**
-   * Create a stable filename.
-   */
   const createExportFilename =
     useCallback(() => {
       const stamp =
@@ -371,13 +720,6 @@ export default function GameResultsScreen({
       return `norulia_game_results_${stamp}.json`;
     }, []);
 
-  /**
-   * WEB
-   *
-   * Use a real browser download instead of
-   * expo-sharing because expo-sharing's local-file
-   * support is limited on web.
-   */
   const exportOnWeb =
     useCallback(
       async (
@@ -391,7 +733,7 @@ export default function GameResultsScreen({
             'undefined'
         ) {
           throw new Error(
-            'Browser download API is unavailable.'
+            'Browser download API unavailable.'
           );
         }
 
@@ -405,7 +747,9 @@ export default function GameResultsScreen({
           );
 
         const url =
-          URL.createObjectURL(blob);
+          URL.createObjectURL(
+            blob
+          );
 
         try {
           const anchor =
@@ -414,7 +758,9 @@ export default function GameResultsScreen({
             );
 
           anchor.href = url;
-          anchor.download = filename;
+          anchor.download =
+            filename;
+
           anchor.style.display =
             'none';
 
@@ -429,22 +775,15 @@ export default function GameResultsScreen({
           );
         } finally {
           setTimeout(() => {
-            URL.revokeObjectURL(url);
+            URL.revokeObjectURL(
+              url
+            );
           }, 1000);
         }
       },
       []
     );
 
-  /**
-   * ANDROID
-   *
-   * Use Android's Storage Access Framework.
-   *
-   * This is important because simply writing into
-   * cacheDirectory does NOT create a user-visible
-   * downloaded file.
-   */
   const exportOnAndroid =
     useCallback(
       async (
@@ -455,7 +794,7 @@ export default function GameResultsScreen({
           !FileSystem.StorageAccessFramework
         ) {
           throw new Error(
-            'Android Storage Access Framework is unavailable.'
+            'Storage Access Framework unavailable.'
           );
         }
 
@@ -494,16 +833,6 @@ export default function GameResultsScreen({
       []
     );
 
-  /**
-   * IOS
-   *
-   * iOS does not expose an Android-style public
-   * Downloads folder through this API.
-   *
-   * We create a real file in the app's document
-   * directory and then open the native share/save
-   * sheet so the user can choose Files / Save to Files.
-   */
   const exportOnIOS =
     useCallback(
       async (
@@ -516,7 +845,7 @@ export default function GameResultsScreen({
 
         if (!baseDirectory) {
           throw new Error(
-            'No writable file directory is available.'
+            'No writable directory available.'
           );
         }
 
@@ -536,7 +865,7 @@ export default function GameResultsScreen({
           await Sharing.isAvailableAsync();
 
         if (!available) {
-          return fileUri;
+          return;
         }
 
         await Sharing.shareAsync(
@@ -544,21 +873,18 @@ export default function GameResultsScreen({
           {
             mimeType:
               'application/json',
+
             dialogTitle:
               text.exportData,
+
             UTI:
               'public.json',
           }
         );
-
-        return fileUri;
       },
       [text.exportData]
     );
 
-  /**
-   * Fallback for other native platforms.
-   */
   const exportWithSharing =
     useCallback(
       async (
@@ -571,7 +897,7 @@ export default function GameResultsScreen({
 
         if (!baseDirectory) {
           throw new Error(
-            'No writable file directory is available.'
+            'No writable directory available.'
           );
         }
 
@@ -592,7 +918,7 @@ export default function GameResultsScreen({
 
         if (!available) {
           throw new Error(
-            'File sharing is unavailable.'
+            'Sharing unavailable.'
           );
         }
 
@@ -601,21 +927,18 @@ export default function GameResultsScreen({
           {
             mimeType:
               'application/json',
+
             dialogTitle:
               text.exportData,
+
             UTI:
               'public.json',
           }
         );
-
-        return true;
       },
       [text.exportData]
     );
 
-  /**
-   * Main export function.
-   */
   const exportResults =
     useCallback(
       async () => {
@@ -628,6 +951,7 @@ export default function GameResultsScreen({
             text.exportData,
             text.exportEmpty
           );
+
           return;
         }
 
@@ -647,11 +971,9 @@ export default function GameResultsScreen({
           const filename =
             createExportFilename();
 
-          /*
-           * WEB
-           */
           if (
-            Platform.OS === 'web'
+            Platform.OS ===
+            'web'
           ) {
             await exportOnWeb(
               json,
@@ -661,11 +983,9 @@ export default function GameResultsScreen({
             return;
           }
 
-          /*
-           * ANDROID
-           */
           if (
-            Platform.OS === 'android'
+            Platform.OS ===
+            'android'
           ) {
             const saved =
               await exportOnAndroid(
@@ -690,11 +1010,9 @@ export default function GameResultsScreen({
             return;
           }
 
-          /*
-           * IOS
-           */
           if (
-            Platform.OS === 'ios'
+            Platform.OS ===
+            'ios'
           ) {
             await exportOnIOS(
               json,
@@ -704,9 +1022,6 @@ export default function GameResultsScreen({
             return;
           }
 
-          /*
-           * Fallback
-           */
           await exportWithSharing(
             json,
             filename
@@ -738,192 +1053,143 @@ export default function GameResultsScreen({
       ]
     );
 
-  const latest =
-    results.length > 0
-      ? results[results.length - 1]
-      : null;
-
   /*
-   * Flatten all metrics from all games.
-   *
-   * If the same metric exists in multiple
-   * sessions, only the latest value is used
-   * for the profile.
-   */
-  const latestMetrics =
-    useMemo(() => {
-      const map =
-        new Map<
-          string,
-          GameMetric
-        >();
+  |--------------------------------------------------------------------------
+  | Helpers
+  |--------------------------------------------------------------------------
+  */
 
-      results.forEach(
-        result => {
-          result.metrics.forEach(
-            metric => {
-              map.set(
-                metric.id,
-                metric
-              );
-            }
-          );
-        }
-      );
-
-      return Array.from(
-        map.values()
-      );
-    }, [results]);
-
-  /*
-   * Overall performance.
-   */
-  const overallScore =
-    useMemo(() => {
-      if (
-        !latestMetrics.length
-      ) {
-        return 0;
-      }
-
-      const total =
-        latestMetrics.reduce(
-          (
-            sum,
-            metric
-          ) =>
-            sum +
-            metric.value,
-          0
+  const getGameIcon =
+    useCallback(
+      (gameId: string) => {
+        return (
+          GAME_ICONS[
+            normalizeGameId(
+              gameId
+            )
+          ] || Gamepad2
         );
+      },
+      []
+    );
 
-      return Math.round(
-        total /
-          latestMetrics.length
-      );
-    }, [latestMetrics]);
+  const getPerformanceLabel =
+    useCallback(
+      (score?: number) => {
+        if (
+          typeof score !==
+          'number'
+        ) {
+          return text.good;
+        }
 
-  const strongestMetric =
-    useMemo(() => {
-      if (
-        !latestMetrics.length
-      ) {
-        return null;
-      }
+        if (score >= 80) {
+          return text.excellent;
+        }
 
-      return [
-        ...latestMetrics,
-      ].sort(
-        (a, b) =>
-          b.value -
-          a.value
-      )[0];
-    }, [latestMetrics]);
+        if (score >= 60) {
+          return text.good;
+        }
 
-  const weakestMetric =
-    useMemo(() => {
-      if (
-        !latestMetrics.length
-      ) {
-        return null;
-      }
-
-      return [
-        ...latestMetrics,
-      ].sort(
-        (a, b) =>
-          a.value -
-          b.value
-      )[0];
-    }, [latestMetrics]);
-
-  const getPerformanceText =
-    (value: number) => {
-      if (value >= 85) {
-        return text.excellent;
-      }
-
-      if (value >= 60) {
-        return text.good;
-      }
-
-      return text.needsPractice;
-    };
-
-  const getGameName =
-    (result: GameResult) => {
-      if (
-        result.gameId ===
-        'visual-flow'
-      ) {
-        return text.visualFlow;
-      }
-
-      return result.gameName;
-    };
-
-  const getIcon =
-    (gameId: string) => {
-      return (
-        GAME_ICONS[gameId] ||
-        Gamepad2
-      );
-    };
+        return text.needsPractice;
+      },
+      [text]
+    );
 
   const formatDate =
-    (timestamp: number) => {
-      const date =
-        new Date(timestamp);
+    useCallback(
+      (timestamp: number) => {
+        const date =
+          new Date(timestamp);
 
-      const now =
-        new Date();
+        const now =
+          new Date();
 
-      const diff =
-        now.getTime() -
-        date.getTime();
+        const diff =
+          Math.floor(
+            (now.getTime() -
+              date.getTime()) /
+              86400000
+          );
 
-      const day =
-        24 *
-        60 *
-        60 *
-        1000;
+        if (diff === 0) {
+          return text.today;
+        }
 
-      if (diff < day) {
-        return text.today;
-      }
+        if (diff === 1) {
+          return text.yesterday;
+        }
 
-      if (diff < day * 2) {
-        return text.yesterday;
-      }
-
-      const days =
-        Math.floor(
-          diff / day
-        );
-
-      return `${days} ${text.daysAgo}`;
-    };
-
-  const goBack = () => {
-    if (
-      router.canGoBack()
-    ) {
-      router.back();
-    } else {
-      router.replace(
-        '/(tabs)/psycho'
-      );
-    }
-  };
-
-  const openGames = () => {
-    router.replace(
-      '/(tabs)/psycho'
+        return `${diff} ${text.daysAgo}`;
+      },
+      [text]
     );
-  };
+
+  const getMetricValue =
+    useCallback(
+      (
+        metrics: GameMetric[],
+        ids: string[]
+      ) => {
+        const metric =
+          metrics.find(
+            (item) =>
+              ids.includes(
+                item.id
+              )
+          );
+
+        return metric;
+      },
+      []
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Loading state
+  |--------------------------------------------------------------------------
+  */
 
   if (loading) {
+    return (
+      <View
+        style={[
+          styles.loadingContainer,
+          {
+            backgroundColor:
+              colors.background,
+          },
+        ]}
+      >
+        <ActivityIndicator
+          size="large"
+          color={colors.primary}
+        />
+
+        <Text
+          style={[
+            styles.loadingText,
+            {
+              color:
+                colors.text,
+            },
+          ]}
+        >
+          {language === 'fa'
+            ? 'در حال بارگذاری نتایج...'
+            : 'Loading results...'}
+        </Text>
+      </View>
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Empty state
+  |--------------------------------------------------------------------------
+  */
+
+  if (!results.length) {
     return (
       <View
         style={[
@@ -934,29 +1200,96 @@ export default function GameResultsScreen({
           },
         ]}
       >
-        <Header
-          title={text.title}
-          subtitle={text.subtitle}
-          onBack={goBack}
-          colors={colors}
-          isRTL={isRTL}
-        />
-
         <View
-          style={
-            styles.loadingContainer
-          }
+          style={[
+            styles.emptyContainer,
+            {
+              direction:
+                isRTL
+                  ? 'rtl'
+                  : 'ltr',
+            },
+          ]}
         >
-          <ActivityIndicator
-            size="large"
-            color={
-              colors.primary
+          <View
+            style={[
+              styles.emptyIcon,
+              {
+                backgroundColor:
+                  colors.primary +
+                  '18',
+              },
+            ]}
+          >
+            <Gamepad2
+              size={42}
+              color={
+                colors.primary
+              }
+            />
+          </View>
+
+          <Text
+            style={[
+              styles.emptyTitle,
+              {
+                color:
+                  colors.text,
+              },
+            ]}
+          >
+            {text.noResults}
+          </Text>
+
+          <Text
+            style={[
+              styles.emptyDescription,
+              {
+                color:
+                  colors.textSecondary,
+                textAlign:
+                  isRTL
+                    ? 'right'
+                    : 'center',
+              },
+            ]}
+          >
+            {
+              text.noResultsDescription
             }
-          />
+          </Text>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() =>
+              router.back()
+            }
+            style={[
+              styles.primaryButton,
+              {
+                backgroundColor:
+                  colors.primary,
+              },
+            ]}
+          >
+            <Text
+              style={
+                styles.primaryButtonText
+              }
+            >
+              {text.startGame}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Main screen
+  |--------------------------------------------------------------------------
+  */
 
   return (
     <View
@@ -968,25 +1301,7 @@ export default function GameResultsScreen({
         },
       ]}
     >
-      <Header
-        title={text.title}
-        subtitle={text.subtitle}
-        onBack={goBack}
-        onExport={
-          exportResults
-        }
-        exporting={
-          exporting
-        }
-        colors={colors}
-        isRTL={isRTL}
-      />
-
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={
-          styles.content
-        }
         showsVerticalScrollIndicator={
           false
         }
@@ -1003,102 +1318,933 @@ export default function GameResultsScreen({
             }
           />
         }
+        contentContainerStyle={
+          styles.scrollContent
+        }
       >
-        {results.length ===
-        0 ? (
-          <EmptyState
-            text={text}
-            colors={colors}
-            onStart={
-              openGames
+        {/* HEADER */}
+
+        <View
+          style={[
+            styles.header,
+            {
+              flexDirection:
+                isRTL
+                  ? 'row-reverse'
+                  : 'row',
+            },
+          ]}
+        >
+          <TouchableOpacity
+            onPress={() =>
+              router.back()
             }
-          />
-        ) : (
-          <>
-            {/* LATEST RESULT */}
+            activeOpacity={0.8}
+            style={[
+              styles.iconButton,
+              {
+                backgroundColor:
+                  colors.card,
+                borderColor:
+                  colors.border,
+              },
+            ]}
+          >
+            <ArrowLeft
+              size={21}
+              color={
+                colors.text
+              }
+            />
+          </TouchableOpacity>
 
-            {latest && (
-              <View>
-                <SectionHeader
-                  title={
-                    text.latest
-                  }
-                  colors={
-                    colors
-                  }
-                  isRTL={
-                    isRTL
-                  }
-                />
+          <View
+            style={[
+              styles.headerTextContainer,
+              {
+                alignItems:
+                  isRTL
+                    ? 'flex-end'
+                    : 'flex-start',
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.title,
+                {
+                  color:
+                    colors.text,
+                },
+              ]}
+            >
+              {text.title}
+            </Text>
 
-                <LatestResult
-                  result={
-                    latest
-                  }
-                  title={
-                    getGameName(
-                      latest
-                    )
-                  }
-                  performanceText={getPerformanceText(
-                    latest
-                      .metrics
-                      .length
-                      ? Math.round(
-                          latest.metrics.reduce(
-                            (
-                              sum,
-                              metric
-                            ) =>
-                              sum +
-                              metric.value,
-                            0
-                          ) /
-                            latest
-                              .metrics
-                              .length
-                        )
-                      : 0
-                  )}
-                  colors={
-                    colors
-                  }
-                  isRTL={
+            <Text
+              style={[
+                styles.subtitle,
+                {
+                  color:
+                    colors.textSecondary,
+                  textAlign:
                     isRTL
-                  }
-                  text={
-                    text
-                  }
-                  getIcon={
-                    getIcon
+                      ? 'right'
+                      : 'left',
+                },
+              ]}
+            >
+              {text.subtitle}
+            </Text>
+          </View>
+        </View>
+
+        {/* OVERALL SUMMARY */}
+
+        <View
+          style={[
+            styles.summaryCard,
+            {
+              backgroundColor:
+                colors.card,
+              borderColor:
+                colors.border,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.summaryHeader,
+              {
+                flexDirection:
+                  isRTL
+                    ? 'row-reverse'
+                    : 'row',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.summaryIcon,
+                {
+                  backgroundColor:
+                    colors.primary +
+                    '18',
+                },
+              ]}
+            >
+              <TrendingUp
+                size={22}
+                color={
+                  colors.primary
+                }
+              />
+            </View>
+
+            <View
+              style={[
+                styles.summaryHeaderText,
+                {
+                  alignItems:
+                    isRTL
+                      ? 'flex-end'
+                      : 'flex-start',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.summaryTitle,
+                  {
+                    color:
+                      colors.text,
+                  },
+                ]}
+              >
+                {
+                  text.cognitiveProfile
+                }
+              </Text>
+
+              <Text
+                style={[
+                  styles.summarySubtitle,
+                  {
+                    color:
+                      colors.textSecondary,
+                  },
+                ]}
+              >
+                {results.length}{' '}
+                {text.gamesPlayed}
+              </Text>
+            </View>
+          </View>
+
+          <View
+            style={[
+              styles.summaryStats,
+              {
+                flexDirection:
+                  isRTL
+                    ? 'row-reverse'
+                    : 'row',
+              },
+            ]}
+          >
+            <View
+              style={styles.summaryStat}
+            >
+              <Text
+                style={[
+                  styles.summaryStatValue,
+                  {
+                    color:
+                      colors.text,
+                  },
+                ]}
+              >
+                {
+                  completedRequiredGames.length
+                }
+              </Text>
+
+              <Text
+                style={[
+                  styles.summaryStatLabel,
+                  {
+                    color:
+                      colors.textSecondary,
+                  },
+                ]}
+              >
+                {text.gamesPlayed}
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.summaryDivider,
+                {
+                  backgroundColor:
+                    colors.border,
+                },
+              ]}
+            />
+
+            <View
+              style={styles.summaryStat}
+            >
+              <Text
+                style={[
+                  styles.summaryStatValue,
+                  {
+                    color:
+                      hasCompletedFullRound
+                        ? colors.success
+                        : colors.primary,
+                  },
+                ]}
+              >
+                {
+                  hasCompletedFullRound
+                    ? '✓'
+                    : remainingRequiredGames
+                }
+              </Text>
+
+              <Text
+                style={[
+                  styles.summaryStatLabel,
+                  {
+                    color:
+                      colors.textSecondary,
+                  },
+                ]}
+              >
+                {
+                  hasCompletedFullRound
+                    ? text.completed
+                    : text.gamesRequired
+                }
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* MOVIE RECOMMENDATIONS */}
+
+        <View
+          style={[
+            styles.movieSection,
+            {
+              backgroundColor:
+                colors.card,
+              borderColor:
+                colors.border,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.movieHeader,
+              {
+                flexDirection:
+                  isRTL
+                    ? 'row-reverse'
+                    : 'row',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.movieHeaderIcon,
+                {
+                  backgroundColor:
+                    colors.primary +
+                    '18',
+                },
+              ]}
+            >
+              <Film
+                size={23}
+                color={
+                  colors.primary
+                }
+              />
+            </View>
+
+            <View
+              style={[
+                styles.movieHeaderText,
+                {
+                  alignItems:
+                    isRTL
+                      ? 'flex-end'
+                      : 'flex-start',
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.movieTitleRow,
+                  {
+                    flexDirection:
+                      isRTL
+                        ? 'row-reverse'
+                        : 'row',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.movieSectionTitle,
+                    {
+                      color:
+                        colors.text,
+                    },
+                  ]}
+                >
+                  {text.movieTitle}
+                </Text>
+
+                <Sparkles
+                  size={17}
+                  color={
+                    colors.primary
                   }
                 />
               </View>
+
+              <Text
+                style={[
+                  styles.movieSectionSubtitle,
+                  {
+                    color:
+                      colors.textSecondary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {
+                  text.movieSubtitle
+                }
+              </Text>
+            </View>
+          </View>
+
+          {/* WAITING */}
+
+          {!hasCompletedFullRound &&
+            !movieLoading && (
+              <View
+                style={[
+                  styles.movieMessage,
+                  {
+                    backgroundColor:
+                      colors.background,
+                  },
+                ]}
+              >
+                <Gamepad2
+                  size={24}
+                  color={
+                    colors.primary
+                  }
+                />
+
+                <Text
+                  style={[
+                    styles.movieMessageText,
+                    {
+                      color:
+                        colors.textSecondary,
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
+                  ]}
+                >
+                  {
+                    text.movieWaiting
+                  }
+                </Text>
+              </View>
             )}
 
-            {/* OVERALL PROFILE */}
+          {/* LOADING */}
 
-            {latestMetrics.length >
-              0 && (
-              <View>
-                <SectionHeader
-                  title={
-                    text.cognitiveProfile
-                  }
-                  colors={
-                    colors
-                  }
-                  isRTL={
-                    isRTL
+          {movieLoading && (
+            <View
+              style={
+                styles.movieLoading
+              }
+            >
+              <ActivityIndicator
+                size="small"
+                color={
+                  colors.primary
+                }
+              />
+
+              <Text
+                style={[
+                  styles.movieLoadingText,
+                  {
+                    color:
+                      colors.textSecondary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
+                  },
+                ]}
+              >
+                {
+                  text.movieLoading
+                }
+              </Text>
+            </View>
+          )}
+
+          {/* ERROR */}
+
+          {!movieLoading &&
+            movieError && (
+              <View
+                style={[
+                  styles.movieError,
+                  {
+                    backgroundColor:
+                      colors.background,
+                    borderColor:
+                      colors.border,
+                  },
+                ]}
+              >
+                <AlertCircle
+                  size={23}
+                  color={
+                    colors.error ||
+                    '#ef4444'
                   }
                 />
 
                 <View
+                  style={
+                    styles.movieErrorContent
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.movieErrorText,
+                      {
+                        color:
+                          colors.text,
+                        textAlign:
+                          isRTL
+                            ? 'right'
+                            : 'left',
+                      },
+                    ]}
+                  >
+                    {
+                      text.movieError
+                    }
+                  </Text>
+
+                  <TouchableOpacity
+                    onPress={() =>
+                      requestMovieRecommendations(
+                        true
+                      )
+                    }
+                    activeOpacity={
+                      0.8
+                    }
+                    style={[
+                      styles.retryButton,
+                      {
+                        backgroundColor:
+                          colors.primary,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={
+                        styles.retryButtonText
+                      }
+                    >
+                      {
+                        text.movieRetry
+                      }
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+          {/* MOVIES */}
+
+          {!movieLoading &&
+            !movieError &&
+            movieRecommendations.length >
+              0 && (
+              <View
+                style={
+                  styles.moviesList
+                }
+              >
+                {movieRecommendations
+                  .slice(0, 3)
+                  .map(
+                    (
+                      movie,
+                      index
+                    ) => {
+                      const genres =
+                        getMovieGenres(
+                          movie.genres
+                        );
+
+                      return (
+                        <View
+                          key={`${movie.movieId}-${index}`}
+                          style={[
+                            styles.movieCard,
+                            {
+                              backgroundColor:
+                                colors.background,
+                              borderColor:
+                                colors.border,
+                            },
+                          ]}
+                        >
+                          <View
+                            style={[
+                              styles.movieNumber,
+                              {
+                                backgroundColor:
+                                  colors.primary,
+                              },
+                            ]}
+                          >
+                            <Text
+                              style={
+                                styles.movieNumberText
+                              }
+                            >
+                              {index +
+                                1}
+                            </Text>
+                          </View>
+
+                          <View
+                            style={
+                              styles.movieContent
+                            }
+                          >
+                            <View
+                              style={[
+                                styles.movieNameRow,
+                                {
+                                  flexDirection:
+                                    isRTL
+                                      ? 'row-reverse'
+                                      : 'row',
+                                },
+                              ]}
+                            >
+                              <Text
+                                numberOfLines={
+                                  2
+                                }
+                                style={[
+                                  styles.movieName,
+                                  {
+                                    color:
+                                      colors.text,
+                                    textAlign:
+                                      isRTL
+                                        ? 'right'
+                                        : 'left',
+                                  },
+                                ]}
+                              >
+                                {
+                                  movie.title
+                                }
+                              </Text>
+
+                              <View
+                                style={[
+                                  styles.matchBadge,
+                                  {
+                                    backgroundColor:
+                                      colors.primary +
+                                      '18',
+                                  },
+                                ]}
+                              >
+                                <Text
+                                  style={[
+                                    styles.matchText,
+                                    {
+                                      color:
+                                        colors.primary,
+                                    },
+                                  ]}
+                                >
+                                  {formatSimilarity(
+                                    movie.similarity
+                                  )}
+                                </Text>
+                              </View>
+                            </View>
+
+                            {genres.length >
+                              0 && (
+                              <View
+                                style={[
+                                  styles.genreRow,
+                                  {
+                                    flexDirection:
+                                      isRTL
+                                        ? 'row-reverse'
+                                        : 'row',
+                                  },
+                                ]}
+                              >
+                                {genres
+                                  .slice(
+                                    0,
+                                    3
+                                  )
+                                  .map(
+                                    (
+                                      genre
+                                    ) => (
+                                      <View
+                                        key={
+                                          genre
+                                        }
+                                        style={[
+                                          styles.genreChip,
+                                          {
+                                            backgroundColor:
+                                              colors.card,
+                                            borderColor:
+                                              colors.border,
+                                          },
+                                        ]}
+                                      >
+                                        <Text
+                                          style={[
+                                            styles.genreText,
+                                            {
+                                              color:
+                                                colors.textSecondary,
+                                            },
+                                          ]}
+                                        >
+                                          {
+                                            genre
+                                          }
+                                        </Text>
+                                      </View>
+                                    )
+                                  )}
+                              </View>
+                            )}
+
+                            <Text
+                              style={[
+                                styles.movieOverview,
+                                {
+                                  color:
+                                    colors.textSecondary,
+                                  textAlign:
+                                    isRTL
+                                      ? 'right'
+                                      : 'left',
+                                },
+                              ]}
+                              numberOfLines={
+                                4
+                              }
+                            >
+                              {
+                                movie.overview
+                              }
+                            </Text>
+
+                            <View
+                              style={[
+                                styles.movieMeta,
+                                {
+                                  flexDirection:
+                                    isRTL
+                                      ? 'row-reverse'
+                                      : 'row',
+                                },
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.movieMetaText,
+                                  {
+                                    color:
+                                      colors.textSecondary,
+                                  },
+                                ]}
+                              >
+                                {
+                                  text.movieId
+                                }
+                                :{' '}
+                                {
+                                  movie.movieId
+                                }
+                              </Text>
+
+                              <Text
+                                style={[
+                                  styles.movieMetaText,
+                                  {
+                                    color:
+                                      colors.primary,
+                                  },
+                                ]}
+                              >
+                                {
+                                  text.movieSimilarity
+                                }{' '}
+                                {formatSimilarity(
+                                  movie.similarity
+                                )}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                      );
+                    }
+                  )}
+              </View>
+            )}
+
+          {/* EMPTY */}
+
+          {!movieLoading &&
+            !movieError &&
+            hasCompletedFullRound &&
+            movieRequestCompleted &&
+            movieRecommendations.length ===
+              0 && (
+              <View
+                style={
+                  styles.movieMessage
+                }
+              >
+                <Film
+                  size={24}
+                  color={
+                    colors.primary
+                  }
+                />
+
+                <Text
                   style={[
-                    styles.overallCard,
+                    styles.movieMessageText,
+                    {
+                      color:
+                        colors.textSecondary,
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
+                    },
+                  ]}
+                >
+                  {
+                    text.movieEmpty
+                  }
+                </Text>
+              </View>
+            )}
+        </View>
+
+        {/* EXPORT BUTTON */}
+
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={
+            exportResults
+          }
+          disabled={exporting}
+          style={[
+            styles.exportButton,
+            {
+              backgroundColor:
+                colors.card,
+              borderColor:
+                colors.border,
+              opacity:
+                exporting
+                  ? 0.6
+                  : 1,
+              flexDirection:
+                isRTL
+                  ? 'row-reverse'
+                  : 'row',
+            },
+          ]}
+        >
+          {exporting ? (
+            <ActivityIndicator
+              size="small"
+              color={
+                colors.primary
+              }
+            />
+          ) : (
+            <Download
+              size={20}
+              color={
+                colors.primary
+              }
+            />
+          )}
+
+          <Text
+            style={[
+              styles.exportButtonText,
+              {
+                color:
+                  colors.text,
+              },
+            ]}
+          >
+            {text.exportData}
+          </Text>
+        </TouchableOpacity>
+
+        {/* GAME HISTORY */}
+
+        <View
+          style={[
+            styles.sectionHeader,
+            {
+              flexDirection:
+                isRTL
+                  ? 'row-reverse'
+                  : 'row',
+            },
+          ]}
+        >
+          <View>
+            <Text
+              style={[
+                styles.sectionTitle,
+                {
+                  color:
+                    colors.text,
+                  textAlign:
+                    isRTL
+                      ? 'right'
+                      : 'left',
+                },
+              ]}
+            >
+              {text.allResults}
+            </Text>
+          </View>
+        </View>
+
+        {results
+          .slice()
+          .reverse()
+          .map(
+            (
+              result,
+              index
+            ) => {
+              const Icon =
+                getGameIcon(
+                  result.gameId
+                );
+
+              const accuracy =
+                getMetricValue(
+                  result.metrics,
+                  [
+                    'memory_accuracy',
+                    'size_discrimination_accuracy',
+                    'visual_attention',
+                    'movement_accuracy',
+                  ]
+                );
+
+              const responseTime =
+                getMetricValue(
+                  result.metrics,
+                  [
+                    'average_response_time',
+                    'size_discrimination_reaction_time',
+                  ]
+                );
+
+              return (
+                <View
+                  key={`${result.gameId}-${result.timestamp}-${index}`}
+                  style={[
+                    styles.resultCard,
                     {
                       backgroundColor:
-                        colors.surface,
+                        colors.card,
                       borderColor:
                         colors.border,
                     },
@@ -1106,7 +2252,7 @@ export default function GameResultsScreen({
                 >
                   <View
                     style={[
-                      styles.overallTop,
+                      styles.resultHeader,
                       {
                         flexDirection:
                           isRTL
@@ -1117,18 +2263,16 @@ export default function GameResultsScreen({
                   >
                     <View
                       style={[
-                        styles.overallIcon,
+                        styles.gameIcon,
                         {
                           backgroundColor:
                             colors.primary +
-                            '15',
+                            '18',
                         },
                       ]}
                     >
-                      <Brain
-                        size={
-                          25
-                        }
+                      <Icon
+                        size={22}
                         color={
                           colors.primary
                         }
@@ -1136,1277 +2280,342 @@ export default function GameResultsScreen({
                     </View>
 
                     <View
-                      style={
-                        styles.overallInfo
-                      }
+                      style={[
+                        styles.resultHeaderText,
+                        {
+                          alignItems:
+                            isRTL
+                              ? 'flex-end'
+                              : 'flex-start',
+                        },
+                      ]}
                     >
                       <Text
                         style={[
-                          styles.overallLabel,
+                          styles.gameName,
                           {
                             color:
-                              colors.textSecondary,
-                            textAlign:
-                              isRTL
-                                ? 'right'
-                                : 'left',
+                              colors.text,
                           },
                         ]}
                       >
                         {
-                          text.overall
+                          result.gameName
                         }
                       </Text>
 
                       <Text
                         style={[
-                          styles.overallValue,
+                          styles.resultDate,
                           {
                             color:
-                              colors.text,
-                            textAlign:
-                              isRTL
-                                ? 'right'
-                                : 'left',
+                              colors.textSecondary,
                           },
                         ]}
                       >
                         {
-                          overallScore
+                          formatDate(
+                            result.timestamp
+                          )
                         }
+                      </Text>
+                    </View>
+
+                    {typeof result.score ===
+                      'number' && (
+                      <View
+                        style={[
+                          styles.scoreContainer,
+                          {
+                            backgroundColor:
+                              colors.primary +
+                              '18',
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.scoreValue,
+                            {
+                              color:
+                                colors.primary,
+                            },
+                          ]}
+                        >
+                          {
+                            result.score
+                          }
+                        </Text>
 
                         <Text
                           style={[
-                            styles.overallOutOf,
+                            styles.scoreLabel,
                             {
                               color:
                                 colors.textSecondary,
                             },
                           ]}
                         >
-                          {' '}
-                          / 100
+                          {
+                            text.score
+                          }
                         </Text>
-                      </Text>
-                    </View>
-
-                    <TrendingUp
-                      size={
-                        23
-                      }
-                      color={
-                        colors.primary
-                      }
-                    />
+                      </View>
+                    )}
                   </View>
+
+                  {typeof result.score ===
+                    'number' && (
+                    <Text
+                      style={[
+                        styles.performanceLabel,
+                        {
+                          color:
+                            colors.textSecondary,
+                          textAlign:
+                            isRTL
+                              ? 'right'
+                              : 'left',
+                        },
+                      ]}
+                    >
+                      {getPerformanceLabel(
+                        result.score
+                      )}
+                    </Text>
+                  )}
 
                   <View
                     style={[
-                      styles.progressTrack,
+                      styles.metricsRow,
                       {
-                        backgroundColor:
-                          colors.border,
+                        flexDirection:
+                          isRTL
+                            ? 'row-reverse'
+                            : 'row',
                       },
                     ]}
                   >
+                    {accuracy && (
+                      <View
+                        style={[
+                          styles.metricItem,
+                          {
+                            alignItems:
+                              isRTL
+                                ? 'flex-end'
+                                : 'flex-start',
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.metricLabel,
+                            {
+                              color:
+                                colors.textSecondary,
+                            },
+                          ]}
+                        >
+                          {
+                            text.accuracy
+                          }
+                        </Text>
+
+                        <Text
+                          style={[
+                            styles.metricValue,
+                            {
+                              color:
+                                colors.text,
+                            },
+                          ]}
+                        >
+                          {
+                            accuracy.value
+                          }
+                          {accuracy.unit ||
+                            ''}
+                        </Text>
+                      </View>
+                    )}
+
+                    {responseTime && (
+                      <View
+                        style={[
+                          styles.metricItem,
+                          {
+                            alignItems:
+                              isRTL
+                                ? 'flex-end'
+                                : 'flex-start',
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.metricLabel,
+                            {
+                              color:
+                                colors.textSecondary,
+                            },
+                          ]}
+                        >
+                          {
+                            text.responseTime
+                          }
+                        </Text>
+
+                        <Text
+                          style={[
+                            styles.metricValue,
+                            {
+                              color:
+                                colors.text,
+                            },
+                          ]}
+                        >
+                          {
+                            responseTime.value
+                          }{' '}
+                          {
+                            responseTime.unit ||
+                            text.milliseconds
+                          }
+                        </Text>
+                      </View>
+                    )}
+
                     <View
                       style={[
-                        styles.progressFill,
+                        styles.metricItem,
                         {
-                          width: `${Math.min(
-                            100,
-                            Math.max(
-                              0,
-                              overallScore
-                            )
-                          )}%`,
-                          backgroundColor:
-                            colors.primary,
+                          alignItems:
+                            isRTL
+                              ? 'flex-end'
+                              : 'flex-start',
                         },
                       ]}
-                    />
+                    >
+                      <Text
+                        style={[
+                          styles.metricLabel,
+                          {
+                            color:
+                              colors.textSecondary,
+                          },
+                        ]}
+                      >
+                        {
+                          text.metrics
+                        }
+                      </Text>
+
+                      <Text
+                        style={[
+                          styles.metricValue,
+                          {
+                            color:
+                              colors.text,
+                          },
+                        ]}
+                      >
+                        {
+                          result.metrics
+                            ?.length ||
+                          0
+                        }
+                      </Text>
+                    </View>
                   </View>
 
-                  <Text
-                    style={[
-                      styles.performanceText,
-                      {
-                        color:
-                          colors.primary,
-                        textAlign:
-                          isRTL
-                            ? 'right'
-                            : 'left',
-                      },
-                    ]}
-                  >
-                    {getPerformanceText(
-                      overallScore
-                    )}
-                  </Text>
-                </View>
+                  {result.metrics
+                    ?.length > 0 && (
+                    <View
+                      style={
+                        styles.detailsContainer
+                      }
+                    >
+                      {result.metrics.map(
+                        (
+                          metric
+                        ) => (
+                          <View
+                            key={
+                              metric.id
+                            }
+                            style={[
+                              styles.detailRow,
+                              {
+                                flexDirection:
+                                  isRTL
+                                    ? 'row-reverse'
+                                    : 'row',
+                                borderTopColor:
+                                  colors.border,
+                              },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.detailLabel,
+                                {
+                                  color:
+                                    colors.textSecondary,
+                                  textAlign:
+                                    isRTL
+                                      ? 'right'
+                                      : 'left',
+                                },
+                              ]}
+                            >
+                              {
+                                metric.label
+                              }
+                            </Text>
 
-                {strongestMetric && (
-                  <ProfileHighlight
-                    icon={
-                      <Trophy
-                        size={
-                          20
-                        }
-                        color={
-                          colors.primary
-                        }
-                      />
-                    }
-                    title={
-                      text.strongest
-                    }
-                    metric={
-                      strongestMetric
-                    }
-                    colors={
-                      colors
-                    }
-                    isRTL={
-                      isRTL
-                    }
-                  />
-                )}
-
-                {weakestMetric &&
-                  weakestMetric.id !==
-                    strongestMetric?.id && (
-                    <ProfileHighlight
-                      icon={
-                        <Target
-                          size={
-                            20
-                          }
-                          color={
-                            colors.primary
-                          }
-                        />
-                      }
-                      title={
-                        text.needsImprovement
-                      }
-                      metric={
-                        weakestMetric
-                      }
-                      colors={
-                        colors
-                      }
-                      isRTL={
-                        isRTL
-                      }
-                    />
+                            <Text
+                              style={[
+                                styles.detailValue,
+                                {
+                                  color:
+                                    colors.text,
+                                },
+                              ]}
+                            >
+                              {
+                                metric.value
+                              }{' '}
+                              {
+                                metric.unit ||
+                                ''
+                              }
+                            </Text>
+                          </View>
+                        )
+                      )}
+                    </View>
                   )}
-              </View>
-            )}
+                </View>
+              );
+            }
+          )}
 
-            {/* HISTORY */}
-
-            <SectionHeader
-              title={
-                text.allResults
-              }
-              colors={
-                colors
-              }
-              isRTL={
-                isRTL
-              }
-            />
-
-            {[...results]
-              .reverse()
-              .map(
-                (
-                  result,
-                  index
-                ) => (
-                  <HistoryCard
-                    key={`${result.gameId}-${result.timestamp}-${index}`}
-                    result={
-                      result
-                    }
-                    title={
-                      getGameName(
-                        result
-                      )
-                    }
-                    date={
-                      formatDate(
-                        result.timestamp
-                      )
-                    }
-                    colors={
-                      colors
-                    }
-                    isRTL={
-                      isRTL
-                    }
-                    text={
-                      text
-                    }
-                    getIcon={
-                      getIcon
-                    }
-                  />
-                )
-              )}
-
-            <TouchableOpacity
-              activeOpacity={
-                0.85
-              }
-              onPress={
-                openGames
-              }
-              style={[
-                styles.startButton,
-                {
-                  backgroundColor:
-                    colors.primary,
-                },
-              ]}
-            >
-              <Gamepad2
-                size={
-                  20
-                }
-                color="#FFFFFF"
-              />
-
-              <Text
-                style={
-                  styles.startButtonText
-                }
-              >
-                {
-                  text.startGame
-                }
-              </Text>
-            </TouchableOpacity>
-
-            <View
-              style={
-                styles.bottomSpace
-              }
-            />
-          </>
-        )}
+        <View
+          style={
+            styles.bottomSpacer
+          }
+        />
       </ScrollView>
     </View>
   );
 }
 
-/* ========================================================= */
-/* HEADER */
-/* ========================================================= */
-
-function Header({
-  title,
-  subtitle,
-  onBack,
-  onExport,
-  exporting,
-  colors,
-  isRTL,
-}: {
-  title: string;
-  subtitle: string;
-  onBack: () => void;
-  onExport?: () => void;
-  exporting?: boolean;
-  colors: any;
-  isRTL: boolean;
-}) {
-  return (
-    <View
-      style={[
-        styles.header,
-        {
-          borderBottomColor:
-            colors.border,
-        },
-      ]}
-    >
-      <TouchableOpacity
-        activeOpacity={
-          0.75
-        }
-        onPress={
-          onBack
-        }
-        style={[
-          styles.backButton,
-          {
-            backgroundColor:
-              colors.surface,
-            borderColor:
-              colors.border,
-          },
-        ]}
-      >
-        <ArrowLeft
-          size={
-            21
-          }
-          color={
-            colors.text
-          }
-          strokeWidth={
-            2.5
-          }
-        />
-      </TouchableOpacity>
-
-      <View
-        style={
-          styles.headerText
-        }
-      >
-        <Text
-          style={[
-            styles.headerTitle,
-            {
-              color:
-                colors.text,
-              textAlign:
-                isRTL
-                  ? 'right'
-                  : 'left',
-            },
-          ]}
-          numberOfLines={
-            1
-          }
-        >
-          {title}
-        </Text>
-
-        <Text
-          style={[
-            styles.headerSubtitle,
-            {
-              color:
-                colors.textSecondary,
-              textAlign:
-                isRTL
-                  ? 'right'
-                  : 'left',
-            },
-          ]}
-          numberOfLines={
-            1
-          }
-        >
-          {
-            subtitle
-          }
-        </Text>
-      </View>
-
-      {onExport ? (
-        <TouchableOpacity
-          activeOpacity={
-            0.75
-          }
-          onPress={
-            onExport
-          }
-          disabled={
-            exporting
-          }
-          accessibilityRole="button"
-          accessibilityLabel={
-            'Download game results'
-          }
-          style={[
-            styles.backButton,
-            {
-              backgroundColor:
-                colors.surface,
-              borderColor:
-                colors.border,
-              opacity:
-                exporting
-                  ? 0.5
-                  : 1,
-            },
-          ]}
-        >
-          {exporting ? (
-            <ActivityIndicator
-              size="small"
-              color={
-                colors.text
-              }
-            />
-          ) : (
-            <Download
-              size={
-                20
-              }
-              color={
-                colors.text
-              }
-              strokeWidth={
-                2.5
-              }
-            />
-          )}
-        </TouchableOpacity>
-      ) : null}
-    </View>
-  );
-}
-
-/* ========================================================= */
-/* SECTION HEADER */
-/* ========================================================= */
-
-function SectionHeader({
-  title,
-  colors,
-  isRTL,
-}: {
-  title: string;
-  colors: any;
-  isRTL: boolean;
-}) {
-  return (
-    <View
-      style={[
-        styles.sectionHeader,
-        {
-          flexDirection:
-            isRTL
-              ? 'row-reverse'
-              : 'row',
-        },
-      ]}
-    >
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color:
-              colors.text,
-            textAlign:
-              isRTL
-                ? 'right'
-                : 'left',
-          },
-        ]}
-      >
-        {title}
-      </Text>
-    </View>
-  );
-}
-
-/* ========================================================= */
-/* LATEST RESULT */
-/* ========================================================= */
-
-function LatestResult({
-  result,
-  title,
-  performanceText,
-  colors,
-  isRTL,
-  text,
-  getIcon,
-}: {
-  result: GameResult;
-  title: string;
-  performanceText: string;
-  colors: any;
-  isRTL: boolean;
-  text: any;
-  getIcon: (
-    id: string
-  ) => React.ComponentType<any>;
-}) {
-  const Icon =
-    getIcon(
-      result.gameId
-    );
-
-  const average =
-    result.metrics.length
-      ? Math.round(
-          result.metrics.reduce(
-            (
-              sum,
-              metric
-            ) =>
-              sum +
-              metric.value,
-            0
-          ) /
-            result
-              .metrics
-              .length
-        )
-      : 0;
-
-  return (
-    <View
-      style={[
-        styles.latestCard,
-        {
-          backgroundColor:
-            colors.surface,
-          borderColor:
-            colors.primary +
-            '35',
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.latestTop,
-          {
-            flexDirection:
-              isRTL
-                ? 'row-reverse'
-                : 'row',
-          },
-        ]}
-      >
-        <View
-          style={[
-            styles.latestIcon,
-            {
-              backgroundColor:
-                colors.primary +
-                '15',
-            },
-          ]}
-        >
-          <Icon
-            size={
-              28
-            }
-            color={
-              colors.primary
-            }
-          />
-        </View>
-
-        <View
-          style={
-            styles.latestTitleContainer
-          }
-        >
-          <Text
-            style={[
-              styles.latestGame,
-              {
-                color:
-                  colors.text,
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
-              },
-            ]}
-          >
-            {
-              title
-            }
-          </Text>
-
-          <Text
-            style={[
-              styles.latestCompleted,
-              {
-                color:
-                  colors.textSecondary,
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
-              },
-            ]}
-          >
-            {
-              text.completed
-            }
-          </Text>
-        </View>
-
-        <View
-          style={[
-            styles.latestScore,
-            {
-              backgroundColor:
-                colors.primary +
-                '12',
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.latestScoreValue,
-              {
-                color:
-                  colors.primary,
-              },
-            ]}
-          >
-            {
-              average
-            }
-          </Text>
-
-          <Text
-            style={[
-              styles.latestScoreUnit,
-              {
-                color:
-                  colors.textSecondary,
-              },
-            ]}
-          >
-            /100
-          </Text>
-        </View>
-      </View>
-
-      <View
-        style={[
-          styles.performanceBadge,
-          {
-            backgroundColor:
-              colors.primary +
-              '10',
-            flexDirection:
-              isRTL
-                ? 'row-reverse'
-                : 'row',
-          },
-        ]}
-      >
-        <CheckCircle
-          size={
-            17
-          }
-          color={
-            colors.primary
-          }
-        />
-
-        <Text
-          style={[
-            styles.performanceBadgeText,
-            {
-              color:
-                colors.primary,
-            },
-          ]}
-        >
-          {
-            performanceText
-          }
-        </Text>
-      </View>
-
-      <Text
-        style={[
-          styles.metricsTitle,
-          {
-            color:
-              colors.text,
-            textAlign:
-              isRTL
-                ? 'right'
-                : 'left',
-          },
-        ]}
-      >
-        {
-          text.metrics
-        }
-      </Text>
-
-      {result.metrics.map(
-        metric => (
-          <MetricRow
-            key={
-              metric.id
-            }
-            metric={
-              metric
-            }
-            colors={
-              colors
-            }
-            isRTL={
-              isRTL
-            }
-          />
-        )
-      )}
-    </View>
-  );
-}
-
-/* ========================================================= */
-/* METRIC ROW */
-/* ========================================================= */
-
-function MetricRow({
-  metric,
-  colors,
-  isRTL,
-}: {
-  metric: GameMetric;
-  colors: any;
-  isRTL: boolean;
-}) {
-  const value =
-    Math.min(
-      100,
-      Math.max(
-        0,
-        metric.value
-      )
-    );
-
-  return (
-    <View
-      style={[
-        styles.metricRow,
-        {
-          flexDirection:
-            isRTL
-              ? 'row-reverse'
-              : 'row',
-        },
-      ]}
-    >
-      <View
-        style={
-          styles.metricMain
-        }
-      >
-        <View
-          style={[
-            styles.metricHeader,
-            {
-              flexDirection:
-                isRTL
-                  ? 'row-reverse'
-                  : 'row',
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.metricLabel,
-              {
-                color:
-                  colors.text,
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
-              },
-            ]}
-          >
-            {
-              metric.label
-            }
-          </Text>
-
-          <Text
-            style={[
-              styles.metricValue,
-              {
-                color:
-                  colors.primary,
-              },
-            ]}
-          >
-            {
-              metric.value
-            }
-
-            {metric.unit
-              ? ` ${metric.unit}`
-              : ''}
-          </Text>
-        </View>
-
-        <View
-          style={[
-            styles.metricTrack,
-            {
-              backgroundColor:
-                colors.border,
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.metricFill,
-              {
-                width:
-                  `${value}%`,
-                backgroundColor:
-                  colors.primary,
-              },
-            ]}
-          />
-        </View>
-      </View>
-    </View>
-  );
-}
-
-/* ========================================================= */
-/* PROFILE HIGHLIGHT */
-/* ========================================================= */
-
-function ProfileHighlight({
-  icon,
-  title,
-  metric,
-  colors,
-  isRTL,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  metric: GameMetric;
-  colors: any;
-  isRTL: boolean;
-}) {
-  return (
-    <View
-      style={[
-        styles.highlightCard,
-        {
-          backgroundColor:
-            colors.surface,
-          borderColor:
-            colors.border,
-          flexDirection:
-            isRTL
-              ? 'row-reverse'
-              : 'row',
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.highlightIcon,
-          {
-            backgroundColor:
-              colors.primary +
-              '12',
-          },
-        ]}
-      >
-        {
-          icon
-        }
-      </View>
-
-      <View
-        style={
-          styles.highlightText
-        }
-      >
-        <Text
-          style={[
-            styles.highlightTitle,
-            {
-              color:
-                colors.textSecondary,
-              textAlign:
-                isRTL
-                  ? 'right'
-                  : 'left',
-            },
-          ]}
-        >
-          {
-            title
-          }
-        </Text>
-
-        <Text
-          style={[
-            styles.highlightMetric,
-            {
-              color:
-                colors.text,
-              textAlign:
-                isRTL
-                  ? 'right'
-                  : 'left',
-            },
-          ]}
-        >
-          {
-            metric.label
-          }
-        </Text>
-      </View>
-
-      <Text
-        style={[
-          styles.highlightValue,
-          {
-            color:
-              colors.primary,
-          },
-        ]}
-      >
-        {
-          metric.value
-        }
-      </Text>
-    </View>
-  );
-}
-
-/* ========================================================= */
-/* HISTORY CARD */
-/* ========================================================= */
-
-function HistoryCard({
-  result,
-  title,
-  date,
-  colors,
-  isRTL,
-  text,
-  getIcon,
-}: {
-  result: GameResult;
-  title: string;
-  date: string;
-  colors: any;
-  isRTL: boolean;
-  text: any;
-  getIcon: (
-    id: string
-  ) => React.ComponentType<any>;
-}) {
-  const Icon =
-    getIcon(
-      result.gameId
-    );
-
-  const average =
-    result.metrics.length
-      ? Math.round(
-          result.metrics.reduce(
-            (
-              sum,
-              metric
-            ) =>
-              sum +
-              metric.value,
-            0
-          ) /
-            result
-              .metrics
-              .length
-        )
-      : 0;
-
-  return (
-    <View
-      style={[
-        styles.historyCard,
-        {
-          backgroundColor:
-            colors.surface,
-          borderColor:
-            colors.border,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.historyTop,
-          {
-            flexDirection:
-              isRTL
-                ? 'row-reverse'
-                : 'row',
-          },
-        ]}
-      >
-        <View
-          style={[
-            styles.historyIcon,
-            {
-              backgroundColor:
-                colors.primary +
-                '12',
-            },
-          ]}
-        >
-          <Icon
-            size={
-              20
-            }
-            color={
-              colors.primary
-            }
-          />
-        </View>
-
-        <View
-          style={
-            styles.historyInfo
-          }
-        >
-          <Text
-            style={[
-              styles.historyTitle,
-              {
-                color:
-                  colors.text,
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
-              },
-            ]}
-            numberOfLines={
-              1
-            }
-          >
-            {
-              title
-            }
-          </Text>
-
-          <Text
-            style={[
-              styles.historyDate,
-              {
-                color:
-                  colors.textSecondary,
-                textAlign:
-                  isRTL
-                    ? 'right'
-                    : 'left',
-              },
-            ]}
-          >
-            {
-              date
-            }
-          </Text>
-        </View>
-
-        <View
-          style={
-            styles.historyScore
-          }
-        >
-          <Text
-            style={[
-              styles.historyScoreValue,
-              {
-                color:
-                  colors.primary,
-              },
-            ]}
-          >
-            {
-              average
-            }
-          </Text>
-
-          <Text
-            style={[
-              styles.historyScoreUnit,
-              {
-                color:
-                  colors.textSecondary,
-              },
-            ]}
-          >
-            /100
-          </Text>
-        </View>
-      </View>
-
-      <View
-        style={
-          styles.historyMetrics
-        }
-      >
-        {result.metrics
-          .slice(0, 3)
-          .map(
-            metric => (
-              <View
-                key={
-                  metric.id
-                }
-                style={
-                  styles.historyMetric
-                }
-              >
-                <Text
-                  style={[
-                    styles.historyMetricLabel,
-                    {
-                      color:
-                        colors.textSecondary,
-                      textAlign:
-                        isRTL
-                          ? 'right'
-                          : 'left',
-                    },
-                  ]}
-                  numberOfLines={
-                    1
-                  }
-                >
-                  {
-                    metric.label
-                  }
-                </Text>
-
-                <Text
-                  style={[
-                    styles.historyMetricValue,
-                    {
-                      color:
-                        colors.text,
-                    },
-                  ]}
-                >
-                  {
-                    metric.value
-                  }
-                </Text>
-              </View>
-            )
-          )}
-      </View>
-    </View>
-  );
-}
-
-/* ========================================================= */
-/* EMPTY STATE */
-/* ========================================================= */
-
-function EmptyState({
-  text,
-  colors,
-  onStart,
-}: {
-  text: any;
-  colors: any;
-  onStart: () => void;
-}) {
-  return (
-    <View
-      style={
-        styles.emptyContainer
-      }
-    >
-      <View
-        style={[
-          styles.emptyIcon,
-          {
-            backgroundColor:
-              colors.primary +
-              '15',
-          },
-        ]}
-      >
-        <Gamepad2
-          size={
-            42
-          }
-          color={
-            colors.primary
-          }
-        />
-      </View>
-
-      <Text
-        style={[
-          styles.emptyTitle,
-          {
-            color:
-              colors.text,
-          },
-        ]}
-      >
-        {
-          text.noResults
-        }
-      </Text>
-
-      <Text
-        style={[
-          styles.emptyDescription,
-          {
-            color:
-              colors.textSecondary,
-          },
-        ]}
-      >
-        {
-          text.noResultsDescription
-        }
-      </Text>
-
-      <TouchableOpacity
-        activeOpacity={
-          0.85
-        }
-        onPress={
-          onStart
-        }
-        style={[
-          styles.startButton,
-          {
-            backgroundColor:
-              colors.primary,
-          },
-        ]}
-      >
-        <Gamepad2
-          size={
-            20
-          }
-          color="#FFFFFF"
-        />
-
-        <Text
-          style={
-            styles.startButtonText
-          }
-        >
-          {
-            text.startGame
-          }
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-/* ========================================================= */
-/* STYLES */
-/* ========================================================= */
+/*
+|--------------------------------------------------------------------------
+| Styles
+|--------------------------------------------------------------------------
+*/
 
 const styles =
   StyleSheet.create({
@@ -2414,25 +2623,253 @@ const styles =
       flex: 1,
     },
 
-    scroll: {
-      flex: 1,
+    scrollContent: {
+      paddingHorizontal:
+        Spacing?.lg || 20,
+      paddingTop:
+        Spacing?.md || 16,
+      paddingBottom: 40,
     },
 
-    content: {
-      paddingHorizontal:
-        Spacing.lg,
-      paddingTop: 20,
-      paddingBottom: 50,
+    loadingContainer: {
+      flex: 1,
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
+      gap: 12,
+    },
+
+    loadingText: {
+      fontSize: 14,
+      fontWeight: '500',
     },
 
     header: {
-      minHeight: 108,
-      paddingHorizontal:
-        Spacing.lg,
-      paddingTop: 54,
-      paddingBottom: 12,
-      borderBottomWidth:
-        StyleSheet.hairlineWidth,
+      alignItems:
+        'center',
+      marginBottom: 20,
+    },
+
+    iconButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      borderWidth: 1,
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
+    },
+
+    headerTextContainer: {
+      flex: 1,
+      marginHorizontal: 14,
+    },
+
+    title: {
+      fontSize: 25,
+      fontWeight: '800',
+      letterSpacing: -0.4,
+    },
+
+    subtitle: {
+      fontSize: 13,
+      marginTop: 4,
+      lineHeight: 19,
+    },
+
+    emptyContainer: {
+      flex: 1,
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
+      paddingHorizontal: 30,
+    },
+
+    emptyIcon: {
+      width: 86,
+      height: 86,
+      borderRadius: 28,
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
+      marginBottom: 20,
+    },
+
+    emptyTitle: {
+      fontSize: 22,
+      fontWeight: '800',
+      marginBottom: 10,
+    },
+
+    emptyDescription: {
+      fontSize: 14,
+      lineHeight: 22,
+      maxWidth: 360,
+    },
+
+    primaryButton: {
+      marginTop: 24,
+      paddingHorizontal: 26,
+      paddingVertical: 14,
+      borderRadius: 16,
+    },
+
+    primaryButtonText: {
+      color: '#fff',
+      fontSize: 15,
+      fontWeight: '700',
+    },
+
+    summaryCard: {
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius?.xl || 24,
+      padding: 18,
+      marginBottom: 18,
+    },
+
+    summaryHeader: {
+      alignItems:
+        'center',
+    },
+
+    summaryIcon: {
+      width: 46,
+      height: 46,
+      borderRadius: 15,
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
+    },
+
+    summaryHeaderText: {
+      flex: 1,
+      marginHorizontal: 12,
+    },
+
+    summaryTitle: {
+      fontSize: 16,
+      fontWeight: '800',
+    },
+
+    summarySubtitle: {
+      fontSize: 12,
+      marginTop: 3,
+    },
+
+    summaryStats: {
+      alignItems:
+        'center',
+      marginTop: 18,
+    },
+
+    summaryStat: {
+      flex: 1,
+      alignItems:
+        'center',
+    },
+
+    summaryStatValue: {
+      fontSize: 25,
+      fontWeight: '800',
+    },
+
+    summaryStatLabel: {
+      fontSize: 11,
+      marginTop: 4,
+    },
+
+    summaryDivider: {
+      width: 1,
+      height: 34,
+    },
+
+    movieSection: {
+      borderWidth: 1,
+      borderRadius:
+        BorderRadius?.xl || 24,
+      padding: 18,
+      marginBottom: 18,
+    },
+
+    movieHeader: {
+      alignItems:
+        'center',
+      marginBottom: 16,
+    },
+
+    movieHeaderIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 16,
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
+    },
+
+    movieHeaderText: {
+      flex: 1,
+      marginHorizontal: 12,
+    },
+
+    movieTitleRow: {
+      alignItems:
+        'center',
+      gap: 7,
+    },
+
+    movieSectionTitle: {
+      fontSize: 17,
+      fontWeight: '800',
+    },
+
+    movieSectionSubtitle: {
+      fontSize: 12,
+      marginTop: 4,
+      lineHeight: 18,
+    },
+
+    movieMessage: {
+      minHeight: 90,
+      borderRadius: 18,
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
+      padding: 18,
+      gap: 10,
+    },
+
+    movieMessageText: {
+      fontSize: 13,
+      lineHeight: 21,
+    },
+
+    movieLoading: {
+      minHeight: 100,
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
+      gap: 12,
+    },
+
+    movieLoadingText: {
+      fontSize: 13,
+      lineHeight: 20,
+    },
+
+    movieError: {
+      minHeight: 100,
+      borderWidth: 1,
+      borderRadius: 18,
+      padding: 16,
       flexDirection:
         'row',
       alignItems:
@@ -2440,454 +2877,266 @@ const styles =
       gap: 12,
     },
 
-    backButton: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      borderWidth: 1,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-    },
-
-    headerText: {
+    movieErrorContent: {
       flex: 1,
-      minWidth: 0,
     },
 
-    headerTitle: {
-      fontSize: 20,
-      fontWeight:
-        '800',
-    },
-
-    headerSubtitle: {
-      fontSize: 11,
-      marginTop: 3,
-    },
-
-    loadingContainer: {
-      flex: 1,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-    },
-
-    sectionHeader: {
-      marginTop: 5,
+    movieErrorText: {
+      fontSize: 13,
+      lineHeight: 20,
       marginBottom: 10,
     },
 
-    sectionTitle: {
-      flex: 1,
-      fontSize: 17,
-      fontWeight:
-        '800',
+    retryButton: {
+      alignSelf:
+        'flex-start',
+      paddingHorizontal: 15,
+      paddingVertical: 8,
+      borderRadius: 10,
     },
 
-    latestCard: {
-      width: '100%',
+    retryButtonText: {
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: '700',
+    },
+
+    moviesList: {
+      gap: 12,
+    },
+
+    movieCard: {
       borderWidth: 1,
-      borderRadius:
-        BorderRadius.lg,
-      padding:
-        Spacing.md,
-      marginBottom: 18,
-    },
-
-    latestTop: {
-      alignItems:
-        'center',
-      gap: 11,
-    },
-
-    latestIcon: {
-      width: 52,
-      height: 52,
-      borderRadius: 17,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-    },
-
-    latestTitleContainer: {
-      flex: 1,
-      minWidth: 0,
-    },
-
-    latestGame: {
-      fontSize: 16,
-      fontWeight:
-        '900',
-    },
-
-    latestCompleted: {
-      fontSize: 10,
-      marginTop: 3,
-    },
-
-    latestScore: {
-      minWidth: 62,
-      minHeight: 54,
-      borderRadius: 16,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
+      borderRadius: 20,
+      padding: 14,
       flexDirection:
         'row',
-      paddingHorizontal:
-        7,
+      alignItems:
+        'flex-start',
     },
 
-    latestScoreValue: {
-      fontSize: 24,
-      fontWeight:
-        '900',
+    movieNumber: {
+      width: 34,
+      height: 34,
+      borderRadius: 12,
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
+      marginRight: 12,
     },
 
-    latestScoreUnit: {
-      fontSize: 9,
+    movieNumberText: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '800',
+    },
+
+    movieContent: {
+      flex: 1,
+    },
+
+    movieNameRow: {
+      alignItems:
+        'flex-start',
+      justifyContent:
+        'space-between',
+      gap: 8,
+    },
+
+    movieName: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: '800',
+      lineHeight: 21,
+    },
+
+    matchBadge: {
+      paddingHorizontal: 9,
+      paddingVertical: 5,
+      borderRadius: 9,
+    },
+
+    matchText: {
+      fontSize: 11,
+      fontWeight: '800',
+    },
+
+    genreRow: {
+      flexWrap:
+        'wrap',
+      gap: 6,
       marginTop: 9,
     },
 
-    performanceBadge: {
-      marginTop: 14,
-      alignSelf:
-        'flex-start',
-      paddingHorizontal:
-        11,
-      paddingVertical:
-        7,
-      borderRadius:
-        BorderRadius.full,
+    genreChip: {
+      borderWidth: 1,
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+
+    genreText: {
+      fontSize: 10,
+      fontWeight: '600',
+    },
+
+    movieOverview: {
+      fontSize: 12,
+      lineHeight: 19,
+      marginTop: 10,
+    },
+
+    movieMeta: {
+      justifyContent:
+        'space-between',
+      marginTop: 11,
+      gap: 8,
+    },
+
+    movieMetaText: {
+      fontSize: 10,
+      fontWeight: '600',
+    },
+
+    exportButton: {
+      minHeight: 54,
+      borderRadius: 17,
+      borderWidth: 1,
+      paddingHorizontal: 18,
+      justifyContent:
+        'center',
       alignItems:
         'center',
-      gap: 6,
+      gap: 10,
+      marginBottom: 24,
     },
 
-    performanceBadgeText: {
-      fontSize: 10,
-      fontWeight:
-        '800',
+    exportButtonText: {
+      fontSize: 14,
+      fontWeight: '700',
     },
 
-    metricsTitle: {
-      fontSize: 12,
-      fontWeight:
-        '800',
-      marginTop: 17,
-      marginBottom: 8,
-    },
-
-    metricRow: {
-      width: '100%',
-      marginTop: 7,
-    },
-
-    metricMain: {
-      flex: 1,
-    },
-
-    metricHeader: {
+    sectionHeader: {
       justifyContent:
         'space-between',
       alignItems:
         'center',
-      gap: 10,
+      marginBottom: 12,
     },
 
-    metricLabel: {
-      flex: 1,
-      fontSize: 11,
+    sectionTitle: {
+      fontSize: 19,
+      fontWeight: '800',
     },
 
-    metricValue: {
-      fontSize: 12,
-      fontWeight:
-        '900',
-    },
-
-    metricTrack: {
-      width: '100%',
-      height: 5,
-      borderRadius: 3,
-      marginTop: 6,
-      overflow:
-        'hidden',
-    },
-
-    metricFill: {
-      height: '100%',
-      borderRadius: 3,
-    },
-
-    overallCard: {
-      width: '100%',
+    resultCard: {
       borderWidth: 1,
       borderRadius:
-        BorderRadius.lg,
-      padding:
-        Spacing.md,
-      marginBottom: 10,
+        BorderRadius?.xl || 24,
+      padding: 16,
+      marginBottom: 12,
     },
 
-    overallTop: {
+    resultHeader: {
       alignItems:
         'center',
-      gap: 11,
     },
 
-    overallIcon: {
-      width: 49,
-      height: 49,
-      borderRadius: 16,
-      alignItems:
-        'center',
+    gameIcon: {
+      width: 46,
+      height: 46,
+      borderRadius: 15,
       justifyContent:
         'center',
-    },
-
-    overallInfo: {
-      flex: 1,
-    },
-
-    overallLabel: {
-      fontSize: 10,
-    },
-
-    overallValue: {
-      fontSize: 25,
-      fontWeight:
-        '900',
-      marginTop: 1,
-    },
-
-    overallOutOf: {
-      fontSize: 11,
-      fontWeight:
-        '500',
-    },
-
-    progressTrack: {
-      width: '100%',
-      height: 7,
-      borderRadius: 5,
-      overflow:
-        'hidden',
-      marginTop: 15,
-    },
-
-    progressFill: {
-      height: '100%',
-      borderRadius: 5,
-    },
-
-    performanceText: {
-      fontSize: 10,
-      fontWeight:
-        '800',
-      marginTop: 7,
-    },
-
-    highlightCard: {
-      width: '100%',
-      minHeight: 66,
-      borderWidth: 1,
-      borderRadius:
-        BorderRadius.lg,
-      paddingHorizontal:
-        Spacing.md,
-      marginBottom: 10,
       alignItems:
         'center',
-      gap: 10,
     },
 
-    highlightIcon: {
-      width: 40,
-      height: 40,
+    resultHeaderText: {
+      flex: 1,
+      marginHorizontal: 12,
+    },
+
+    gameName: {
+      fontSize: 15,
+      fontWeight: '800',
+    },
+
+    resultDate: {
+      fontSize: 11,
+      marginTop: 3,
+    },
+
+    scoreContainer: {
+      minWidth: 58,
+      paddingVertical: 8,
+      paddingHorizontal: 9,
       borderRadius: 13,
       alignItems:
         'center',
-      justifyContent:
-        'center',
     },
 
-    highlightText: {
-      flex: 1,
+    scoreValue: {
+      fontSize: 18,
+      fontWeight: '800',
     },
 
-    highlightTitle: {
+    scoreLabel: {
       fontSize: 9,
+      marginTop: 1,
     },
 
-    highlightMetric: {
-      fontSize: 12,
-      fontWeight:
-        '800',
-      marginTop: 2,
-    },
-
-    highlightValue: {
-      fontSize: 20,
-      fontWeight:
-        '900',
-    },
-
-    historyCard: {
-      width: '100%',
-      borderWidth: 1,
-      borderRadius:
-        BorderRadius.lg,
-      padding:
-        Spacing.md,
-      marginBottom: 10,
-    },
-
-    historyTop: {
-      alignItems:
-        'center',
-      gap: 10,
-    },
-
-    historyIcon: {
-      width: 43,
-      height: 43,
-      borderRadius: 14,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-    },
-
-    historyInfo: {
-      flex: 1,
-      minWidth: 0,
-    },
-
-    historyTitle: {
-      fontSize: 13,
-      fontWeight:
-        '800',
-    },
-
-    historyDate: {
-      fontSize: 9,
-      marginTop: 3,
-    },
-
-    historyScore: {
-      flexDirection:
-        'row',
-      alignItems:
-        'flex-end',
-    },
-
-    historyScoreValue: {
-      fontSize: 21,
-      fontWeight:
-        '900',
-    },
-
-    historyScoreUnit: {
-      fontSize: 8,
-      marginBottom: 3,
-    },
-
-    historyMetrics: {
-      flexDirection:
-        'row',
-      marginTop: 12,
-      gap: 7,
-    },
-
-    historyMetric: {
-      flex: 1,
-      minWidth: 0,
-      paddingTop: 8,
-      borderTopWidth: 1,
-      borderTopColor:
-        'rgba(128,128,128,0.15)',
-    },
-
-    historyMetricLabel: {
-      fontSize: 8,
-    },
-
-    historyMetricValue: {
-      fontSize: 13,
-      fontWeight:
-        '800',
-      marginTop: 3,
-    },
-
-    startButton: {
-      width: '100%',
-      minHeight: 54,
-      borderRadius:
-        BorderRadius.full,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-      flexDirection:
-        'row',
-      gap: 8,
+    performanceLabel: {
+      fontSize: 11,
       marginTop: 10,
+      fontWeight: '600',
     },
 
-    startButtonText: {
-      color:
-        '#FFFFFF',
-      fontSize: 15,
-      fontWeight:
-        '800',
+    metricsRow: {
+      marginTop: 14,
+      gap: 16,
     },
 
-    emptyContainer: {
+    metricItem: {
       flex: 1,
-      minHeight: 520,
+    },
+
+    metricLabel: {
+      fontSize: 10,
+      marginBottom: 4,
+    },
+
+    metricValue: {
+      fontSize: 15,
+      fontWeight: '800',
+    },
+
+    detailsContainer: {
+      marginTop: 14,
+    },
+
+    detailRow: {
+      minHeight: 40,
+      borderTopWidth: 1,
       alignItems:
         'center',
       justifyContent:
-        'center',
-      paddingHorizontal: 20,
+        'space-between',
+      gap: 12,
     },
 
-    emptyIcon: {
-      width: 90,
-      height: 90,
-      borderRadius: 30,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-      marginBottom: 18,
+    detailLabel: {
+      flex: 1,
+      fontSize: 11,
     },
 
-    emptyTitle: {
-      fontSize: 22,
-      fontWeight:
-        '900',
-      textAlign:
-        'center',
-    },
-
-    emptyDescription: {
-      maxWidth: 340,
+    detailValue: {
       fontSize: 12,
-      lineHeight: 20,
-      textAlign:
-        'center',
-      marginTop: 8,
+      fontWeight: '700',
     },
 
-    bottomSpace: {
+    bottomSpacer: {
       height: 20,
     },
   });
-
