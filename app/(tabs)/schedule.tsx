@@ -401,17 +401,30 @@ export default function ScheduleScreen() {
 
   const { user } = useAuth();
 
-  // تعریف رنگ‌ها بر اساس تم
+  // تعیین رنگ FAB بر اساس تم
+  const getFabColor = () => {
+    if (isAthlete) {
+      return '#22C55E'; // سبز برای تم ورزشکار
+    }
+    if (isDark) {
+      return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
+    }
+    return '#8B5CF6'; // بنفش برای تم لایت
+  };
+
+  // تعیین رنگ آیکون و المان‌های اصلی
   const iconColor = isAthlete
     ? '#22C55E'  // سبز برای تم ورزشکار
     : isDark
     ? 'rgba(73, 194, 226, 1)'  // آبی برای تم تاریک
-    : colors.primary;  // رنگ پیش‌فرض
+    : '#8B5CF6';  // بنفش برای تم لایت
 
   // رنگ اصلی برای FAB و المان‌های اصلی
   const primary = isAthlete
     ? '#22C55E'  // سبز برای تم ورزشکار
-    : 'rgba(73, 194, 226, 1)';  // آبی برای سایر تم‌ها
+    : isDark
+    ? 'rgba(73, 194, 226, 1)'  // آبی برای تم تاریک
+    : '#8B5CF6';  // بنفش برای تم لایت
 
   const green =
     isDark
@@ -913,6 +926,9 @@ export default function ScheduleScreen() {
       );
     };
 
+  // محاسبه رنگ FAB با استفاده از تابع getFabColor
+  const fabColor = getFabColor();
+
   return (
     <LinearGradient
       colors={
@@ -946,36 +962,49 @@ export default function ScheduleScreen() {
         ]}
       >
 
-        {/* ===== تغییر رنگ پس‌زمینه هیرو برای تم لایت ===== */}
-        <LinearGradient
-          colors={isDark 
-            ? ['rgba(73, 194, 226, 0.12)', 'rgba(73, 194, 226, 0.12)']
-            : ['#F0F4FF', '#E8EEFF']  // ← رنگ‌های جدید برای تم لایت (آبی ملایم)
-          }
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        {/* ===== هیرو با حباب‌های تزئینی مشابه صفحه Protocol ===== */}
+        <View
           style={[
             styles.scheduleHero,
             {
+              backgroundColor: isDark 
+                ? 'rgba(73, 194, 226, 0.12)'
+                : '#F0F4FF',
               borderColor: isDark
-                ? 'rgba(255,255,255,0.10)'
+                ? 'rgba(73, 194, 226, 0.20)'
                 : 'rgba(73, 194, 226, 0.20)',
-
               shadowColor: '#000000',
-
-              shadowOpacity: isDark
-                ? 0.20
-                : 0.15,
-
-              elevation: isDark
-                ? 8
-                : 5,
+              shadowOpacity: isDark ? 0.20 : 0.15,
+              elevation: isDark ? 8 : 5,
             },
           ]}
         >
+          {/* حباب‌های تزئینی */}
+          <View
+            pointerEvents="none"
+            style={[
+              styles.heroGlowOne,
+              {
+                backgroundColor: isDark
+                  ? 'rgba(73, 194, 226, 0.08)'
+                  : 'rgba(73, 194, 226, 0.10)',
+              },
+            ]}
+          />
+
+          <View
+            pointerEvents="none"
+            style={[
+              styles.heroGlowTwo,
+              {
+                backgroundColor: isDark
+                  ? 'rgba(73, 194, 226, 0.05)'
+                  : 'rgba(73, 194, 226, 0.06)',
+              },
+            ]}
+          />
 
           <View style={styles.scheduleCharacterStage}>
-
             <MotiView
               from={{
                 opacity: 0,
@@ -1062,7 +1091,7 @@ export default function ScheduleScreen() {
               />
             </View>
           </MotiView>
-        </LinearGradient>
+        </View>
 
         <MotiView
           from={{
@@ -1856,8 +1885,7 @@ export default function ScheduleScreen() {
                           },
                         ]}
                       >
-                        <View
-                          style={[
+                        <View                          style={[
                             styles.actionText,
                             {
                               alignItems:
@@ -1969,10 +1997,8 @@ export default function ScheduleScreen() {
           }) => [
             styles.fab,
             {
-              backgroundColor:
-                isDark ? '#8B5CF6' : primary,  // بنفش برای تم تاریک، رنگ اصلی برای سایر تم‌ها
-              shadowColor:
-                isDark ? '#8B5CF6' : primary,  // بنفش برای تم تاریک، رنگ اصلی برای سایر تم‌ها
+              backgroundColor: fabColor,
+              shadowColor: fabColor,
               transform: [
                 {
                   scale:
@@ -2039,6 +2065,25 @@ const styles =
       },
 
       shadowRadius: 20,
+    },
+
+    // ===== حباب‌های تزئینی هیرو =====
+    heroGlowOne: {
+      position: 'absolute',
+      width: 190,
+      height: 190,
+      borderRadius: 95,
+      top: -85,
+      right: -55,
+    },
+
+    heroGlowTwo: {
+      position: 'absolute',
+      width: 150,
+      height: 150,
+      borderRadius: 75,
+      bottom: -80,
+      left: -55,
     },
 
     scheduleCharacterStage: {

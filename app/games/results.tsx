@@ -1,3 +1,4 @@
+
 import React, {
   useCallback,
   useEffect,
@@ -88,18 +89,6 @@ function normalizeGameId(value: string) {
     .replace(/\s+/g, '-');
 }
 
-/**
- * The current Colab API returns genres as:
- *
- * [
- *   "Drama",
- *   "Fantasy"
- * ]
- *
- * Older versions of the API could return a JSON string.
- * This helper supports both formats so the UI remains
- * backwards-compatible.
- */
 function getMovieGenres(
   genres:
     | string[]
@@ -233,10 +222,14 @@ export default function GameResultsScreen({
     setMovieError,
   ] = useState<string | null>(null);
 
-  // Refs for preventing duplicate movie requests
-  const movieRequestInFlightRef = useRef(false);
-  const movieRequestedSignatureRef = useRef<string | null>(null);
-  const movieMountedRef = useRef(true);
+  const movieRequestInFlightRef =
+    useRef(false);
+
+  const movieRequestedSignatureRef =
+    useRef<string | null>(null);
+
+  const movieMountedRef =
+    useRef(true);
 
   const text = useMemo(
     () =>
@@ -246,7 +239,8 @@ export default function GameResultsScreen({
             subtitle: 'تحلیل عملکرد بازی‌های شما',
             latest: 'آخرین نتیجه',
             allResults: 'سابقه بازی‌ها',
-            noResults: 'هنوز نتیجه‌ای ثبت نشده است.',
+            noResults:
+              'هنوز نتیجه‌ای ثبت نشده است.',
             noResultsDescription:
               'یک بازی انجام دهید تا اطلاعات عملکرد شما اینجا نمایش داده شود.',
             startGame: 'شروع یک بازی',
@@ -266,9 +260,11 @@ export default function GameResultsScreen({
             seconds: 'ثانیه',
             milliseconds: 'میلی‌ثانیه',
             outOf: 'از',
-            cognitiveProfile: 'پروفایل عملکرد شناختی',
+            cognitiveProfile:
+              'پروفایل عملکرد شناختی',
             strongest: 'قوی‌ترین حوزه',
-            needsImprovement: 'نیازمند بهبود',
+            needsImprovement:
+              'نیازمند بهبود',
             overall: 'عملکرد کلی',
             gamesPlayed: 'بازی انجام‌شده',
             refresh: 'به‌روزرسانی',
@@ -277,7 +273,8 @@ export default function GameResultsScreen({
             metrics: 'شاخص‌های عملکرد',
             noMetric:
               'اطلاعات عملکردی ثبت نشده است.',
-            exportData: 'دانلود نتایج (JSON)',
+            exportData:
+              'دانلود نتایج (JSON)',
             exportSuccess:
               'فایل نتایج با موفقیت ذخیره شد.',
             exportError:
@@ -285,7 +282,8 @@ export default function GameResultsScreen({
             exportEmpty:
               'هنوز داده‌ای برای دانلود وجود ندارد.',
             cancelled: 'ذخیره فایل لغو شد.',
-            movieTitle: 'پیشنهاد فیلم برای شما',
+            movieTitle:
+              'پیشنهاد فیلم برای شما',
             movieSubtitle:
               'بر اساس عملکرد شما در بازی‌های شناختی',
             movieLoading:
@@ -301,7 +299,8 @@ export default function GameResultsScreen({
             movieOverview: 'درباره فیلم',
             movieGenres: 'ژانر',
             movieId: 'شناسه فیلم',
-            movieMatchedTags: 'دلیل پیشنهاد',
+            movieMatchedTags:
+              'دلیل پیشنهاد',
             recommendationReady:
               'پیشنهادهای شخصی‌سازی‌شده',
             gamesRequired: 'بازی دیگر',
@@ -326,9 +325,11 @@ export default function GameResultsScreen({
             accuracy: 'Accuracy',
             responseTime: 'Response Time',
             performance: 'Performance',
-            excellent: 'Excellent Performance',
+            excellent:
+              'Excellent Performance',
             good: 'Good Performance',
-            needsPractice: 'Needs Practice',
+            needsPractice:
+              'Needs Practice',
             visualFlow: 'Visual Flow',
             completed: 'Completed',
             viewDetails: 'View Details',
@@ -378,7 +379,8 @@ export default function GameResultsScreen({
             movieOverview: 'About the movie',
             movieGenres: 'Genres',
             movieId: 'Movie ID',
-            movieMatchedTags: 'Why this was recommended',
+            movieMatchedTags:
+              'Why this was recommended',
             recommendationReady:
               'Personalized Recommendations',
             gamesRequired: 'more games',
@@ -392,10 +394,11 @@ export default function GameResultsScreen({
     [language]
   );
 
-  const loadResults = useCallback(
-    async () => {
+  const loadResults =
+    useCallback(async () => {
       try {
-        const data = await getGameResults();
+        const data =
+          await getGameResults();
 
         setResults(
           Array.isArray(data)
@@ -413,47 +416,46 @@ export default function GameResultsScreen({
         setLoading(false);
         setRefreshing(false);
       }
-    },
-    []
-  );
+    }, []);
 
   useEffect(() => {
     loadResults();
   }, [loadResults]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      movieMountedRef.current = false;
+      movieMountedRef.current =
+        false;
     };
   }, []);
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    loadResults();
-  }, [loadResults]);
+  const onRefresh =
+    useCallback(() => {
+      setRefreshing(true);
+      loadResults();
+    }, [loadResults]);
 
-  /**
-   * Count unique game types.
-   *
-   * The movie engine requires 3 DIFFERENT games,
-   * not simply 3 sessions of the same game.
-   */
-  const completedGameIds = useMemo(() => {
-    const set = new Set<string>();
+  const completedGameIds =
+    useMemo(() => {
+      const set =
+        new Set<string>();
 
-    results.forEach((result) => {
-      if (!result?.gameId) {
-        return;
-      }
+      results.forEach(
+        (result) => {
+          if (!result?.gameId) {
+            return;
+          }
 
-      set.add(
-        normalizeGameId(result.gameId)
+          set.add(
+            normalizeGameId(
+              result.gameId
+            )
+          );
+        }
       );
-    });
 
-    return set;
-  }, [results]);
+      return set;
+    }, [results]);
 
   const completedGamesCount =
     completedGameIds.size;
@@ -469,26 +471,28 @@ export default function GameResultsScreen({
     completedGamesCount >=
     MIN_GAMES_FOR_MOVIE_RECOMMENDATION;
 
-  /**
-   * Generate a stable signature from the game
-   * results so we don't repeatedly call the API
-   * with exactly the same data.
-   */
   const movieRequestSignature =
     useMemo(() => {
       return results
         .map((result) => ({
-          gameId: normalizeGameId(
-            result.gameId
-          ),
-          timestamp: result.timestamp,
+          gameId:
+            normalizeGameId(
+              result.gameId
+            ),
+          timestamp:
+            result.timestamp,
           score: result.score,
-          metrics: result.metrics,
+          metrics:
+            result.metrics,
         }))
         .sort(
           (a, b) =>
-            Number(a.timestamp || 0) -
-            Number(b.timestamp || 0)
+            Number(
+              a.timestamp || 0
+            ) -
+            Number(
+              b.timestamp || 0
+            )
         )
         .map((item) =>
           JSON.stringify(item)
@@ -496,150 +500,149 @@ export default function GameResultsScreen({
         .join('|');
     }, [results]);
 
-  /**
-   * Request movie recommendations from
-   * the current Colab / FastAPI service.
-   */
-  const requestMovieRecommendations = useCallback(
-    async (force = false) => {
-      if (!hasEnoughGamesForMovies) {
-        return;
-      }
-
-      if (!results.length) {
-        return;
-      }
-
-      if (movieRequestInFlightRef.current) {
-        return;
-      }
-
-      if (
-        !force &&
-        movieRequestedSignatureRef.current ===
-          movieRequestSignature
-      ) {
-        return;
-      }
-
-      movieRequestInFlightRef.current = true;
-
-      if (movieMountedRef.current) {
-        setMovieLoading(true);
-        setMovieError(null);
-      }
-
-      try {
-        console.log(
-          '[MovieRecommendation] Requesting recommendations...',
-          {
-            games: results.length,
-            differentGames: completedGamesCount,
-            signature: movieRequestSignature,
-          }
-        );
-
-        const recommendations =
-          await getMovieRecommendations(
-            results,
-            3
-          );
-
-        const normalizedRecommendations =
-          Array.isArray(recommendations)
-            ? recommendations
-                .filter(
-                  (movie) =>
-                    movie &&
-                    typeof movie.title === 'string'
-                )
-                .slice(0, 3)
-            : [];
-
-        console.log(
-          '[MovieRecommendation] Recommendations received:',
-          normalizedRecommendations
-        );
-
-        if (!movieMountedRef.current) {
+  const requestMovieRecommendations =
+    useCallback(
+      async (force = false) => {
+        if (
+          !hasEnoughGamesForMovies ||
+          !results.length
+        ) {
           return;
         }
-
-        setMovieRecommendations(
-          normalizedRecommendations
-        );
-
-        /*
-         * VERY IMPORTANT:
-         * Mark this exact dataset as processed even
-         * when the API returns an empty array.
-         *
-         * This prevents an endless request loop.
-         */
-        movieRequestedSignatureRef.current =
-          movieRequestSignature;
 
         if (
-          normalizedRecommendations.length ===
-          0
+          movieRequestInFlightRef.current
         ) {
-          console.warn(
-            '[MovieRecommendation] API returned no movies.'
-          );
-        }
-      } catch (error) {
-        console.error(
-          '[MovieRecommendation] Failed:',
-          error
-        );
-
-        if (!movieMountedRef.current) {
           return;
         }
 
-        setMovieRecommendations([]);
-
-        setMovieError(
-          text.noConnection
-        );
-
-        /*
-         * Do NOT mark the signature as successful
-         * on error.
-         *
-         * The user can explicitly press Try Again.
-         */
-      } finally {
-        movieRequestInFlightRef.current = false;
-
-        if (movieMountedRef.current) {
-          setMovieLoading(false);
+        if (
+          !force &&
+          movieRequestedSignatureRef.current ===
+            movieRequestSignature
+        ) {
+          return;
         }
-      }
-    },
-    [
-      hasEnoughGamesForMovies,
-      results,
-      completedGamesCount,
-      movieRequestSignature,
-      text.noConnection,
-    ]
-  );
 
-  /**
-   * Automatically request recommendations
-   * when enough different games exist.
-   */
+        movieRequestInFlightRef.current =
+          true;
+
+        if (
+          movieMountedRef.current
+        ) {
+          setMovieLoading(true);
+          setMovieError(null);
+        }
+
+        try {
+          console.log(
+            '[MovieRecommendation] Requesting recommendations...',
+            {
+              games:
+                results.length,
+              differentGames:
+                completedGamesCount,
+              signature:
+                movieRequestSignature,
+            }
+          );
+
+          const recommendations =
+            await getMovieRecommendations(
+              results,
+              3
+            );
+
+          const normalizedRecommendations =
+            Array.isArray(
+              recommendations
+            )
+              ? recommendations
+                  .filter(
+                    (movie) =>
+                      movie &&
+                      typeof movie.title ===
+                        'string'
+                  )
+                  .slice(0, 3)
+              : [];
+
+          console.log(
+            '[MovieRecommendation] Recommendations received:',
+            normalizedRecommendations
+          );
+
+          if (
+            !movieMountedRef.current
+          ) {
+            return;
+          }
+
+          setMovieRecommendations(
+            normalizedRecommendations
+          );
+
+          movieRequestedSignatureRef.current =
+            movieRequestSignature;
+
+          if (
+            normalizedRecommendations.length ===
+            0
+          ) {
+            console.warn(
+              '[MovieRecommendation] API returned no movies.'
+            );
+          }
+        } catch (error) {
+          console.error(
+            '[MovieRecommendation] Failed:',
+            error
+          );
+
+          if (
+            !movieMountedRef.current
+          ) {
+            return;
+          }
+
+          setMovieRecommendations(
+            []
+          );
+
+          setMovieError(
+            text.noConnection
+          );
+        } finally {
+          movieRequestInFlightRef.current =
+            false;
+
+          if (
+            movieMountedRef.current
+          ) {
+            setMovieLoading(false);
+          }
+        }
+      },
+      [
+        hasEnoughGamesForMovies,
+        results,
+        completedGamesCount,
+        movieRequestSignature,
+        text.noConnection,
+      ]
+    );
+
   useEffect(() => {
-    if (!hasEnoughGamesForMovies) {
+    if (
+      !hasEnoughGamesForMovies ||
+      !results.length
+    ) {
       return;
     }
 
-    if (!results.length) {
-      return;
-    }
-
-    if (movieRequestInFlightRef.current) {
+    if (
+      movieRequestInFlightRef.current
+    ) {
       return;
     }
 
@@ -650,7 +653,9 @@ export default function GameResultsScreen({
       return;
     }
 
-    requestMovieRecommendations(false);
+    requestMovieRecommendations(
+      false
+    );
   }, [
     hasEnoughGamesForMovies,
     results.length,
@@ -699,13 +704,10 @@ export default function GameResultsScreen({
         }
 
         const blob =
-          new Blob(
-            [json],
-            {
-              type:
-                'application/json;charset=utf-8',
-            }
-          );
+          new Blob([json], {
+            type:
+              'application/json;charset=utf-8',
+          });
 
         const url =
           URL.createObjectURL(
@@ -937,7 +939,6 @@ export default function GameResultsScreen({
               json,
               filename
             );
-
             return;
           }
 
@@ -1052,9 +1053,7 @@ export default function GameResultsScreen({
     useCallback(
       (timestamp: number) => {
         const date =
-          new Date(
-            timestamp
-          );
+          new Date(timestamp);
 
         const now =
           new Date();
@@ -1087,15 +1086,12 @@ export default function GameResultsScreen({
         metrics: GameMetric[],
         ids: string[]
       ) => {
-        const metric =
-          metrics.find(
-            (item) =>
-              ids.includes(
-                item.id
-              )
-          );
-
-        return metric;
+        return metrics.find(
+          (item) =>
+            ids.includes(
+              item.id
+            )
+        );
       },
       []
     );
@@ -1256,14 +1252,16 @@ export default function GameResultsScreen({
           styles.scrollContent
         }
       >
+        {/* ======================================================
+            HEADER
+            BACK BUTTON IS ALWAYS ON THE LEFT
+           ====================================================== */}
+
         <View
           style={[
             styles.header,
             {
-              flexDirection:
-                isRTL
-                  ? 'row-reverse'
-                  : 'row',
+              flexDirection: 'row',
             },
           ]}
         >
@@ -1328,6 +1326,10 @@ export default function GameResultsScreen({
             </Text>
           </View>
         </View>
+
+        {/* ======================================================
+            SUMMARY
+           ====================================================== */}
 
         <View
           style={[
@@ -1612,8 +1614,6 @@ export default function GameResultsScreen({
             </View>
           </View>
 
-          {/* Waiting for enough different games */}
-
           {!hasEnoughGamesForMovies &&
             !movieLoading && (
               <View
@@ -1687,8 +1687,6 @@ export default function GameResultsScreen({
               </View>
             )}
 
-          {/* Loading */}
-
           {movieLoading && (
             <View
               style={
@@ -1721,8 +1719,6 @@ export default function GameResultsScreen({
               </Text>
             </View>
           )}
-
-          {/* Error */}
 
           {!movieLoading &&
             movieError && (
@@ -1809,8 +1805,6 @@ export default function GameResultsScreen({
               </View>
             )}
 
-          {/* Recommendations */}
-
           {!movieLoading &&
             !movieError &&
             movieRecommendations.length >
@@ -1854,8 +1848,6 @@ export default function GameResultsScreen({
                             },
                           ]}
                         >
-                          {/* Rank */}
-
                           <View
                             style={[
                               styles.movieNumber,
@@ -1887,8 +1879,6 @@ export default function GameResultsScreen({
                               styles.movieContent
                             }
                           >
-                            {/* Title + match */}
-
                             <View
                               style={[
                                 styles.movieNameRow,
@@ -1947,8 +1937,6 @@ export default function GameResultsScreen({
                               </View>
                             </View>
 
-                            {/* Genres */}
-
                             {genres.length >
                               0 && (
                               <View
@@ -2002,8 +1990,6 @@ export default function GameResultsScreen({
                                   )}
                               </View>
                             )}
-
-                            {/* Matched tags */}
 
                             {matchedTags.length >
                               0 && (
@@ -2091,8 +2077,6 @@ export default function GameResultsScreen({
                               </View>
                             )}
 
-                            {/* Overview */}
-
                             {movie.overview ? (
                               <Text
                                 style={[
@@ -2115,8 +2099,6 @@ export default function GameResultsScreen({
                                 }
                               </Text>
                             ) : null}
-
-                            {/* Metadata */}
 
                             <View
                               style={[
@@ -2171,8 +2153,6 @@ export default function GameResultsScreen({
                   )}
               </View>
             )}
-
-          {/* Empty result after successful request */}
 
           {!movieLoading &&
             !movieError &&
@@ -2751,6 +2731,7 @@ const styles =
     },
 
     header: {
+      paddingTop:20,
       alignItems:
         'center',
       marginBottom: 20,
@@ -2759,12 +2740,13 @@ const styles =
     iconButton: {
       width: 44,
       height: 44,
-      borderRadius: 14,
+      borderRadius: 30,
       borderWidth: 1,
       justifyContent:
         'center',
       alignItems:
         'center',
+      flexShrink: 0,
     },
 
     headerTextContainer: {
@@ -2896,10 +2878,6 @@ const styles =
       width: 1,
       height: 34,
     },
-
-    /* ==========================================================
-       MOVIE STYLES
-       ========================================================== */
 
     movieSection: {
       borderWidth: 1,
@@ -3140,10 +3118,6 @@ const styles =
       fontWeight: '600',
     },
 
-    /* ==========================================================
-       EXPORT
-       ========================================================== */
-
     exportButton: {
       minHeight: 54,
       borderRadius: 17,
@@ -3161,10 +3135,6 @@ const styles =
       fontSize: 14,
       fontWeight: '700',
     },
-
-    /* ==========================================================
-       HISTORY
-       ========================================================== */
 
     sectionHeader: {
       justifyContent:
@@ -3290,3 +3260,4 @@ const styles =
       height: 20,
     },
   });
+

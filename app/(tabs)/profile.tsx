@@ -83,49 +83,54 @@ export default function ProfileScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
- <LinearGradient
-  colors={
-    isDark
-      ? [
-          'rgba(167, 139, 250, 0.24)',
-          'rgba(196, 181, 253, 0.16)',
-          'rgba(139, 92, 246, 0.10)',
-        ]
-      : [
-          colors.primary + '18',
-          colors.primary + '0D',
-        ]
-  }
-  start={{ x: 0, y: 0 }}
-  end={{ x: 1, y: 1 }}
-  style={[
-    styles.hero,
-    {
-      borderColor: isDark
-        ? 'rgba(196, 181, 253, 0.30)'
-        : colors.primary + '33',
+      {/* ===== هیرو با حباب‌های تزئینی مشابه صفحات دیگر ===== */}
+      <View
+        style={[
+          styles.hero,
+          {
+            backgroundColor: isDark 
+              ? 'rgba(73, 194, 226, 0.12)'
+              : '#F0F4FF',
+            borderColor: isDark
+              ? 'rgba(73, 194, 226, 0.20)'
+              : 'rgba(73, 194, 226, 0.20)',
+            shadowColor: '#000000',
+            shadowOpacity: isDark ? 0.20 : 0.15,
+            shadowRadius: isDark ? 16 : 10,
+            shadowOffset: {
+              width: 0,
+              height: 2,
+            },
+            elevation: isDark ? 4 : 2,
+          },
+        ]}
+      >
+        {/* حباب‌های تزئینی */}
+        <View
+          pointerEvents="none"
+          style={[
+            styles.heroGlowOne,
+            {
+              backgroundColor: isDark
+                ? 'rgba(73, 194, 226, 0.08)'
+                : 'rgba(73, 194, 226, 0.10)',
+            },
+          ]}
+        />
 
-      shadowColor: isDark
-        ? '#A78BFA'
-        : '#000000',
+        <View
+          pointerEvents="none"
+          style={[
+            styles.heroGlowTwo,
+            {
+              backgroundColor: isDark
+                ? 'rgba(73, 194, 226, 0.05)'
+                : 'rgba(73, 194, 226, 0.06)',
+            },
+          ]}
+        />
 
-      shadowOpacity: isDark
-        ? 0.12
-        : 0.06,
-
-      shadowRadius: isDark
-        ? 16
-        : 10,
-
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-
-      elevation: isDark ? 4 : 2,
-    },
-  ]}
->      <View style={styles.characterStage}>
+        <View style={styles.characterStage}>
           <MotiView
             from={{
               opacity: 0,
@@ -210,7 +215,7 @@ export default function ProfileScreen() {
             />
           </View>
         </MotiView>
-      </LinearGradient>
+      </View>
 
       <View
         style={[
@@ -460,14 +465,31 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     overflow: 'hidden',
     borderWidth: 1,
-    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 10,
     },
-    shadowOpacity: 0.15,
     shadowRadius: 20,
     elevation: 8,
+  },
+
+  // ===== حباب‌های تزئینی هیرو =====
+  heroGlowOne: {
+    position: 'absolute',
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    top: -85,
+    right: -55,
+  },
+
+  heroGlowTwo: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    bottom: -80,
+    left: -55,
   },
 
   characterStage: {
