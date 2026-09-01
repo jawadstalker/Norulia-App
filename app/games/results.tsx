@@ -20,8 +20,6 @@ import {
 import {
   ArrowLeft,
   Brain,
-  CheckCircle,
-  Clock,
   Download,
   Eye,
   Film,
@@ -66,13 +64,8 @@ type Props = {
 |--------------------------------------------------------------------------
 | Games that form one complete cognitive round
 |--------------------------------------------------------------------------
-|
-| These are the games currently available in app/games.
-|
-| A recommendation request is only sent after the user has
-| completed at least one result for every game below.
-|
 */
+
 const REQUIRED_GAME_IDS = [
   'anologram',
   'bilingual-sequence',
@@ -95,11 +88,11 @@ const GAME_ICONS: Record<
   'pattern-match': Target,
   'last-survival': Trophy,
   'size-discrimination': Target,
-  'stroop': Zap,
-  'anologram': Brain,
+  stroop: Zap,
+  anologram: Brain,
   'bilingual-sequence': Gamepad2,
-  'relaxe': Brain,
-  'word': Brain,
+  relaxe: Brain,
+  word: Brain,
 };
 
 function normalizeGameId(value: string) {
@@ -575,9 +568,7 @@ export default function GameResultsScreen({
       return REQUIRED_GAME_IDS.filter(
         (gameId) =>
           completedGameIds.has(
-            normalizeGameId(
-              gameId
-            )
+            normalizeGameId(gameId)
           )
       );
     }, [completedGameIds]);
@@ -624,13 +615,15 @@ export default function GameResultsScreen({
           /*
            * Send ALL game sessions.
            *
-           * The ML service itself builds the cognitive profile.
-           * We do not manually interpret the game results here.
+           * The ML service builds the cognitive profile.
+           *
+           * IMPORTANT:
+           * The current movieRecommendation service
+           * accepts one argument only.
            */
           const response =
             await getMovieRecommendations(
-              results,
-              3
+              results
             );
 
           const recommendations =
@@ -672,7 +665,7 @@ export default function GameResultsScreen({
 
   /*
   |--------------------------------------------------------------------------
-  | Automatically request recommendations when full round is complete
+  | Automatically request recommendations
   |--------------------------------------------------------------------------
   */
 
@@ -747,15 +740,11 @@ export default function GameResultsScreen({
           );
 
         const url =
-          URL.createObjectURL(
-            blob
-          );
+          URL.createObjectURL(blob);
 
         try {
           const anchor =
-            document.createElement(
-              'a'
-            );
+            document.createElement('a');
 
           anchor.href = url;
           anchor.download =
@@ -775,9 +764,7 @@ export default function GameResultsScreen({
           );
         } finally {
           setTimeout(() => {
-            URL.revokeObjectURL(
-              url
-            );
+            URL.revokeObjectURL(url);
           }, 1000);
         }
       },
@@ -1064,9 +1051,7 @@ export default function GameResultsScreen({
       (gameId: string) => {
         return (
           GAME_ICONS[
-            normalizeGameId(
-              gameId
-            )
+            normalizeGameId(gameId)
           ] || Gamepad2
         );
       },
@@ -1344,7 +1329,7 @@ export default function GameResultsScreen({
               styles.iconButton,
               {
                 backgroundColor:
-                  colors.card,
+                  colors.surface,
                 borderColor:
                   colors.border,
               },
@@ -1406,7 +1391,7 @@ export default function GameResultsScreen({
             styles.summaryCard,
             {
               backgroundColor:
-                colors.card,
+                colors.surface,
               borderColor:
                 colors.border,
             },
@@ -1533,7 +1518,9 @@ export default function GameResultsScreen({
             />
 
             <View
-              style={styles.summaryStat}
+              style={
+                styles.summaryStat
+              }
             >
               <Text
                 style={[
@@ -1579,7 +1566,7 @@ export default function GameResultsScreen({
             styles.movieSection,
             {
               backgroundColor:
-                colors.card,
+                colors.surface,
               borderColor:
                 colors.border,
             },
@@ -1976,7 +1963,7 @@ export default function GameResultsScreen({
                                           styles.genreChip,
                                           {
                                             backgroundColor:
-                                              colors.card,
+                                              colors.surface,
                                             borderColor:
                                               colors.border,
                                           },
@@ -2129,7 +2116,7 @@ export default function GameResultsScreen({
             styles.exportButton,
             {
               backgroundColor:
-                colors.card,
+                colors.surface,
               borderColor:
                 colors.border,
               opacity:
@@ -2244,7 +2231,7 @@ export default function GameResultsScreen({
                     styles.resultCard,
                     {
                       backgroundColor:
-                        colors.card,
+                        colors.surface,
                       borderColor:
                         colors.border,
                     },
