@@ -87,26 +87,102 @@ function normalizeGameId(value: string) {
     .replace(/\s+/g, '-');
 }
 
+/**
+ * The current Colab API returns genres as:
+ *
+ * [
+ *   "Drama",
+ *   "Fantasy"
+ * ]
+ *
+ * Older versions of the API could return a JSON string.
+ * This helper supports both formats so the UI remains
+ * backwards-compatible.
+ */
 function getMovieGenres(
-  genres: string | undefined
+  genres:
+    | string[]
+    | string
+    | undefined
+    | null
 ): string[] {
   if (!genres) {
     return [];
   }
 
-  try {
-    const parsed = JSON.parse(genres);
+  if (Array.isArray(genres)) {
+    return genres
+      .filter(
+        (genre): genre is string =>
+          typeof genre === 'string' &&
+          genre.trim().length > 0
+      )
+      .map((genre) => genre.trim());
+  }
 
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .map((item) => item?.name)
-      .filter(Boolean);
-  } catch {
+  if (typeof genres !== 'string') {
     return [];
   }
+
+  const trimmed = genres.trim();
+
+  if (!trimmed) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed);
+
+    if (Array.isArray(parsed)) {
+      return parsed
+        .map((item) => {
+          if (typeof item === 'string') {
+            return item;
+          }
+
+          if (
+            item &&
+            typeof item === 'object' &&
+            typeof item.name === 'string'
+          ) {
+            return item.name;
+          }
+
+          return '';
+        })
+        .filter(
+          (value): value is string =>
+            typeof value === 'string' &&
+            value.trim().length > 0
+        );
+    }
+  } catch {
+    // The value may simply be a comma-separated string.
+  }
+
+  return trimmed
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function getMovieMatchedTags(
+  matchedTags:
+    | string[]
+    | undefined
+    | null
+): string[] {
+  if (!Array.isArray(matchedTags)) {
+    return [];
+  }
+
+  return matchedTags
+    .filter(
+      (tag): tag is string =>
+        typeof tag === 'string' &&
+        tag.trim().length > 0
+    )
+    .map((tag) => tag.trim());
 }
 
 function formatSimilarity(
@@ -170,7 +246,8 @@ export default function GameResultsScreen({
             latest: 'آخرین نتیجه',
             allResults: 'سابقه بازی‌ها',
             noResults: 'هنوز نتیجه‌ای ثبت نشده است.',
-            noResultsDescription: 'یک بازی انجام دهید تا اطلاعات عملکرد شما اینجا نمایش داده شود.',
+            noResultsDescription:
+              'یک بازی انجام دهید تا اطلاعات عملکرد شما اینجا نمایش داده شود.',
             startGame: 'شروع یک بازی',
             score: 'امتیاز',
             accuracy: 'دقت',
@@ -197,36 +274,52 @@ export default function GameResultsScreen({
             back: 'بازگشت',
             game: 'بازی',
             metrics: 'شاخص‌های عملکرد',
-            noMetric: 'اطلاعات عملکردی ثبت نشده است.',
+            noMetric:
+              'اطلاعات عملکردی ثبت نشده است.',
             exportData: 'دانلود نتایج (JSON)',
-            exportSuccess: 'فایل نتایج با موفقیت ذخیره شد.',
-            exportError: 'ذخیره فایل نتایج با خطا مواجه شد.',
-            exportEmpty: 'هنوز داده‌ای برای دانلود وجود ندارد.',
+            exportSuccess:
+              'فایل نتایج با موفقیت ذخیره شد.',
+            exportError:
+              'ذخیره فایل نتایج با خطا مواجه شد.',
+            exportEmpty:
+              'هنوز داده‌ای برای دانلود وجود ندارد.',
             cancelled: 'ذخیره فایل لغو شد.',
             movieTitle: 'پیشنهاد فیلم برای شما',
-            movieSubtitle: 'بر اساس عملکرد شما در بازی‌های شناختی',
-            movieLoading: 'در حال تحلیل نتایج و پیدا کردن فیلم‌های مناسب...',
-            movieWaiting: 'برای دریافت پیشنهاد فیلم، حداقل ۳ بازی متفاوت انجام دهید.',
-            movieError: 'دریافت پیشنهاد فیلم در حال حاضر امکان‌پذیر نیست.',
+            movieSubtitle:
+              'بر اساس عملکرد شما در بازی‌های شناختی',
+            movieLoading:
+              'در حال تحلیل نتایج و پیدا کردن فیلم‌های مناسب...',
+            movieWaiting:
+              'برای دریافت پیشنهاد فیلم، حداقل ۳ بازی متفاوت انجام دهید.',
+            movieError:
+              'دریافت پیشنهاد فیلم در حال حاضر امکان‌پذیر نیست.',
             movieRetry: 'تلاش دوباره',
-            movieEmpty: 'هنوز فیلمی برای پیشنهاد پیدا نشد.',
+            movieEmpty:
+              'هنوز فیلمی برای پیشنهاد پیدا نشد.',
             movieSimilarity: 'تناسب',
             movieOverview: 'درباره فیلم',
             movieGenres: 'ژانر',
             movieId: 'شناسه فیلم',
-            recommendationReady: 'پیشنهادهای شخصی‌سازی‌شده',
+            movieMatchedTags: 'دلیل پیشنهاد',
+            recommendationReady:
+              'پیشنهادهای شخصی‌سازی‌شده',
             gamesRequired: 'بازی دیگر',
-            gamesProgress: 'بازی متفاوت تکمیل شده',
-            allGamesCompleted: 'تعداد کافی بازی برای پیشنهاد فیلم تکمیل شده است.',
-            noConnection: 'اتصال به سرویس پیشنهاد فیلم برقرار نشد.',
+            gamesProgress:
+              'بازی متفاوت تکمیل شده',
+            allGamesCompleted:
+              'تعداد کافی بازی برای پیشنهاد فیلم تکمیل شده است.',
+            noConnection:
+              'اتصال به سرویس پیشنهاد فیلم برقرار نشد.',
           }
         : {
             title: 'Performance Results',
-            subtitle: 'Your game performance analysis',
+            subtitle:
+              'Your game performance analysis',
             latest: 'Latest Result',
             allResults: 'Game History',
             noResults: 'No results yet.',
-            noResultsDescription: 'Complete a game to see your performance data here.',
+            noResultsDescription:
+              'Complete a game to see your performance data here.',
             startGame: 'Start a Game',
             score: 'Score',
             accuracy: 'Accuracy',
@@ -244,37 +337,56 @@ export default function GameResultsScreen({
             seconds: 'seconds',
             milliseconds: 'ms',
             outOf: 'out of',
-            cognitiveProfile: 'Cognitive Performance Profile',
+            cognitiveProfile:
+              'Cognitive Performance Profile',
             strongest: 'Strongest Area',
-            needsImprovement: 'Needs Improvement',
+            needsImprovement:
+              'Needs Improvement',
             overall: 'Overall Performance',
             gamesPlayed: 'Games Played',
             refresh: 'Refresh',
             back: 'Back',
             game: 'Game',
             metrics: 'Performance Metrics',
-            noMetric: 'No performance data recorded.',
-            exportData: 'Download Results (JSON)',
-            exportSuccess: 'Results file was saved successfully.',
-            exportError: 'Failed to save results file.',
-            exportEmpty: 'There is no data to download yet.',
-            cancelled: 'File saving was cancelled.',
-            movieTitle: 'Movies Recommended For You',
-            movieSubtitle: 'Based on your cognitive game performance',
-            movieLoading: 'Analyzing your results and finding the best movies for you...',
-            movieWaiting: 'Complete at least 3 different games to receive movie recommendations.',
-            movieError: 'Movie recommendations are currently unavailable.',
+            noMetric:
+              'No performance data recorded.',
+            exportData:
+              'Download Results (JSON)',
+            exportSuccess:
+              'Results file was saved successfully.',
+            exportError:
+              'Failed to save results file.',
+            exportEmpty:
+              'There is no data to download yet.',
+            cancelled:
+              'File saving was cancelled.',
+            movieTitle:
+              'Movies Recommended For You',
+            movieSubtitle:
+              'Based on your cognitive game performance',
+            movieLoading:
+              'Analyzing your results and finding the best movies for you...',
+            movieWaiting:
+              'Complete at least 3 different games to receive movie recommendations.',
+            movieError:
+              'Movie recommendations are currently unavailable.',
             movieRetry: 'Try Again',
-            movieEmpty: 'No movie recommendations were found.',
+            movieEmpty:
+              'No movie recommendations were found.',
             movieSimilarity: 'Match',
             movieOverview: 'About the movie',
             movieGenres: 'Genres',
             movieId: 'Movie ID',
-            recommendationReady: 'Personalized Recommendations',
+            movieMatchedTags: 'Why this was recommended',
+            recommendationReady:
+              'Personalized Recommendations',
             gamesRequired: 'more games',
-            gamesProgress: 'different games completed',
-            allGamesCompleted: 'Enough games have been completed for movie recommendations.',
-            noConnection: 'Could not connect to the movie recommendation service.',
+            gamesProgress:
+              'different games completed',
+            allGamesCompleted:
+              'Enough games have been completed for movie recommendations.',
+            noConnection:
+              'Could not connect to the movie recommendation service.',
           },
     [language]
   );
@@ -283,9 +395,18 @@ export default function GameResultsScreen({
     async () => {
       try {
         const data = await getGameResults();
-        setResults(Array.isArray(data) ? data : []);
+
+        setResults(
+          Array.isArray(data)
+            ? data
+            : []
+        );
       } catch (error) {
-        console.warn('[Results] Failed to load results:', error);
+        console.warn(
+          '[Results] Failed to load results:',
+          error
+        );
+
         setResults([]);
       } finally {
         setLoading(false);
@@ -304,14 +425,25 @@ export default function GameResultsScreen({
     loadResults();
   }, [loadResults]);
 
+  /**
+   * Count unique game types.
+   *
+   * The movie engine requires 3 DIFFERENT games,
+   * not simply 3 sessions of the same game.
+   */
   const completedGameIds = useMemo(() => {
     const set = new Set<string>();
+
     results.forEach((result) => {
       if (!result?.gameId) {
         return;
       }
-      set.add(normalizeGameId(result.gameId));
+
+      set.add(
+        normalizeGameId(result.gameId)
+      );
     });
+
     return set;
   }, [results]);
 
@@ -329,11 +461,18 @@ export default function GameResultsScreen({
     completedGamesCount >=
     MIN_GAMES_FOR_MOVIE_RECOMMENDATION;
 
+  /**
+   * Generate a stable signature from the game
+   * results so we don't repeatedly call the API
+   * with exactly the same data.
+   */
   const movieRequestSignature =
     useMemo(() => {
       return results
         .map((result) => ({
-          gameId: normalizeGameId(result.gameId),
+          gameId: normalizeGameId(
+            result.gameId
+          ),
           timestamp: result.timestamp,
           score: result.score,
           metrics: result.metrics,
@@ -349,6 +488,10 @@ export default function GameResultsScreen({
         .join('|');
     }, [results]);
 
+  /**
+   * Request movie recommendations from
+   * the current Colab / FastAPI service.
+   */
   const requestMovieRecommendations =
     useCallback(
       async (
@@ -359,6 +502,12 @@ export default function GameResultsScreen({
         }
 
         if (!results.length) {
+          return;
+        }
+
+        if (
+          movieLoading
+        ) {
           return;
         }
 
@@ -374,25 +523,71 @@ export default function GameResultsScreen({
         setMovieError(null);
 
         try {
-          const response =
-            await getMovieRecommendations(results);
+          console.log(
+            '[MovieRecommendation] Sending request...',
+            {
+              games: results.length,
+              differentGames:
+                completedGamesCount,
+              topK: 3,
+            }
+          );
 
           const recommendations =
-            Array.isArray(response)
-              ? response
+            await getMovieRecommendations(
+              results,
+              3
+            );
+
+          const normalizedRecommendations =
+            Array.isArray(recommendations)
+              ? recommendations
+                  .filter(
+                    (movie) =>
+                      movie &&
+                      typeof movie.title ===
+                        'string'
+                  )
+                  .slice(0, 3)
               : [];
 
+          console.log(
+            '[MovieRecommendation] Received:',
+            normalizedRecommendations
+          );
+
           setMovieRecommendations(
-            recommendations.slice(0, 3)
+            normalizedRecommendations
           );
 
           setLastMovieRequestSignature(
             movieRequestSignature
           );
+
+          if (
+            normalizedRecommendations.length ===
+            0
+          ) {
+            console.warn(
+              '[MovieRecommendation] API returned no recommendations.'
+            );
+          }
         } catch (error) {
-          console.warn('[MovieRecommendation] Request failed:', error);
+          console.error(
+            '[MovieRecommendation] Request failed:',
+            error
+          );
+
           setMovieRecommendations([]);
-          setMovieError(text.noConnection);
+
+          /**
+           * Keep the UI message friendly,
+           * while the actual error remains visible
+           * in development logs.
+           */
+          setMovieError(
+            text.noConnection
+          );
         } finally {
           setMovieLoading(false);
         }
@@ -400,21 +595,34 @@ export default function GameResultsScreen({
       [
         hasEnoughGamesForMovies,
         results,
+        completedGamesCount,
+        movieLoading,
         movieRequestSignature,
         lastMovieRequestSignature,
         text.noConnection,
       ]
     );
 
+  /**
+   * Automatically request recommendations
+   * when enough different games exist.
+   */
   useEffect(() => {
     if (
-      hasEnoughGamesForMovies &&
-      results.length &&
-      movieRequestSignature !==
-        lastMovieRequestSignature
+      !hasEnoughGamesForMovies ||
+      !results.length
     ) {
-      requestMovieRecommendations();
+      return;
     }
+
+    if (
+      movieRequestSignature ===
+      lastMovieRequestSignature
+    ) {
+      return;
+    }
+
+    requestMovieRecommendations();
   }, [
     hasEnoughGamesForMovies,
     results.length,
@@ -426,7 +634,8 @@ export default function GameResultsScreen({
   const createExportPayload =
     useCallback(() => {
       return {
-        exportedAt: new Date().toISOString(),
+        exportedAt:
+          new Date().toISOString(),
         count: results.length,
         results,
       };
@@ -437,7 +646,10 @@ export default function GameResultsScreen({
       const stamp =
         new Date()
           .toISOString()
-          .replace(/[:.]/g, '-');
+          .replace(
+            /[:.]/g,
+            '-'
+          );
 
       return `norulia_game_results_${stamp}.json`;
     }, []);
@@ -449,33 +661,56 @@ export default function GameResultsScreen({
         filename: string
       ) => {
         if (
-          typeof document === 'undefined' ||
-          typeof URL === 'undefined'
+          typeof document ===
+            'undefined' ||
+          typeof URL ===
+            'undefined'
         ) {
-          throw new Error('Browser download API unavailable.');
+          throw new Error(
+            'Browser download API unavailable.'
+          );
         }
 
         const blob =
           new Blob(
             [json],
             {
-              type: 'application/json;charset=utf-8',
+              type:
+                'application/json;charset=utf-8',
             }
           );
 
-        const url = URL.createObjectURL(blob);
+        const url =
+          URL.createObjectURL(
+            blob
+          );
 
         try {
-          const anchor = document.createElement('a');
+          const anchor =
+            document.createElement(
+              'a'
+            );
+
           anchor.href = url;
-          anchor.download = filename;
-          anchor.style.display = 'none';
-          document.body.appendChild(anchor);
+          anchor.download =
+            filename;
+          anchor.style.display =
+            'none';
+
+          document.body.appendChild(
+            anchor
+          );
+
           anchor.click();
-          document.body.removeChild(anchor);
+
+          document.body.removeChild(
+            anchor
+          );
         } finally {
           setTimeout(() => {
-            URL.revokeObjectURL(url);
+            URL.revokeObjectURL(
+              url
+            );
           }, 1000);
         }
       },
@@ -488,8 +723,13 @@ export default function GameResultsScreen({
         json: string,
         filename: string
       ) => {
-        if (!FileSystem.StorageAccessFramework) {
-          throw new Error('Storage Access Framework unavailable.');
+        if (
+          !FileSystem
+            .StorageAccessFramework
+        ) {
+          throw new Error(
+            'Storage Access Framework unavailable.'
+          );
         }
 
         const permission =
@@ -517,7 +757,9 @@ export default function GameResultsScreen({
           fileUri,
           json,
           {
-            encoding: FileSystem.EncodingType.UTF8,
+            encoding:
+              FileSystem.EncodingType
+                .UTF8,
           }
         );
 
@@ -537,16 +779,21 @@ export default function GameResultsScreen({
           FileSystem.cacheDirectory;
 
         if (!baseDirectory) {
-          throw new Error('No writable directory available.');
+          throw new Error(
+            'No writable directory available.'
+          );
         }
 
-        const fileUri = `${baseDirectory}${filename}`;
+        const fileUri =
+          `${baseDirectory}${filename}`;
 
         await FileSystem.writeAsStringAsync(
           fileUri,
           json,
           {
-            encoding: FileSystem.EncodingType.UTF8,
+            encoding:
+              FileSystem.EncodingType
+                .UTF8,
           }
         );
 
@@ -560,8 +807,10 @@ export default function GameResultsScreen({
         await Sharing.shareAsync(
           fileUri,
           {
-            mimeType: 'application/json',
-            dialogTitle: text.exportData,
+            mimeType:
+              'application/json',
+            dialogTitle:
+              text.exportData,
             UTI: 'public.json',
           }
         );
@@ -580,16 +829,21 @@ export default function GameResultsScreen({
           FileSystem.cacheDirectory;
 
         if (!baseDirectory) {
-          throw new Error('No writable directory available.');
+          throw new Error(
+            'No writable directory available.'
+          );
         }
 
-        const fileUri = `${baseDirectory}${filename}`;
+        const fileUri =
+          `${baseDirectory}${filename}`;
 
         await FileSystem.writeAsStringAsync(
           fileUri,
           json,
           {
-            encoding: FileSystem.EncodingType.UTF8,
+            encoding:
+              FileSystem.EncodingType
+                .UTF8,
           }
         );
 
@@ -597,14 +851,18 @@ export default function GameResultsScreen({
           await Sharing.isAvailableAsync();
 
         if (!available) {
-          throw new Error('Sharing unavailable.');
+          throw new Error(
+            'Sharing unavailable.'
+          );
         }
 
         await Sharing.shareAsync(
           fileUri,
           {
-            mimeType: 'application/json',
-            dialogTitle: text.exportData,
+            mimeType:
+              'application/json',
+            dialogTitle:
+              text.exportData,
             UTI: 'public.json',
           }
         );
@@ -631,36 +889,84 @@ export default function GameResultsScreen({
         setExporting(true);
 
         try {
-          const payload = createExportPayload();
-          const json = JSON.stringify(payload, null, 2);
-          const filename = createExportFilename();
+          const payload =
+            createExportPayload();
 
-          if (Platform.OS === 'web') {
-            await exportOnWeb(json, filename);
+          const json =
+            JSON.stringify(
+              payload,
+              null,
+              2
+            );
+
+          const filename =
+            createExportFilename();
+
+          if (
+            Platform.OS ===
+            'web'
+          ) {
+            await exportOnWeb(
+              json,
+              filename
+            );
+
             return;
           }
 
-          if (Platform.OS === 'android') {
-            const saved = await exportOnAndroid(json, filename);
+          if (
+            Platform.OS ===
+            'android'
+          ) {
+            const saved =
+              await exportOnAndroid(
+                json,
+                filename
+              );
 
             if (!saved) {
-              Alert.alert(text.exportData, text.cancelled);
+              Alert.alert(
+                text.exportData,
+                text.cancelled
+              );
+
               return;
             }
 
-            Alert.alert(text.exportData, text.exportSuccess);
+            Alert.alert(
+              text.exportData,
+              text.exportSuccess
+            );
+
             return;
           }
 
-          if (Platform.OS === 'ios') {
-            await exportOnIOS(json, filename);
+          if (
+            Platform.OS ===
+            'ios'
+          ) {
+            await exportOnIOS(
+              json,
+              filename
+            );
+
             return;
           }
 
-          await exportWithSharing(json, filename);
+          await exportWithSharing(
+            json,
+            filename
+          );
         } catch (error) {
-          console.warn('[Results] Export failed:', error);
-          Alert.alert(text.exportData, text.exportError);
+          console.warn(
+            '[Results] Export failed:',
+            error
+          );
+
+          Alert.alert(
+            text.exportData,
+            text.exportError
+          );
         } finally {
           setExporting(false);
         }
@@ -683,7 +989,9 @@ export default function GameResultsScreen({
       (gameId: string) => {
         return (
           GAME_ICONS[
-            normalizeGameId(gameId)
+            normalizeGameId(
+              gameId
+            )
           ] || Gamepad2
         );
       },
@@ -693,7 +1001,10 @@ export default function GameResultsScreen({
   const getPerformanceLabel =
     useCallback(
       (score?: number) => {
-        if (typeof score !== 'number') {
+        if (
+          typeof score !==
+          'number'
+        ) {
           return text.good;
         }
 
@@ -713,11 +1024,22 @@ export default function GameResultsScreen({
   const formatDate =
     useCallback(
       (timestamp: number) => {
-        const date = new Date(timestamp);
-        const now = new Date();
-        const diff = Math.floor(
-          (now.getTime() - date.getTime()) / 86400000
-        );
+        const date =
+          new Date(
+            timestamp
+          );
+
+        const now =
+          new Date();
+
+        const diff =
+          Math.floor(
+            (
+              now.getTime() -
+              date.getTime()
+            ) /
+              86400000
+          );
 
         if (diff === 0) {
           return text.today;
@@ -738,9 +1060,13 @@ export default function GameResultsScreen({
         metrics: GameMetric[],
         ids: string[]
       ) => {
-        const metric = metrics.find(
-          (item) => ids.includes(item.id)
-        );
+        const metric =
+          metrics.find(
+            (item) =>
+              ids.includes(
+                item.id
+              )
+          );
 
         return metric;
       },
@@ -753,7 +1079,8 @@ export default function GameResultsScreen({
         style={[
           styles.loadingContainer,
           {
-            backgroundColor: colors.background,
+            backgroundColor:
+              colors.background,
           },
         ]}
       >
@@ -784,7 +1111,8 @@ export default function GameResultsScreen({
         style={[
           styles.container,
           {
-            backgroundColor: colors.background,
+            backgroundColor:
+              colors.background,
           },
         ]}
       >
@@ -792,7 +1120,10 @@ export default function GameResultsScreen({
           style={[
             styles.emptyContainer,
             {
-              direction: isRTL ? 'rtl' : 'ltr',
+              direction:
+                isRTL
+                  ? 'rtl'
+                  : 'ltr',
             },
           ]}
         >
@@ -800,7 +1131,9 @@ export default function GameResultsScreen({
             style={[
               styles.emptyIcon,
               {
-                backgroundColor: colors.primary + '18',
+                backgroundColor:
+                  colors.primary +
+                  '18',
               },
             ]}
           >
@@ -825,26 +1158,37 @@ export default function GameResultsScreen({
             style={[
               styles.emptyDescription,
               {
-                color: colors.textSecondary,
-                textAlign: isRTL ? 'right' : 'center',
+                color:
+                  colors.textSecondary,
+                textAlign:
+                  isRTL
+                    ? 'right'
+                    : 'center',
               },
             ]}
           >
-            {text.noResultsDescription}
+            {
+              text.noResultsDescription
+            }
           </Text>
 
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => router.back()}
+            onPress={() =>
+              router.back()
+            }
             style={[
               styles.primaryButton,
               {
-                backgroundColor: colors.primary,
+                backgroundColor:
+                  colors.primary,
               },
             ]}
           >
             <Text
-              style={styles.primaryButtonText}
+              style={
+                styles.primaryButtonText
+              }
             >
               {text.startGame}
             </Text>
@@ -859,37 +1203,55 @@ export default function GameResultsScreen({
       style={[
         styles.container,
         {
-          backgroundColor: colors.background,
+          backgroundColor:
+            colors.background,
         },
       ]}
     >
       <ScrollView
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={
+          false
+        }
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.primary}
+            refreshing={
+              refreshing
+            }
+            onRefresh={
+              onRefresh
+            }
+            tintColor={
+              colors.primary
+            }
           />
         }
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={
+          styles.scrollContent
+        }
       >
         <View
           style={[
             styles.header,
             {
-              flexDirection: isRTL ? 'row-reverse' : 'row',
+              flexDirection:
+                isRTL
+                  ? 'row-reverse'
+                  : 'row',
             },
           ]}
         >
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() =>
+              router.back()
+            }
             activeOpacity={0.8}
             style={[
               styles.iconButton,
               {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
+                backgroundColor:
+                  colors.surface,
+                borderColor:
+                  colors.border,
               },
             ]}
           >
@@ -903,7 +1265,10 @@ export default function GameResultsScreen({
             style={[
               styles.headerTextContainer,
               {
-                alignItems: isRTL ? 'flex-end' : 'flex-start',
+                alignItems:
+                  isRTL
+                    ? 'flex-end'
+                    : 'flex-start',
               },
             ]}
           >
@@ -911,7 +1276,8 @@ export default function GameResultsScreen({
               style={[
                 styles.title,
                 {
-                  color: colors.text,
+                  color:
+                    colors.text,
                 },
               ]}
             >
@@ -922,8 +1288,12 @@ export default function GameResultsScreen({
               style={[
                 styles.subtitle,
                 {
-                  color: colors.textSecondary,
-                  textAlign: isRTL ? 'right' : 'left',
+                  color:
+                    colors.textSecondary,
+                  textAlign:
+                    isRTL
+                      ? 'right'
+                      : 'left',
                 },
               ]}
             >
@@ -936,8 +1306,10 @@ export default function GameResultsScreen({
           style={[
             styles.summaryCard,
             {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
+              backgroundColor:
+                colors.surface,
+              borderColor:
+                colors.border,
             },
           ]}
         >
@@ -945,7 +1317,10 @@ export default function GameResultsScreen({
             style={[
               styles.summaryHeader,
               {
-                flexDirection: isRTL ? 'row-reverse' : 'row',
+                flexDirection:
+                  isRTL
+                    ? 'row-reverse'
+                    : 'row',
               },
             ]}
           >
@@ -953,13 +1328,17 @@ export default function GameResultsScreen({
               style={[
                 styles.summaryIcon,
                 {
-                  backgroundColor: colors.primary + '18',
+                  backgroundColor:
+                    colors.primary +
+                    '18',
                 },
               ]}
             >
               <TrendingUp
                 size={22}
-                color={colors.primary}
+                color={
+                  colors.primary
+                }
               />
             </View>
 
@@ -967,7 +1346,10 @@ export default function GameResultsScreen({
               style={[
                 styles.summaryHeaderText,
                 {
-                  alignItems: isRTL ? 'flex-end' : 'flex-start',
+                  alignItems:
+                    isRTL
+                      ? 'flex-end'
+                      : 'flex-start',
                 },
               ]}
             >
@@ -975,22 +1357,29 @@ export default function GameResultsScreen({
                 style={[
                   styles.summaryTitle,
                   {
-                    color: colors.text,
+                    color:
+                      colors.text,
                   },
                 ]}
               >
-                {text.cognitiveProfile}
+                {
+                  text.cognitiveProfile
+                }
               </Text>
 
               <Text
                 style={[
                   styles.summarySubtitle,
                   {
-                    color: colors.textSecondary,
+                    color:
+                      colors.textSecondary,
                   },
                 ]}
               >
-                {results.length} {text.gamesPlayed}
+                {results.length}{' '}
+                {
+                  text.gamesPlayed
+                }
               </Text>
             </View>
           </View>
@@ -999,33 +1388,44 @@ export default function GameResultsScreen({
             style={[
               styles.summaryStats,
               {
-                flexDirection: isRTL ? 'row-reverse' : 'row',
+                flexDirection:
+                  isRTL
+                    ? 'row-reverse'
+                    : 'row',
               },
             ]}
           >
             <View
-              style={styles.summaryStat}
+              style={
+                styles.summaryStat
+              }
             >
               <Text
                 style={[
                   styles.summaryStatValue,
                   {
-                    color: colors.text,
+                    color:
+                      colors.text,
                   },
                 ]}
               >
-                {completedGamesCount}
+                {
+                  completedGamesCount
+                }
               </Text>
 
               <Text
                 style={[
                   styles.summaryStatLabel,
                   {
-                    color: colors.textSecondary,
+                    color:
+                      colors.textSecondary,
                   },
                 ]}
               >
-                {text.gamesProgress}
+                {
+                  text.gamesProgress
+                }
               </Text>
             </View>
 
@@ -1033,21 +1433,25 @@ export default function GameResultsScreen({
               style={[
                 styles.summaryDivider,
                 {
-                  backgroundColor: colors.border,
+                  backgroundColor:
+                    colors.border,
                 },
               ]}
             />
 
             <View
-              style={styles.summaryStat}
+              style={
+                styles.summaryStat
+              }
             >
               <Text
                 style={[
                   styles.summaryStatValue,
                   {
-                    color: hasEnoughGamesForMovies
-                      ? colors.success
-                      : colors.primary,
+                    color:
+                      hasEnoughGamesForMovies
+                        ? colors.success
+                        : colors.primary,
                   },
                 ]}
               >
@@ -1060,7 +1464,8 @@ export default function GameResultsScreen({
                 style={[
                   styles.summaryStatLabel,
                   {
-                    color: colors.textSecondary,
+                    color:
+                      colors.textSecondary,
                   },
                 ]}
               >
@@ -1072,12 +1477,18 @@ export default function GameResultsScreen({
           </View>
         </View>
 
+        {/* ======================================================
+            MOVIE RECOMMENDATIONS
+           ====================================================== */}
+
         <View
           style={[
             styles.movieSection,
             {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
+              backgroundColor:
+                colors.surface,
+              borderColor:
+                colors.border,
             },
           ]}
         >
@@ -1085,7 +1496,10 @@ export default function GameResultsScreen({
             style={[
               styles.movieHeader,
               {
-                flexDirection: isRTL ? 'row-reverse' : 'row',
+                flexDirection:
+                  isRTL
+                    ? 'row-reverse'
+                    : 'row',
               },
             ]}
           >
@@ -1093,13 +1507,17 @@ export default function GameResultsScreen({
               style={[
                 styles.movieHeaderIcon,
                 {
-                  backgroundColor: colors.primary + '18',
+                  backgroundColor:
+                    colors.primary +
+                    '18',
                 },
               ]}
             >
               <Film
                 size={23}
-                color={colors.primary}
+                color={
+                  colors.primary
+                }
               />
             </View>
 
@@ -1107,7 +1525,10 @@ export default function GameResultsScreen({
               style={[
                 styles.movieHeaderText,
                 {
-                  alignItems: isRTL ? 'flex-end' : 'flex-start',
+                  alignItems:
+                    isRTL
+                      ? 'flex-end'
+                      : 'flex-start',
                 },
               ]}
             >
@@ -1115,7 +1536,10 @@ export default function GameResultsScreen({
                 style={[
                   styles.movieTitleRow,
                   {
-                    flexDirection: isRTL ? 'row-reverse' : 'row',
+                    flexDirection:
+                      isRTL
+                        ? 'row-reverse'
+                        : 'row',
                   },
                 ]}
               >
@@ -1123,16 +1547,21 @@ export default function GameResultsScreen({
                   style={[
                     styles.movieSectionTitle,
                     {
-                      color: colors.text,
+                      color:
+                        colors.text,
                     },
                   ]}
                 >
-                  {text.movieTitle}
+                  {
+                    text.movieTitle
+                  }
                 </Text>
 
                 <Sparkles
                   size={17}
-                  color={colors.primary}
+                  color={
+                    colors.primary
+                  }
                 />
               </View>
 
@@ -1140,15 +1569,23 @@ export default function GameResultsScreen({
                 style={[
                   styles.movieSectionSubtitle,
                   {
-                    color: colors.textSecondary,
-                    textAlign: isRTL ? 'right' : 'left',
+                    color:
+                      colors.textSecondary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
                   },
                 ]}
               >
-                {text.movieSubtitle}
+                {
+                  text.movieSubtitle
+                }
               </Text>
             </View>
           </View>
+
+          {/* Waiting for enough different games */}
 
           {!hasEnoughGamesForMovies &&
             !movieLoading && (
@@ -1156,68 +1593,109 @@ export default function GameResultsScreen({
                 style={[
                   styles.movieMessage,
                   {
-                    backgroundColor: colors.background,
-                    flexDirection: isRTL ? 'row-reverse' : 'row',
+                    backgroundColor:
+                      colors.background,
+                    flexDirection:
+                      isRTL
+                        ? 'row-reverse'
+                        : 'row',
                   },
                 ]}
               >
                 <Gamepad2
                   size={24}
-                  color={colors.primary}
+                  color={
+                    colors.primary
+                  }
                 />
 
                 <View
-                  style={styles.movieWaitingContent}
+                  style={
+                    styles.movieWaitingContent
+                  }
                 >
                   <Text
                     style={[
                       styles.movieMessageText,
                       {
-                        color: colors.text,
-                        textAlign: isRTL ? 'right' : 'left',
+                        color:
+                          colors.text,
+                        textAlign:
+                          isRTL
+                            ? 'right'
+                            : 'left',
                       },
                     ]}
                   >
-                    {text.movieWaiting}
+                    {
+                      text.movieWaiting
+                    }
                   </Text>
 
                   <Text
                     style={[
                       styles.movieProgressText,
                       {
-                        color: colors.primary,
-                        textAlign: isRTL ? 'right' : 'left',
+                        color:
+                          colors.primary,
+                        textAlign:
+                          isRTL
+                            ? 'right'
+                            : 'left',
                       },
                     ]}
                   >
-                    {completedGamesCount} / {MIN_GAMES_FOR_MOVIE_RECOMMENDATION} {text.gamesProgress}
+                    {
+                      completedGamesCount
+                    }{' '}
+                    /{' '}
+                    {
+                      MIN_GAMES_FOR_MOVIE_RECOMMENDATION
+                    }{' '}
+                    {
+                      text.gamesProgress
+                    }
                   </Text>
                 </View>
               </View>
             )}
 
+          {/* Loading */}
+
           {movieLoading && (
             <View
-              style={styles.movieLoading}
+              style={
+                styles.movieLoading
+              }
             >
               <ActivityIndicator
                 size="small"
-                color={colors.primary}
+                color={
+                  colors.primary
+                }
               />
 
               <Text
                 style={[
                   styles.movieLoadingText,
                   {
-                    color: colors.textSecondary,
-                    textAlign: isRTL ? 'right' : 'left',
+                    color:
+                      colors.textSecondary,
+                    textAlign:
+                      isRTL
+                        ? 'right'
+                        : 'left',
                   },
                 ]}
               >
-                {text.movieLoading}
+                {
+                  text.movieLoading
+                }
               </Text>
             </View>
           )}
+
+          {/* Error */}
 
           {!movieLoading &&
             movieError && (
@@ -1225,50 +1703,78 @@ export default function GameResultsScreen({
                 style={[
                   styles.movieError,
                   {
-                    backgroundColor: colors.background,
-                    borderColor: colors.border,
-                    flexDirection: isRTL ? 'row-reverse' : 'row',
+                    backgroundColor:
+                      colors.background,
+                    borderColor:
+                      colors.border,
+                    flexDirection:
+                      isRTL
+                        ? 'row-reverse'
+                        : 'row',
                   },
                 ]}
               >
                 <AlertCircle
                   size={23}
-                  color={colors.error || '#ef4444'}
+                  color={
+                    colors.error ||
+                    '#ef4444'
+                  }
                 />
 
                 <View
-                  style={styles.movieErrorContent}
+                  style={
+                    styles.movieErrorContent
+                  }
                 >
                   <Text
                     style={[
                       styles.movieErrorText,
                       {
-                        color: colors.text,
-                        textAlign: isRTL ? 'right' : 'left',
+                        color:
+                          colors.text,
+                        textAlign:
+                          isRTL
+                            ? 'right'
+                            : 'left',
                       },
                     ]}
                   >
-                    {text.movieError}
+                    {
+                      text.movieError
+                    }
                   </Text>
 
                   {hasEnoughGamesForMovies && (
                     <TouchableOpacity
                       onPress={() =>
-                        requestMovieRecommendations(true)
+                        requestMovieRecommendations(
+                          true
+                        )
                       }
-                      activeOpacity={0.8}
+                      activeOpacity={
+                        0.8
+                      }
                       style={[
                         styles.retryButton,
                         {
-                          backgroundColor: colors.primary,
-                          alignSelf: isRTL ? 'flex-end' : 'flex-start',
+                          backgroundColor:
+                            colors.primary,
+                          alignSelf:
+                            isRTL
+                              ? 'flex-end'
+                              : 'flex-start',
                         },
                       ]}
                     >
                       <Text
-                        style={styles.retryButtonText}
+                        style={
+                          styles.retryButtonText
+                        }
                       >
-                        {text.movieRetry}
+                        {
+                          text.movieRetry
+                        }
                       </Text>
                     </TouchableOpacity>
                   )}
@@ -1276,11 +1782,16 @@ export default function GameResultsScreen({
               </View>
             )}
 
+          {/* Recommendations */}
+
           {!movieLoading &&
             !movieError &&
-            movieRecommendations.length > 0 && (
+            movieRecommendations.length >
+              0 && (
               <View
-                style={styles.moviesList}
+                style={
+                  styles.moviesList
+                }
               >
                 {movieRecommendations
                   .slice(0, 3)
@@ -1290,7 +1801,14 @@ export default function GameResultsScreen({
                       index
                     ) => {
                       const genres =
-                        getMovieGenres(movie.genres);
+                        getMovieGenres(
+                          movie.genres
+                        );
+
+                      const matchedTags =
+                        getMovieMatchedTags(
+                          movie.matchedTags
+                        );
 
                       return (
                         <View
@@ -1298,58 +1816,91 @@ export default function GameResultsScreen({
                           style={[
                             styles.movieCard,
                             {
-                              backgroundColor: colors.background,
-                              borderColor: colors.border,
-                              flexDirection: isRTL ? 'row-reverse' : 'row',
+                              backgroundColor:
+                                colors.background,
+                              borderColor:
+                                colors.border,
+                              flexDirection:
+                                isRTL
+                                  ? 'row-reverse'
+                                  : 'row',
                             },
                           ]}
                         >
+                          {/* Rank */}
+
                           <View
                             style={[
                               styles.movieNumber,
                               {
-                                backgroundColor: colors.primary,
-                                marginRight: isRTL ? 0 : 12,
-                                marginLeft: isRTL ? 12 : 0,
+                                backgroundColor:
+                                  colors.primary,
+                                marginRight:
+                                  isRTL
+                                    ? 0
+                                    : 12,
+                                marginLeft:
+                                  isRTL
+                                    ? 12
+                                    : 0,
                               },
                             ]}
                           >
                             <Text
-                              style={styles.movieNumberText}
+                              style={
+                                styles.movieNumberText
+                              }
                             >
                               {index + 1}
                             </Text>
                           </View>
 
                           <View
-                            style={styles.movieContent}
+                            style={
+                              styles.movieContent
+                            }
                           >
+                            {/* Title + match */}
+
                             <View
                               style={[
                                 styles.movieNameRow,
                                 {
-                                  flexDirection: isRTL ? 'row-reverse' : 'row',
+                                  flexDirection:
+                                    isRTL
+                                      ? 'row-reverse'
+                                      : 'row',
                                 },
                               ]}
                             >
                               <Text
-                                numberOfLines={2}
+                                numberOfLines={
+                                  2
+                                }
                                 style={[
                                   styles.movieName,
                                   {
-                                    color: colors.text,
-                                    textAlign: isRTL ? 'right' : 'left',
+                                    color:
+                                      colors.text,
+                                    textAlign:
+                                      isRTL
+                                        ? 'right'
+                                        : 'left',
                                   },
                                 ]}
                               >
-                                {movie.title}
+                                {
+                                  movie.title
+                                }
                               </Text>
 
                               <View
                                 style={[
                                   styles.matchBadge,
                                   {
-                                    backgroundColor: colors.primary + '18',
+                                    backgroundColor:
+                                      colors.primary +
+                                      '18',
                                   },
                                 ]}
                               >
@@ -1357,35 +1908,52 @@ export default function GameResultsScreen({
                                   style={[
                                     styles.matchText,
                                     {
-                                      color: colors.primary,
+                                      color:
+                                        colors.primary,
                                     },
                                   ]}
                                 >
-                                  {formatSimilarity(movie.similarity)}
+                                  {formatSimilarity(
+                                    movie.similarity
+                                  )}
                                 </Text>
                               </View>
                             </View>
 
-                            {genres.length > 0 && (
+                            {/* Genres */}
+
+                            {genres.length >
+                              0 && (
                               <View
                                 style={[
                                   styles.genreRow,
                                   {
-                                    flexDirection: isRTL ? 'row-reverse' : 'row',
+                                    flexDirection:
+                                      isRTL
+                                        ? 'row-reverse'
+                                        : 'row',
                                   },
                                 ]}
                               >
                                 {genres
-                                  .slice(0, 3)
+                                  .slice(
+                                    0,
+                                    3
+                                  )
                                   .map(
-                                    (genre) => (
+                                    (
+                                      genre,
+                                      genreIndex
+                                    ) => (
                                       <View
-                                        key={genre}
+                                        key={`${genre}-${genreIndex}`}
                                         style={[
                                           styles.genreChip,
                                           {
-                                            backgroundColor: colors.surface,
-                                            borderColor: colors.border,
+                                            backgroundColor:
+                                              colors.surface,
+                                            borderColor:
+                                              colors.border,
                                           },
                                         ]}
                                       >
@@ -1393,11 +1961,14 @@ export default function GameResultsScreen({
                                           style={[
                                             styles.genreText,
                                             {
-                                              color: colors.textSecondary,
+                                              color:
+                                                colors.textSecondary,
                                             },
                                           ]}
                                         >
-                                          {genre}
+                                          {
+                                            genre
+                                          }
                                         </Text>
                                       </View>
                                     )
@@ -1405,24 +1976,129 @@ export default function GameResultsScreen({
                               </View>
                             )}
 
-                            <Text
-                              style={[
-                                styles.movieOverview,
+                            {/* Matched tags */}
+
+                            {matchedTags.length >
+                              0 && (
+                              <View
+                                style={[
+                                  styles.matchedTagsContainer,
+                                  {
+                                    alignItems:
+                                      isRTL
+                                        ? 'flex-end'
+                                        : 'flex-start',
+                                  },
+                                ]}
+                              >
+                                <Text
+                                  style={[
+                                    styles.matchedTagsLabel,
+                                    {
+                                      color:
+                                        colors.textSecondary,
+                                      textAlign:
+                                        isRTL
+                                          ? 'right'
+                                          : 'left',
+                                    },
+                                  ]}
+                                >
+                                  {
+                                    text.movieMatchedTags
+                                  }
+                                </Text>
+
+                                <View
+                                  style={[
+                                    styles.genreRow,
+                                    {
+                                      flexDirection:
+                                        isRTL
+                                          ? 'row-reverse'
+                                          : 'row',
+                                    },
+                                  ]}
+                                >
+                                  {matchedTags
+                                    .slice(
+                                      0,
+                                      4
+                                    )
+                                    .map(
+                                      (
+                                        tag,
+                                        tagIndex
+                                      ) => (
+                                        <View
+                                          key={`${tag}-${tagIndex}`}
+                                          style={[
+                                            styles.tagChip,
+                                            {
+                                              backgroundColor:
+                                                colors.primary +
+                                                '12',
+                                              borderColor:
+                                                colors.primary +
+                                                '35',
+                                            },
+                                          ]}
+                                        >
+                                          <Text
+                                            style={[
+                                              styles.tagText,
+                                              {
+                                                color:
+                                                  colors.primary,
+                                              },
+                                            ]}
+                                          >
+                                            {
+                                              tag
+                                            }
+                                          </Text>
+                                        </View>
+                                      )
+                                    )}
+                                </View>
+                              </View>
+                            )}
+
+                            {/* Overview */}
+
+                            {movie.overview ? (
+                              <Text
+                                style={[
+                                  styles.movieOverview,
+                                  {
+                                    color:
+                                      colors.textSecondary,
+                                    textAlign:
+                                      isRTL
+                                        ? 'right'
+                                        : 'left',
+                                  },
+                                ]}
+                                numberOfLines={
+                                  4
+                                }
+                              >
                                 {
-                                  color: colors.textSecondary,
-                                  textAlign: isRTL ? 'right' : 'left',
-                                },
-                              ]}
-                              numberOfLines={4}
-                            >
-                              {movie.overview}
-                            </Text>
+                                  movie.overview
+                                }
+                              </Text>
+                            ) : null}
+
+                            {/* Metadata */}
 
                             <View
                               style={[
                                 styles.movieMeta,
                                 {
-                                  flexDirection: isRTL ? 'row-reverse' : 'row',
+                                  flexDirection:
+                                    isRTL
+                                      ? 'row-reverse'
+                                      : 'row',
                                 },
                               ]}
                             >
@@ -1430,22 +2106,35 @@ export default function GameResultsScreen({
                                 style={[
                                   styles.movieMetaText,
                                   {
-                                    color: colors.textSecondary,
+                                    color:
+                                      colors.textSecondary,
                                   },
                                 ]}
                               >
-                                {text.movieId}: {movie.movieId}
+                                {
+                                  text.movieId
+                                }
+                                :{' '}
+                                {
+                                  movie.movieId
+                                }
                               </Text>
 
                               <Text
                                 style={[
                                   styles.movieMetaText,
                                   {
-                                    color: colors.primary,
+                                    color:
+                                      colors.primary,
                                   },
                                 ]}
                               >
-                                {text.movieSimilarity} {formatSimilarity(movie.similarity)}
+                                {
+                                  text.movieSimilarity
+                                }{' '}
+                                {formatSimilarity(
+                                  movie.similarity
+                                )}
                               </Text>
                             </View>
                           </View>
@@ -1456,63 +2145,95 @@ export default function GameResultsScreen({
               </View>
             )}
 
+          {/* Empty result after successful request */}
+
           {!movieLoading &&
             !movieError &&
             hasEnoughGamesForMovies &&
             lastMovieRequestSignature ===
               movieRequestSignature &&
-            movieRecommendations.length === 0 && (
+            movieRecommendations.length ===
+              0 && (
               <View
                 style={[
                   styles.movieMessage,
                   {
-                    backgroundColor: colors.background,
+                    backgroundColor:
+                      colors.background,
                   },
                 ]}
               >
                 <Film
                   size={24}
-                  color={colors.primary}
+                  color={
+                    colors.primary
+                  }
                 />
 
                 <Text
                   style={[
                     styles.movieMessageText,
                     {
-                      color: colors.textSecondary,
-                      textAlign: isRTL ? 'right' : 'left',
+                      color:
+                        colors.textSecondary,
+                      textAlign:
+                        isRTL
+                          ? 'right'
+                          : 'left',
                     },
                   ]}
                 >
-                  {text.movieEmpty}
+                  {
+                    text.movieEmpty
+                  }
                 </Text>
               </View>
             )}
         </View>
 
+        {/* ======================================================
+            EXPORT
+           ====================================================== */}
+
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={exportResults}
-          disabled={exporting}
+          onPress={
+            exportResults
+          }
+          disabled={
+            exporting
+          }
           style={[
             styles.exportButton,
             {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              opacity: exporting ? 0.6 : 1,
-              flexDirection: isRTL ? 'row-reverse' : 'row',
+              backgroundColor:
+                colors.surface,
+              borderColor:
+                colors.border,
+              opacity:
+                exporting
+                  ? 0.6
+                  : 1,
+              flexDirection:
+                isRTL
+                  ? 'row-reverse'
+                  : 'row',
             },
           ]}
         >
           {exporting ? (
             <ActivityIndicator
               size="small"
-              color={colors.primary}
+              color={
+                colors.primary
+              }
             />
           ) : (
             <Download
               size={20}
-              color={colors.primary}
+              color={
+                colors.primary
+              }
             />
           )}
 
@@ -1520,19 +2241,29 @@ export default function GameResultsScreen({
             style={[
               styles.exportButtonText,
               {
-                color: colors.text,
+                color:
+                  colors.text,
               },
             ]}
           >
-            {text.exportData}
+            {
+              text.exportData
+            }
           </Text>
         </TouchableOpacity>
+
+        {/* ======================================================
+            GAME HISTORY
+           ====================================================== */}
 
         <View
           style={[
             styles.sectionHeader,
             {
-              flexDirection: isRTL ? 'row-reverse' : 'row',
+              flexDirection:
+                isRTL
+                  ? 'row-reverse'
+                  : 'row',
             },
           ]}
         >
@@ -1541,12 +2272,18 @@ export default function GameResultsScreen({
               style={[
                 styles.sectionTitle,
                 {
-                  color: colors.text,
-                  textAlign: isRTL ? 'right' : 'left',
+                  color:
+                    colors.text,
+                  textAlign:
+                    isRTL
+                      ? 'right'
+                      : 'left',
                 },
               ]}
             >
-              {text.allResults}
+              {
+                text.allResults
+              }
             </Text>
           </View>
         </View>
@@ -1560,7 +2297,9 @@ export default function GameResultsScreen({
               index
             ) => {
               const Icon =
-                getGameIcon(result.gameId);
+                getGameIcon(
+                  result.gameId
+                );
 
               const accuracy =
                 getMetricValue(
@@ -1588,8 +2327,10 @@ export default function GameResultsScreen({
                   style={[
                     styles.resultCard,
                     {
-                      backgroundColor: colors.surface,
-                      borderColor: colors.border,
+                      backgroundColor:
+                        colors.surface,
+                      borderColor:
+                        colors.border,
                     },
                   ]}
                 >
@@ -1597,7 +2338,10 @@ export default function GameResultsScreen({
                     style={[
                       styles.resultHeader,
                       {
-                        flexDirection: isRTL ? 'row-reverse' : 'row',
+                        flexDirection:
+                          isRTL
+                            ? 'row-reverse'
+                            : 'row',
                       },
                     ]}
                   >
@@ -1605,13 +2349,17 @@ export default function GameResultsScreen({
                       style={[
                         styles.gameIcon,
                         {
-                          backgroundColor: colors.primary + '18',
+                          backgroundColor:
+                            colors.primary +
+                            '18',
                         },
                       ]}
                     >
                       <Icon
                         size={22}
-                        color={colors.primary}
+                        color={
+                          colors.primary
+                        }
                       />
                     </View>
 
@@ -1619,7 +2367,10 @@ export default function GameResultsScreen({
                       style={[
                         styles.resultHeaderText,
                         {
-                          alignItems: isRTL ? 'flex-end' : 'flex-start',
+                          alignItems:
+                            isRTL
+                              ? 'flex-end'
+                              : 'flex-start',
                         },
                       ]}
                     >
@@ -1627,21 +2378,28 @@ export default function GameResultsScreen({
                         style={[
                           styles.gameName,
                           {
-                            color: colors.text,
+                            color:
+                              colors.text,
                           },
                         ]}
                       >
-                        {result.gameName}
+                        {
+                          result.gameName
+                        }
                       </Text>
 
-                      <Text                        style={[
+                      <Text
+                        style={[
                           styles.resultDate,
                           {
-                            color: colors.textSecondary,
+                            color:
+                              colors.textSecondary,
                           },
                         ]}
                       >
-                        {formatDate(result.timestamp)}
+                        {formatDate(
+                          result.timestamp
+                        )}
                       </Text>
                     </View>
 
@@ -1651,7 +2409,9 @@ export default function GameResultsScreen({
                         style={[
                           styles.scoreContainer,
                           {
-                            backgroundColor: colors.primary + '18',
+                            backgroundColor:
+                              colors.primary +
+                              '18',
                           },
                         ]}
                       >
@@ -1659,22 +2419,28 @@ export default function GameResultsScreen({
                           style={[
                             styles.scoreValue,
                             {
-                              color: colors.primary,
+                              color:
+                                colors.primary,
                             },
                           ]}
                         >
-                          {result.score}
+                          {
+                            result.score
+                          }
                         </Text>
 
                         <Text
                           style={[
                             styles.scoreLabel,
                             {
-                              color: colors.textSecondary,
+                              color:
+                                colors.textSecondary,
                             },
                           ]}
                         >
-                          {text.score}
+                          {
+                            text.score
+                          }
                         </Text>
                       </View>
                     )}
@@ -1686,12 +2452,20 @@ export default function GameResultsScreen({
                       style={[
                         styles.performanceLabel,
                         {
-                          color: colors.textSecondary,
-                          textAlign: isRTL ? 'right' : 'left',
+                          color:
+                            colors.textSecondary,
+                          textAlign:
+                            isRTL
+                              ? 'right'
+                              : 'left',
                         },
                       ]}
                     >
-                      {getPerformanceLabel(result.score)}
+                      {
+                        getPerformanceLabel(
+                          result.score
+                        )
+                      }
                     </Text>
                   )}
 
@@ -1699,7 +2473,10 @@ export default function GameResultsScreen({
                     style={[
                       styles.metricsRow,
                       {
-                        flexDirection: isRTL ? 'row-reverse' : 'row',
+                        flexDirection:
+                          isRTL
+                            ? 'row-reverse'
+                            : 'row',
                       },
                     ]}
                   >
@@ -1708,7 +2485,10 @@ export default function GameResultsScreen({
                         style={[
                           styles.metricItem,
                           {
-                            alignItems: isRTL ? 'flex-end' : 'flex-start',
+                            alignItems:
+                              isRTL
+                                ? 'flex-end'
+                                : 'flex-start',
                           },
                         ]}
                       >
@@ -1716,23 +2496,32 @@ export default function GameResultsScreen({
                           style={[
                             styles.metricLabel,
                             {
-                              color: colors.textSecondary,
+                              color:
+                                colors.textSecondary,
                             },
                           ]}
                         >
-                          {text.accuracy}
+                          {
+                            text.accuracy
+                          }
                         </Text>
 
                         <Text
                           style={[
                             styles.metricValue,
                             {
-                              color: colors.text,
+                              color:
+                                colors.text,
                             },
                           ]}
                         >
-                          {accuracy.value}
-                          {accuracy.unit || ''}
+                          {
+                            accuracy.value
+                          }
+                          {
+                            accuracy.unit ||
+                            ''
+                          }
                         </Text>
                       </View>
                     )}
@@ -1742,7 +2531,10 @@ export default function GameResultsScreen({
                         style={[
                           styles.metricItem,
                           {
-                            alignItems: isRTL ? 'flex-end' : 'flex-start',
+                            alignItems:
+                              isRTL
+                                ? 'flex-end'
+                                : 'flex-start',
                           },
                         ]}
                       >
@@ -1750,22 +2542,32 @@ export default function GameResultsScreen({
                           style={[
                             styles.metricLabel,
                             {
-                              color: colors.textSecondary,
+                              color:
+                                colors.textSecondary,
                             },
                           ]}
                         >
-                          {text.responseTime}
+                          {
+                            text.responseTime
+                          }
                         </Text>
 
                         <Text
                           style={[
                             styles.metricValue,
                             {
-                              color: colors.text,
+                              color:
+                                colors.text,
                             },
                           ]}
                         >
-                          {responseTime.value} {responseTime.unit || text.milliseconds}
+                          {
+                            responseTime.value
+                          }{' '}
+                          {
+                            responseTime.unit ||
+                            text.milliseconds
+                          }
                         </Text>
                       </View>
                     )}
@@ -1774,7 +2576,10 @@ export default function GameResultsScreen({
                       style={[
                         styles.metricItem,
                         {
-                          alignItems: isRTL ? 'flex-end' : 'flex-start',
+                          alignItems:
+                            isRTL
+                              ? 'flex-end'
+                              : 'flex-start',
                         },
                       ]}
                     >
@@ -1782,39 +2587,56 @@ export default function GameResultsScreen({
                         style={[
                           styles.metricLabel,
                           {
-                            color: colors.textSecondary,
+                            color:
+                              colors.textSecondary,
                           },
                         ]}
                       >
-                        {text.metrics}
+                        {
+                          text.metrics
+                        }
                       </Text>
 
                       <Text
                         style={[
                           styles.metricValue,
                           {
-                            color: colors.text,
+                            color:
+                              colors.text,
                           },
                         ]}
                       >
-                        {result.metrics?.length || 0}
+                        {
+                          result.metrics
+                            ?.length ||
+                          0
+                        }
                       </Text>
                     </View>
                   </View>
 
-                  {result.metrics?.length > 0 && (
+                  {result.metrics?.length >
+                    0 && (
                     <View
-                      style={styles.detailsContainer}
+                      style={
+                        styles.detailsContainer
+                      }
                     >
                       {result.metrics.map(
                         (metric) => (
                           <View
-                            key={metric.id}
+                            key={
+                              metric.id
+                            }
                             style={[
                               styles.detailRow,
                               {
-                                flexDirection: isRTL ? 'row-reverse' : 'row',
-                                borderTopColor: colors.border,
+                                flexDirection:
+                                  isRTL
+                                    ? 'row-reverse'
+                                    : 'row',
+                                borderTopColor:
+                                  colors.border,
                               },
                             ]}
                           >
@@ -1822,23 +2644,36 @@ export default function GameResultsScreen({
                               style={[
                                 styles.detailLabel,
                                 {
-                                  color: colors.textSecondary,
-                                  textAlign: isRTL ? 'right' : 'left',
+                                  color:
+                                    colors.textSecondary,
+                                  textAlign:
+                                    isRTL
+                                      ? 'right'
+                                      : 'left',
                                 },
                               ]}
                             >
-                              {metric.label}
+                              {
+                                metric.label
+                              }
                             </Text>
 
                             <Text
                               style={[
                                 styles.detailValue,
                                 {
-                                  color: colors.text,
+                                  color:
+                                    colors.text,
                                 },
                               ]}
                             >
-                              {metric.value} {metric.unit || ''}
+                              {
+                                metric.value
+                              }{' '}
+                              {
+                                metric.unit ||
+                                ''
+                              }
                             </Text>
                           </View>
                         )
@@ -1851,7 +2686,9 @@ export default function GameResultsScreen({
           )}
 
         <View
-          style={styles.bottomSpacer}
+          style={
+            styles.bottomSpacer
+          }
         />
       </ScrollView>
     </View>
@@ -1863,400 +2700,565 @@ const styles =
     container: {
       flex: 1,
     },
+
     scrollContent: {
-      paddingHorizontal: Spacing?.lg || 20,
-      paddingTop: Spacing?.md || 16,
+      paddingHorizontal:
+        Spacing?.lg || 20,
+      paddingTop:
+        Spacing?.md || 16,
       paddingBottom: 40,
     },
+
     loadingContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
       gap: 12,
     },
+
     loadingText: {
       fontSize: 14,
       fontWeight: '500',
     },
+
     header: {
-      alignItems: 'center',
+      alignItems:
+        'center',
       marginBottom: 20,
     },
+
     iconButton: {
       width: 44,
       height: 44,
       borderRadius: 14,
       borderWidth: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
     },
+
     headerTextContainer: {
       flex: 1,
       marginHorizontal: 14,
     },
+
     title: {
       fontSize: 25,
       fontWeight: '800',
       letterSpacing: -0.4,
     },
+
     subtitle: {
       fontSize: 13,
       marginTop: 4,
       lineHeight: 19,
     },
+
     emptyContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
       paddingHorizontal: 30,
     },
+
     emptyIcon: {
       width: 86,
       height: 86,
       borderRadius: 28,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
       marginBottom: 20,
     },
+
     emptyTitle: {
       fontSize: 22,
       fontWeight: '800',
       marginBottom: 10,
     },
+
     emptyDescription: {
       fontSize: 14,
       lineHeight: 22,
       maxWidth: 360,
     },
+
     primaryButton: {
       marginTop: 24,
       paddingHorizontal: 26,
       paddingVertical: 14,
       borderRadius: 16,
     },
+
     primaryButtonText: {
       color: '#fff',
       fontSize: 15,
       fontWeight: '700',
     },
+
     summaryCard: {
       borderWidth: 1,
-      borderRadius: BorderRadius?.xl || 24,
+      borderRadius:
+        BorderRadius?.xl ||
+        24,
       padding: 18,
       marginBottom: 18,
     },
+
     summaryHeader: {
-      alignItems: 'center',
+      alignItems:
+        'center',
     },
+
     summaryIcon: {
       width: 46,
       height: 46,
       borderRadius: 15,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
     },
+
     summaryHeaderText: {
       flex: 1,
       marginHorizontal: 12,
     },
+
     summaryTitle: {
       fontSize: 16,
       fontWeight: '800',
     },
+
     summarySubtitle: {
       fontSize: 12,
       marginTop: 3,
     },
+
     summaryStats: {
-      alignItems: 'center',
+      alignItems:
+        'center',
       marginTop: 18,
     },
+
     summaryStat: {
       flex: 1,
-      alignItems: 'center',
+      alignItems:
+        'center',
     },
+
     summaryStatValue: {
       fontSize: 25,
       fontWeight: '800',
     },
+
     summaryStatLabel: {
       fontSize: 11,
       marginTop: 4,
-      textAlign: 'center',
+      textAlign:
+        'center',
     },
+
     summaryDivider: {
       width: 1,
       height: 34,
     },
+
+    /* ==========================================================
+       MOVIE STYLES
+       ========================================================== */
+
     movieSection: {
       borderWidth: 1,
-      borderRadius: BorderRadius?.xl || 24,
+      borderRadius:
+        BorderRadius?.xl ||
+        24,
       padding: 18,
       marginBottom: 18,
     },
+
     movieHeader: {
-      alignItems: 'center',
+      alignItems:
+        'center',
       marginBottom: 16,
     },
+
     movieHeaderIcon: {
       width: 48,
       height: 48,
       borderRadius: 16,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
     },
+
     movieHeaderText: {
       flex: 1,
       marginHorizontal: 12,
     },
+
     movieTitleRow: {
-      alignItems: 'center',
+      alignItems:
+        'center',
       gap: 7,
     },
+
     movieSectionTitle: {
       fontSize: 17,
       fontWeight: '800',
     },
+
     movieSectionSubtitle: {
       fontSize: 12,
       marginTop: 4,
       lineHeight: 18,
     },
+
     movieMessage: {
       minHeight: 90,
       borderRadius: 18,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
       padding: 18,
       gap: 10,
     },
+
     movieWaitingContent: {
       flex: 1,
       gap: 4,
     },
+
     movieMessageText: {
       fontSize: 13,
       lineHeight: 21,
     },
+
     movieProgressText: {
       fontSize: 11,
       fontWeight: '700',
       lineHeight: 17,
     },
+
     movieLoading: {
       minHeight: 100,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
       gap: 12,
     },
+
     movieLoadingText: {
       fontSize: 13,
       lineHeight: 20,
     },
+
     movieError: {
       minHeight: 100,
       borderWidth: 1,
       borderRadius: 18,
       padding: 16,
-      alignItems: 'center',
+      alignItems:
+        'center',
       gap: 12,
     },
+
     movieErrorContent: {
       flex: 1,
     },
+
     movieErrorText: {
       fontSize: 13,
       lineHeight: 20,
       marginBottom: 10,
     },
+
     retryButton: {
       paddingHorizontal: 15,
       paddingVertical: 8,
       borderRadius: 10,
     },
+
     retryButtonText: {
       color: '#fff',
       fontSize: 12,
       fontWeight: '700',
     },
+
     moviesList: {
       gap: 12,
     },
+
     movieCard: {
       borderWidth: 1,
       borderRadius: 20,
       padding: 14,
-      alignItems: 'flex-start',
+      alignItems:
+        'flex-start',
     },
+
     movieNumber: {
       width: 34,
       height: 34,
       borderRadius: 12,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
     },
+
     movieNumberText: {
       color: '#fff',
       fontSize: 14,
       fontWeight: '800',
     },
+
     movieContent: {
       flex: 1,
       minWidth: 0,
     },
+
     movieNameRow: {
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
+      alignItems:
+        'flex-start',
+      justifyContent:
+        'space-between',
       gap: 8,
     },
+
     movieName: {
       flex: 1,
       fontSize: 16,
       fontWeight: '800',
       lineHeight: 21,
     },
+
     matchBadge: {
       paddingHorizontal: 9,
       paddingVertical: 5,
       borderRadius: 9,
     },
+
     matchText: {
       fontSize: 11,
       fontWeight: '800',
     },
+
     genreRow: {
-      flexWrap: 'wrap',
+      flexWrap:
+        'wrap',
       gap: 6,
       marginTop: 9,
     },
+
     genreChip: {
       borderWidth: 1,
       borderRadius: 8,
       paddingHorizontal: 8,
       paddingVertical: 4,
     },
+
     genreText: {
       fontSize: 10,
       fontWeight: '600',
     },
+
+    matchedTagsContainer: {
+      marginTop: 9,
+      width: '100%',
+    },
+
+    matchedTagsLabel: {
+      fontSize: 10,
+      fontWeight: '600',
+      marginBottom: 4,
+    },
+
+    tagChip: {
+      borderWidth: 1,
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+
+    tagText: {
+      fontSize: 10,
+      fontWeight: '700',
+    },
+
     movieOverview: {
       fontSize: 12,
       lineHeight: 19,
       marginTop: 10,
     },
+
     movieMeta: {
-      justifyContent: 'space-between',
+      justifyContent:
+        'space-between',
       marginTop: 11,
       gap: 8,
     },
+
     movieMetaText: {
       fontSize: 10,
       fontWeight: '600',
     },
+
+    /* ==========================================================
+       EXPORT
+       ========================================================== */
+
     exportButton: {
       minHeight: 54,
       borderRadius: 17,
       borderWidth: 1,
       paddingHorizontal: 18,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
       gap: 10,
       marginBottom: 24,
     },
+
     exportButtonText: {
       fontSize: 14,
       fontWeight: '700',
     },
+
+    /* ==========================================================
+       HISTORY
+       ========================================================== */
+
     sectionHeader: {
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      justifyContent:
+        'space-between',
+      alignItems:
+        'center',
       marginBottom: 12,
     },
+
     sectionTitle: {
       fontSize: 19,
       fontWeight: '800',
     },
+
     resultCard: {
       borderWidth: 1,
-      borderRadius: BorderRadius?.xl || 24,
+      borderRadius:
+        BorderRadius?.xl ||
+        24,
       padding: 16,
       marginBottom: 12,
     },
+
     resultHeader: {
-      alignItems: 'center',
+      alignItems:
+        'center',
     },
+
     gameIcon: {
       width: 46,
       height: 46,
       borderRadius: 15,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
     },
+
     resultHeaderText: {
       flex: 1,
       marginHorizontal: 12,
     },
+
     gameName: {
       fontSize: 15,
       fontWeight: '800',
     },
+
     resultDate: {
       fontSize: 11,
       marginTop: 3,
     },
+
     scoreContainer: {
       minWidth: 58,
       paddingVertical: 8,
       paddingHorizontal: 9,
       borderRadius: 13,
-      alignItems: 'center',
+      alignItems:
+        'center',
     },
+
     scoreValue: {
       fontSize: 18,
       fontWeight: '800',
     },
+
     scoreLabel: {
       fontSize: 9,
       marginTop: 1,
     },
+
     performanceLabel: {
       fontSize: 11,
       marginTop: 10,
       fontWeight: '600',
     },
+
     metricsRow: {
       marginTop: 14,
       gap: 16,
     },
+
     metricItem: {
       flex: 1,
     },
+
     metricLabel: {
       fontSize: 10,
       marginBottom: 4,
     },
+
     metricValue: {
       fontSize: 15,
       fontWeight: '800',
     },
+
     detailsContainer: {
       marginTop: 14,
     },
+
     detailRow: {
       minHeight: 40,
       borderTopWidth: 1,
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      alignItems:
+        'center',
+      justifyContent:
+        'space-between',
       gap: 12,
     },
+
     detailLabel: {
       flex: 1,
       fontSize: 11,
     },
+
     detailValue: {
       fontSize: 12,
       fontWeight: '700',
     },
+
     bottomSpacer: {
       height: 20,
     },
