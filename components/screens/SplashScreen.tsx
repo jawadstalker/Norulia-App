@@ -10,12 +10,10 @@ import {
   Easing,
   Image,
   ImageSourcePropType,
-  I18nManager,
   StyleSheet,
   View,
   useWindowDimensions,
 } from 'react-native';
-import { AppText as Text } from '../ui/AppText';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -28,40 +26,27 @@ const COLORS = {
   bg: '#24152F',
   bgMiddle: '#1D1328',
   bgBottom: '#100B17',
-
   fg: '#F6F0FA',
   muted: '#B9ACBF',
-
   accent: '#CFA8F2',
   accentHi: '#E9DDF5',
   accentSoft: '#A96FE0',
-
   star: '#E8D7F7',
 };
 
 /* ================================================================
    TEXT
+   Splash screen is ALWAYS English.
+   No localization or RTL text is used here.
 ================================================================ */
 
 const FIRST_WORD = 'IPS';
 
-const FIRST_SUBTITLE_EN =
-  'Iliya Pardazesh Shargh';
+const FIRST_SUBTITLE = 'Iliya Pardazesh Shargh';
 
-const FIRST_SUBTITLE_FA =
-  'ایلیا پردازش شرق';
+const SECOND_WORD = 'Neurolia';
 
-const SECOND_WORD_EN =
-  'Neurolia';
-
-const SECOND_WORD_FA =
-  'نورولیا';
-
-const SECOND_TAGLINE_EN =
-  'Mind, beautifully calibrated.';
-
-const SECOND_TAGLINE_FA =
-  'ذهن، با ظرافت تنظیم‌شده.';
+const SECOND_TAGLINE = 'Mind, beautifully calibrated.';
 
 /* ================================================================
    TIMING
@@ -69,7 +54,7 @@ const SECOND_TAGLINE_FA =
    Sequence:
 
    0
-   │
+
    ├── First logo enters
    ├── IPS enters
    ├── First subtitle enters
@@ -93,19 +78,25 @@ const TIMING = {
   FIRST_LOGO_IN: 650,
 
   FIRST_WORD_DELAY: 150,
+
   FIRST_WORD_IN: 460,
 
   FIRST_SUBTITLE_DELAY: 270,
+
   FIRST_SUBTITLE_IN: 500,
 
   /* Start of complete first-brand exit */
+
   FIRST_OUT_START: 1750,
 
   FIRST_LOGO_OUT: 500,
+
   FIRST_WORD_OUT: 400,
+
   FIRST_SUBTITLE_OUT: 400,
 
   /* Gap between first exit and second entrance */
+
   SECOND_START: 2380,
 
   /* ---------------- SECOND BRAND ---------------- */
@@ -113,10 +104,13 @@ const TIMING = {
   SECOND_LOGO_IN: 650,
 
   SECOND_WORD_DELAY: 180,
+
   SECOND_WORD_STAGGER: 55,
+
   SECOND_WORD_IN: 460,
 
   SECOND_TAGLINE_DELAY: 430,
+
   SECOND_TAGLINE_IN: 520,
 
   /* ---------------- COMPLETE ---------------- */
@@ -151,7 +145,6 @@ type SparkConfig = {
   bottom?: `${number}%`;
   left?: `${number}%`;
   right?: `${number}%`;
-
   size: number;
   delay: number;
   duration: number;
@@ -215,7 +208,6 @@ const SPARKS: SparkConfig[] = [
 
 export interface SplashScreenProps {
   onComplete?: () => void;
-
   logo1?: ImageSourcePropType;
   logo2?: ImageSourcePropType;
 }
@@ -295,15 +287,11 @@ function FirstBrand({
   logoLife,
   letterLives,
   subtitleLife,
-  isRTL,
 }: {
   logo: ImageSourcePropType;
-
   logoLife: Animated.Value;
   letterLives: Animated.Value[];
   subtitleLife: Animated.Value;
-
-  isRTL: boolean;
 }) {
   /* --------------------------------------------------------------
      LOGO
@@ -313,50 +301,39 @@ function FirstBrand({
      2 = exited
   -------------------------------------------------------------- */
 
-  const logoOpacity =
-    logoLife.interpolate({
-      inputRange: [0, 0.35, 1, 1.65, 2],
-      outputRange: [0, 0.8, 1, 0.8, 0],
-    });
+  const logoOpacity = logoLife.interpolate({
+    inputRange: [0, 0.35, 1, 1.65, 2],
+    outputRange: [0, 0.8, 1, 0.8, 0],
+  });
 
-  const logoTranslateY =
-    logoLife.interpolate({
-      inputRange: [0, 1, 2],
-      outputRange: [24, 0, -26],
-    });
+  const logoTranslateY = logoLife.interpolate({
+    inputRange: [0, 1, 2],
+    outputRange: [24, 0, -26],
+  });
 
-  const logoScale =
-    logoLife.interpolate({
-      inputRange: [0, 0.45, 1, 2],
-      outputRange: [0.88, 1.015, 1, 0.96],
-    });
+  const logoScale = logoLife.interpolate({
+    inputRange: [0, 0.45, 1, 2],
+    outputRange: [0.88, 1.015, 1, 0.96],
+  });
 
   /* --------------------------------------------------------------
      SUBTITLE
   -------------------------------------------------------------- */
 
-  const subtitleOpacity =
-    subtitleLife.interpolate({
-      inputRange: [0, 0.35, 1, 1.7, 2],
-      outputRange: [0, 0.75, 1, 0.75, 0],
-    });
+  const subtitleOpacity = subtitleLife.interpolate({
+    inputRange: [0, 0.35, 1, 1.7, 2],
+    outputRange: [0, 0.75, 1, 0.75, 0],
+  });
 
-  const subtitleTranslateY =
-    subtitleLife.interpolate({
-      inputRange: [0, 1, 2],
-      outputRange: [12, 0, -14],
-    });
+  const subtitleTranslateY = subtitleLife.interpolate({
+    inputRange: [0, 1, 2],
+    outputRange: [12, 0, -14],
+  });
 
-  const subtitleScale =
-    subtitleLife.interpolate({
-      inputRange: [0, 1, 2],
-      outputRange: [0.96, 1, 0.98],
-    });
-
-  const subtitle =
-    isRTL
-      ? FIRST_SUBTITLE_FA
-      : FIRST_SUBTITLE_EN;
+  const subtitleScale = subtitleLife.interpolate({
+    inputRange: [0, 1, 2],
+    outputRange: [0.96, 1, 0.98],
+  });
 
   return (
     <View
@@ -394,54 +371,45 @@ function FirstBrand({
           IPS
       ========================================================== */}
 
-      <View
-        style={[
-          styles.firstWordmark,
-          isRTL && styles.rtlWordmark,
-        ]}
-      >
+      <View style={styles.firstWordmark}>
         {FIRST_WORD.split('').map(
           (letter, index) => {
-            const life =
-              letterLives[index];
+            const life = letterLives[index];
 
-            const opacity =
-              life.interpolate({
-                inputRange: [
-                  0,
-                  0.35,
-                  1,
-                  1.7,
-                  2,
-                ],
-                outputRange: [
-                  0,
-                  0.75,
-                  1,
-                  0.7,
-                  0,
-                ],
-              });
+            const opacity = life.interpolate({
+              inputRange: [
+                0,
+                0.35,
+                1,
+                1.7,
+                2,
+              ],
+              outputRange: [
+                0,
+                0.75,
+                1,
+                0.7,
+                0,
+              ],
+            });
 
-            const translateY =
-              life.interpolate({
-                inputRange: [0, 1, 2],
-                outputRange: [
-                  14,
-                  0,
-                  -14,
-                ],
-              });
+            const translateY = life.interpolate({
+              inputRange: [0, 1, 2],
+              outputRange: [
+                14,
+                0,
+                -14,
+              ],
+            });
 
-            const scale =
-              life.interpolate({
-                inputRange: [0, 1, 2],
-                outputRange: [
-                  0.94,
-                  1,
-                  0.98,
-                ],
-              });
+            const scale = life.interpolate({
+              inputRange: [0, 1, 2],
+              outputRange: [
+                0.94,
+                1,
+                0.98,
+              ],
+            });
 
             return (
               <Animated.Text
@@ -475,28 +443,20 @@ function FirstBrand({
       <Animated.Text
         style={[
           styles.firstSubtitle,
-
-          isRTL &&
-            styles.persianFirstSubtitle,
-
           {
-            opacity:
-              subtitleOpacity,
-
+            opacity: subtitleOpacity,
             transform: [
               {
-                translateY:
-                  subtitleTranslateY,
+                translateY: subtitleTranslateY,
               },
               {
-                scale:
-                  subtitleScale,
+                scale: subtitleScale,
               },
             ],
           },
         ]}
       >
-        {subtitle}
+        {FIRST_SUBTITLE}
       </Animated.Text>
     </View>
   );
@@ -511,67 +471,48 @@ function SecondBrand({
   logoProgress,
   letterProgresses,
   taglineProgress,
-  isRTL,
 }: {
   logo: ImageSourcePropType;
-
   logoProgress: Animated.Value;
   letterProgresses: Animated.Value[];
   taglineProgress: Animated.Value;
-
-  isRTL: boolean;
 }) {
   /* --------------------------------------------------------------
      SECOND LOGO
   -------------------------------------------------------------- */
 
-  const logoOpacity =
-    logoProgress.interpolate({
-      inputRange: [0, 0.3, 1],
-      outputRange: [0, 0.75, 1],
-    });
+  const logoOpacity = logoProgress.interpolate({
+    inputRange: [0, 0.3, 1],
+    outputRange: [0, 0.75, 1],
+  });
 
-  const logoTranslateY =
-    logoProgress.interpolate({
-      inputRange: [0, 1],
-      outputRange: [22, 0],
-    });
+  const logoTranslateY = logoProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [22, 0],
+  });
 
-  const logoScale =
-    logoProgress.interpolate({
-      inputRange: [0, 0.45, 1],
-      outputRange: [
-        0.88,
-        1.015,
-        1,
-      ],
-    });
+  const logoScale = logoProgress.interpolate({
+    inputRange: [0, 0.45, 1],
+    outputRange: [
+      0.88,
+      1.015,
+      1,
+    ],
+  });
 
   /* --------------------------------------------------------------
      TAGLINE
   -------------------------------------------------------------- */
 
-  const taglineOpacity =
-    taglineProgress.interpolate({
-      inputRange: [0, 0.4, 1],
-      outputRange: [0, 0.8, 1],
-    });
+  const taglineOpacity = taglineProgress.interpolate({
+    inputRange: [0, 0.4, 1],
+    outputRange: [0, 0.8, 1],
+  });
 
-  const taglineTranslateY =
-    taglineProgress.interpolate({
-      inputRange: [0, 1],
-      outputRange: [11, 0],
-    });
-
-  const secondWord =
-    isRTL
-      ? SECOND_WORD_FA
-      : SECOND_WORD_EN;
-
-  const tagline =
-    isRTL
-      ? SECOND_TAGLINE_FA
-      : SECOND_TAGLINE_EN;
+  const taglineTranslateY = taglineProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [11, 0],
+  });
 
   return (
     <View
@@ -581,7 +522,6 @@ function SecondBrand({
       {/* ==========================================================
           SECOND LOGO
 
-          Important:
           No circle
           No border
           No glow
@@ -593,15 +533,12 @@ function SecondBrand({
           styles.secondLogoContainer,
           {
             opacity: logoOpacity,
-
             transform: [
               {
-                translateY:
-                  logoTranslateY,
+                translateY: logoTranslateY,
               },
               {
-                scale:
-                  logoScale,
+                scale: logoScale,
               },
             ],
           },
@@ -618,14 +555,8 @@ function SecondBrand({
           SECOND WORD
       ========================================================== */}
 
-      <View
-        style={[
-          styles.secondWordmark,
-          isRTL &&
-            styles.rtlWordmark,
-        ]}
-      >
-        {secondWord
+      <View style={styles.secondWordmark}>
+        {SECOND_WORD
           .split('')
           .map(
             (
@@ -633,9 +564,7 @@ function SecondBrand({
               index
             ) => {
               const progress =
-                letterProgresses[
-                  index
-                ];
+                letterProgresses[index];
 
               const opacity =
                 progress.interpolate({
@@ -680,13 +609,8 @@ function SecondBrand({
                   key={`${letter}-${index}`}
                   style={[
                     styles.secondWordLetter,
-
-                    isRTL &&
-                      styles.persianWordLetter,
-
                     {
                       opacity,
-
                       transform: [
                         {
                           translateY,
@@ -712,14 +636,8 @@ function SecondBrand({
       <Animated.Text
         style={[
           styles.tagline,
-
-          isRTL &&
-            styles.persianTagline,
-
           {
-            opacity:
-              taglineOpacity,
-
+            opacity: taglineOpacity,
             transform: [
               {
                 translateY:
@@ -729,7 +647,7 @@ function SecondBrand({
           },
         ]}
       >
-        {tagline}
+        {SECOND_TAGLINE}
       </Animated.Text>
     </View>
   );
@@ -741,7 +659,6 @@ function SecondBrand({
 
 export function SplashScreen({
   onComplete,
-
   logo1 = require('../../assets/logo1.png'),
   logo2 = require('../../assets/logo2.png'),
 }: SplashScreenProps) {
@@ -750,552 +667,451 @@ export function SplashScreen({
     height,
   } = useWindowDimensions();
 
-  const isRTL =
-    I18nManager.isRTL;
+  const reduceMotion = useRef(false);
 
-  const reduceMotion =
-    useRef(false);
+  const timers = useRef<
+    ReturnType<typeof setTimeout>[]
+  >([]);
 
-  const timers =
-    useRef<
-      ReturnType<
-        typeof setTimeout
-      >[]
-    >([]);
-
-  const completed =
-    useRef(false);
+  const completed = useRef(false);
 
   /* ==============================================================
      ANIMATED VALUES
   ============================================================== */
 
-  const backgroundProgress =
-    useRef(
-      createAnimatedValue(0)
-    ).current;
+  const backgroundProgress = useRef(
+    createAnimatedValue(0)
+  ).current;
 
   /* ---------------- FIRST BRAND ---------------- */
 
-  const firstLogoLife =
-    useRef(
-      createAnimatedValue(0)
-    ).current;
+  const firstLogoLife = useRef(
+    createAnimatedValue(0)
+  ).current;
 
-  const firstLetterLives =
-    useRef(
-      FIRST_WORD
-        .split('')
-        .map(() =>
-          createAnimatedValue(0)
-        )
-    ).current;
+  const firstLetterLives = useRef(
+    FIRST_WORD
+      .split('')
+      .map(() =>
+        createAnimatedValue(0)
+      )
+  ).current;
 
-  const firstSubtitleLife =
-    useRef(
-      createAnimatedValue(0)
-    ).current;
+  const firstSubtitleLife = useRef(
+    createAnimatedValue(0)
+  ).current;
 
   /* ---------------- SECOND BRAND ---------------- */
 
-  const secondLogoProgress =
-    useRef(
-      createAnimatedValue(0)
-    ).current;
+  const secondLogoProgress = useRef(
+    createAnimatedValue(0)
+  ).current;
 
-  const secondWordLength =
-    isRTL
-      ? SECOND_WORD_FA.length
-      : SECOND_WORD_EN.length;
+  const secondLetterProgresses = useRef(
+    Array.from(
+      {
+        length: SECOND_WORD.length,
+      },
+      () =>
+        createAnimatedValue(0)
+    )
+  ).current;
 
-  const secondLetterProgresses =
-    useRef(
-      Array.from(
-        {
-          length:
-            secondWordLength,
-        },
-        () =>
-          createAnimatedValue(0)
-      )
-    ).current;
-
-  const secondTaglineProgress =
-    useRef(
-      createAnimatedValue(0)
-    ).current;
+  const secondTaglineProgress = useRef(
+    createAnimatedValue(0)
+  ).current;
 
   /* ---------------- SPARKS ---------------- */
 
-  const sparkValues =
-    useRef(
-      SPARKS.map(() =>
-        createAnimatedValue(0)
-      )
-    ).current;
+  const sparkValues = useRef(
+    SPARKS.map(() =>
+      createAnimatedValue(0)
+    )
+  ).current;
 
   /* ==============================================================
      CLEAR TIMERS
   ============================================================== */
 
-  const clearTimers =
-    useCallback(() => {
-      timers.current.forEach(
-        timer =>
-          clearTimeout(timer)
-      );
+  const clearTimers = useCallback(() => {
+    timers.current.forEach(
+      timer => clearTimeout(timer)
+    );
 
-      timers.current = [];
-    }, []);
+    timers.current = [];
+  }, []);
 
   /* ==============================================================
      FINISH
   ============================================================== */
 
-  const finish =
-    useCallback(() => {
-      if (completed.current) {
-        return;
-      }
+  const finish = useCallback(() => {
+    if (completed.current) {
+      return;
+    }
 
-      completed.current = true;
+    completed.current = true;
 
-      onComplete?.();
-    }, [onComplete]);
+    onComplete?.();
+  }, [onComplete]);
 
   /* ==============================================================
      PLAY ANIMATION
   ============================================================== */
 
-  const play =
-    useCallback(() => {
-      clearTimers();
+  const play = useCallback(() => {
+    clearTimers();
 
-      completed.current = false;
+    completed.current = false;
 
-      const d =
-        reduceMotion.current
-          ? 0.001
-          : 1;
+    const d = reduceMotion.current
+      ? 0.001
+      : 1;
 
-      /* ==========================================================
-         RESET
-      ========================================================== */
+    /* ==========================================================
+       RESET
+    ========================================================== */
 
-      backgroundProgress.setValue(0);
+    backgroundProgress.setValue(0);
 
-      firstLogoLife.setValue(0);
+    firstLogoLife.setValue(0);
 
-      firstLetterLives.forEach(
-        value =>
-          value.setValue(0)
-      );
+    firstLetterLives.forEach(
+      value => value.setValue(0)
+    );
 
-      firstSubtitleLife.setValue(0);
+    firstSubtitleLife.setValue(0);
 
-      secondLogoProgress.setValue(0);
+    secondLogoProgress.setValue(0);
 
-      secondLetterProgresses.forEach(
-        value =>
-          value.setValue(0)
-      );
+    secondLetterProgresses.forEach(
+      value => value.setValue(0)
+    );
 
-      secondTaglineProgress.setValue(
-        0
-      );
+    secondTaglineProgress.setValue(0);
 
-      sparkValues.forEach(
-        value =>
-          value.setValue(0)
-      );
+    sparkValues.forEach(
+      value => value.setValue(0)
+    );
 
-      /* ==========================================================
-         BACKGROUND
-      ========================================================== */
+    /* ==========================================================
+       BACKGROUND
+    ========================================================== */
 
-      Animated.timing(
-        backgroundProgress,
-        {
-          toValue: 1,
+    Animated.timing(
+      backgroundProgress,
+      {
+        toValue: 1,
+        duration: 700 * d,
+        easing: Easing.out(
+          Easing.quad
+        ),
+        useNativeDriver: true,
+      }
+    ).start();
 
-          duration:
-            700 * d,
+    /* ==========================================================
+       SPARKLES
+    ========================================================== */
 
-          easing:
-            Easing.out(
-              Easing.quad
-            ),
+    SPARKS.forEach(
+      (
+        spark,
+        index
+      ) => {
+        const timer =
+          setTimeout(
+            () => {
+              Animated.loop(
+                Animated.sequence([
+                  Animated.timing(
+                    sparkValues[index],
+                    {
+                      toValue: 1,
+                      duration:
+                        spark.duration *
+                        d,
+                      easing:
+                        Easing.inOut(
+                          Easing.sin
+                        ),
+                      useNativeDriver:
+                        true,
+                    }
+                  ),
 
-          useNativeDriver: true,
-        }
-      ).start();
+                  Animated.timing(
+                    sparkValues[index],
+                    {
+                      toValue: 0,
+                      duration:
+                        spark.duration *
+                        d,
+                      easing:
+                        Easing.inOut(
+                          Easing.sin
+                        ),
+                      useNativeDriver:
+                        true,
+                    }
+                  ),
+                ])
+              ).start();
+            },
+            spark.delay * d
+          );
 
-      /* ==========================================================
-         SPARKLES
-      ========================================================== */
+        timers.current.push(timer);
+      }
+    );
 
-      SPARKS.forEach(
-        (
-          spark,
-          index
-        ) => {
-          const timer =
-            setTimeout(
-              () => {
-                Animated.loop(
-                  Animated.sequence([
-                    Animated.timing(
-                      sparkValues[
-                        index
-                      ],
-                      {
-                        toValue: 1,
+    /* ==========================================================
+       FIRST BRAND — LOGO IN
+    ========================================================== */
 
-                        duration:
-                          spark.duration *
-                          d,
+    Animated.timing(
+      firstLogoLife,
+      {
+        toValue: 1,
+        duration:
+          TIMING.FIRST_LOGO_IN * d,
+        easing: EASE_ENTER,
+        useNativeDriver: true,
+      }
+    ).start();
 
-                        easing:
-                          Easing.inOut(
-                            Easing.sin
-                          ),
+    /* ==========================================================
+       FIRST BRAND — IPS IN
+    ========================================================== */
 
-                        useNativeDriver:
-                          true,
-                      }
-                    ),
+    firstLetterLives.forEach(
+      (
+        value,
+        index
+      ) => {
+        Animated.timing(
+          value,
+          {
+            toValue: 1,
+            duration:
+              TIMING.FIRST_WORD_IN *
+              d,
+            delay:
+              (
+                TIMING.FIRST_WORD_DELAY +
+                index * 60
+              ) * d,
+            easing: EASE_ENTER,
+            useNativeDriver: true,
+          }
+        ).start();
+      }
+    );
 
-                    Animated.timing(
-                      sparkValues[
-                        index
-                      ],
-                      {
-                        toValue: 0,
+    /* ==========================================================
+       FIRST BRAND — SUBTITLE IN
+    ========================================================== */
 
-                        duration:
-                          spark.duration *
-                          d,
+    Animated.timing(
+      firstSubtitleLife,
+      {
+        toValue: 1,
+        duration:
+          TIMING.FIRST_SUBTITLE_IN *
+          d,
+        delay:
+          TIMING.FIRST_SUBTITLE_DELAY *
+          d,
+        easing: EASE_ENTER,
+        useNativeDriver: true,
+      }
+    ).start();
 
-                        easing:
-                          Easing.inOut(
-                            Easing.sin
-                          ),
+    /* ==========================================================
+       FIRST BRAND — EXIT
 
-                        useNativeDriver:
-                          true,
-                      }
-                    ),
-                  ])
-                ).start();
-              },
+       All elements of the first brand
+       leave together so nothing remains
+       underneath the second logo.
+    ========================================================== */
 
-              spark.delay * d
+    timers.current.push(
+      setTimeout(
+        () => {
+          /* ---------------- LOGO OUT ---------------- */
+
+          const logoExit =
+            Animated.timing(
+              firstLogoLife,
+              {
+                toValue: 2,
+                duration:
+                  TIMING.FIRST_LOGO_OUT *
+                  d,
+                easing: EASE_EXIT,
+                useNativeDriver: true,
+              }
             );
 
-          timers.current.push(
-            timer
-          );
-        }
-      );
+          /* ---------------- IPS OUT ---------------- */
 
-      /* ==========================================================
-         FIRST BRAND — LOGO IN
-      ========================================================== */
+          const wordExit =
+            Animated.parallel(
+              firstLetterLives.map(
+                (
+                  value,
+                  index
+                ) =>
+                  Animated.timing(
+                    value,
+                    {
+                      toValue: 2,
+                      duration:
+                        TIMING.FIRST_WORD_OUT *
+                        d,
+                      delay:
+                        index *
+                        28 *
+                        d,
+                      easing:
+                        EASE_EXIT,
+                      useNativeDriver:
+                        true,
+                    }
+                  )
+              )
+            );
 
-      Animated.timing(
-        firstLogoLife,
-        {
-          toValue: 1,
+          /* ---------------- SUBTITLE OUT ---------------- */
 
-          duration:
-            TIMING.FIRST_LOGO_IN *
-            d,
+          const subtitleExit =
+            Animated.timing(
+              firstSubtitleLife,
+              {
+                toValue: 2,
+                duration:
+                  TIMING.FIRST_SUBTITLE_OUT *
+                  d,
+                delay: 30 * d,
+                easing: EASE_EXIT,
+                useNativeDriver: true,
+              }
+            );
 
-          easing:
-            EASE_ENTER,
+          /* ====================================================
+             RUN ALL FIRST-BRAND EXITS TOGETHER
+          ==================================================== */
 
-          useNativeDriver: true,
-        }
-      ).start();
+          Animated.parallel([
+            logoExit,
+            wordExit,
+            subtitleExit,
+          ]).start();
+        },
+        TIMING.FIRST_OUT_START * d
+      )
+    );
 
-      /* ==========================================================
-         FIRST BRAND — IPS IN
-      ========================================================== */
+    /* ==========================================================
+       SECOND BRAND
 
-      firstLetterLives.forEach(
-        (
-          value,
-          index
-        ) => {
+       Second brand starts after the first brand
+       has completed its exit.
+    ========================================================== */
+
+    timers.current.push(
+      setTimeout(
+        () => {
+          /* ====================================================
+             SECOND LOGO IN
+          ==================================================== */
+
           Animated.timing(
-            value,
+            secondLogoProgress,
             {
               toValue: 1,
-
               duration:
-                TIMING.FIRST_WORD_IN *
+                TIMING.SECOND_LOGO_IN *
                 d,
-
-              delay:
-                (
-                  TIMING.FIRST_WORD_DELAY +
-                  index * 60
-                ) * d,
-
-              easing:
-                EASE_ENTER,
-
+              easing: EASE_ENTER,
               useNativeDriver: true,
             }
           ).start();
-        }
-      );
 
-      /* ==========================================================
-         FIRST BRAND — SUBTITLE IN
-      ========================================================== */
+          /* ====================================================
+             SECOND WORD IN
+          ==================================================== */
 
-      Animated.timing(
-        firstSubtitleLife,
-        {
-          toValue: 1,
-
-          duration:
-            TIMING.FIRST_SUBTITLE_IN *
-            d,
-
-          delay:
-            TIMING.FIRST_SUBTITLE_DELAY *
-            d,
-
-          easing:
-            EASE_ENTER,
-
-          useNativeDriver: true,
-        }
-      ).start();
-
-      /* ==========================================================
-         FIRST BRAND — EXIT
-
-         مهم:
-         همه اجزای برند اول اینجا با هم خارج می‌شوند.
-         بنابراین دیگر هیچ چیزی از برند اول زیر لوگوی دوم
-         باقی نمی‌ماند.
-      ========================================================== */
-
-      timers.current.push(
-        setTimeout(
-          () => {
-            /* ---------------- LOGO OUT ---------------- */
-
-            const logoExit =
+          secondLetterProgresses.forEach(
+            (
+              value,
+              index
+            ) => {
               Animated.timing(
-                firstLogoLife,
-                {
-                  toValue: 2,
-
-                  duration:
-                    TIMING.FIRST_LOGO_OUT *
-                    d,
-
-                  easing:
-                    EASE_EXIT,
-
-                  useNativeDriver: true,
-                }
-              );
-
-            /* ---------------- IPS OUT ---------------- */
-
-            const wordExit =
-              Animated.parallel(
-                firstLetterLives.map(
-                  (
-                    value,
-                    index
-                  ) =>
-                    Animated.timing(
-                      value,
-                      {
-                        toValue: 2,
-
-                        duration:
-                          TIMING.FIRST_WORD_OUT *
-                          d,
-
-                        delay:
-                          index * 28 * d,
-
-                        easing:
-                          EASE_EXIT,
-
-                        useNativeDriver:
-                          true,
-                      }
-                    )
-                )
-              );
-
-            /* ---------------- SUBTITLE OUT ---------------- */
-
-            const subtitleExit =
-              Animated.timing(
-                firstSubtitleLife,
-                {
-                  toValue: 2,
-
-                  duration:
-                    TIMING.FIRST_SUBTITLE_OUT *
-                    d,
-
-                  delay:
-                    30 * d,
-
-                  easing:
-                    EASE_EXIT,
-
-                  useNativeDriver: true,
-                }
-              );
-
-            /* ====================================================
-               RUN ALL FIRST-BRAND EXITS TOGETHER
-            ==================================================== */
-
-            Animated.parallel([
-              logoExit,
-              wordExit,
-              subtitleExit,
-            ]).start();
-          },
-
-          TIMING.FIRST_OUT_START *
-            d
-        )
-      );
-
-      /* ==========================================================
-         SECOND BRAND
-
-         شروع دوم عمداً بعد از پایان خروج اول است.
-         این قسمت مهم‌ترین اصلاح است.
-      ========================================================== */
-
-      timers.current.push(
-        setTimeout(
-          () => {
-            /* ====================================================
-               SECOND LOGO IN
-            ==================================================== */
-
-            Animated.timing(
-              secondLogoProgress,
-              {
-                toValue: 1,
-
-                duration:
-                  TIMING.SECOND_LOGO_IN *
-                  d,
-
-                easing:
-                  EASE_ENTER,
-
-                useNativeDriver:
-                  true,
-              }
-            ).start();
-
-            /* ====================================================
-               SECOND WORD IN
-            ==================================================== */
-
-            secondLetterProgresses.forEach(
-              (
                 value,
-                index
-              ) => {
-                Animated.timing(
-                  value,
-                  {
-                    toValue: 1,
+                {
+                  toValue: 1,
+                  duration:
+                    TIMING.SECOND_WORD_IN *
+                    d,
+                  delay:
+                    (
+                      TIMING.SECOND_WORD_DELAY +
+                      index *
+                        TIMING.SECOND_WORD_STAGGER
+                    ) * d,
+                  easing: EASE_ENTER,
+                  useNativeDriver: true,
+                }
+              ).start();
+            }
+          );
 
-                    duration:
-                      TIMING.SECOND_WORD_IN *
-                      d,
+          /* ====================================================
+             TAGLINE IN
+          ==================================================== */
 
-                    delay:
-                      (
-                        TIMING.SECOND_WORD_DELAY +
-                        index *
-                          TIMING.SECOND_WORD_STAGGER
-                      ) * d,
+          Animated.timing(
+            secondTaglineProgress,
+            {
+              toValue: 1,
+              duration:
+                TIMING.SECOND_TAGLINE_IN *
+                d,
+              delay:
+                TIMING.SECOND_TAGLINE_DELAY *
+                d,
+              easing: EASE_ENTER,
+              useNativeDriver: true,
+            }
+          ).start();
+        },
+        TIMING.SECOND_START * d
+      )
+    );
 
-                    easing:
-                      EASE_ENTER,
+    /* ==========================================================
+       COMPLETE
+    ========================================================== */
 
-                    useNativeDriver:
-                      true,
-                  }
-                ).start();
-              }
-            );
-
-            /* ====================================================
-               TAGLINE IN
-            ==================================================== */
-
-            Animated.timing(
-              secondTaglineProgress,
-              {
-                toValue: 1,
-
-                duration:
-                  TIMING.SECOND_TAGLINE_IN *
-                  d,
-
-                delay:
-                  TIMING.SECOND_TAGLINE_DELAY *
-                  d,
-
-                easing:
-                  EASE_ENTER,
-
-                useNativeDriver:
-                  true,
-              }
-            ).start();
-          },
-
-          TIMING.SECOND_START * d
-        )
-      );
-
-      /* ==========================================================
-         COMPLETE
-      ========================================================== */
-
-      timers.current.push(
-        setTimeout(
-          finish,
-          TIMING.COMPLETE * d
-        )
-      );
-    }, [
-      backgroundProgress,
-      clearTimers,
-      finish,
-
-      firstLetterLives,
-      firstLogoLife,
-      firstSubtitleLife,
-
-      secondLetterProgresses,
-      secondLogoProgress,
-      secondTaglineProgress,
-
-      sparkValues,
-    ]);
+    timers.current.push(
+      setTimeout(
+        finish,
+        TIMING.COMPLETE * d
+      )
+    );
+  }, [
+    backgroundProgress,
+    clearTimers,
+    finish,
+    firstLetterLives,
+    firstLogoLife,
+    firstSubtitleLife,
+    secondLetterProgresses,
+    secondLogoProgress,
+    secondTaglineProgress,
+    sparkValues,
+  ]);
 
   /* ==============================================================
      ACCESSIBILITY / REDUCED MOTION
@@ -1369,7 +1185,6 @@ export function SplashScreen({
   const backgroundOpacity =
     backgroundProgress.interpolate({
       inputRange: [0, 1],
-
       outputRange: [0, 1],
     });
 
@@ -1495,7 +1310,6 @@ export function SplashScreen({
         subtitleLife={
           firstSubtitleLife
         }
-        isRTL={isRTL}
       />
 
       {/* ==========================================================
@@ -1513,7 +1327,6 @@ export function SplashScreen({
         taglineProgress={
           secondTaglineProgress
         }
-        isRTL={isRTL}
       />
     </View>
   );
@@ -1530,15 +1343,11 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
-
     backgroundColor:
       COLORS.bgBottom,
-
     alignItems: 'center',
-
     justifyContent:
       'center',
-
     overflow: 'hidden',
   },
 
@@ -1548,23 +1357,17 @@ const styles = StyleSheet.create({
 
   spark: {
     position: 'absolute',
-
     color:
       COLORS.star,
-
     fontWeight: '300',
-
     includeFontPadding:
       false,
-
     textShadowColor:
       'rgba(195,155,239,0.45)',
-
     textShadowOffset: {
       width: 0,
       height: 0,
     },
-
     textShadowRadius: 5,
   },
 
@@ -1574,15 +1377,12 @@ const styles = StyleSheet.create({
 
   brandLayer: {
     position: 'absolute',
-
     left: 0,
     right: 0,
     top: 0,
     bottom: 0,
-
     alignItems:
       'center',
-
     justifyContent:
       'center',
   },
@@ -1594,10 +1394,8 @@ const styles = StyleSheet.create({
   firstLogoContainer: {
     width: 132,
     height: 132,
-
     alignItems:
       'center',
-
     justifyContent:
       'center',
   },
@@ -1605,7 +1403,6 @@ const styles = StyleSheet.create({
   firstLogo: {
     width: 116,
     height: 116,
-
     overflow:
       'hidden',
   },
@@ -1617,34 +1414,21 @@ const styles = StyleSheet.create({
   firstWordmark: {
     flexDirection:
       'row',
-
     alignItems:
       'center',
-
     justifyContent:
       'center',
-
     marginTop: 17,
-  },
-
-  rtlWordmark: {
-    flexDirection:
-      'row-reverse',
   },
 
   firstWordLetter: {
     color:
       COLORS.fg,
-
     fontSize: 50,
-
     lineHeight: 55,
-
     fontWeight:
       '800',
-
     letterSpacing: 7,
-
     includeFontPadding:
       false,
   },
@@ -1655,44 +1439,19 @@ const styles = StyleSheet.create({
 
   firstSubtitle: {
     marginTop: 10,
-
     color:
       COLORS.accentHi,
-
     fontSize: 12,
-
     lineHeight: 18,
-
     fontWeight:
       '600',
-
     letterSpacing: 1.5,
-
     textTransform:
       'uppercase',
-
     textAlign:
       'center',
-
     includeFontPadding:
       false,
-  },
-
-  persianFirstSubtitle: {
-    fontSize: 14,
-
-    lineHeight: 22,
-
-    fontWeight:
-      '500',
-
-    letterSpacing: 0,
-
-    textTransform:
-      'none',
-
-    writingDirection:
-      'rtl',
   },
 
   /* ==============================================================
@@ -1702,10 +1461,8 @@ const styles = StyleSheet.create({
   secondLogoContainer: {
     width: 132,
     height: 132,
-
     alignItems:
       'center',
-
     justifyContent:
       'center',
   },
@@ -1713,7 +1470,6 @@ const styles = StyleSheet.create({
   secondLogo: {
     width: 116,
     height: 116,
-
     overflow:
       'hidden',
   },
@@ -1725,48 +1481,23 @@ const styles = StyleSheet.create({
   secondWordmark: {
     flexDirection:
       'row',
-
     alignItems:
       'center',
-
     justifyContent:
       'center',
-
     marginTop: 18,
   },
 
   secondWordLetter: {
     color:
       COLORS.fg,
-
     fontSize: 50,
-
     lineHeight: 56,
-
     fontWeight:
       '800',
-
     letterSpacing: -1,
-
     includeFontPadding:
       false,
-  },
-
-  persianWordLetter: {
-    fontSize: 48,
-
-    lineHeight: 57,
-
-    fontWeight:
-      '700',
-
-    letterSpacing: 0,
-
-    includeFontPadding:
-      false,
-
-    writingDirection:
-      'rtl',
   },
 
   /* ==============================================================
@@ -1775,50 +1506,18 @@ const styles = StyleSheet.create({
 
   tagline: {
     marginTop: 15,
-
     color:
       COLORS.muted,
-
     fontSize: 14,
-
     lineHeight: 20,
-
     fontWeight:
       '500',
-
     letterSpacing: 0.15,
-
     textAlign:
       'center',
-
     includeFontPadding:
       false,
-
     paddingHorizontal: 24,
-  },
-
-  persianTagline: {
-    marginTop: 14,
-
-    color:
-      COLORS.muted,
-
-    fontSize: 15,
-
-    lineHeight: 24,
-
-    fontWeight:
-      '500',
-
-    letterSpacing: 0,
-
-    writingDirection:
-      'rtl',
-
-    textAlign:
-      'center',
-
-    paddingHorizontal: 30,
   },
 });
 
