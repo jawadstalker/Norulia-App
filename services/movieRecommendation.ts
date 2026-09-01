@@ -1,38 +1,96 @@
 
 import { GameResult } from '../app/games/gameResults';
 
-/*
-|--------------------------------------------------------------------------
-| Norulia Movie Recommendation API
-|--------------------------------------------------------------------------
-|
-| Backend:
-| Google Colab + FastAPI + ngrok
-|
-| Current API:
-| POST /recommend
-|
-| Authentication:
-| X-API-Key
-|
-|--------------------------------------------------------------------------
-*/
+/**
+ * ============================================================================
+ * NORULIA MOVIE RECOMMENDATION SERVICE
+ * ============================================================================
+ *
+ * Backend:
+ * Google Colab + FastAPI + ngrok
+ *
+ * Current API:
+ *
+ * GET  /health
+ * POST /recommend
+ *
+ * Authentication:
+ * X-API-Key
+ *
+ * Current response format:
+ *
+ * {
+ *   "success": true,
+ *   "recommendations": [
+ *     {
+ *       "movie_id": 497,
+ *       "title": "The Green Mile",
+ *       "overview": "...",
+ *       "genres": ["Drama", "Fantasy"],
+ *       "similarity": 0.3667,
+ *       "matched_tags": ["emotional", "thoughtful"]
+ *     }
+ *   ],
+ *   "profile": {
+ *     "games_analyzed": 11,
+ *     "dimensions": {...},
+ *     "raw_metrics": {...},
+ *     "traits": [...],
+ *     "preferences": [...]
+ *   },
+ *   "games_analyzed": 11,
+ *   "top_k": 3
+ * }
+ *
+ * ============================================================================
+ */
 
+/**
+ * ============================================================================
+ * API CONFIGURATION
+ * ============================================================================
+ *
+ * IMPORTANT:
+ *
+ * Do not commit a real production API key to GitHub.
+ *
+ * For development you can temporarily place the current key here.
+ *
+ * Replace the placeholder below with your CURRENT Colab API key.
+ */
 const MOVIE_API_URL =
   'https://roundness-stuck-stretch.ngrok-free.dev';
 
 const MOVIE_API_KEY =
-  '3IhN7vwOx7PIS5SxD5zBzezSVih_Yb6aBheAMq9ypaQKPB3G';
+  'REPLACE_WITH_CURRENT_API_KEY';
 
-const AUTH_HEADER_NAME = 'X-API-Key';
+const AUTH_HEADER_NAME =
+  'X-API-Key';
 
-const MINIMUM_GAMES = 3;
+export const MINIMUM_GAMES = 3;
 
-/*
-|--------------------------------------------------------------------------
-| Movie Recommendation
-|--------------------------------------------------------------------------
-*/
+export const DEFAULT_TOP_K = 3;
+
+export const MAX_TOP_K = 10;
+
+/**
+ * Request timeout.
+ *
+ * This prevents the app from waiting forever if:
+ *
+ * - Colab is asleep
+ * - ngrok is disconnected
+ * - FastAPI is unavailable
+ * - recommendation engine hangs
+ */
+const REQUEST_TIMEOUT_MS = 45000;
+
+
+/**
+ * ============================================================================
+ * MOVIE RECOMMENDATION
+ * ============================================================================
+ */
 
 export type MovieRecommendation = {
   movieId: number;
@@ -43,23 +101,26 @@ export type MovieRecommendation = {
   matchedTags: string[];
 };
 
-/*
-|--------------------------------------------------------------------------
-| Cognitive Profile
-|--------------------------------------------------------------------------
-*/
+
+/**
+ * ============================================================================
+ * COGNITIVE PROFILE
+ * ============================================================================
+ */
+
+export type MovieRecommendationDimensions = {
+  processing_speed: number;
+  attention: number;
+  memory: number;
+  motor_accuracy: number;
+  resilience: number;
+  reasoning: number;
+};
 
 export type MovieRecommendationProfile = {
   gamesAnalyzed: number;
 
-  dimensions: {
-    processing_speed: number;
-    attention: number;
-    memory: number;
-    motor_accuracy: number;
-    resilience: number;
-    reasoning: number;
-  };
+  dimensions: MovieRecommendationDimensions;
 
   rawMetrics: Record<string, number>;
 
@@ -68,11 +129,12 @@ export type MovieRecommendationProfile = {
   preferences: string[];
 };
 
-/*
-|--------------------------------------------------------------------------
-| Full API Response
-|--------------------------------------------------------------------------
-*/
+
+/**
+ * ============================================================================
+ * COMPLETE API RESULT
+ * ============================================================================
+ */
 
 export type MovieRecommendationResponse = {
   success: boolean;
@@ -88,35 +150,25 @@ export type MovieRecommendationResponse = {
   message?: string;
 };
 
-/*
-|--------------------------------------------------------------------------
-| API Request
-|--------------------------------------------------------------------------
-*/
+
+/**
+ * ============================================================================
+ * API REQUEST
+ * ============================================================================
+ */
 
 type MovieRecommendationRequest = {
   games: GameResult[];
+
   top_k: number;
 };
 
-/*
-|--------------------------------------------------------------------------
-| Raw API Movie
-|--------------------------------------------------------------------------
-|
-| This matches the actual Colab response:
-|
-| {
-|   "movie_id": 497,
-|   "title": "The Green Mile",
-|   "overview": "...",
-|   "genres": ["Drama", "Fantasy"],
-|   "similarity": 0.3667,
-|   "matched_tags": ["emotional", "thoughtful"]
-| }
-|
-|--------------------------------------------------------------------------
-*/
+
+/**
+ * ============================================================================
+ * RAW API MOVIE
+ * ============================================================================
+ */
 
 type RawMovieRecommendation = {
   movie_id?: number | string;
@@ -132,163 +184,210 @@ type RawMovieRecommendation = {
   matched_tags?: string[];
 };
 
-/*
-|--------------------------------------------------------------------------
-| Raw Cognitive Profile
-|--------------------------------------------------------------------------
-*/
+
+/**
+ * ============================================================================
+ * RAW API PROFILE
+ * ============================================================================
+ */
 
 type RawMovieRecommendationProfile = {
-  games_analyzed?: number;
+  games_analyzed?: number | string;
 
   dimensions?: {
-    processing_speed?: number;
-    attention?: number;
-    memory?: number;
-    motor_accuracy?: number;
-    resilience?: number;
-    reasoning?: number;
+    processing_speed?: number | string;
+
+    attention?: number | string;
+
+    memory?: number | string;
+
+    motor_accuracy?: number | string;
+
+    resilience?: number | string;
+
+    reasoning?: number | string;
   };
 
-  raw_metrics?: Record<string, number>;
+  raw_metrics?: Record<string, number | string>;
 
   traits?: string[];
 
   preferences?: string[];
 };
 
-/*
-|--------------------------------------------------------------------------
-| Raw API Response
-|--------------------------------------------------------------------------
-*/
+
+/**
+ * ============================================================================
+ * RAW API RESPONSE
+ * ============================================================================
+ */
 
 type RawMovieRecommendationResponse = {
   success?: boolean;
 
   recommendations?: RawMovieRecommendation[];
 
-  profile?: RawMovieRecommendationProfile;
+  profile?: RawMovieRecommendationProfile | null;
 
-  games_analyzed?: number;
+  games_analyzed?: number | string;
 
-  top_k?: number;
+  top_k?: number | string;
 
   message?: string;
+
+  detail?: string;
 };
 
-/*
-|--------------------------------------------------------------------------
-| Normalize Movie
-|--------------------------------------------------------------------------
-*/
+
+/**
+ * ============================================================================
+ * TOP K NORMALIZATION
+ * ============================================================================
+ */
+
+function normalizeTopK(
+  value: number = DEFAULT_TOP_K
+): number {
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_TOP_K;
+  }
+
+  return Math.max(
+    1,
+    Math.min(
+      MAX_TOP_K,
+      Math.floor(parsed)
+    )
+  );
+}
+
+
+/**
+ * ============================================================================
+ * NUMBER NORMALIZATION
+ * ============================================================================
+ */
+
+function safeNumber(
+  value: unknown,
+  fallback = 0
+): number {
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed)
+    ? parsed
+    : fallback;
+}
+
+
+/**
+ * ============================================================================
+ * NORMALIZE MOVIE
+ * ============================================================================
+ *
+ * Converts:
+ *
+ * movie_id
+ * matched_tags
+ *
+ * into:
+ *
+ * movieId
+ * matchedTags
+ *
+ * for React Native.
+ */
 
 function normalizeMovie(
   movie: RawMovieRecommendation
 ): MovieRecommendation | null {
-
-  if (!movie || typeof movie !== 'object') {
+  if (
+    !movie ||
+    typeof movie !== 'object'
+  ) {
     return null;
   }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Title
-  |--------------------------------------------------------------------------
-  */
 
   const title =
     typeof movie.title === 'string'
       ? movie.title.trim()
       : '';
 
+  /**
+   * A movie without a title is unusable by the UI.
+   */
   if (!title) {
     return null;
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Movie ID
-  |--------------------------------------------------------------------------
-  */
+  /**
+   * Movie ID.
+   */
+  const movieId = safeNumber(
+    movie.movie_id,
+    0
+  );
 
-  const parsedMovieId =
-    Number(movie.movie_id);
-
-  const movieId =
-    Number.isFinite(parsedMovieId)
-      ? parsedMovieId
-      : 0;
-
-  /*
-  |--------------------------------------------------------------------------
-  | Overview
-  |--------------------------------------------------------------------------
-  */
-
+  /**
+   * Overview.
+   */
   const overview =
     typeof movie.overview === 'string'
-      ? movie.overview
+      ? movie.overview.trim()
       : '';
 
-  /*
-  |--------------------------------------------------------------------------
-  | Similarity
-  |--------------------------------------------------------------------------
-  */
+  /**
+   * Similarity.
+   */
+  const similarity = safeNumber(
+    movie.similarity,
+    0
+  );
 
-  const parsedSimilarity =
-    Number(movie.similarity);
-
-  const similarity =
-    Number.isFinite(parsedSimilarity)
-      ? parsedSimilarity
-      : 0;
-
-  /*
-  |--------------------------------------------------------------------------
-  | Genres
-  |--------------------------------------------------------------------------
-  */
-
+  /**
+   * Genres.
+   */
   let genres: string[] = [];
 
-  if (Array.isArray(movie.genres)) {
-
+  if (
+    Array.isArray(movie.genres)
+  ) {
     genres = movie.genres
       .filter(
-        (genre): genre is string =>
+        (
+          genre
+        ): genre is string =>
           typeof genre === 'string'
       )
       .map(
         genre => genre.trim()
       )
       .filter(Boolean);
-
   } else if (
     typeof movie.genres === 'string'
   ) {
-
-    genres =
-      movie.genres
-        .split(',')
-        .map(
-          genre => genre.trim()
-        )
-        .filter(Boolean);
+    genres = movie.genres
+      .split(',')
+      .map(
+        genre => genre.trim()
+      )
+      .filter(Boolean);
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Matched Tags
-  |--------------------------------------------------------------------------
-  */
-
+  /**
+   * Matched tags.
+   */
   const matchedTags =
-    Array.isArray(movie.matched_tags)
+    Array.isArray(
+      movie.matched_tags
+    )
       ? movie.matched_tags
           .filter(
-            (tag): tag is string =>
+            (
+              tag
+            ): tag is string =>
               typeof tag === 'string'
           )
           .map(
@@ -307,182 +406,221 @@ function normalizeMovie(
   };
 }
 
-/*
-|--------------------------------------------------------------------------
-| Normalize Cognitive Profile
-|--------------------------------------------------------------------------
-*/
+
+/**
+ * ============================================================================
+ * NORMALIZE PROFILE
+ * ============================================================================
+ */
 
 function normalizeProfile(
-  profile?: RawMovieRecommendationProfile
+  profile?: RawMovieRecommendationProfile | null
 ): MovieRecommendationProfile | null {
-
-  if (!profile) {
+  if (
+    !profile ||
+    typeof profile !== 'object'
+  ) {
     return null;
   }
 
   const dimensions =
     profile.dimensions ?? {};
 
+  const rawMetrics: Record<
+    string,
+    number
+  > = {};
+
+  if (
+    profile.raw_metrics &&
+    typeof profile.raw_metrics === 'object'
+  ) {
+    Object.entries(
+      profile.raw_metrics
+    ).forEach(
+      ([key, value]) => {
+        const numericValue =
+          Number(value);
+
+        if (
+          Number.isFinite(
+            numericValue
+          )
+        ) {
+          rawMetrics[key] =
+            numericValue;
+        }
+      }
+    );
+  }
+
+  const traits =
+    Array.isArray(
+      profile.traits
+    )
+      ? profile.traits
+          .filter(
+            item =>
+              typeof item === 'string'
+          )
+          .map(
+            item => item.trim()
+          )
+          .filter(Boolean)
+      : [];
+
+  const preferences =
+    Array.isArray(
+      profile.preferences
+    )
+      ? profile.preferences
+          .filter(
+            item =>
+              typeof item === 'string'
+          )
+          .map(
+            item => item.trim()
+          )
+          .filter(Boolean)
+      : [];
+
   return {
     gamesAnalyzed:
-      Number(
-        profile.games_analyzed ?? 0
+      safeNumber(
+        profile.games_analyzed,
+        0
       ),
 
     dimensions: {
       processing_speed:
-        Number(
-          dimensions.processing_speed ?? 0
+        safeNumber(
+          dimensions.processing_speed,
+          0
         ),
 
       attention:
-        Number(
-          dimensions.attention ?? 0
+        safeNumber(
+          dimensions.attention,
+          0
         ),
 
       memory:
-        Number(
-          dimensions.memory ?? 0
+        safeNumber(
+          dimensions.memory,
+          0
         ),
 
       motor_accuracy:
-        Number(
-          dimensions.motor_accuracy ?? 0
+        safeNumber(
+          dimensions.motor_accuracy,
+          0
         ),
 
       resilience:
-        Number(
-          dimensions.resilience ?? 0
+        safeNumber(
+          dimensions.resilience,
+          0
         ),
 
       reasoning:
-        Number(
-          dimensions.reasoning ?? 0
+        safeNumber(
+          dimensions.reasoning,
+          0
         ),
     },
 
-    rawMetrics:
-      profile.raw_metrics ?? {},
+    rawMetrics,
 
-    traits:
-      Array.isArray(profile.traits)
-        ? profile.traits.filter(
-            item =>
-              typeof item === 'string'
-          )
-        : [],
+    traits,
 
-    preferences:
-      Array.isArray(
-        profile.preferences
-      )
-        ? profile.preferences.filter(
-            item =>
-              typeof item === 'string'
-          )
-        : [],
+    preferences,
   };
 }
 
-/*
-|--------------------------------------------------------------------------
-| Get Movie Recommendations
-|--------------------------------------------------------------------------
-|
-| This is the main function used by results.tsx.
-|
-| Example:
-|
-| const movies =
-|   await getMovieRecommendations(
-|     gameResults,
-|     3
-|   );
-|
-|--------------------------------------------------------------------------
-*/
 
-export async function getMovieRecommendations(
-  games: GameResult[],
-  topK: number = 3
-): Promise<MovieRecommendation[]> {
+/**
+ * ============================================================================
+ * VALIDATE GAMES
+ * ============================================================================
+ */
 
-  /*
-  |--------------------------------------------------------------------------
-  | Validate input
-  |--------------------------------------------------------------------------
-  */
-
-  if (!Array.isArray(games)) {
-
+function validateGames(
+  games: GameResult[]
+): void {
+  if (
+    !Array.isArray(games)
+  ) {
     throw new Error(
       'Invalid game results provided for movie recommendation.'
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Minimum games
-  |--------------------------------------------------------------------------
-  |
-  | Norulia requires at least 3 completed sessions.
-  |
-  |--------------------------------------------------------------------------
-  */
-
   if (
-    games.length <
-    MINIMUM_GAMES
+    games.length < MINIMUM_GAMES
   ) {
-
     throw new Error(
       `At least ${MINIMUM_GAMES} game sessions are required before movie recommendations can be generated.`
     );
   }
+}
 
-  /*
-  |--------------------------------------------------------------------------
-  | Normalize topK
-  |--------------------------------------------------------------------------
-  */
 
-  const parsedTopK =
-    Number(topK);
+/**
+ * ============================================================================
+ * BUILD REQUEST
+ * ============================================================================
+ */
+
+function buildRequest(
+  games: GameResult[],
+  topK: number
+): MovieRecommendationRequest {
+  return {
+    games,
+    top_k: normalizeTopK(topK),
+  };
+}
+
+
+/**
+ * ============================================================================
+ * FETCH MOVIE API
+ * ============================================================================
+ *
+ * This is the ONLY function that actually communicates with Colab.
+ *
+ * Keeping the network logic here prevents duplicate implementation
+ * between getMovieRecommendations() and getMovieRecommendationResult().
+ * ============================================================================
+ */
+
+async function requestMovieAPI(
+  games: GameResult[],
+  topK: number
+): Promise<RawMovieRecommendationResponse> {
+  validateGames(games);
 
   const safeTopK =
-    Number.isFinite(parsedTopK)
-      ? Math.max(
-          1,
-          Math.min(
-            10,
-            Math.floor(
-              parsedTopK
-            )
-          )
-        )
-      : 3;
+    normalizeTopK(topK);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Build payload
-  |--------------------------------------------------------------------------
-  */
-
-  const payload:
-    MovieRecommendationRequest = {
-    games,
-    top_k: safeTopK,
-  };
+  const payload =
+    buildRequest(
+      games,
+      safeTopK
+    );
 
   const endpoint =
-    `${MOVIE_API_URL}/recommend`;
+    `${MOVIE_API_URL.replace(/\/+$/, '')}/recommend`;
 
-  /*
-  |--------------------------------------------------------------------------
-  | Debug
-  |--------------------------------------------------------------------------
-  */
+  if (
+    !MOVIE_API_KEY ||
+    MOVIE_API_KEY ===
+      'REPLACE_WITH_CURRENT_API_KEY'
+  ) {
+    throw new Error(
+      'Movie recommendation API key is not configured.'
+    );
+  }
 
   console.log(
     '[MovieRecommendation] Request:',
@@ -493,16 +631,20 @@ export async function getMovieRecommendations(
     }
   );
 
-  /*
-  |--------------------------------------------------------------------------
-  | API Request
-  |--------------------------------------------------------------------------
-  */
+  const controller =
+    new AbortController();
+
+  const timeoutId =
+    setTimeout(
+      () => {
+        controller.abort();
+      },
+      REQUEST_TIMEOUT_MS
+    );
 
   let response: Response;
 
   try {
-
     response =
       await fetch(
         endpoint,
@@ -516,12 +658,6 @@ export async function getMovieRecommendations(
             Accept:
               'application/json',
 
-            /*
-            |--------------------------------------------------------------------------
-            | REQUIRED AUTHENTICATION
-            |--------------------------------------------------------------------------
-            */
-
             [AUTH_HEADER_NAME]:
               MOVIE_API_KEY,
           },
@@ -530,35 +666,40 @@ export async function getMovieRecommendations(
             JSON.stringify(
               payload
             ),
+
+          signal:
+            controller.signal,
         }
       );
-
   } catch (error) {
+    clearTimeout(timeoutId);
 
     console.error(
       '[MovieRecommendation] Network error:',
       error
     );
 
+    if (
+      error instanceof Error &&
+      error.name === 'AbortError'
+    ) {
+      throw new Error(
+        'Movie recommendation service timed out. Make sure the Colab runtime is still running.'
+      );
+    }
+
     throw new Error(
-      'Could not connect to the Norulia movie recommendation service.'
+      'Could not connect to the Norulia movie recommendation service. Make sure Colab and ngrok are running.'
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Read response body once
-  |--------------------------------------------------------------------------
-  */
+  clearTimeout(timeoutId);
 
+  /**
+   * Read body exactly once.
+   */
   const responseText =
     await response.text();
-
-  /*
-  |--------------------------------------------------------------------------
-  | Parse JSON
-  |--------------------------------------------------------------------------
-  */
 
   let data:
     RawMovieRecommendationResponse |
@@ -567,16 +708,12 @@ export async function getMovieRecommendations(
   if (
     responseText.trim()
   ) {
-
     try {
-
       data =
         JSON.parse(
           responseText
         );
-
     } catch (error) {
-
       console.error(
         '[MovieRecommendation] Invalid JSON:',
         error
@@ -588,40 +725,19 @@ export async function getMovieRecommendations(
     }
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | HTTP Errors
-  |--------------------------------------------------------------------------
-  */
+  /**
+   * ==========================================================================
+   * HTTP ERROR
+   * ==========================================================================
+   */
 
   if (!response.ok) {
-
-    let errorMessage =
-      `Movie recommendation API failed (${response.status})`;
-
-    const errorData =
-      data as (
-        RawMovieRecommendationResponse & {
-          detail?: string;
-        }
-      ) | null;
-
-    if (
-      typeof errorData?.detail ===
-      'string'
-    ) {
-
-      errorMessage =
-        errorData.detail;
-
-    } else if (
-      typeof data?.message ===
-      'string'
-    ) {
-
-      errorMessage =
-        data.message;
-    }
+    const errorMessage =
+      typeof data?.detail === 'string'
+        ? data.detail
+        : typeof data?.message === 'string'
+          ? data.message
+          : `Movie recommendation API failed (${response.status})`;
 
     console.error(
       '[MovieRecommendation] API error:',
@@ -637,48 +753,35 @@ export async function getMovieRecommendations(
       }
     );
 
-    /*
-    |--------------------------------------------------------------------------
-    | Authentication Error
-    |--------------------------------------------------------------------------
-    */
-
     if (
       response.status === 401
     ) {
-
       throw new Error(
-        'Movie recommendation authentication failed. Check the API key.'
+        'Movie recommendation authentication failed. Check the X-API-Key used by the app and Colab.'
       );
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Minimum Games Error
-    |--------------------------------------------------------------------------
-    */
 
     if (
       response.status === 400
     ) {
-
       throw new Error(
         errorMessage
       );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Endpoint / ngrok Error
-    |--------------------------------------------------------------------------
-    */
-
     if (
       response.status === 404
     ) {
-
       throw new Error(
-        'Movie recommendation endpoint was not found. Make sure the Colab runtime and ngrok tunnel are still running.'
+        'Movie recommendation endpoint was not found. Make sure the current Colab/ngrok server is running.'
+      );
+    }
+
+    if (
+      response.status >= 500
+    ) {
+      throw new Error(
+        'The movie recommendation server encountered an internal error. Check the Colab output.'
       );
     }
 
@@ -687,309 +790,77 @@ export async function getMovieRecommendations(
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Empty response
-  |--------------------------------------------------------------------------
-  */
+  /**
+   * ==========================================================================
+   * EMPTY RESPONSE
+   * ==========================================================================
+   */
 
   if (!data) {
-
     throw new Error(
       'Movie recommendation API returned an empty response.'
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | API success
-  |--------------------------------------------------------------------------
-  */
+  /**
+   * ==========================================================================
+   * API SUCCESS FLAG
+   * ==========================================================================
+   */
 
   if (
     data.success === false
   ) {
-
     throw new Error(
       data.message ||
-      'Movie recommendation service failed.'
+        'Movie recommendation service failed.'
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Recommendations
-  |--------------------------------------------------------------------------
-  */
-
-  const rawRecommendations =
-    Array.isArray(
-      data.recommendations
-    )
-      ? data.recommendations
-      : [];
-
-  /*
-  |--------------------------------------------------------------------------
-  | Normalize
-  |--------------------------------------------------------------------------
-  */
-
-  const recommendations =
-    rawRecommendations
-      .map(
-        normalizeMovie
-      )
-      .filter(
-        (
-          movie
-        ): movie is MovieRecommendation =>
-          movie !== null
-      )
-      .slice(
-        0,
-        safeTopK
-      );
-
-  /*
-  |--------------------------------------------------------------------------
-  | Log result
-  |--------------------------------------------------------------------------
-  */
-
-  console.log(
-    '[MovieRecommendation] Success:',
-    {
-      gamesAnalyzed:
-        data.games_analyzed ??
-        games.length,
-
-      recommendations:
-        recommendations.length,
-
-      topK:
-        safeTopK,
-    }
-  );
-
-  /*
-  |--------------------------------------------------------------------------
-  | No recommendations
-  |--------------------------------------------------------------------------
-  */
-
-  if (
-    recommendations.length === 0
-  ) {
-
-    console.warn(
-      '[MovieRecommendation] API returned zero recommendations.'
-    );
-  }
-
-  return recommendations;
+  return data;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Get Complete Recommendation Result
-|--------------------------------------------------------------------------
-|
-| Use this when results.tsx also needs:
-|
-| - movies
-| - cognitive profile
-| - traits
-| - preferences
-| - games analyzed
-|
-|--------------------------------------------------------------------------
-*/
+
+/**
+ * ============================================================================
+ * GET COMPLETE MOVIE RECOMMENDATION RESULT
+ * ============================================================================
+ *
+ * USE THIS IN results.tsx.
+ *
+ * Example:
+ *
+ * const result =
+ *   await getMovieRecommendationResult(
+ *     gameResults,
+ *     3
+ *   );
+ *
+ * result.recommendations
+ * result.profile
+ * result.gamesAnalyzed
+ *
+ * ============================================================================
+ */
 
 export async function getMovieRecommendationResult(
   games: GameResult[],
-  topK: number = 3
+  topK: number = DEFAULT_TOP_K
 ): Promise<MovieRecommendationResponse> {
-
-  /*
-  |--------------------------------------------------------------------------
-  | Validate games
-  |--------------------------------------------------------------------------
-  */
-
-  if (!Array.isArray(games)) {
-
-    throw new Error(
-      'Invalid game results provided for movie recommendation.'
-    );
-  }
-
-  if (
-    games.length <
-    MINIMUM_GAMES
-  ) {
-
-    throw new Error(
-      `At least ${MINIMUM_GAMES} game sessions are required before movie recommendations can be generated.`
-    );
-  }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Safe topK
-  |--------------------------------------------------------------------------
-  */
-
-  const parsedTopK =
-    Number(topK);
+  validateGames(games);
 
   const safeTopK =
-    Number.isFinite(parsedTopK)
-      ? Math.max(
-          1,
-          Math.min(
-            10,
-            Math.floor(
-              parsedTopK
-            )
-          )
-        )
-      : 3;
+    normalizeTopK(topK);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Request
-  |--------------------------------------------------------------------------
-  */
-
-  let response: Response;
-
-  try {
-
-    response =
-      await fetch(
-        `${MOVIE_API_URL}/recommend`,
-        {
-          method: 'POST',
-
-          headers: {
-            'Content-Type':
-              'application/json',
-
-            Accept:
-              'application/json',
-
-            [AUTH_HEADER_NAME]:
-              MOVIE_API_KEY,
-          },
-
-          body:
-            JSON.stringify({
-              games,
-              top_k:
-                safeTopK,
-            }),
-        }
-      );
-
-  } catch (error) {
-
-    console.error(
-      '[MovieRecommendation] Network error:',
-      error
+  const data =
+    await requestMovieAPI(
+      games,
+      safeTopK
     );
 
-    throw new Error(
-      'Could not connect to the Norulia movie recommendation service.'
-    );
-  }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Parse body
-  |--------------------------------------------------------------------------
-  */
-
-  const responseText =
-    await response.text();
-
-  let data:
-    RawMovieRecommendationResponse |
-    null = null;
-
-  try {
-
-    data =
-      responseText.trim()
-        ? JSON.parse(
-            responseText
-          )
-        : null;
-
-  } catch {
-
-    throw new Error(
-      'Invalid JSON returned by the movie recommendation service.'
-    );
-  }
-
-  /*
-  |--------------------------------------------------------------------------
-  | HTTP error
-  |--------------------------------------------------------------------------
-  */
-
-  if (!response.ok) {
-
-    const errorData =
-      data as (
-        RawMovieRecommendationResponse & {
-          detail?: string;
-        }
-      ) | null;
-
-    const message =
-      typeof errorData?.detail ===
-      'string'
-        ? errorData.detail
-        : (
-            data?.message ||
-            `Movie recommendation API failed (${response.status})`
-          );
-
-    if (
-      response.status === 401
-    ) {
-
-      throw new Error(
-        'Movie recommendation authentication failed.'
-      );
-    }
-
-    throw new Error(
-      message
-    );
-  }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Empty response
-  |--------------------------------------------------------------------------
-  */
-
-  if (!data) {
-
-    throw new Error(
-      'Empty response from movie recommendation API.'
-    );
-  }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Normalize movies
-  |--------------------------------------------------------------------------
-  */
-
+  /**
+   * Normalize movies.
+   */
   const rawRecommendations =
     Array.isArray(
       data.recommendations
@@ -1013,22 +884,49 @@ export async function getMovieRecommendationResult(
         safeTopK
       );
 
-  /*
-  |--------------------------------------------------------------------------
-  | Normalize profile
-  |--------------------------------------------------------------------------
-  */
-
+  /**
+   * Normalize profile.
+   */
   const profile =
     normalizeProfile(
       data.profile
     );
 
-  /*
-  |--------------------------------------------------------------------------
-  | Return complete response
-  |--------------------------------------------------------------------------
-  */
+  const gamesAnalyzed =
+    safeNumber(
+      data.games_analyzed,
+      games.length
+    );
+
+  const returnedTopK =
+    safeNumber(
+      data.top_k,
+      safeTopK
+    );
+
+  console.log(
+    '[MovieRecommendation] Success:',
+    {
+      gamesAnalyzed,
+      recommendations:
+        recommendations.length,
+      topK:
+        returnedTopK,
+      profileLoaded:
+        profile !== null,
+    }
+  );
+
+  if (
+    recommendations.length === 0
+  ) {
+    console.warn(
+      '[MovieRecommendation] API returned zero recommendations.',
+      data.message
+        ? `Message: ${data.message}`
+        : ''
+    );
+  }
 
   return {
     success:
@@ -1038,17 +936,10 @@ export async function getMovieRecommendationResult(
 
     profile,
 
-    gamesAnalyzed:
-      Number(
-        data.games_analyzed ??
-        games.length
-      ),
+    gamesAnalyzed,
 
     topK:
-      Number(
-        data.top_k ??
-        safeTopK
-      ),
+      returnedTopK,
 
     message:
       typeof data.message === 'string'
@@ -1057,40 +948,99 @@ export async function getMovieRecommendationResult(
   };
 }
 
-/*
-|--------------------------------------------------------------------------
-| Get Top Movie Recommendations
-|--------------------------------------------------------------------------
-|
-| Convenience wrapper.
-|
-|--------------------------------------------------------------------------
-*/
+
+/**
+ * ============================================================================
+ * GET MOVIE RECOMMENDATIONS ONLY
+ * ============================================================================
+ *
+ * Convenience function.
+ *
+ * Use this if the caller only needs the movies.
+ *
+ * ============================================================================
+ */
+
+export async function getMovieRecommendations(
+  games: GameResult[],
+  topK: number = DEFAULT_TOP_K
+): Promise<MovieRecommendation[]> {
+  const result =
+    await getMovieRecommendationResult(
+      games,
+      topK
+    );
+
+  return result.recommendations;
+}
+
+
+/**
+ * ============================================================================
+ * GET TOP MOVIE RECOMMENDATIONS
+ * ============================================================================
+ *
+ * Alias kept for compatibility with existing imports.
+ *
+ * ============================================================================
+ */
 
 export async function getTopMovieRecommendations(
   games: GameResult[],
-  topK: number = 3
+  topK: number = DEFAULT_TOP_K
 ): Promise<MovieRecommendation[]> {
-
   return getMovieRecommendations(
     games,
     topK
   );
 }
 
-/*
-|--------------------------------------------------------------------------
-| Check API Health
-|--------------------------------------------------------------------------
-*/
+
+/**
+ * ============================================================================
+ * CHECK MOVIE API HEALTH
+ * ============================================================================
+ *
+ * GET /health
+ *
+ * IMPORTANT:
+ *
+ * The current Colab API returns:
+ *
+ * {
+ *   "status": "ok",
+ *   "service": "norulia-movie-recommendation",
+ *   "version": "2.0.0",
+ *   "authentication": true,
+ *   "engine_loaded": true,
+ *   "minimum_games": 3
+ * }
+ *
+ * We accept both the new v2 response and the older health response
+ * so the app does not unnecessarily fail during development.
+ *
+ * ============================================================================
+ */
 
 export async function checkMovieRecommendationHealth(): Promise<boolean> {
+  const endpoint =
+    `${MOVIE_API_URL.replace(/\/+$/, '')}/health`;
+
+  const controller =
+    new AbortController();
+
+  const timeoutId =
+    setTimeout(
+      () => {
+        controller.abort();
+      },
+      15000
+    );
 
   try {
-
     const response =
       await fetch(
-        `${MOVIE_API_URL}/health`,
+        endpoint,
         {
           method: 'GET',
 
@@ -1098,8 +1048,13 @@ export async function checkMovieRecommendationHealth(): Promise<boolean> {
             Accept:
               'application/json',
           },
+
+          signal:
+            controller.signal,
         }
       );
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       return false;
@@ -1108,12 +1063,33 @@ export async function checkMovieRecommendationHealth(): Promise<boolean> {
     const data =
       await response.json();
 
-    return (
+    /**
+     * Current API:
+     *
+     * status = ok
+     * engine_loaded = true
+     */
+    if (
       data?.status === 'ok' &&
       data?.engine_loaded === true
-    );
+    ) {
+      return true;
+    }
 
+    /**
+     * Backward compatibility with the old API.
+     */
+    if (
+      data?.status === 'ok' &&
+      data?.service ===
+        'norulia-movie-recommendation'
+    ) {
+      return true;
+    }
+
+    return false;
   } catch (error) {
+    clearTimeout(timeoutId);
 
     console.warn(
       '[MovieRecommendation] Health check failed:',
@@ -1121,6 +1097,149 @@ export async function checkMovieRecommendationHealth(): Promise<boolean> {
     );
 
     return false;
+  }
+}
+
+
+/**
+ * ============================================================================
+ * API URL HELPERS
+ * ============================================================================
+ *
+ * Useful for debugging from results.tsx.
+ * ============================================================================
+ */
+
+export function getMovieRecommendationApiUrl(): string {
+  return MOVIE_API_URL;
+}
+
+
+/**
+ * ============================================================================
+ * DEBUG API CONNECTION
+ * ============================================================================
+ *
+ * This function is optional.
+ *
+ * It performs the health request and returns useful information for logs.
+ *
+ * ============================================================================
+ */
+
+export type MovieRecommendationHealth = {
+  reachable: boolean;
+
+  status?: string;
+
+  service?: string;
+
+  version?: string;
+
+  authentication?: boolean;
+
+  engineLoaded?: boolean;
+
+  minimumGames?: number;
+
+  error?: string;
+};
+
+export async function getMovieRecommendationHealth(): Promise<MovieRecommendationHealth> {
+  const endpoint =
+    `${MOVIE_API_URL.replace(/\/+$/, '')}/health`;
+
+  const controller =
+    new AbortController();
+
+  const timeoutId =
+    setTimeout(
+      () => {
+        controller.abort();
+      },
+      15000
+    );
+
+  try {
+    const response =
+      await fetch(
+        endpoint,
+        {
+          method: 'GET',
+
+          headers: {
+            Accept:
+              'application/json',
+          },
+
+          signal:
+            controller.signal,
+        }
+      );
+
+    clearTimeout(timeoutId);
+
+    const text =
+      await response.text();
+
+    let data: any = null;
+
+    try {
+      data =
+        text.trim()
+          ? JSON.parse(text)
+          : null;
+    } catch {
+      data = null;
+    }
+
+    if (!response.ok) {
+      return {
+        reachable: false,
+
+        error:
+          typeof data?.detail === 'string'
+            ? data.detail
+            : `HTTP ${response.status}`,
+      };
+    }
+
+    return {
+      reachable:
+        data?.status === 'ok',
+
+      status:
+        data?.status,
+
+      service:
+        data?.service,
+
+      version:
+        data?.version,
+
+      authentication:
+        data?.authentication,
+
+      engineLoaded:
+        data?.engine_loaded,
+
+      minimumGames:
+        safeNumber(
+          data?.minimum_games,
+          MINIMUM_GAMES
+        ),
+    };
+  } catch (error) {
+    clearTimeout(timeoutId);
+
+    return {
+      reachable: false,
+
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Unknown network error',
+    };
   }
 }
 

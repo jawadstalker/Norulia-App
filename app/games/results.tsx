@@ -2,6 +2,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -232,10 +233,10 @@ export default function GameResultsScreen({
     setMovieError,
   ] = useState<string | null>(null);
 
-  const [
-    lastMovieRequestSignature,
-    setLastMovieRequestSignature,
-  ] = useState<string | null>(null);
+  // Refs for preventing duplicate movie requests
+  const movieRequestInFlightRef = useRef(false);
+  const movieRequestedSignatureRef = useRef<string | null>(null);
+  const movieMountedRef = useRef(true);
 
   const text = useMemo(
     () =>
@@ -420,6 +421,13 @@ export default function GameResultsScreen({
     loadResults();
   }, [loadResults]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      movieMountedRef.current = false;
+    };
+  }, []);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     loadResults();
@@ -492,142 +500,161 @@ export default function GameResultsScreen({
    * Request movie recommendations from
    * the current Colab / FastAPI service.
    */
-  const requestMovieRecommendations =
-    useCallback(
-      async (
-        force = false
-      ) => {
-        if (!hasEnoughGamesForMovies) {
-          return;
-        }
+  const requestMovieRecommendations = useCallback(
+    async (force = false) => {
+      if (!hasEnoughGamesForMovies) {
+        return;
+      }
 
-        if (!results.length) {
-          return;
-        }
+      if (!results.length) {
+        return;
+      }
 
-        if (
-          movieLoading
-        ) {
-          return;
-        }
+      if (movieRequestInFlightRef.current) {
+        return;
+      }
 
-        if (
-          !force &&
-          lastMovieRequestSignature ===
-            movieRequestSignature
-        ) {
-          return;
-        }
+      if (
+        !force &&
+        movieRequestedSignatureRef.current ===
+          movieRequestSignature
+      ) {
+        return;
+      }
 
+      movieRequestInFlightRef.current = true;
+
+      if (movieMountedRef.current) {
         setMovieLoading(true);
         setMovieError(null);
+      }
 
-        try {
-          console.log(
-            '[MovieRecommendation] Sending request...',
-            {
-              games: results.length,
-              differentGames:
-                completedGamesCount,
-              topK: 3,
-            }
-          );
-
-          const recommendations =
-            await getMovieRecommendations(
-              results,
-              3
-            );
-
-          const normalizedRecommendations =
-            Array.isArray(recommendations)
-              ? recommendations
-                  .filter(
-                    (movie) =>
-                      movie &&
-                      typeof movie.title ===
-                        'string'
-                  )
-                  .slice(0, 3)
-              : [];
-
-          console.log(
-            '[MovieRecommendation] Received:',
-            normalizedRecommendations
-          );
-
-          setMovieRecommendations(
-            normalizedRecommendations
-          );
-
-          setLastMovieRequestSignature(
-            movieRequestSignature
-          );
-
-          if (
-            normalizedRecommendations.length ===
-            0
-          ) {
-            console.warn(
-              '[MovieRecommendation] API returned no recommendations.'
-            );
+      try {
+        console.log(
+          '[MovieRecommendation] Requesting recommendations...',
+          {
+            games: results.length,
+            differentGames: completedGamesCount,
+            signature: movieRequestSignature,
           }
-        } catch (error) {
-          console.error(
-            '[MovieRecommendation] Request failed:',
-            error
+        );
+
+        const recommendations =
+          await getMovieRecommendations(
+            results,
+            3
           );
 
-          setMovieRecommendations([]);
+        const normalizedRecommendations =
+          Array.isArray(recommendations)
+            ? recommendations
+                .filter(
+                  (movie) =>
+                    movie &&
+                    typeof movie.title === 'string'
+                )
+                .slice(0, 3)
+            : [];
 
-          /**
-           * Keep the UI message friendly,
-           * while the actual error remains visible
-           * in development logs.
-           */
-          setMovieError(
-            text.noConnection
+        console.log(
+          '[MovieRecommendation] Recommendations received:',
+          normalizedRecommendations
+        );
+
+        if (!movieMountedRef.current) {
+          return;
+        }
+
+        setMovieRecommendations(
+          normalizedRecommendations
+        );
+
+        /*
+         * VERY IMPORTANT:
+         * Mark this exact dataset as processed even
+         * when the API returns an empty array.
+         *
+         * This prevents an endless request loop.
+         */
+        movieRequestedSignatureRef.current =
+          movieRequestSignature;
+
+        if (
+          normalizedRecommendations.length ===
+          0
+        ) {
+          console.warn(
+            '[MovieRecommendation] API returned no movies.'
           );
-        } finally {
+        }
+      } catch (error) {
+        console.error(
+          '[MovieRecommendation] Failed:',
+          error
+        );
+
+        if (!movieMountedRef.current) {
+          return;
+        }
+
+        setMovieRecommendations([]);
+
+        setMovieError(
+          text.noConnection
+        );
+
+        /*
+         * Do NOT mark the signature as successful
+         * on error.
+         *
+         * The user can explicitly press Try Again.
+         */
+      } finally {
+        movieRequestInFlightRef.current = false;
+
+        if (movieMountedRef.current) {
           setMovieLoading(false);
         }
-      },
-      [
-        hasEnoughGamesForMovies,
-        results,
-        completedGamesCount,
-        movieLoading,
-        movieRequestSignature,
-        lastMovieRequestSignature,
-        text.noConnection,
-      ]
-    );
+      }
+    },
+    [
+      hasEnoughGamesForMovies,
+      results,
+      completedGamesCount,
+      movieRequestSignature,
+      text.noConnection,
+    ]
+  );
 
   /**
    * Automatically request recommendations
    * when enough different games exist.
    */
   useEffect(() => {
-    if (
-      !hasEnoughGamesForMovies ||
-      !results.length
-    ) {
+    if (!hasEnoughGamesForMovies) {
+      return;
+    }
+
+    if (!results.length) {
+      return;
+    }
+
+    if (movieRequestInFlightRef.current) {
       return;
     }
 
     if (
-      movieRequestSignature ===
-      lastMovieRequestSignature
+      movieRequestedSignatureRef.current ===
+      movieRequestSignature
     ) {
       return;
     }
 
-    requestMovieRecommendations();
+    requestMovieRecommendations(false);
   }, [
     hasEnoughGamesForMovies,
     results.length,
     movieRequestSignature,
-    lastMovieRequestSignature,
     requestMovieRecommendations,
   ]);
 
@@ -2150,7 +2177,7 @@ export default function GameResultsScreen({
           {!movieLoading &&
             !movieError &&
             hasEnoughGamesForMovies &&
-            lastMovieRequestSignature ===
+            movieRequestedSignatureRef.current ===
               movieRequestSignature &&
             movieRecommendations.length ===
               0 && (
