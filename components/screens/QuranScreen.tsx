@@ -1093,9 +1093,9 @@ export default function QuranScreen() {
             <TouchableOpacity activeOpacity={0.8} onPress={handleBack} style={[styles.headerBackButton, { backgroundColor: colors.surface || 'rgba(255,255,255,0.06)', borderColor: colors.border || 'rgba(255,255,255,0.1)' }]}>
               <ArrowLeft size={21} strokeWidth={2.2} color={colors.text || '#fff'} />
             </TouchableOpacity>
-            <View style={[styles.headerCenter, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-              <Text numberOfLines={1} style={[styles.headerTitle, { color: colors.text || '#fff', textAlign: isRTL ? 'right' : 'left' }]}>{t.quranMemorization}</Text>
-              <Text numberOfLines={1} style={[styles.headerSubtitle, { color: colors.textSecondary || '#aaa', textAlign: isRTL ? 'right' : 'left' }]}>{t.quranSurahYasin}</Text>
+            <View style={styles.headerCenter}>
+              <Text numberOfLines={1} style={[styles.headerTitle, { color: colors.text || '#fff' }]}>{t.quranMemorization}</Text>
+              <Text numberOfLines={1} style={[styles.headerSubtitle, { color: colors.textSecondary || '#aaa' }]}>{t.quranSurahYasin}</Text>
             </View>
             <View style={[styles.headerIcon, { backgroundColor: isDark ? 'rgba(139,92,246,0.14)' : 'rgba(139,92,246,0.08)' }]}>
               <BookOpen size={22} strokeWidth={2} color={colors.primary} />
@@ -1199,9 +1199,9 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 50 },
   header: { minHeight: 76, paddingHorizontal: 16, paddingTop: 40, paddingBottom: 10, alignItems: 'center', marginBottom: 12 },
   headerBackButton: { width: 42, height: 42, borderRadius: 30, alignItems: 'center', justifyContent: 'center', borderWidth: 1, flexShrink: 0 },
-  headerCenter: { flex: 1, justifyContent: 'center', marginHorizontal: 12, minWidth: 0 },
-  headerTitle: { fontSize: 20, fontWeight: '800' },
-  headerSubtitle: { marginTop: 3, fontSize: 12, fontWeight: '500' },
+  headerCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', marginHorizontal: 12, minWidth: 0 },
+  headerTitle: { fontSize: 20, fontWeight: '800', textAlign: 'center' },
+  headerSubtitle: { marginTop: 3, fontSize: 12, fontWeight: '500', textAlign: 'center' },
   headerIcon: { width: 50, height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   dayCard: { borderRadius: 22, borderWidth: 1, padding: 16, marginBottom: 12 },
   dayHeader: { alignItems: 'center', justifyContent: 'space-between' },

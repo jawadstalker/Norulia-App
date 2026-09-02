@@ -1629,23 +1629,12 @@ export default function HafezScreen() {
           />
         </TouchableOpacity>
 
-        <View
-          style={
-            styles.headerTitleWrapper
-          }
-        >
+        <View style={styles.headerTitleWrapper}>
           <Text
             numberOfLines={1}
             style={[
               styles.headerTitle,
-              {
-                color:
-                  colors.text,
-                textAlign:
-                  isPersian
-                    ? 'right'
-                    : 'left',
-              },
+              { color: colors.text },
             ]}
           >
             {title}
@@ -1656,14 +1645,7 @@ export default function HafezScreen() {
               numberOfLines={1}
               style={[
                 styles.headerSubtitle,
-                {
-                  color:
-                    colors.textSecondary,
-                  textAlign:
-                    isPersian
-                      ? 'right'
-                      : 'left',
-                },
+                { color: colors.textSecondary },
               ]}
             >
               {subtitle}
@@ -4581,6 +4563,7 @@ const styles = StyleSheet.create({
 
   headerTitleWrapper: {
     flex: 1,
+    alignItems: 'center',
     justifyContent:
       'center',
     marginHorizontal: 12,
@@ -4590,12 +4573,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
+    textAlign: 'center',
   },
 
   headerSubtitle: {
     marginTop: 3,
     fontSize: 12,
     fontWeight: '500',
+    textAlign: 'center',
   },
 
   headerIcon: {

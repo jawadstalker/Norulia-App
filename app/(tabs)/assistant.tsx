@@ -50,7 +50,7 @@ interface ChatResponse {
 }
 
 export default function AssistantScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, theme } = useTheme();
   const { isRTL, language } = useLanguage();
   const insets = useSafeAreaInsets();
 
@@ -67,6 +67,26 @@ export default function AssistantScreen() {
   const inputRef = useRef<TextInput>(null);
   const abortController = useRef<AbortController | null>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Keep the icon color synchronized with the active theme.
+  // Athlete theme uses the theme's primary green color.
+  const getIconColor = useCallback(() => {
+    if (theme === 'athlete') {
+      return colors.primary;
+    }
+
+    if (isDark) {
+      return 'rgba(73,194,226,1)';
+    }
+
+    if (theme === 'light') {
+      return '#7B61FF';
+    }
+
+    return colors.primary || '#7B61FF';
+  }, [colors.primary, isDark, theme]);
+
+  const iconColor = getIconColor();
 
   const welcomeMessage =
     language === 'fa'
@@ -154,23 +174,19 @@ export default function AssistantScreen() {
       abortController.current?.abort();
 
       const controller = new AbortController();
-
       abortController.current = controller;
 
       const response = await fetch(
         CHAT_API_URL,
         {
           method: 'POST',
-
           headers: {
             'Content-Type': 'application/json',
             Accept: 'application/json',
           },
-
           body: JSON.stringify({
             message: text,
           }),
-
           signal: controller.signal,
         }
       );
@@ -244,7 +260,6 @@ export default function AssistantScreen() {
       }
 
       lightHaptic();
-
       setRequestError(false);
       setInputText('');
 
@@ -257,9 +272,7 @@ export default function AssistantScreen() {
       }
 
       addMessage(text, true);
-
       setIsTyping(true);
-
       inputRef.current?.blur();
 
       try {
@@ -343,7 +356,6 @@ export default function AssistantScreen() {
     });
 
     setRequestError(false);
-
     handleSend(lastUser.text);
   }, [
     messages,
@@ -414,11 +426,6 @@ export default function AssistantScreen() {
     isDark
       ? 'rgba(255,255,255,0.055)'
       : 'rgba(0,0,0,0.035)';
-
-  const iconColor =
-    isDark
-      ? 'rgba(73,194,226,1)'
-      : colors.text;
 
   return (
     <LinearGradient
@@ -765,7 +772,9 @@ export default function AssistantScreen() {
                           styles.aiPill,
                           {
                             backgroundColor:
-                              isDark
+                              theme === 'athlete'
+                                ? 'rgba(52,199,89,0.14)'
+                                : isDark
                                 ? 'rgba(130,116,216,0.18)'
                                 : 'rgba(130,116,216,0.10)',
                           },
@@ -803,7 +812,9 @@ export default function AssistantScreen() {
                         styles.onlineDot,
                         {
                           backgroundColor:
-                            '#39D98A',
+                            theme === 'athlete'
+                              ? colors.primary
+                              : '#39D98A',
                         },
                       ]}
                     />

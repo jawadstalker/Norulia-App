@@ -457,37 +457,38 @@ export default function SportsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <View style={[styles.header, { flexDirection: 'row' }]}>
+        <View style={styles.header}>
           <TouchableOpacity
             activeOpacity={0.75}
             onPress={() => router.back()}
-            style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            style={[styles.headerBackButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            accessibilityRole="button"
           >
-            <ArrowLeft size={20} color={colors.text} />
+            <ArrowLeft size={21} strokeWidth={2.2} color={colors.text} />
           </TouchableOpacity>
 
-          <View style={[styles.headerContent, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+          <View style={styles.headerTitleWrapper}>
             <View
               style={[
                 styles.athleteBadge,
-                {
-                  backgroundColor: `${colors.primary}18`,
-                  borderColor: colors.border,
-                  flexDirection: isRTL ? 'row-reverse' : 'row',
-                },
+                { backgroundColor: `${colors.primary}18`, borderColor: colors.border },
               ]}
             >
               <View style={[styles.liveDot, { backgroundColor: colors.primary }]} />
               <Text style={[styles.badgeText, { color: colors.primary }]}>{text.badge}</Text>
             </View>
 
-            <Text style={[styles.title, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text numberOfLines={1} style={[styles.headerTitle, { color: colors.text }]}>
               {text.title}
             </Text>
 
-            <Text style={[styles.subtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text numberOfLines={2} style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
               {text.subtitle}
             </Text>
+          </View>
+
+          <View style={[styles.headerIcon, { backgroundColor: `${colors.primary}18` }]}>
+            <Activity size={22} strokeWidth={2} color={colors.primary} />
           </View>
         </View>
 
@@ -1005,22 +1006,37 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   header: {
+    minHeight: 76,
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 13,
     marginBottom: 22,
   },
-  backButton: {
-    width: 43,
-    height: 43,
-    borderRadius: 15,
+  headerBackButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+    flexShrink: 0,
   },
-  headerContent: {
+  headerTitleWrapper: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 0,
+  },
+  headerIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   athleteBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
     paddingHorizontal: 10,
@@ -1039,15 +1055,16 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.5,
   },
-  title: {
-    fontSize: 31,
-    fontWeight: '900',
-    letterSpacing: -1,
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
   },
-  subtitle: {
+  headerSubtitle: {
+    marginTop: 3,
     fontSize: 12,
-    lineHeight: 19,
-    marginTop: 5,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   todayCard: {
     borderRadius: 22,

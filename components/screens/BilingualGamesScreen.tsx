@@ -126,15 +126,8 @@ export default function BilingualGamesScreen() {
       ]}
     >
       {/* ==================== HEADER ==================== */}
-      <View
-        style={[
-          styles.header,
-          {
-            flexDirection: 'row', // همیشه چپ به راست
-          },
-        ]}
-      >
-        {/* دکمه برگشت - همیشه در سمت چپ */}
+      <View style={styles.header}>
+        {/* دکمه برگشت */}
         <TouchableOpacity
           onPress={handleBack}
           activeOpacity={0.8}
@@ -147,7 +140,7 @@ export default function BilingualGamesScreen() {
             right: 10,
           }}
           style={[
-            styles.backButton,
+            styles.headerBackButton,
             {
               backgroundColor: colors.surface,
               borderColor: colors.border,
@@ -155,81 +148,37 @@ export default function BilingualGamesScreen() {
           ]}
         >
           <ArrowLeft
-            size={23}
+            size={21}
             color={colors.text}
-            strokeWidth={2.5}
+            strokeWidth={2.2}
           />
         </TouchableOpacity>
 
-        {/* عنوان و آیکون - همیشه در سمت راست */}
-        <View
-          style={[
-            styles.headerContent,
-            {
-              alignItems: 'flex-end', // همیشه راست‌چین
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.titleRow,
-              {
-                flexDirection: 'row-reverse', // آیکون سمت راست عنوان
-              },
-            ]}
+        {/* عنوان - همیشه وسط‌چین، مستقل از جهت زبان */}
+        <View style={styles.headerTitleWrapper}>
+          <Text
+            numberOfLines={1}
+            style={[styles.headerTitle, { color: colors.text }]}
           >
-            <View
-              style={[
-                styles.headerIcon,
-                {
-                  backgroundColor: iconBgColor, // استفاده از رنگ شرطی
-                },
-              ]}
-            >
-              <Languages
-                size={22}
-                color={iconColor} // استفاده از رنگ شرطی
-              />
-            </View>
+            {language === 'fa'
+              ? 'بازی‌های دوزبانه'
+              : 'Bilingual Games'}
+          </Text>
 
-            <View
-              style={[
-                styles.titleTextContainer,
-                {
-                  alignItems: 'flex-end', // راست‌چین
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.headerTitle,
-                  {
-                    color: colors.text,
-                    textAlign: 'right', // همیشه راست
-                  },
-                ]}
-              >
-                {language === 'fa'
-                  ? 'بازی‌های دوزبانه'
-                  : 'Bilingual Games'}
-              </Text>
+          <Text
+            numberOfLines={1}
+            style={[styles.headerSubtitle, { color: colors.textSecondary }]}
+          >
+            {bilingualGames.length}{' '}
+            {language === 'fa'
+              ? 'بازی برای یادگیری'
+              : 'games to learn'}
+          </Text>
+        </View>
 
-              <Text
-                style={[
-                  styles.headerSubtitle,
-                  {
-                    color: colors.textSecondary,
-                    textAlign: 'right', // همیشه راست
-                  },
-                ]}
-              >
-                {bilingualGames.length}{' '}
-                {language === 'fa'
-                  ? 'بازی برای یادگیری'
-                  : 'games to learn'}
-              </Text>
-            </View>
-          </View>
+        {/* آیکون - همیشه در سمت راستِ ظاهری هدر */}
+        <View style={[styles.headerIcon, { backgroundColor: iconBgColor }]}>
+          <Languages size={22} color={iconColor} />
         </View>
       </View>
 
@@ -495,56 +444,48 @@ const styles = StyleSheet.create({
   },
 
   header: {
+    minHeight: 76,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg + 35,
     paddingBottom: Spacing.md,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    flexDirection: 'row', // همیشه چپ به راست
   },
 
-  headerContent: {
+  headerTitleWrapper: {
     flex: 1,
-    alignItems: 'flex-end', // همیشه راست‌چین
-  },
-
-  titleRow: {
     alignItems: 'center',
-    gap: 11,
-    flexDirection: 'row-reverse', // آیکون سمت راست عنوان
+    justifyContent: 'center',
+    marginHorizontal: 12,
+    minWidth: 0,
   },
 
   headerIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 15,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-
-  titleTextContainer: {
-    flex: 1,
-    alignItems: 'flex-end', // راست‌چین
+    flexShrink: 0,
   },
 
   headerTitle: {
-    fontSize: 22,
-    fontWeight: '900',
+    fontSize: 20,
+    fontWeight: '800',
     letterSpacing: -0.4,
-    textAlign: 'right', // همیشه راست
+    textAlign: 'center',
   },
 
   headerSubtitle: {
     fontSize: 12,
-    marginTop: 4,
+    marginTop: 3,
     fontWeight: '500',
-    textAlign: 'right', // همیشه راست
+    textAlign: 'center',
   },
 
-  backButton: {
-    width: 44,
-    height: 44,
+  headerBackButton: {
+    width: 42,
+    height: 42,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
     alignItems: 'center',
@@ -556,7 +497,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 2,
-    flexShrink: 0, // جلوگیری از کوچک شدن دکمه
+    flexShrink: 0,
   },
 
   introCard: {
