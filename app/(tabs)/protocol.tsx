@@ -22,14 +22,12 @@ import * as Haptics from 'expo-haptics';
 
 import {
   ArrowLeft,
-  ArrowRight,
   BarChart3,
   BookOpen,
   CalendarDays,
   Check,
   ChevronLeft,
   ChevronRight,
-  CircleCheck,
   Sparkles,
   Users,
   Target,
@@ -1075,6 +1073,10 @@ export default function ProtocolScreen() {
   const currentCompletedTasks = getCompletedTasks(currentDay);
   const currentTotalTasks = currentEntry?.tasks?.length ?? 0;
 
+  // ============================================================
+  // renderPageHeader - Back button only in day/report
+  // ============================================================
+
   const renderPageHeader = (title: string, subtitle: string) => (
     <View
       style={[
@@ -1084,25 +1086,31 @@ export default function ProtocolScreen() {
         },
       ]}
     >
-      <TouchableOpacity
-        onPress={handleBack}
-        activeOpacity={0.75}
-        accessibilityRole="button"
-        accessibilityLabel={fa ? 'بازگشت' : 'Back'}
-        style={[
-          styles.headerBackButton,
-          {
-            backgroundColor: card,
-            borderColor: softBorder,
-          },
-        ]}
-      >
-        {fa ? (
-          <ArrowRight size={21} color={colors.text} strokeWidth={2.2} />
-        ) : (
-          <ArrowLeft size={21} color={colors.text} strokeWidth={2.2} />
-        )}
-      </TouchableOpacity>
+      {/* Back button ONLY in internal pages (day/report) */}
+      {view !== 'home' ? (
+        <TouchableOpacity
+          onPress={handleBack}
+          activeOpacity={0.75}
+          accessibilityRole="button"
+          accessibilityLabel={fa ? 'بازگشت' : 'Back'}
+          style={[
+            styles.headerBackButton,
+            {
+              backgroundColor: card,
+              borderColor: softBorder,
+            },
+          ]}
+        >
+          {/* Always left, no RTL rotation */}
+          <ArrowLeft
+            size={21}
+            color={colors.text}
+            strokeWidth={2.2}
+          />
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.headerSidePlaceholder} />
+      )}
 
       <View style={styles.headerTitleContainer}>
         <Text
@@ -1110,7 +1118,7 @@ export default function ProtocolScreen() {
             styles.headerTitle,
             {
               color: colors.text,
-              textAlign,
+              textAlign: 'center',
               writingDirection: textDirection,
             },
           ]}
@@ -1122,8 +1130,8 @@ export default function ProtocolScreen() {
           style={[
             styles.headerSubtitle,
             {
-              color: colors.textSecondary || `${colors.text}80`,
-              textAlign,
+              color: colors.textSecondary || colors.text + '80',
+              textAlign: 'center',
               writingDirection: textDirection,
             },
           ]}
@@ -1136,77 +1144,84 @@ export default function ProtocolScreen() {
     </View>
   );
 
-  const renderDayNavigation = () => (
-    <View
-      style={[
-        styles.dayNavigation,
-        {
-          flexDirection: rowDirection,
-        },
-      ]}
-    >
-      <TouchableOpacity
-        onPress={previousDay}
-        disabled={currentDay === 0}
-        activeOpacity={0.75}
-        style={[
-          styles.dayNavButton,
-          {
-            backgroundColor: card,
-            borderColor: softBorder,
-            opacity: currentDay === 0 ? 0.35 : 1,
-          },
-        ]}
-      >
-        {fa ? (
-          <ChevronRight size={22} color={colors.text} strokeWidth={2.2} />
-        ) : (
-          <ChevronLeft size={22} color={colors.text} strokeWidth={2.2} />
-        )}
-      </TouchableOpacity>
+  // ============================================================
+  // renderDayNavigation - Fixed direction for arrows
+  // ============================================================
 
+  const renderDayNavigation = () => {
+    return (
       <View
         style={[
-          styles.dayIndicator,
+          styles.dayNavigation,
           {
-            backgroundColor: softAccent,
-            borderColor: softBorder,
+            flexDirection: 'row',
           },
         ]}
       >
-        <Text
+        {/* Previous day - always with ChevronLeft */}
+        <TouchableOpacity
+          onPress={previousDay}
+          disabled={currentDay === 0}
+          activeOpacity={0.75}
+          accessibilityRole="button"
+          accessibilityLabel={fa ? 'روز قبلی' : 'Previous day'}
           style={[
-            styles.dayIndicatorText,
+            styles.dayNavButton,
             {
-              color: accent,
+              backgroundColor: card,
+              borderColor: softBorder,
+              opacity: currentDay === 0 ? 0.35 : 1,
             },
           ]}
         >
-          {getDayLabel(currentDay)}
-        </Text>
-      </View>
-
-      <TouchableOpacity
-        onPress={nextDay}
-        disabled={currentDay >= totalDays - 1}
-        activeOpacity={0.75}
-        style={[
-          styles.dayNavButton,
-          {
-            backgroundColor: card,
-            borderColor: softBorder,
-            opacity: currentDay >= totalDays - 1 ? 0.35 : 1,
-          },
-        ]}
-      >
-        {fa ? (
           <ChevronLeft size={22} color={colors.text} strokeWidth={2.2} />
-        ) : (
+        </TouchableOpacity>
+
+        {/* Day indicator */}
+        <View
+          style={[
+            styles.dayIndicator,
+            {
+              backgroundColor: softAccent,
+              borderColor: softBorder,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.dayIndicatorText,
+              {
+                color: accent,
+                textAlign: 'center',
+                writingDirection: textDirection,
+              },
+            ]}
+          >
+            {getDayLabel(currentDay)}
+          </Text>
+        </View>
+
+        {/* Next day - always with ChevronRight */}
+        <TouchableOpacity
+          onPress={nextDay}
+          disabled={currentDay >= totalDays - 1}
+          activeOpacity={0.75}
+          accessibilityRole="button"
+          accessibilityLabel={fa ? 'روز بعدی' : 'Next day'}
+          style={[
+            styles.dayNavButton,
+            {
+              backgroundColor: card,
+              borderColor: softBorder,
+              opacity: currentDay >= totalDays - 1 ? 0.35 : 1,
+            },
+          ]}
+        >
           <ChevronRight size={22} color={colors.text} strokeWidth={2.2} />
-        )}
-      </TouchableOpacity>
-    </View>
-  );
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   const renderModeCard = (protocolMode: ProtocolMode) => {
     const Icon = getModeIcon(protocolMode);
@@ -1686,45 +1701,45 @@ export default function ProtocolScreen() {
                 </Text>
 
                 <View
+                style={[
+                  styles.aiPlanTaskMeta,
+                  {
+                    flexDirection: rowDirection,
+                  },
+                ]}
+              >
+                <Clock3 size={13} color={colors.textSecondary || `${colors.text}70`} />
+
+                <Text
                   style={[
-                    styles.aiPlanTaskMeta,
+                    styles.aiPlanTaskMetaText,
                     {
-                      flexDirection: rowDirection,
+                      color: colors.textSecondary || `${colors.text}70`,
                     },
                   ]}
                 >
-                  <Clock3 size={13} color={colors.textSecondary || `${colors.text}70`} />
+                  {fa
+                    ? `${planTask.duration_minutes} دقیقه`
+                    : `${planTask.duration_minutes} min`}
+                </Text>
 
+                {typeof planTask.confidence === 'number' && (
                   <Text
                     style={[
-                      styles.aiPlanTaskMetaText,
+                      styles.aiPlanTaskConfidence,
                       {
-                        color: colors.textSecondary || `${colors.text}70`,
+                        color: accent,
                       },
                     ]}
                   >
-                    {fa
-                      ? `${planTask.duration_minutes} دقیقه`
-                      : `${planTask.duration_minutes} min`}
+                    {Math.round(planTask.confidence * 100)}%
                   </Text>
-
-                  {typeof planTask.confidence === 'number' && (
-                    <Text
-                      style={[
-                        styles.aiPlanTaskConfidence,
-                        {
-                          color: accent,
-                        },
-                      ]}
-                    >
-                      {Math.round(planTask.confidence * 100)}%
-                    </Text>
-                  )}
-                </View>
+                )}
               </View>
-
-              <Zap size={16} color={accent} strokeWidth={2.2} />
             </View>
+
+            <Zap size={16} color={accent} strokeWidth={2.2} />
+          </View>
           ))}
         </View>
       </View>
@@ -2669,7 +2684,7 @@ export default function ProtocolScreen() {
                     styles.quoteText,
                     {
                       color: colors.text,
-                      textAlign,
+                      textAlign: 'center',
                       writingDirection: textDirection,
                     },
                   ]}
@@ -2683,7 +2698,7 @@ export default function ProtocolScreen() {
                       styles.quoteReference,
                       {
                         color: accent,
-                        textAlign,
+                        textAlign: 'center',
                         writingDirection: textDirection,
                       },
                     ]}
@@ -2701,6 +2716,7 @@ export default function ProtocolScreen() {
                   {
                     backgroundColor: card,
                     borderColor: softBorder,
+                    alignItems: 'center',
                   },
                 ]}
               >
@@ -2733,7 +2749,7 @@ export default function ProtocolScreen() {
                         styles.poemTitle,
                         {
                           color: colors.text,
-                          textAlign,
+                          textAlign: 'center',
                           writingDirection: textDirection,
                         },
                       ]}
@@ -2747,7 +2763,7 @@ export default function ProtocolScreen() {
                           styles.poemPoet,
                           {
                             color: colors.textSecondary || `${colors.text}80`,
-                            textAlign,
+                            textAlign: 'center',
                             writingDirection: textDirection,
                           },
                         ]}
@@ -2763,7 +2779,7 @@ export default function ProtocolScreen() {
                     styles.poemText,
                     {
                       color: colors.text,
-                      textAlign,
+                      textAlign: 'center',
                       writingDirection: textDirection,
                     },
                   ]}
@@ -3532,7 +3548,7 @@ const styles = StyleSheet.create({
     minHeight: 72,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 10,
@@ -4128,6 +4144,7 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 12,
     marginBottom: 16,
+    paddingHorizontal: 16,
   },
 
   dayNavButton: {
@@ -4176,10 +4193,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 26,
     marginBottom: 8,
+    textAlign: 'center',
   },
 
   quoteReference: {
     fontSize: 12,
+    textAlign: 'center',
   },
 
   poemCard: {
@@ -4188,6 +4207,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
+    alignItems: 'center',
   },
 
   poemHeader: {
@@ -4207,17 +4227,20 @@ const styles = StyleSheet.create({
   poemTitle: {
     fontSize: 13,
     fontWeight: '600',
+    textAlign: 'center',
   },
 
   poemPoet: {
     fontSize: 11,
     opacity: 0.7,
+    textAlign: 'center',
   },
 
   poemText: {
     fontSize: 14,
     lineHeight: 22,
     fontStyle: 'italic',
+    textAlign: 'center',
   },
 
   tasksSection: {

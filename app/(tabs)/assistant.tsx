@@ -1,3 +1,4 @@
+
 import React, {
   useCallback,
   useEffect,
@@ -68,8 +69,9 @@ export default function AssistantScreen() {
   const abortController = useRef<AbortController | null>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep the icon color synchronized with the active theme.
-  // Athlete theme uses the theme's primary green color.
+  /*
+   * Keep icon color synchronized with the active theme.
+   */
   const getIconColor = useCallback(() => {
     if (theme === 'athlete') {
       return colors.primary;
@@ -93,6 +95,9 @@ export default function AssistantScreen() {
       ? 'سلام، روز بخیر !\nمن نورولیا هستم.\nراجع به چیزی دوست داری با هم صحبت کنیم؟'
       : 'Hello, good day!\nI am Neurolia.\nIs there something you would like to talk about?';
 
+  /*
+   * Welcome typing animation
+   */
   useEffect(() => {
     if (hasStarted) {
       return;
@@ -169,12 +174,18 @@ export default function AssistantScreen() {
     [getCurrentTime]
   );
 
+  /*
+   * API request
+   */
   const requestAssistant = useCallback(
     async (text: string) => {
       abortController.current?.abort();
 
-      const controller = new AbortController();
-      abortController.current = controller;
+      const controller =
+        new AbortController();
+
+      abortController.current =
+        controller;
 
       const response = await fetch(
         CHAT_API_URL,
@@ -249,6 +260,9 @@ export default function AssistantScreen() {
     []
   );
 
+  /*
+   * Send message
+   */
   const handleSend = useCallback(
     async (value?: string) => {
       const text = (
@@ -260,6 +274,7 @@ export default function AssistantScreen() {
       }
 
       lightHaptic();
+
       setRequestError(false);
       setInputText('');
 
@@ -272,7 +287,9 @@ export default function AssistantScreen() {
       }
 
       addMessage(text, true);
+
       setIsTyping(true);
+
       inputRef.current?.blur();
 
       try {
@@ -326,11 +343,16 @@ export default function AssistantScreen() {
     ]
   );
 
+  /*
+   * Retry last request
+   */
   const handleRetry = useCallback(() => {
     const lastUser =
       [...messages]
         .reverse()
-        .find(message => message.isUser);
+        .find(
+          message => message.isUser
+        );
 
     if (!lastUser || isTyping) {
       return;
@@ -341,7 +363,8 @@ export default function AssistantScreen() {
         [...prev]
           .reverse()
           .find(
-            message => !message.isUser
+            message =>
+              !message.isUser
           );
 
       if (!lastAssistant) {
@@ -356,6 +379,7 @@ export default function AssistantScreen() {
     });
 
     setRequestError(false);
+
     handleSend(lastUser.text);
   }, [
     messages,
@@ -363,6 +387,9 @@ export default function AssistantScreen() {
     handleSend,
   ]);
 
+  /*
+   * Automatically scroll to newest message.
+   */
   useEffect(() => {
     if (messages.length === 0) {
       return;
@@ -378,6 +405,9 @@ export default function AssistantScreen() {
       clearTimeout(timer);
   }, [messages]);
 
+  /*
+   * Cleanup
+   */
   useEffect(() => {
     return () => {
       abortController.current?.abort();
@@ -456,6 +486,10 @@ export default function AssistantScreen() {
             },
           ]}
         >
+          {/* ====================================================== */}
+          {/* WELCOME SCENE                                          */}
+          {/* ====================================================== */}
+
           <AnimatePresence>
             {!hasStarted && (
               <MotiView
@@ -680,6 +714,10 @@ export default function AssistantScreen() {
             )}
           </AnimatePresence>
 
+          {/* ====================================================== */}
+          {/* CHAT HEADER                                            */}
+          {/* ====================================================== */}
+
           <AnimatePresence>
             {hasStarted && (
               <MotiView
@@ -824,6 +862,10 @@ export default function AssistantScreen() {
             )}
           </AnimatePresence>
 
+          {/* ====================================================== */}
+          {/* CHAT AREA                                              */}
+          {/* ====================================================== */}
+
           {hasStarted && (
             <View
               style={styles.chatArea}
@@ -874,6 +916,7 @@ export default function AssistantScreen() {
                       },
                     ]}
                   >
+                    {/* Assistant avatar */}
                     {!message.isUser && (
                       <View
                         style={
@@ -900,13 +943,18 @@ export default function AssistantScreen() {
                         {
                           backgroundColor:
                             message.isUser
-                              ? colors.primary
+                              ? theme === 'athlete'
+                                ? '#2D7D46'
+                                : colors.primary
                               : isDark
                               ? 'rgba(255,255,255,0.065)'
                               : '#FFFFFF',
+
                           borderColor:
                             message.isUser
-                              ? colors.primary
+                              ? theme === 'athlete'
+                                ? '#2D7D46'
+                                : colors.primary
                               : isDark
                               ? 'rgba(255,255,255,0.09)'
                               : 'rgba(0,0,0,0.06)',
@@ -921,6 +969,7 @@ export default function AssistantScreen() {
                               message.isUser
                                 ? '#FFFFFF'
                                 : colors.text,
+
                             textAlign:
                               isRTL
                                 ? 'right'
@@ -939,6 +988,7 @@ export default function AssistantScreen() {
                               message.isUser
                                 ? 'rgba(255,255,255,0.65)'
                                 : colors.textSecondary,
+
                             textAlign:
                               isRTL
                                 ? 'right'
@@ -952,27 +1002,62 @@ export default function AssistantScreen() {
                   </MotiView>
                 ))}
 
+                {/* ================================================== */}
+                {/* NEUROLIA TYPING INDICATOR                         */}
+                {/* ================================================== */}
+
                 {isTyping && (
                   <MotiView
                     from={{
                       opacity: 0,
+                      translateX: -18,
                       translateY: 8,
+                      scale: 0.94,
                     }}
                     animate={{
                       opacity: 1,
+                      translateX: 0,
                       translateY: 0,
+                      scale: 1,
+                    }}
+                    transition={{
+                      type: 'spring',
+                      damping: 16,
+                      stiffness: 180,
                     }}
                     style={[
                       styles.typingRow,
                       {
+                        /*
+                         * IMPORTANT:
+                         * Always keep typing indicator
+                         * on the assistant side.
+                         */
+                        justifyContent:
+                          'flex-start',
+
                         flexDirection:
-                          isRTL
-                            ? 'row-reverse'
-                            : 'row',
+                          'row',
+
+                        alignSelf:
+                          'flex-start',
                       },
                     ]}
                   >
-                    <View
+                    {/* Neurolia avatar */}
+                    <MotiView
+                      from={{
+                        scale: 0.92,
+                        opacity: 0.7,
+                      }}
+                      animate={{
+                        scale: 1,
+                        opacity: 1,
+                      }}
+                      transition={{
+                        type: 'timing',
+                        duration: 500,
+                      }}
                       style={
                         styles.messageAvatarContainer
                       }
@@ -985,9 +1070,22 @@ export default function AssistantScreen() {
                           styles.messageAvatarImage
                         }
                       />
-                    </View>
+                    </MotiView>
 
-                    <View
+                    {/* Animated typing bubble */}
+                    <MotiView
+                      from={{
+                        scale: 0.92,
+                        opacity: 0.7,
+                      }}
+                      animate={{
+                        scale: 1,
+                        opacity: 1,
+                      }}
+                      transition={{
+                        type: 'timing',
+                        duration: 650,
+                      }}
                       style={[
                         styles.typingBubble,
                         {
@@ -995,6 +1093,11 @@ export default function AssistantScreen() {
                             isDark
                               ? 'rgba(255,255,255,0.065)'
                               : '#FFFFFF',
+
+                          borderColor:
+                            isDark
+                              ? 'rgba(255,255,255,0.08)'
+                              : 'rgba(0,0,0,0.06)',
                         },
                       ]}
                     >
@@ -1003,7 +1106,25 @@ export default function AssistantScreen() {
                           styles.typingDots
                         }
                       >
-                        <View
+                        {/* Dot 1 */}
+                        <MotiView
+                          from={{
+                            translateY: 0,
+                            scale: 0.75,
+                            opacity: 0.45,
+                          }}
+                          animate={{
+                            translateY: -6,
+                            scale: 1.15,
+                            opacity: 1,
+                          }}
+                          transition={{
+                            type: 'timing',
+                            duration: 420,
+                            loop: true,
+                            repeatReverse: true,
+                            delay: 0,
+                          }}
                           style={[
                             styles.typingDot,
                             {
@@ -1013,7 +1134,25 @@ export default function AssistantScreen() {
                           ]}
                         />
 
-                        <View
+                        {/* Dot 2 */}
+                        <MotiView
+                          from={{
+                            translateY: 0,
+                            scale: 0.75,
+                            opacity: 0.45,
+                          }}
+                          animate={{
+                            translateY: -6,
+                            scale: 1.15,
+                            opacity: 1,
+                          }}
+                          transition={{
+                            type: 'timing',
+                            duration: 420,
+                            loop: true,
+                            repeatReverse: true,
+                            delay: 140,
+                          }}
                           style={[
                             styles.typingDot,
                             {
@@ -1023,7 +1162,25 @@ export default function AssistantScreen() {
                           ]}
                         />
 
-                        <View
+                        {/* Dot 3 */}
+                        <MotiView
+                          from={{
+                            translateY: 0,
+                            scale: 0.75,
+                            opacity: 0.45,
+                          }}
+                          animate={{
+                            translateY: -6,
+                            scale: 1.15,
+                            opacity: 1,
+                          }}
+                          transition={{
+                            type: 'timing',
+                            duration: 420,
+                            loop: true,
+                            repeatReverse: true,
+                            delay: 280,
+                          }}
                           style={[
                             styles.typingDot,
                             {
@@ -1033,9 +1190,13 @@ export default function AssistantScreen() {
                           ]}
                         />
                       </View>
-                    </View>
+                    </MotiView>
                   </MotiView>
                 )}
+
+                {/* ================================================== */}
+                {/* RETRY                                               */}
+                {/* ================================================== */}
 
                 {requestError && (
                   <TouchableOpacity
@@ -1072,6 +1233,7 @@ export default function AssistantScreen() {
                 )}
               </ScrollView>
 
+              {/* Scroll-to-bottom button */}
               <AnimatePresence>
                 {showScrollButton && (
                   <MotiView
@@ -1122,6 +1284,10 @@ export default function AssistantScreen() {
           )}
         </View>
 
+        {/* ======================================================== */}
+        {/* INPUT AREA                                               */}
+        {/* ======================================================== */}
+
         <View
           style={[
             styles.inputArea,
@@ -1143,6 +1309,7 @@ export default function AssistantScreen() {
               {
                 backgroundColor:
                   inputBackground,
+
                 borderColor:
                   isDark
                     ? 'rgba(255,255,255,0.08)'
@@ -1243,6 +1410,10 @@ export default function AssistantScreen() {
   );
 }
 
+/* ================================================================ */
+/* STYLES                                                           */
+/* ================================================================ */
+
 const styles = StyleSheet.create({
   gradient: {
     flex: 1,
@@ -1256,6 +1427,10 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
+
+  /* ============================================================ */
+  /* WELCOME                                                      */
+  /* ============================================================ */
 
   welcomeScene: {
     position: 'absolute',
@@ -1304,10 +1479,12 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 20,
     paddingVertical: 18,
+
     shadowOffset: {
       width: 0,
       height: 10,
     },
+
     shadowOpacity: 0.12,
     shadowRadius: 22,
     elevation: 8,
@@ -1342,6 +1519,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     bottom: -7,
+
     transform: [
       {
         rotate: '45deg',
@@ -1356,6 +1534,10 @@ const styles = StyleSheet.create({
   dialogTailLeft: {
     left: 28,
   },
+
+  /* ============================================================ */
+  /* HEADER                                                        */
+  /* ============================================================ */
 
   chatHeader: {
     zIndex: 20,
@@ -1422,6 +1604,10 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
 
+  /* ============================================================ */
+  /* CHAT                                                          */
+  /* ============================================================ */
+
   chatArea: {
     flex: 1,
     position: 'relative',
@@ -1439,6 +1625,7 @@ const styles = StyleSheet.create({
   messageRow: {
     width: '100%',
     marginBottom: 12,
+
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 8,
@@ -1447,6 +1634,7 @@ const styles = StyleSheet.create({
   messageAvatarContainer: {
     width: 32,
     height: 32,
+
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1459,9 +1647,12 @@ const styles = StyleSheet.create({
 
   messageBubble: {
     maxWidth: '78%',
+
     borderWidth: 1,
+
     paddingHorizontal: 14,
     paddingVertical: 11,
+
     borderRadius: 19,
   },
 
@@ -1484,42 +1675,84 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
 
+  /* ============================================================ */
+  /* TYPING INDICATOR                                             */
+  /* ============================================================ */
+
   typingRow: {
+    width: '100%',
     marginBottom: 12,
+
+    /*
+     * Critical:
+     * This makes the loader stay on the assistant side.
+     */
+    alignSelf: 'flex-start',
+    justifyContent: 'flex-start',
+
+    flexDirection: 'row',
     alignItems: 'flex-end',
+
     gap: 8,
   },
 
   typingBubble: {
-    minWidth: 66,
-    minHeight: 42,
-    paddingHorizontal: 15,
-    borderRadius: 18,
+    minWidth: 72,
+    minHeight: 46,
+
+    paddingHorizontal: 16,
+
+    borderRadius: 20,
+    borderWidth: 1,
+
     justifyContent: 'center',
+    alignItems: 'center',
+
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+
+    elevation: 2,
   },
 
   typingDots: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    justifyContent: 'center',
+
+    gap: 6,
+
+    height: 20,
   },
 
   typingDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    opacity: 0.7,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
   },
+
+  /* ============================================================ */
+  /* RETRY                                                         */
+  /* ============================================================ */
 
   retryButton: {
     alignSelf: 'center',
+
     flexDirection: 'row',
     alignItems: 'center',
+
     gap: 7,
+
     borderWidth: 1,
     borderRadius: 18,
+
     paddingHorizontal: 14,
     paddingVertical: 8,
+
     marginTop: 5,
   },
 
@@ -1528,10 +1761,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
+  /* ============================================================ */
+  /* SCROLL BUTTON                                                 */
+  /* ============================================================ */
+
   scrollButtonWrapper: {
     position: 'absolute',
     right: 16,
     bottom: 14,
+
     zIndex: 20,
   },
 
@@ -1539,8 +1777,10 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
+
     alignItems: 'center',
     justifyContent: 'center',
+
     elevation: 6,
   },
 
@@ -1551,28 +1791,41 @@ const styles = StyleSheet.create({
     marginTop: -3,
   },
 
+  /* ============================================================ */
+  /* INPUT                                                         */
+  /* ============================================================ */
+
   inputArea: {
     width: '100%',
+
     paddingTop: 8,
+
     position: 'relative',
+
     zIndex: 100,
     elevation: 100,
   },
 
   inputContainer: {
     minHeight: 58,
+
     borderRadius: 29,
     borderWidth: 1,
+
     flexDirection: 'row',
     alignItems: 'center',
+
     paddingHorizontal: 6,
   },
 
   input: {
     flex: 1,
+
     maxHeight: 110,
     minHeight: 44,
+
     fontSize: 15,
+
     paddingHorizontal: 8,
     paddingTop: 11,
     paddingBottom: 10,
@@ -1581,6 +1834,7 @@ const styles = StyleSheet.create({
   micButton: {
     width: 42,
     height: 46,
+
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1588,8 +1842,11 @@ const styles = StyleSheet.create({
   sendButton: {
     width: 44,
     height: 44,
+
     borderRadius: 22,
+
     alignItems: 'center',
     justifyContent: 'center',
   },
 });
+

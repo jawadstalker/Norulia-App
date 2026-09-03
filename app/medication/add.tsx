@@ -1,4 +1,6 @@
+
 import React, { useState } from 'react';
+
 import {
   View,
   Text,
@@ -9,20 +11,25 @@ import {
   Modal,
   Pressable,
 } from 'react-native';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useRouter } from 'expo-router';
+
 import {
   Spacing,
   BorderRadius,
 } from '../../constants/theme';
+
 import {
   ArrowLeft,
   Clock,
   CheckCircle,
   AlertCircle,
 } from 'lucide-react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
 
 const MEDICATIONS_STORAGE_KEY = '@neurolia_medications';
@@ -42,11 +49,12 @@ const getDateKey = (date: Date = new Date()) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
+
   return `${year}-${month}-${day}`;
 };
 
 export default function AddMedication() {
-  const { colors } = useTheme();
+  const { colors, isDark, isAthlete } = useTheme();
   const { t, isRTL } = useLanguage();
   const router = useRouter();
 
@@ -54,11 +62,47 @@ export default function AddMedication() {
   const [dosage, setDosage] = useState('');
   const [time, setTime] = useState('');
   const [type, setType] = useState(t.cognitive || 'Cognitive');
+
   const [saving, setSaving] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
+
   const [errorMessage, setErrorMessage] = useState('');
   const [savedMedicationName, setSavedMedicationName] = useState('');
+
+  // ============================================================
+  // UNIFIED THEME COLOR
+  // ============================================================
+
+  const themeColor = isAthlete
+    ? '#22C55E'
+    : isDark
+      ? 'rgba(73, 194, 226, 1)'
+      : colors.primary;
+
+  const iconColor = themeColor;
+
+  const primarySoft = isAthlete
+    ? 'rgba(34,197,94,0.10)'
+    : isDark
+      ? 'rgba(73,194,226,0.18)'
+      : `${colors.primary}18`;
+
+  const primaryMedium = isAthlete
+    ? 'rgba(34,197,94,0.25)'
+    : isDark
+      ? 'rgba(73,194,226,0.30)'
+      : `${colors.primary}30`;
+
+  const gradientColors = isAthlete
+    ? ['#22C55E', '#16A34A'] as const
+    : isDark
+      ? ['rgba(73, 194, 226, 1)', 'rgba(73, 194, 226, 0.8)'] as const
+      : [colors.primary, colors.primary] as const;
+
+  // ============================================================
+  // SAVE MEDICATION
+  // ============================================================
 
   const handleSave = async () => {
     const cleanName = name.trim();
@@ -66,7 +110,10 @@ export default function AddMedication() {
     const cleanTime = time.trim();
 
     if (!cleanName || !cleanDosage || !cleanTime) {
-      setErrorMessage(t.pleaseFillAllFields || 'Please fill all fields');
+      setErrorMessage(
+        t.pleaseFillAllFields || 'Please fill all fields'
+      );
+
       setErrorModalVisible(true);
       return;
     }
@@ -78,12 +125,16 @@ export default function AddMedication() {
     setSaving(true);
 
     try {
-      const stored = await AsyncStorage.getItem(MEDICATIONS_STORAGE_KEY);
+      const stored = await AsyncStorage.getItem(
+        MEDICATIONS_STORAGE_KEY
+      );
+
       let medications: Medication[] = [];
 
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
+
           if (Array.isArray(parsed)) {
             medications = parsed;
           }
@@ -103,14 +154,29 @@ export default function AddMedication() {
         date: getDateKey(),
       };
 
-      const updatedMedications = [...medications, newMedication];
-      await AsyncStorage.setItem(MEDICATIONS_STORAGE_KEY, JSON.stringify(updatedMedications));
+      const updatedMedications = [
+        ...medications,
+        newMedication,
+      ];
+
+      await AsyncStorage.setItem(
+        MEDICATIONS_STORAGE_KEY,
+        JSON.stringify(updatedMedications)
+      );
 
       setSavedMedicationName(cleanName);
       setSuccessModalVisible(true);
     } catch (error) {
-      console.error('Failed to save medication:', error);
-      setErrorMessage(t.somethingWentWrong || 'Something went wrong while saving the medication.');
+      console.error(
+        'Failed to save medication:',
+        error
+      );
+
+      setErrorMessage(
+        t.somethingWentWrong ||
+          'Something went wrong while saving the medication.'
+      );
+
       setErrorModalVisible(true);
     } finally {
       setSaving(false);
@@ -126,20 +192,36 @@ export default function AddMedication() {
     if (saving) {
       return;
     }
+
     router.back();
   };
 
+  // ============================================================
+  // MEDICATION TYPES
+  // ============================================================
+
   const typeOptions = [
-    { key: 'cognitive', value: t.cognitive || 'Cognitive' },
-    { key: 'supplement', value: t.supplement || 'Supplement' },
-    { key: 'other', value: t.other || 'Other' },
+    {
+      key: 'cognitive',
+      value: t.cognitive || 'Cognitive',
+    },
+    {
+      key: 'supplement',
+      value: t.supplement || 'Supplement',
+    },
+    {
+      key: 'other',
+      value: t.other || 'Other',
+    },
   ];
 
   return (
     <View
       style={[
         styles.container,
-        { backgroundColor: colors.background }
+        {
+          backgroundColor: colors.background,
+        },
       ]}
     >
       <ScrollView
@@ -147,6 +229,10 @@ export default function AddMedication() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* ======================================================
+            HEADER
+        ====================================================== */}
+
         <View style={styles.header}>
           <TouchableOpacity
             onPress={handleBack}
@@ -155,17 +241,25 @@ export default function AddMedication() {
               {
                 backgroundColor: colors.surface,
                 borderColor: colors.border,
-              }
+              },
             ]}
             activeOpacity={0.75}
           >
-            <ArrowLeft size={22} color={colors.text} strokeWidth={2.5} />
+            <ArrowLeft
+              size={22}
+              color={iconColor}
+              strokeWidth={2.5}
+            />
           </TouchableOpacity>
 
           <View
             style={[
               styles.headerTitleContainer,
-              { flexDirection: isRTL ? 'row' : 'row-reverse' }
+              {
+                flexDirection: isRTL
+                  ? 'row'
+                  : 'row-reverse',
+              },
             ]}
           >
             <Text
@@ -174,7 +268,7 @@ export default function AddMedication() {
                 {
                   color: colors.text,
                   textAlign: 'right',
-                }
+                },
               ]}
             >
               {t.addMedicationTitle || 'Add Medication'}
@@ -184,7 +278,13 @@ export default function AddMedication() {
           <View style={styles.headerSpacer} />
         </View>
 
+        {/* ======================================================
+            FORM
+        ====================================================== */}
+
         <View style={styles.form}>
+          {/* Medication Name */}
+
           <View style={styles.fieldContainer}>
             <Text
               style={[
@@ -192,13 +292,17 @@ export default function AddMedication() {
                 {
                   color: colors.text,
                   textAlign: isRTL ? 'right' : 'left',
-                }
+                },
               ]}
             >
               {t.medicationName || 'Medication Name'}
             </Text>
+
             <TextInput
-              placeholder={t.medicationNamePlaceholder || 'e.g., Donepezil'}
+              placeholder={
+                t.medicationNamePlaceholder ||
+                'e.g., Donepezil'
+              }
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
@@ -209,11 +313,15 @@ export default function AddMedication() {
                   color: colors.text,
                   borderColor: colors.border,
                   textAlign: isRTL ? 'right' : 'left',
-                }
+                },
               ]}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={
+                colors.textSecondary
+              }
             />
           </View>
+
+          {/* Dosage */}
 
           <View style={styles.fieldContainer}>
             <Text
@@ -222,13 +330,16 @@ export default function AddMedication() {
                 {
                   color: colors.text,
                   textAlign: isRTL ? 'right' : 'left',
-                }
+                },
               ]}
             >
               {t.dosage || 'Dosage'}
             </Text>
+
             <TextInput
-              placeholder={t.dosagePlaceholder || 'e.g., 10mg'}
+              placeholder={
+                t.dosagePlaceholder || 'e.g., 10mg'
+              }
               value={dosage}
               onChangeText={setDosage}
               style={[
@@ -238,11 +349,15 @@ export default function AddMedication() {
                   color: colors.text,
                   borderColor: colors.border,
                   textAlign: isRTL ? 'right' : 'left',
-                }
+                },
               ]}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={
+                colors.textSecondary
+              }
             />
           </View>
+
+          {/* Time */}
 
           <View style={styles.fieldContainer}>
             <Text
@@ -251,44 +366,65 @@ export default function AddMedication() {
                 {
                   color: colors.text,
                   textAlign: isRTL ? 'right' : 'left',
-                }
+                },
               ]}
             >
               {t.time || 'Time'}
             </Text>
+
             <View style={styles.timeInputWrapper}>
               <Clock
                 size={20}
-                color={colors.primary}
+                color={iconColor}
                 strokeWidth={2.2}
                 style={[
                   styles.timeIcon,
                   {
-                    left: isRTL ? undefined : 15,
-                    right: isRTL ? 15 : undefined,
-                  }
+                    left: isRTL
+                      ? undefined
+                      : 15,
+                    right: isRTL
+                      ? 15
+                      : undefined,
+                  },
                 ]}
               />
+
               <TextInput
-                placeholder={t.timePlaceholder || 'e.g., 20:00'}
+                placeholder={
+                  t.timePlaceholder ||
+                  'e.g., 20:00'
+                }
                 value={time}
                 onChangeText={setTime}
                 keyboardType="numbers-and-punctuation"
                 style={[
                   styles.timeInput,
                   {
-                    backgroundColor: colors.surface,
+                    backgroundColor:
+                      colors.surface,
                     color: colors.text,
-                    borderColor: colors.border,
-                    textAlign: isRTL ? 'right' : 'left',
-                    paddingLeft: isRTL ? 15 : 50,
-                    paddingRight: isRTL ? 50 : 15,
-                  }
+                    borderColor:
+                      colors.border,
+                    textAlign: isRTL
+                      ? 'right'
+                      : 'left',
+                    paddingLeft: isRTL
+                      ? 15
+                      : 50,
+                    paddingRight: isRTL
+                      ? 50
+                      : 15,
+                  },
                 ]}
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor={
+                  colors.textSecondary
+                }
               />
             </View>
           </View>
+
+          {/* Type */}
 
           <View style={styles.fieldContainer}>
             <Text
@@ -296,37 +432,58 @@ export default function AddMedication() {
                 styles.label,
                 {
                   color: colors.text,
-                  textAlign: isRTL ? 'right' : 'left',
-                }
+                  textAlign: isRTL
+                    ? 'right'
+                    : 'left',
+                },
               ]}
             >
               {t.type || 'Type'}
             </Text>
+
             <View
               style={[
                 styles.typeContainer,
-                { flexDirection: isRTL ? 'row-reverse' : 'row' }
+                {
+                  flexDirection: isRTL
+                    ? 'row-reverse'
+                    : 'row',
+                },
               ]}
             >
-              {typeOptions.map(option => {
-                const selected = type === option.value;
+              {typeOptions.map((option) => {
+                const selected =
+                  type === option.value;
+
                 return (
                   <TouchableOpacity
                     key={option.key}
-                    onPress={() => setType(option.value)}
+                    onPress={() =>
+                      setType(option.value)
+                    }
                     activeOpacity={0.8}
                     style={[
                       styles.typeButton,
                       {
-                        backgroundColor: selected ? colors.primary : colors.surface,
-                        borderColor: selected ? colors.primary : colors.border,
-                      }
+                        backgroundColor:
+                          selected
+                            ? themeColor
+                            : colors.surface,
+                        borderColor:
+                          selected
+                            ? themeColor
+                            : colors.border,
+                      },
                     ]}
                   >
                     <Text
                       style={[
                         styles.typeButtonText,
-                        { color: selected ? '#FFFFFF' : colors.text }
+                        {
+                          color: selected
+                            ? '#FFFFFF'
+                            : colors.text,
+                        },
                       ]}
                     >
                       {option.value}
@@ -337,58 +494,81 @@ export default function AddMedication() {
             </View>
           </View>
 
+          {/* Save */}
+
           <TouchableOpacity
             onPress={handleSave}
             disabled={saving}
             activeOpacity={0.85}
             style={[
               styles.saveButton,
-              { opacity: saving ? 0.65 : 1 }
+              {
+                opacity: saving ? 0.65 : 1,
+              },
             ]}
           >
             <LinearGradient
-              colors={[colors.primary, colors.primary]}
+              colors={gradientColors}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.saveGradient}
             >
               <Text style={styles.saveButtonText}>
-                {saving ? t.saving || 'Saving...' : t.save || 'Save Medication'}
+                {saving
+                  ? t.saving || 'Saving...'
+                  : t.save || 'Save Medication'}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
+      {/* ========================================================
+          SUCCESS MODAL
+      ======================================================== */}
+
       <Modal
         visible={successModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setSuccessModalVisible(false)}
+        onRequestClose={() =>
+          setSuccessModalVisible(false)
+        }
       >
         <View style={styles.modalOverlay}>
           <View
             style={[
               styles.successModal,
               {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-              }
+                backgroundColor:
+                  colors.surface,
+                borderColor:
+                  colors.border,
+              },
             ]}
           >
             <View
               style={[
                 styles.successIconContainer,
-                { backgroundColor: colors.primary + '18' }
+                {
+                  backgroundColor:
+                    primarySoft,
+                },
               ]}
             >
-              <CheckCircle size={52} color={colors.primary} strokeWidth={2} />
+              <CheckCircle
+                size={52}
+                color={iconColor}
+                strokeWidth={2}
+              />
             </View>
 
             <Text
               style={[
                 styles.modalTitle,
-                { color: colors.text }
+                {
+                  color: colors.text,
+                },
               ]}
             >
               {t.success || 'Success!'}
@@ -397,12 +577,16 @@ export default function AddMedication() {
             <Text
               style={[
                 styles.modalMessage,
-                { color: colors.textSecondary }
+                {
+                  color:
+                    colors.textSecondary,
+                },
               ]}
             >
               {savedMedicationName}
               {'\n'}
-              {t.addedSuccessfully || 'Medication added successfully.'}
+              {t.addedSuccessfully ||
+                'Medication added successfully.'}
             </Text>
 
             <TouchableOpacity
@@ -410,10 +594,15 @@ export default function AddMedication() {
               onPress={handleSuccessClose}
               style={[
                 styles.modalButton,
-                { backgroundColor: colors.primary }
+                {
+                  backgroundColor:
+                    themeColor,
+                },
               ]}
             >
-              <Text style={styles.modalButtonText}>
+              <Text
+                style={styles.modalButtonText}
+              >
                 {t.great || t.ok || 'OK'}
               </Text>
             </TouchableOpacity>
@@ -421,39 +610,60 @@ export default function AddMedication() {
         </View>
       </Modal>
 
+      {/* ========================================================
+          ERROR MODAL
+      ======================================================== */}
+
       <Modal
         visible={errorModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setErrorModalVisible(false)}
+        onRequestClose={() =>
+          setErrorModalVisible(false)
+        }
       >
         <Pressable
           style={styles.modalOverlay}
-          onPress={() => setErrorModalVisible(false)}
+          onPress={() =>
+            setErrorModalVisible(false)
+          }
         >
           <Pressable
             style={[
               styles.successModal,
               {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-              }
+                backgroundColor:
+                  colors.surface,
+                borderColor:
+                  colors.border,
+              },
             ]}
-            onPress={event => event.stopPropagation()}
+            onPress={(event) =>
+              event.stopPropagation()
+            }
           >
             <View
               style={[
                 styles.errorIconContainer,
-                { backgroundColor: '#EF4444' + '18' }
+                {
+                  backgroundColor:
+                    primarySoft,
+                },
               ]}
             >
-              <AlertCircle size={52} color="#EF4444" strokeWidth={2} />
+              <AlertCircle
+                size={52}
+                color={iconColor}
+                strokeWidth={2}
+              />
             </View>
 
             <Text
               style={[
                 styles.modalTitle,
-                { color: colors.text }
+                {
+                  color: colors.text,
+                },
               ]}
             >
               {t.error || 'Error'}
@@ -462,7 +672,10 @@ export default function AddMedication() {
             <Text
               style={[
                 styles.modalMessage,
-                { color: colors.textSecondary }
+                {
+                  color:
+                    colors.textSecondary,
+                },
               ]}
             >
               {errorMessage}
@@ -470,13 +683,20 @@ export default function AddMedication() {
 
             <TouchableOpacity
               activeOpacity={0.85}
-              onPress={() => setErrorModalVisible(false)}
+              onPress={() =>
+                setErrorModalVisible(false)
+              }
               style={[
                 styles.modalButton,
-                { backgroundColor: colors.primary }
+                {
+                  backgroundColor:
+                    themeColor,
+                },
               ]}
             >
-              <Text style={styles.modalButtonText}>
+              <Text
+                style={styles.modalButtonText}
+              >
                 {t.ok || 'OK'}
               </Text>
             </TouchableOpacity>
@@ -491,20 +711,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
   scrollContent: {
-    paddingHorizontal: Spacing?.lg || 20,
-    paddingTop: Spacing?.md || 16,
+    paddingHorizontal:
+      Spacing?.lg || 20,
+    paddingTop:
+      Spacing?.md || 16,
     paddingBottom: 40,
   },
+
   header: {
-    width: '80%',
+    width: '100%',
     minHeight: 58,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent:
+      'space-between',
     marginBottom: 24,
     paddingTop: 50,
   },
+
   backButton: {
     width: 44,
     height: 44,
@@ -513,67 +739,75 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   headerTitleContainer: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent:
+      'flex-end',
     gap: 10,
     paddingHorizontal: 10,
   },
-  headerIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+
   title: {
     fontSize: 21,
     fontWeight: '700',
     flexShrink: 1,
   },
+
   headerSpacer: {
     width: 44,
   },
+
   form: {
     gap: 20,
   },
+
   fieldContainer: {
     width: '100%',
   },
+
   label: {
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
   },
+
   input: {
     width: '100%',
     minHeight: 54,
     borderWidth: 1,
-    borderRadius: BorderRadius?.md || 14,
+    borderRadius:
+      BorderRadius?.md || 14,
     paddingHorizontal: 16,
     fontSize: 15,
   },
+
   timeInputWrapper: {
     position: 'relative',
     width: '100%',
   },
+
   timeIcon: {
     position: 'absolute',
     top: 17,
     zIndex: 2,
   },
+
   timeInput: {
     width: '100%',
     minHeight: 54,
     borderWidth: 1,
-    borderRadius: BorderRadius?.md || 14,
+    borderRadius:
+      BorderRadius?.md || 14,
     fontSize: 15,
   },
+
   typeContainer: {
     width: '100%',
     gap: 8,
   },
+
   typeButton: {
     flex: 1,
     minHeight: 48,
@@ -583,18 +817,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 8,
   },
+
   typeButtonText: {
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
   },
+
   saveButton: {
     width: '100%',
     minHeight: 56,
-    borderRadius: BorderRadius?.md || 14,
+    borderRadius:
+      BorderRadius?.md || 14,
     overflow: 'hidden',
     marginTop: 8,
   },
+
   saveGradient: {
     flex: 1,
     minHeight: 56,
@@ -603,18 +841,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
   },
+
   saveButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
   },
+
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    backgroundColor:
+      'rgba(0, 0, 0, 0.55)',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
   },
+
   successModal: {
     width: '100%',
     maxWidth: 380,
@@ -624,6 +866,7 @@ const styles = StyleSheet.create({
     paddingVertical: 28,
     alignItems: 'center',
   },
+
   successIconContainer: {
     width: 88,
     height: 88,
@@ -632,6 +875,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 18,
   },
+
   errorIconContainer: {
     width: 88,
     height: 88,
@@ -640,18 +884,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 18,
   },
+
   modalTitle: {
     fontSize: 22,
     fontWeight: '800',
     marginBottom: 10,
     textAlign: 'center',
   },
+
   modalMessage: {
     fontSize: 15,
     lineHeight: 23,
     textAlign: 'center',
     marginBottom: 24,
   },
+
   modalButton: {
     width: '100%',
     minHeight: 50,
@@ -660,9 +907,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
+
   modalButtonText: {
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
   },
 });
+

@@ -38,30 +38,56 @@ export default function ConsultationScreen() {
   const { colors, isDark, isAthlete } = useTheme();
   const { isRTL } = useLanguage();
 
-  // تعیین رنگ آیکون‌ها بر اساس تم
+  // ============================================================
+  // رنگ‌های هماهنگ با تم‌ها
+  // ============================================================
+
   const getIconColor = () => {
-    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
-    if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
-    return 'rgba(73, 194, 226, 1)'; // آبی برای تم روشن (پیش‌فرض)
+    if (isAthlete) return '#22C55E';
+    if (isDark) return 'rgba(73, 194, 226, 1)';
+    return '#6B5AA6';
   };
 
-  const iconColor = getIconColor();
-
-  // تعیین رنگ‌های پس‌زمینه بر اساس تم
   const getPrimarySoft = () => {
-    if (isAthlete) return '#22C55E' + '20';
-    if (isDark) return colors.primary + '20';
-    return colors.primary + '12';
+    if (isAthlete) return 'rgba(34,197,94,0.10)';
+    if (isDark) return 'rgba(73, 194, 226, 0.18)';
+    return 'rgba(107,90,166,0.10)';
   };
 
   const getPrimaryMedium = () => {
-    if (isAthlete) return '#22C55E' + '30';
-    if (isDark) return colors.primary + '30';
-    return colors.primary + '18';
+    if (isAthlete) return 'rgba(34,197,94,0.25)';
+    if (isDark) return 'rgba(73, 194, 226, 0.30)';
+    return 'rgba(107,90,166,0.18)';
   };
 
+  const getHeroBackground = () => {
+    if (isAthlete) return 'rgba(34,197,94,0.08)';
+    if (isDark) return 'rgba(73, 194, 226,0.10)';
+    return '#F0F4FF';
+  };
+
+  const getHeroBorder = () => {
+    if (isAthlete) return 'rgba(34,197,94,0.20)';
+    if (isDark) return 'rgba(73, 194, 226, 0.20)';
+    return 'rgba(107,90,166,0.20)';
+  };
+
+  const getButtonGradient = (): readonly [string, string] => {
+    if (isAthlete) return ['#22C55E', '#16A34A'] as const;
+    if (isDark) return ['rgba(73, 194, 226, 1)', 'rgba(73, 194, 226, 0.8)'] as const;
+    return ['#6B5AA6', '#5A4A8C'] as const;
+  };
+
+  const iconColor = getIconColor();
   const primarySoft = getPrimarySoft();
   const primaryMedium = getPrimaryMedium();
+  const heroBackground = getHeroBackground();
+  const heroBorder = getHeroBorder();
+  const buttonGradient = getButtonGradient();
+
+  const backgroundGradient: readonly [ColorValue, ColorValue] = isDark
+    ? [colors.background, colors.surfaceSecondary] as const
+    : [colors.background, '#FFFFFF'] as const;
 
   const TEXTS = {
     headerTitle: isRTL
@@ -132,16 +158,6 @@ export default function ConsultationScreen() {
       `tel:${CONSULT_PHONE}`,
     ).catch(() => {});
   };
-
-  const backgroundGradient = isDark
-    ? [
-        colors.background,
-        colors.background,
-      ]
-    : [
-        colors.background,
-        colors.background,
-      ];
 
   return (
     <LinearGradient
@@ -238,7 +254,14 @@ export default function ConsultationScreen() {
               duration: 500,
               delay: 100,
             }}
-            style={styles.hero}
+            style={[
+              styles.hero,
+              {
+                backgroundColor: heroBackground,
+                borderColor: heroBorder,
+                shadowColor: iconColor,
+              },
+            ]}
           >
             <View
               style={[
@@ -387,10 +410,7 @@ export default function ConsultationScreen() {
               ]}
             >
               <LinearGradient
-                colors={[
-                  iconColor,
-                  iconColor,
-                ]}
+                colors={buttonGradient}
                 start={{
                   x: 0,
                   y: 0,
@@ -662,7 +682,22 @@ const styles = StyleSheet.create({
     marginBottom:
       Spacing.lg,
 
-    gap: Spacing.sm,
+    padding: Spacing.md,
+
+    borderRadius: 24,
+
+    borderWidth: 1,
+
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+
+    shadowOpacity: 0.10,
+
+    shadowRadius: 20,
+
+    elevation: 5,
   },
 
   avatarWrap: {

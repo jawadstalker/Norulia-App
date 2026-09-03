@@ -518,6 +518,17 @@ export default function GameResultsScreen({
     completedGamesCount >=
     MIN_GAMES_FOR_MOVIE_RECOMMENDATION;
 
+  /*
+   * IMPORTANT:
+   * Language is part of the signature.
+   *
+   * This means:
+   *
+   * fa -> en
+   * en -> fa
+   *
+   * will create a new movie request.
+   */
   const movieRequestSignature =
     useMemo(() => {
       return [
@@ -553,6 +564,10 @@ export default function GameResultsScreen({
       language,
     ]);
 
+  /*
+   * Clear old-language recommendations
+   * immediately when language changes.
+   */
   useEffect(() => {
     setMovieRecommendations([]);
     setMovieError(null);
@@ -609,6 +624,10 @@ export default function GameResultsScreen({
             }
           );
 
+          /*
+           * IMPORTANT:
+           * Pass the current language to the service.
+           */
           const recommendations =
             await getMovieRecommendations(
               results,
@@ -1958,7 +1977,7 @@ export default function GameResultsScreen({
                               styles.movieContent
                             }
                           >
-                            {/* MOVIE TITLE - BILINGUAL */}
+                            {/* MOVIE TITLE */}
                             <View
                               style={[
                                 styles.movieNameRow,
@@ -1986,9 +2005,9 @@ export default function GameResultsScreen({
                                   },
                                 ]}
                               >
-                                {language === 'fa'
-                                  ? movie.titleFa || movie.titleEn
-                                  : movie.titleEn}
+                                {
+                                  movie.title
+                                }
                               </Text>
 
                               <View
@@ -2129,87 +2148,92 @@ export default function GameResultsScreen({
                               </View>
                             )}
 
-                            {/* MATCHED TAGS - ONLY IN ENGLISH */}
-                            {language === 'en' &&
-                              matchedTags.length >
-                                0 && (
-                                <View
+                            {/* MATCHED TAGS */}
+                            {matchedTags.length >
+                              0 && (
+                              <View
+                                style={[
+                                  styles.matchedTagsContainer,
+                                  {
+                                    alignItems:
+                                      isRTL
+                                        ? 'flex-end'
+                                        : 'flex-start',
+                                  },
+                                ]}
+                              >
+                                <Text
                                   style={[
-                                    styles.matchedTagsContainer,
+                                    styles.matchedTagsLabel,
                                     {
-                                      alignItems:
-                                        'flex-start',
+                                      color:
+                                        colors.textSecondary,
+                                      textAlign:
+                                        isRTL
+                                          ? 'right'
+                                          : 'left',
                                     },
                                   ]}
                                 >
-                                  <Text
-                                    style={[
-                                      styles.matchedTagsLabel,
-                                      {
-                                        color:
-                                          colors.textSecondary,
-                                        textAlign:
-                                          'left',
-                                      },
-                                    ]}
-                                  >
-                                    {
-                                      text.movieMatchedTags
-                                    }
-                                  </Text>
+                                  {
+                                    text.movieMatchedTags
+                                  }
+                                </Text>
 
-                                  <View
-                                    style={[
-                                      styles.genreRow,
-                                      {
-                                        flexDirection:
-                                          'row',
-                                      },
-                                    ]}
-                                  >
-                                    {matchedTags
-                                      .slice(
-                                        0,
-                                        4
-                                      )
-                                      .map(
-                                        (
-                                          tag,
-                                          tagIndex
-                                        ) => (
-                                          <View
-                                            key={`${tag}-${tagIndex}`}
+                                <View
+                                  style={[
+                                    styles.genreRow,
+                                    {
+                                      flexDirection:
+                                        isRTL
+                                          ? 'row-reverse'
+                                          : 'row',
+                                    },
+                                  ]}
+                                >
+                                  {matchedTags
+                                    .slice(
+                                      0,
+                                      4
+                                    )
+                                    .map(
+                                      (
+                                        tag,
+                                        tagIndex
+                                      ) => (
+                                        <View
+                                          key={`${tag}-${tagIndex}`}
+                                          style={[
+                                            styles.tagChip,
+                                            {
+                                              backgroundColor:
+                                                colors.primary +
+                                                '12',
+                                              borderColor:
+                                                colors.primary +
+                                                '35',
+                                            },
+                                          ]}
+                                        >
+                                          <Text
                                             style={[
-                                              styles.tagChip,
+                                              styles.tagText,
                                               {
-                                                backgroundColor:
-                                                  colors.primary +
-                                                  '12',
-                                                borderColor:
-                                                  colors.primary +
-                                                  '35',
+                                                color:
+                                                  colors.primary,
                                               },
                                             ]}
                                           >
-                                            <Text
-                                              style={[
-                                                styles.tagText,
-                                                {
-                                                  color:
-                                                    colors.primary,
-                                                },
-                                              ]}
-                                            >
-                                              {
-                                                tag
-                                              }
-                                            </Text>
-                                          </View>
-                                        )
-                                      )}
-                                  </View>
+                                            {
+                                              tag
+                                            }
+                                          </Text>
+                                        </View>
+                                      )
+                                    )}
                                 </View>
-                              )}
+                              </View>
+                            )}
 
                             {/* OVERVIEW */}
                             {movie.overview ? (
@@ -2259,18 +2283,15 @@ export default function GameResultsScreen({
                               </View>
                             ) : null}
 
-                            {/* META - LEFT ALIGNED */}
+                            {/* META */}
                             <View
                               style={[
                                 styles.movieMeta,
                                 {
                                   flexDirection:
-                                    'row',
-                                  justifyContent:
-                                    'space-between',
-                                  alignItems:
-                                    'center',
-                                  marginTop: 11,
+                                    isRTL
+                                      ? 'row-reverse'
+                                      : 'row',
                                 },
                               ]}
                             >
@@ -2280,13 +2301,16 @@ export default function GameResultsScreen({
                                   {
                                     color:
                                       colors.textSecondary,
-                                    textAlign:
-                                      'left',
                                   },
                                 ]}
                               >
-                                {text.movieId}:{' '}
-                                {movie.movieId}
+                                {
+                                  text.movieId
+                                }
+                                :{' '}
+                                {
+                                  movie.movieId
+                                }
                               </Text>
 
                               <Text
@@ -2295,12 +2319,12 @@ export default function GameResultsScreen({
                                   {
                                     color:
                                       colors.primary,
-                                    textAlign:
-                                      'right',
                                   },
                                 ]}
                               >
-                                {text.movieSimilarity}{' '}
+                                {
+                                  text.movieSimilarity
+                                }{' '}
                                 {formatSimilarity(
                                   movie.similarity
                                 )}
@@ -3298,10 +3322,10 @@ const styles =
     },
 
     movieMeta: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      justifyContent:
+        'space-between',
       marginTop: 11,
+      gap: 8,
     },
 
     movieMetaText: {

@@ -16,7 +16,6 @@ import {
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -59,33 +58,23 @@ interface Medication {
   date: string;
 }
 
-const MEDICATIONS_STORAGE_KEY =
-  '@neurolia_medications';
+const MEDICATIONS_STORAGE_KEY = '@neurolia_medications';
 
 const getDateKey = (date: Date = new Date()) => {
   const year = date.getFullYear();
-
-  const month = String(
-    date.getMonth() + 1
-  ).padStart(2, '0');
-
-  const day = String(
-    date.getDate()
-  ).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
 
   return `${year}-${month}-${day}`;
 };
 
-function toPersianDate(
-  date: Date
-): {
+function toPersianDate(date: Date): {
   year: number;
   month: number;
   day: number;
 } {
   const gregorianYear = date.getFullYear();
-  const gregorianMonth =
-    date.getMonth() + 1;
+  const gregorianMonth = date.getMonth() + 1;
   const gregorianDay = date.getDate();
 
   const daysInMonth = [
@@ -106,43 +95,29 @@ function toPersianDate(
 
   let daysPassed = 0;
 
-  for (
-    let i = 1;
-    i < gregorianMonth;
-    i++
-  ) {
+  for (let i = 1; i < gregorianMonth; i++) {
     daysPassed += daysInMonth[i];
   }
 
   daysPassed += gregorianDay;
 
   const isLeap =
-    (gregorianYear % 4 === 0 &&
-      gregorianYear % 100 !== 0) ||
+    (gregorianYear % 4 === 0 && gregorianYear % 100 !== 0) ||
     gregorianYear % 400 === 0;
 
-  if (
-    isLeap &&
-    gregorianMonth > 2
-  ) {
+  if (isLeap && gregorianMonth > 2) {
     daysPassed += 1;
   }
 
-  let persianYear =
-    gregorianYear - 622;
-
+  let persianYear = gregorianYear - 622;
   let persianMonth = 1;
-
-  let persianDay =
-    daysPassed - 79;
+  let persianDay = daysPassed - 79;
 
   if (persianDay <= 0) {
     persianYear -= 1;
     persianDay += 365;
 
-    if (
-      (persianYear + 1) % 4 === 0
-    ) {
+    if ((persianYear + 1) % 4 === 0) {
       persianDay += 1;
     }
   }
@@ -162,8 +137,7 @@ function toPersianDate(
     29,
   ];
 
-  const isPersianLeap =
-    persianYear % 4 === 0;
+  const isPersianLeap = persianYear % 4 === 0;
 
   if (isPersianLeap) {
     persianDaysInMonth[11] = 30;
@@ -171,22 +145,14 @@ function toPersianDate(
 
   let remainingDays = persianDay;
 
-  for (
-    let i = 0;
-    i < 12;
-    i++
-  ) {
-    if (
-      remainingDays <=
-      persianDaysInMonth[i]
-    ) {
+  for (let i = 0; i < 12; i++) {
+    if (remainingDays <= persianDaysInMonth[i]) {
       persianMonth = i + 1;
       persianDay = remainingDays;
       break;
     }
 
-    remainingDays -=
-      persianDaysInMonth[i];
+    remainingDays -= persianDaysInMonth[i];
   }
 
   return {
@@ -201,65 +167,72 @@ function getPersianMonthName(
   t: any
 ): string {
   const monthNames = [
-    t.monthFarvardin ||
-      'فروردین',
-
-    t.monthOrdibehesht ||
-      'اردیبهشت',
-
-    t.monthKhordad ||
-      'خرداد',
-
-    t.monthTir ||
-      'تیر',
-
-    t.monthMordad ||
-      'مرداد',
-
-    t.monthShahrivar ||
-      'شهریور',
-
-    t.monthMehr ||
-      'مهر',
-
-    t.monthAban ||
-      'آبان',
-
-    t.monthAzar ||
-      'آذر',
-
-    t.monthDey ||
-      'دی',
-
-    t.monthBahman ||
-      'بهمن',
-
-    t.monthEsfand ||
-      'اسفند',
+    t.monthFarvardin || 'فروردین',
+    t.monthOrdibehesht || 'اردیبهشت',
+    t.monthKhordad || 'خرداد',
+    t.monthTir || 'تیر',
+    t.monthMordad || 'مرداد',
+    t.monthShahrivar || 'شهریور',
+    t.monthMehr || 'مهر',
+    t.monthAban || 'آبان',
+    t.monthAzar || 'آذر',
+    t.monthDey || 'دی',
+    t.monthBahman || 'بهمن',
+    t.monthEsfand || 'اسفند',
   ];
 
-  return (
-    monthNames[month - 1] || ''
-  );
+  return monthNames[month - 1] || '';
 }
 
 export default function MedicationScreen() {
-  const { colors } = useTheme();
-
-  const {
-    t,
-    isRTL,
-  } = useLanguage();
-
+  const { colors, isDark, isAthlete } = useTheme();
+  const { t, isRTL } = useLanguage();
   const { user } = useAuth();
-
   const router = useRouter();
 
-  const [refreshing, setRefreshing] =
-    useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const createDefaultMedications =
-    useCallback((): Medication[] => {
+  // ============================================================
+  // Unified theme color
+  // ============================================================
+
+  const themeColor = isAthlete
+    ? '#22C55E'
+    : isDark
+      ? 'rgba(73, 194, 226, 1)'
+      : colors.primary;
+
+  const iconColor = themeColor;
+
+  const primarySoft = isAthlete
+    ? 'rgba(34,197,94,0.10)'
+    : isDark
+      ? 'rgba(73, 194, 226, 0.18)'
+      : 'rgba(107,90,166,0.10)';
+
+  const primaryMedium = isAthlete
+    ? 'rgba(34,197,94,0.25)'
+    : isDark
+      ? 'rgba(73, 194, 226, 0.30)'
+      : 'rgba(107,90,166,0.18)';
+
+  const gradientColors = isAthlete
+    ? ['#22C55E', '#16A34A'] as const
+    : isDark
+      ? [
+          'rgba(73, 194, 226, 1)',
+          'rgba(73, 194, 226, 0.8)',
+        ] as const
+      : [colors.primary, colors.primary] as const;
+
+  const addGradientColors = gradientColors;
+
+  // ============================================================
+  // Default medications
+  // ============================================================
+
+  const createDefaultMedications = useCallback(
+    (): Medication[] => {
       const today = getDateKey();
 
       return [
@@ -269,69 +242,60 @@ export default function MedicationScreen() {
           dosage: '10mg',
           time: '08:00',
           status: 'taken',
-          type:
-            t.cognitive ||
-            'Cognitive',
+          type: t.cognitive || 'Cognitive',
           adherence: 85,
           date: today,
         },
-
         {
           id: 2,
           name: 'Memantine',
           dosage: '20mg',
           time: '20:00',
           status: 'pending',
-          type:
-            t.cognitive ||
-            'Cognitive',
+          type: t.cognitive || 'Cognitive',
           adherence: 92,
           date: today,
         },
       ];
-    }, [t]);
+    },
+    [t]
+  );
 
-  const [
-    medications,
-    setMedications,
-  ] = useState<Medication[]>(
+  const [medications, setMedications] = useState<Medication[]>(
     createDefaultMedications()
   );
 
-  const loadMedications =
-    useCallback(async () => {
-      try {
-        const stored =
-          await AsyncStorage.getItem(
-            MEDICATIONS_STORAGE_KEY
-          );
+  // ============================================================
+  // Load medications
+  // ============================================================
 
-        if (stored) {
-          const parsed: Medication[] =
-            JSON.parse(stored);
+  const loadMedications = useCallback(async () => {
+    try {
+      const stored = await AsyncStorage.getItem(
+        MEDICATIONS_STORAGE_KEY
+      );
 
-          setMedications(parsed);
-          return;
-        }
-
-        const defaults =
-          createDefaultMedications();
-
-        setMedications(defaults);
-
-        await AsyncStorage.setItem(
-          MEDICATIONS_STORAGE_KEY,
-          JSON.stringify(defaults)
-        );
-      } catch (error) {
-        console.error(
-          'Failed to load medications:',
-          error
-        );
+      if (stored) {
+        const parsed: Medication[] = JSON.parse(stored);
+        setMedications(parsed);
+        return;
       }
-    }, [
-      createDefaultMedications,
-    ]);
+
+      const defaults = createDefaultMedications();
+
+      setMedications(defaults);
+
+      await AsyncStorage.setItem(
+        MEDICATIONS_STORAGE_KEY,
+        JSON.stringify(defaults)
+      );
+    } catch (error) {
+      console.error(
+        'Failed to load medications:',
+        error
+      );
+    }
+  }, [createDefaultMedications]);
 
   useFocusEffect(
     useCallback(() => {
@@ -339,291 +303,237 @@ export default function MedicationScreen() {
     }, [loadMedications])
   );
 
+  // ============================================================
+  // Date
+  // ============================================================
+
   const todayKey = getDateKey();
-
   const now = new Date();
+  const persianDate = toPersianDate(now);
 
-  const persianDate =
-    toPersianDate(now);
+  const calendarTitle = useMemo(() => {
+    if (isRTL) {
+      const monthName = getPersianMonthName(
+        persianDate.month,
+        t
+      );
 
-  const calendarTitle =
-    useMemo(() => {
-      if (isRTL) {
-        const monthName =
-          getPersianMonthName(
-            persianDate.month,
-            t
-          );
+      const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
 
-        const persianDigits =
-          '۰۱۲۳۴۵۶۷۸۹';
+      const persianYear = persianDate.year
+        .toString()
+        .split('')
+        .map(
+          digit =>
+            persianDigits[
+              parseInt(digit, 10)
+            ] || digit
+        )
+        .join('');
 
-        const persianYear =
-          persianDate.year
-            .toString()
-            .split('')
-            .map(
-              (digit) =>
-                persianDigits[
-                  parseInt(digit, 10)
-                ] || digit
-            )
-            .join('');
+      return `${monthName} ${persianYear}`;
+    }
 
-        return `${monthName} ${persianYear}`;
+    const monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    return `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+  }, [isRTL, persianDate, t, now]);
+
+  // ============================================================
+  // Today's medications
+  // ============================================================
+
+  const todayMedications = useMemo(() => {
+    return medications.filter(
+      medication => medication.date === todayKey
+    );
+  }, [medications, todayKey]);
+
+  const takenCount = todayMedications.filter(
+    medication => medication.status === 'taken'
+  ).length;
+
+  const pendingCount = todayMedications.filter(
+    medication => medication.status !== 'taken'
+  ).length;
+
+  const totalToday = todayMedications.length;
+
+  const nextMedication = todayMedications
+    .filter(
+      medication => medication.status !== 'taken'
+    )
+    .sort((a, b) =>
+      a.time.localeCompare(b.time)
+    )[0];
+
+  // ============================================================
+  // Unified status color
+  // ============================================================
+
+  const getStatusColor = (
+    _status: Medication['status']
+  ) => {
+    return iconColor;
+  };
+
+  // ============================================================
+  // Mark as taken
+  // ============================================================
+
+  const markAsTaken = useCallback(
+    async (id: number) => {
+      const medication = medications.find(
+        item => item.id === id
+      );
+
+      if (!medication) {
+        return;
       }
 
-      const monthNames = [
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December',
-      ];
+      if (medication.status === 'taken') {
+        return;
+      }
 
-      return `${
-        monthNames[now.getMonth()]
-      } ${now.getFullYear()}`;
-    }, [
-      isRTL,
-      persianDate,
-      t,
-      now,
-    ]);
+      const updatedMedications = medications.map(
+        item => {
+          if (item.id !== id) {
+            return item;
+          }
 
-  const todayMedications =
-    useMemo(() => {
-      return medications.filter(
-        (medication) =>
-          medication.date === todayKey
+          return {
+            ...item,
+            status: 'taken' as const,
+            adherence: Math.min(
+              100,
+              item.adherence + 5
+            ),
+          };
+        }
       );
-    }, [
-      medications,
-      todayKey,
-    ]);
 
-  const takenCount =
-    todayMedications.filter(
-      (medication) =>
-        medication.status ===
-        'taken'
-    ).length;
+      setMedications(updatedMedications);
 
-  const pendingCount =
-    todayMedications.filter(
-      (medication) =>
-        medication.status !==
-        'taken'
-    ).length;
-
-  const totalToday =
-    todayMedications.length;
-
-  const nextMedication =
-    todayMedications
-      .filter(
-        (medication) =>
-          medication.status !==
-          'taken'
-      )
-      .sort((a, b) =>
-        a.time.localeCompare(b.time)
-      )[0];
-
-  const markAsTaken =
-    useCallback(
-      async (id: number) => {
-        const medication =
-          medications.find(
-            (item) =>
-              item.id === id
-          );
-
-        if (!medication) {
-          return;
-        }
-
-        if (
-          medication.status ===
-          'taken'
-        ) {
-          return;
-        }
-
-        const updatedMedications =
-          medications.map(
-            (item) => {
-              if (item.id !== id) {
-                return item;
-              }
-
-              return {
-                ...item,
-                status:
-                  'taken' as const,
-                adherence:
-                  Math.min(
-                    100,
-                    item.adherence + 5
-                  ),
-              };
-            }
-          );
-
-        setMedications(
-          updatedMedications
+      try {
+        await AsyncStorage.setItem(
+          MEDICATIONS_STORAGE_KEY,
+          JSON.stringify(updatedMedications)
         );
 
-        try {
-          await AsyncStorage.setItem(
-            MEDICATIONS_STORAGE_KEY,
-            JSON.stringify(
-              updatedMedications
-            )
-          );
-
-          Alert.alert(
-            `✅ ${
-              t.medicationTaken ||
-              'Medication Taken'
-            }`,
-            `${medication.name} (${
-              medication.dosage
-            }) ${
-              t.medicationTakenMessage ||
-              'marked as taken!'
-            }`,
-            [
-              {
-                text:
-                  t.great ||
-                  'Great!',
-              },
-            ]
-          );
-        } catch (error) {
-          console.error(
-            'Failed to save medication:',
-            error
-          );
-        }
-      },
-      [
-        medications,
-        t,
-      ]
-    );
-
-  const onRefresh =
-    useCallback(() => {
-      setRefreshing(true);
-
-      loadMedications().finally(
-        () => {
-          setTimeout(() => {
-            setRefreshing(false);
-          }, 500);
-        }
-      );
-    }, [loadMedications]);
-
-  const getStatusColor =
-    (status: Medication['status']) => {
-      switch (status) {
-        case 'taken':
-          return '#10B981';
-
-        case 'pending':
-          return '#F59E0B';
-
-        case 'missed':
-          return '#EF4444';
-
-        default:
-          return colors.primary;
+        Alert.alert(
+          `✓ ${
+            t.medicationTaken ||
+            'Medication Taken'
+          }`,
+          `${medication.name} (${medication.dosage}) ${
+            t.medicationTakenMessage ||
+            'marked as taken!'
+          }`,
+          [
+            {
+              text: t.great || 'Great!',
+            },
+          ]
+        );
+      } catch (error) {
+        console.error(
+          'Failed to save medication:',
+          error
+        );
       }
-    };
+    },
+    [medications, t]
+  );
+
+  // ============================================================
+  // Refresh
+  // ============================================================
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+
+    loadMedications().finally(() => {
+      setTimeout(() => {
+        setRefreshing(false);
+      }, 500);
+    });
+  }, [loadMedications]);
+
+  // ============================================================
+  // Greeting
+  // ============================================================
 
   const getGreeting = () => {
-    const hour =
-      new Date().getHours();
+    const hour = new Date().getHours();
 
     if (hour < 12) {
-      return (
-        t.goodMorning ||
-        'Good morning'
-      );
+      return t.goodMorning || 'Good morning';
     }
 
     if (hour < 17) {
-      return (
-        t.goodAfternoon ||
-        'Good afternoon'
-      );
+      return t.goodAfternoon || 'Good afternoon';
     }
 
-    return (
-      t.goodEvening ||
-      'Good evening'
-    );
+    return t.goodEvening || 'Good evening';
   };
+
+  // ============================================================
+  // Calendar
+  // ============================================================
 
   const baseCalendarDays = [
     {
-      day:
-        t.daySat || 'Sat',
+      day: t.daySat || 'Sat',
       taken: true,
     },
     {
-      day:
-        t.daySun || 'Sun',
+      day: t.daySun || 'Sun',
       taken: true,
     },
     {
-      day:
-        t.dayMon || 'Mon',
+      day: t.dayMon || 'Mon',
       taken: true,
     },
     {
-      day:
-        t.dayTue || 'Tue',
+      day: t.dayTue || 'Tue',
       taken: true,
     },
     {
-      day:
-        t.dayWed || 'Wed',
+      day: t.dayWed || 'Wed',
       taken: false,
     },
     {
-      day:
-        t.dayThu || 'Thu',
+      day: t.dayThu || 'Thu',
       taken: false,
     },
     {
-      day:
-        t.dayFri || 'Fri',
+      day: t.dayFri || 'Fri',
       taken: false,
     },
   ];
 
-  const calendarDays =
-    useMemo(() => {
-      return isRTL
-        ? [
-            ...baseCalendarDays,
-          ].reverse()
-        : baseCalendarDays;
-    }, [
-      isRTL,
-      t,
-    ]);
+  const calendarDays = useMemo(() => {
+    return isRTL
+      ? [...baseCalendarDays].reverse()
+      : baseCalendarDays;
+  }, [isRTL, t]);
+
+  // ============================================================
+  // Back
+  // ============================================================
 
   const goBack = useCallback(() => {
     if (router.canGoBack()) {
@@ -638,11 +548,14 @@ export default function MedicationScreen() {
       style={[
         styles.container,
         {
-          backgroundColor:
-            colors.background,
+          backgroundColor: colors.background,
         },
       ]}
     >
+      {/* ========================================================
+          PAGE HEADER
+      ======================================================== */}
+
       <View
         style={[
           styles.pageHeader,
@@ -655,7 +568,9 @@ export default function MedicationScreen() {
           onPress={goBack}
           activeOpacity={0.75}
           accessibilityRole="button"
-          accessibilityLabel={t.back || 'Back'}
+          accessibilityLabel={
+            t.back || 'Back'
+          }
           style={[
             styles.unifiedBackButton,
             {
@@ -666,7 +581,7 @@ export default function MedicationScreen() {
         >
           <ArrowLeft
             size={21}
-            color={colors.text}
+            color={iconColor}
             strokeWidth={2.5}
           />
         </TouchableOpacity>
@@ -707,7 +622,9 @@ export default function MedicationScreen() {
               },
             ]}
           >
-            {totalToday} {t.medicinesToday || 'medicines today'}
+            {totalToday}{' '}
+            {t.medicinesToday ||
+              'medicines today'}
           </Text>
         </View>
 
@@ -715,42 +632,38 @@ export default function MedicationScreen() {
           style={[
             styles.avatarWrapper,
             {
-              backgroundColor:
-                colors.primary +
-                '18',
+              backgroundColor: primarySoft,
             },
           ]}
         >
           <Image
             source={require('../../assets/avatars/model1.jpg')}
-            style={
-              styles.characterImage
-            }
+            style={styles.characterImage}
           />
         </View>
       </View>
 
+      {/* ========================================================
+          CONTENT
+      ======================================================== */}
+
       <ScrollView
-        showsVerticalScrollIndicator={
-          false
-        }
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={
           styles.scrollContent
         }
         refreshControl={
           <RefreshControl
-            refreshing={
-              refreshing
-            }
-            onRefresh={
-              onRefresh
-            }
-            tintColor={
-              colors.primary
-            }
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={iconColor}
           />
         }
       >
+        {/* ======================================================
+            HEADER
+        ====================================================== */}
+
         <MotiView
           from={{
             opacity: 0,
@@ -770,8 +683,7 @@ export default function MedicationScreen() {
             style={[
               styles.headerContent,
               {
-                flexDirection:
-                  'row',
+                flexDirection: 'row',
               },
             ]}
           >
@@ -779,10 +691,9 @@ export default function MedicationScreen() {
               style={[
                 styles.headerTextContainer,
                 {
-                  alignItems:
-                    isRTL
-                      ? 'flex-end'
-                      : 'flex-start',
+                  alignItems: isRTL
+                    ? 'flex-end'
+                    : 'flex-start',
                 },
               ]}
             >
@@ -790,12 +701,10 @@ export default function MedicationScreen() {
                 style={[
                   styles.greeting,
                   {
-                    color:
-                      colors.text,
-                    textAlign:
-                      isRTL
-                        ? 'right'
-                        : 'left',
+                    color: colors.text,
+                    textAlign: isRTL
+                      ? 'right'
+                      : 'left',
                   },
                 ]}
                 numberOfLines={1}
@@ -812,10 +721,9 @@ export default function MedicationScreen() {
                   {
                     color:
                       colors.textSecondary,
-                    textAlign:
-                      isRTL
-                        ? 'right'
-                        : 'left',
+                    textAlign: isRTL
+                      ? 'right'
+                      : 'left',
                   },
                 ]}
               >
@@ -829,10 +737,9 @@ export default function MedicationScreen() {
                   {
                     color:
                       colors.textSecondary,
-                    textAlign:
-                      isRTL
-                        ? 'right'
-                        : 'left',
+                    textAlign: isRTL
+                      ? 'right'
+                      : 'left',
                   },
                 ]}
               >
@@ -842,32 +749,29 @@ export default function MedicationScreen() {
             </View>
           </View>
 
+          {/* ====================================================
+              STATUS BAR
+          ==================================================== */}
+
           <View
             style={[
               styles.statusBar,
               {
-                backgroundColor:
-                  colors.primary +
-                  '08',
+                backgroundColor: primarySoft,
               },
             ]}
           >
-            <View
-              style={
-                styles.statusItem
-              }
-            >
+            <View style={styles.statusItem}>
               <Flame
                 size={19}
-                color="#F97316"
+                color={iconColor}
               />
 
               <Text
                 style={[
                   styles.statusText,
                   {
-                    color:
-                      colors.text,
+                    color: colors.text,
                   },
                 ]}
               >
@@ -882,30 +786,22 @@ export default function MedicationScreen() {
                 styles.statusDivider,
                 {
                   backgroundColor:
-                    colors.primary +
-                    '20',
+                    primaryMedium,
                 },
               ]}
             />
 
-            <View
-              style={
-                styles.statusItem
-              }
-            >
+            <View style={styles.statusItem}>
               <Pill
                 size={19}
-                color={
-                  colors.primary
-                }
+                color={iconColor}
               />
 
               <Text
                 style={[
                   styles.statusText,
                   {
-                    color:
-                      colors.text,
+                    color: colors.text,
                   },
                 ]}
               >
@@ -920,67 +816,45 @@ export default function MedicationScreen() {
                 styles.statusDivider,
                 {
                   backgroundColor:
-                    colors.primary +
-                    '20',
+                    primaryMedium,
                 },
               ]}
             />
 
-            <View
-              style={
-                styles.statusItem
-              }
-            >
+            <View style={styles.statusItem}>
               <Clock
                 size={19}
-                color="#3B82F6"
+                color={iconColor}
               />
 
               <Text
                 style={[
                   styles.statusText,
                   {
-                    color:
-                      colors.text,
+                    color: colors.text,
                   },
                 ]}
               >
-                {t.next ||
-                  'Next'}{' '}
-                {nextMedication
-                  ?.time || '—'}
+                {t.next || 'Next'}{' '}
+                {nextMedication?.time ||
+                  '—'}
               </Text>
             </View>
           </View>
         </MotiView>
 
-        <View
-          style={
-            styles.statsGrid
-          }
-        >
+        {/* ======================================================
+            STATS
+        ====================================================== */}
+
+        <View style={styles.statsGrid}>
           <LinearGradient
-            colors={[
-              '#7C3AED',
-              '#6D28D9',
-            ]}
-            start={{
-              x: 0,
-              y: 0,
-            }}
-            end={{
-              x: 1,
-              y: 1,
-            }}
-            style={
-              styles.gradientCard
-            }
+            colors={gradientColors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.gradientCard}
           >
-            <View
-              style={
-                styles.statContent
-              }
-            >
+            <View style={styles.statContent}>
               <Pill
                 size={24}
                 color="#FFFFFF"
@@ -999,8 +873,7 @@ export default function MedicationScreen() {
                   styles.statLabelWhite
                 }
               >
-                {t.today ||
-                  'Today'}
+                {t.today || 'Today'}
               </Text>
             </View>
           </LinearGradient>
@@ -1008,10 +881,8 @@ export default function MedicationScreen() {
           <Card
             style={{
               flex: 1,
-              padding:
-                Spacing.md,
-              alignItems:
-                'center',
+              padding: Spacing.md,
+              alignItems: 'center',
             }}
           >
             <View
@@ -1019,13 +890,13 @@ export default function MedicationScreen() {
                 styles.statIconContainer,
                 {
                   backgroundColor:
-                    '#10B98120',
+                    primarySoft,
                 },
               ]}
             >
               <CheckCircle
                 size={24}
-                color="#10B981"
+                color={iconColor}
               />
             </View>
 
@@ -1033,8 +904,7 @@ export default function MedicationScreen() {
               style={[
                 styles.statNumber,
                 {
-                  color:
-                    '#10B981',
+                  color: iconColor,
                 },
               ]}
             >
@@ -1050,18 +920,15 @@ export default function MedicationScreen() {
                 },
               ]}
             >
-              {t.taken ||
-                'Taken'}
+              {t.taken || 'Taken'}
             </Text>
           </Card>
 
           <Card
             style={{
               flex: 1,
-              padding:
-                Spacing.md,
-              alignItems:
-                'center',
+              padding: Spacing.md,
+              alignItems: 'center',
             }}
           >
             <View
@@ -1069,13 +936,13 @@ export default function MedicationScreen() {
                 styles.statIconContainer,
                 {
                   backgroundColor:
-                    '#F59E0B20',
+                    primarySoft,
                 },
               ]}
             >
               <Clock
                 size={24}
-                color="#F59E0B"
+                color={iconColor}
               />
             </View>
 
@@ -1083,8 +950,7 @@ export default function MedicationScreen() {
               style={[
                 styles.statNumber,
                 {
-                  color:
-                    '#F59E0B',
+                  color: iconColor,
                 },
               ]}
             >
@@ -1100,11 +966,14 @@ export default function MedicationScreen() {
                 },
               ]}
             >
-              {t.pending ||
-                'Pending'}
+              {t.pending || 'Pending'}
             </Text>
           </Card>
         </View>
+
+        {/* ======================================================
+            ADD MEDICATION
+        ====================================================== */}
 
         <TouchableOpacity
           activeOpacity={0.85}
@@ -1113,26 +982,13 @@ export default function MedicationScreen() {
               '/medication/add' as any
             )
           }
-          style={
-            styles.addButtonWrapper
-          }
+          style={styles.addButtonWrapper}
         >
           <LinearGradient
-            colors={[
-              '#7C3AED',
-              '#3B82F6',
-            ]}
-            start={{
-              x: 0,
-              y: 0,
-            }}
-            end={{
-              x: 1,
-              y: 0,
-            }}
-            style={
-              styles.addButton
-            }
+            colors={addGradientColors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.addButton}
           >
             <Plus
               size={20}
@@ -1140,9 +996,7 @@ export default function MedicationScreen() {
             />
 
             <Text
-              style={
-                styles.addButtonText
-              }
+              style={styles.addButtonText}
             >
               {t.addMedication ||
                 'Add Medication'}
@@ -1150,38 +1004,36 @@ export default function MedicationScreen() {
           </LinearGradient>
         </TouchableOpacity>
 
+        {/* ======================================================
+            CALENDAR
+        ====================================================== */}
+
         <Card
           style={{
-            padding:
-              Spacing.md,
-            marginBottom:
-              Spacing.md,
+            padding: Spacing.md,
+            marginBottom: Spacing.md,
           }}
         >
           <View
             style={[
               styles.calendarHeader,
               {
-                flexDirection:
-                  isRTL
-                    ? 'row-reverse'
-                    : 'row',
+                flexDirection: isRTL
+                  ? 'row-reverse'
+                  : 'row',
               },
             ]}
           >
             <Calendar
               size={20}
-              color={
-                colors.primary
-              }
+              color={iconColor}
             />
 
             <Text
               style={[
                 styles.calendarTitle,
                 {
-                  color:
-                    colors.text,
+                  color: colors.text,
                 },
               ]}
             >
@@ -1190,15 +1042,10 @@ export default function MedicationScreen() {
           </View>
 
           <View
-            style={
-              styles.calendarGrid
-            }
+            style={styles.calendarGrid}
           >
             {calendarDays.map(
-              (
-                day,
-                index
-              ) => (
+              (day, index) => (
                 <View
                   key={index}
                   style={
@@ -1223,7 +1070,7 @@ export default function MedicationScreen() {
                       {
                         backgroundColor:
                           day.taken
-                            ? '#10B981'
+                            ? iconColor
                             : colors.border,
                       },
                     ]}
@@ -1234,19 +1081,20 @@ export default function MedicationScreen() {
           </View>
         </Card>
 
+        {/* ======================================================
+            TODAY'S MEDICATIONS
+        ====================================================== */}
+
         <View
-          style={
-            styles.medicationSection
-          }
+          style={styles.medicationSection}
         >
           <View
             style={[
               styles.sectionHeader,
               {
-                flexDirection:
-                  isRTL
-                    ? 'row-reverse'
-                    : 'row',
+                flexDirection: isRTL
+                  ? 'row-reverse'
+                  : 'row',
               },
             ]}
           >
@@ -1254,8 +1102,7 @@ export default function MedicationScreen() {
               style={[
                 styles.sectionTitle,
                 {
-                  color:
-                    colors.text,
+                  color: colors.text,
                 },
               ]}
             >
@@ -1273,10 +1120,9 @@ export default function MedicationScreen() {
               style={[
                 styles.viewAllButton,
                 {
-                  flexDirection:
-                    isRTL
-                      ? 'row-reverse'
-                      : 'row',
+                  flexDirection: isRTL
+                    ? 'row-reverse'
+                    : 'row',
                 },
               ]}
             >
@@ -1284,27 +1130,22 @@ export default function MedicationScreen() {
                 style={[
                   styles.viewAll,
                   {
-                    color:
-                      colors.primary,
+                    color: iconColor,
                   },
                 ]}
               >
-                {t.viewAll ||
-                  'View All'}
+                {t.viewAll || 'View All'}
               </Text>
 
               <ChevronRight
                 size={16}
-                color={
-                  colors.primary
-                }
+                color={iconColor}
                 style={
                   isRTL
                     ? {
                         transform: [
                           {
-                            scaleX:
-                              -1,
+                            scaleX: -1,
                           },
                         ],
                       }
@@ -1317,15 +1158,11 @@ export default function MedicationScreen() {
           {todayMedications.length ===
           0 ? (
             <Card
-              style={
-                styles.emptyCard
-              }
+              style={styles.emptyCard}
             >
               <Pill
                 size={30}
-                color={
-                  colors.textSecondary
-                }
+                color={iconColor}
               />
 
               <Text
@@ -1343,10 +1180,7 @@ export default function MedicationScreen() {
             </Card>
           ) : (
             todayMedications.map(
-              (
-                med,
-                index
-              ) => (
+              (med, index) => (
                 <MotiView
                   key={med.id}
                   from={{
@@ -1358,8 +1192,7 @@ export default function MedicationScreen() {
                     translateY: 0,
                   }}
                   transition={{
-                    delay:
-                      index * 100,
+                    delay: index * 100,
                     type: 'timing',
                     duration: 350,
                   }}
@@ -1384,23 +1217,24 @@ export default function MedicationScreen() {
                         },
                       ]}
                     >
+                      {/* Medication icon */}
+
                       <View
                         style={[
                           styles.medicationIcon,
                           {
                             backgroundColor:
-                              colors.primary +
-                              '20',
+                              primarySoft,
                           },
                         ]}
                       >
                         <Pill
                           size={24}
-                          color={
-                            colors.primary
-                          }
+                          color={iconColor}
                         />
                       </View>
+
+                      {/* Medication info */}
 
                       <View
                         style={
@@ -1443,9 +1277,7 @@ export default function MedicationScreen() {
                               },
                             ]}
                           >
-                            {
-                              med.dosage
-                            }
+                            {med.dosage}
                           </Text>
 
                           <View
@@ -1462,7 +1294,7 @@ export default function MedicationScreen() {
                             <Brain
                               size={14}
                               color={
-                                colors.primary
+                                iconColor
                               }
                             />
 
@@ -1475,12 +1307,12 @@ export default function MedicationScreen() {
                                 },
                               ]}
                             >
-                              {
-                                med.type
-                              }
+                              {med.type}
                             </Text>
                           </View>
                         </View>
+
+                        {/* Time */}
 
                         <View
                           style={[
@@ -1496,7 +1328,7 @@ export default function MedicationScreen() {
                           <Clock
                             size={14}
                             color={
-                              colors.textSecondary
+                              iconColor
                             }
                           />
 
@@ -1509,11 +1341,11 @@ export default function MedicationScreen() {
                               },
                             ]}
                           >
-                            {
-                              med.time
-                            }
+                            {med.time}
                           </Text>
                         </View>
+
+                        {/* Adherence */}
 
                         <View
                           style={[
@@ -1539,8 +1371,7 @@ export default function MedicationScreen() {
                               style={[
                                 styles.adherenceFill,
                                 {
-                                  width:
-                                    `${med.adherence}%`,
+                                  width: `${med.adherence}%`,
                                   backgroundColor:
                                     getStatusColor(
                                       med.status
@@ -1559,15 +1390,14 @@ export default function MedicationScreen() {
                               },
                             ]}
                           >
-                            {
-                              med.adherence
-                            }%
-                            {' '}
+                            {med.adherence}%{' '}
                             {t.adherence ||
                               'adherence'}
                           </Text>
                         </View>
                       </View>
+
+                      {/* Status button */}
 
                       <TouchableOpacity
                         activeOpacity={
@@ -1596,15 +1426,9 @@ export default function MedicationScreen() {
                           styles.statusButton,
                           {
                             borderColor:
-                              getStatusColor(
-                                med.status
-                              ) +
-                              '25',
+                              `${iconColor}25`,
                             backgroundColor:
-                              getStatusColor(
-                                med.status
-                              ) +
-                              '08',
+                              `${iconColor}08`,
                           },
                         ]}
                       >
@@ -1617,7 +1441,9 @@ export default function MedicationScreen() {
                           >
                             <CheckCircle
                               size={22}
-                              color="#10B981"
+                              color={
+                                iconColor
+                              }
                             />
 
                             <Text
@@ -1625,7 +1451,7 @@ export default function MedicationScreen() {
                                 styles.statusText,
                                 {
                                   color:
-                                    '#10B981',
+                                    iconColor,
                                 },
                               ]}
                             >
@@ -1642,10 +1468,7 @@ export default function MedicationScreen() {
                             <Clock
                               size={22}
                               color={
-                                med.status ===
-                                'missed'
-                                  ? '#EF4444'
-                                  : '#F59E0B'
+                                iconColor
                               }
                             />
 
@@ -1654,10 +1477,7 @@ export default function MedicationScreen() {
                                 styles.statusText,
                                 {
                                   color:
-                                    med.status ===
-                                    'missed'
-                                      ? '#EF4444'
-                                      : '#F59E0B',
+                                    iconColor,
                                 },
                               ]}
                             >
@@ -1675,376 +1495,371 @@ export default function MedicationScreen() {
           )}
         </View>
 
-        <View
-          style={
-            styles.bottomSpace
-          }
-        />
+        <View style={styles.bottomSpace} />
       </ScrollView>
     </View>
   );
 }
 
-const styles =
-  StyleSheet.create({
-    container: {
-      flex: 1,
-    },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
 
-    scrollContent: {
-      paddingHorizontal:
-        Spacing.lg,
-      paddingTop: 0,
-      paddingBottom: 40,
-    },
+  scrollContent: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: 0,
+    paddingBottom: 40,
+  },
 
-    pageHeader: {
-      width: '100%',
-      paddingHorizontal: 0,
-      paddingTop: 60,
-      paddingBottom: 15,
-      paddingLeft:20,
-      paddingRight: 20,
-      flexDirection: 'row',
-      alignItems: 'center',
-      borderBottomWidth: StyleSheet.hairlineWidth,
-    },
+  pageHeader: {
+    width: '100%',
+    paddingHorizontal: 0,
+    paddingTop: 40,
+    paddingBottom: 15,
+    paddingLeft: 20,
+    paddingRight: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth:
+      StyleSheet.hairlineWidth,
+  },
 
-    unifiedBackButton: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      borderWidth: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0,
-      marginRight: 12,
-    },
+  unifiedBackButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    marginRight: 12,
+  },
 
-    pageHeaderText: {
-      flex: 1,
-      minWidth: 0,
-    },
+  pageHeaderText: {
+    flex: 1,
+    minWidth: 0,
+  },
 
-    pageHeaderTitle: {
-      fontSize: 21,
-      fontWeight: '800',
-      lineHeight: 27,
-    },
+  pageHeaderTitle: {
+    fontSize: 21,
+    fontWeight: '800',
+    lineHeight: 27,
+  },
 
-    pageHeaderSubtitle: {
-      fontSize: 12,
-      marginTop: 3,
-      lineHeight: 18,
-    },
+  pageHeaderSubtitle: {
+    fontSize: 12,
+    marginTop: 3,
+    lineHeight: 18,
+  },
 
-    avatarWrapper: {
-      width: 72,
-      height: 72,
-      borderRadius: 36,
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'hidden',
-      flexShrink: 0,
-      marginLeft: Spacing.md,
-    },
+  avatarWrapper: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    flexShrink: 0,
+    marginLeft: Spacing.md,
+  },
 
-    characterImage: {
-      width: 68,
-      height: 68,
-      borderRadius: 34,
-    },
+  characterImage: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+  },
 
-    header: {
-      marginTop: Spacing.md,
-      marginBottom: Spacing.lg,
-    },
+  header: {
+    marginTop: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
 
-    headerContent: {
-      width: '100%',
-      alignItems: 'center',
-      minHeight: 82,
-    },
+  headerContent: {
+    width: '100%',
+    alignItems: 'center',
+    minHeight: 82,
+  },
 
-    headerTextContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      minWidth: 0,
-    },
+  headerTextContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    minWidth: 0,
+  },
 
-    greeting: {
-      fontSize: 23,
-      fontWeight: '700',
-      marginBottom: 5,
-    },
+  greeting: {
+    fontSize: 23,
+    fontWeight: '700',
+    marginBottom: 5,
+  },
 
-    headerSubtitle: {
-      fontSize: 13,
-      lineHeight: 19,
-    },
+  headerSubtitle: {
+    fontSize: 13,
+    lineHeight: 19,
+  },
 
-    statusBar: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      alignItems: 'center',
-      marginTop: Spacing.md,
-      paddingVertical: Spacing.sm + 2,
-      borderRadius: BorderRadius.lg,
-    },
+  statusBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.sm + 2,
+    borderRadius: BorderRadius.lg,
+  },
 
-    statusItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      flex: 1,
-      justifyContent: 'center',
-    },
+  statusItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+    justifyContent: 'center',
+  },
 
-    statusText: {
-      fontSize: 11,
-      fontWeight: '500',
-    },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
 
-    statusDivider: {
-      width: 1,
-      height: 20,
-    },
+  statusDivider: {
+    width: 1,
+    height: 20,
+  },
 
-    statsGrid: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: Spacing.md,
-      gap: Spacing.sm,
-    },
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
 
-    gradientCard: {
-      flex: 1,
-      padding: Spacing.md,
-      borderRadius: BorderRadius.lg,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
+  gradientCard: {
+    flex: 1,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
-    statContent: {
-      alignItems: 'center',
-    },
+  statContent: {
+    alignItems: 'center',
+  },
 
-    statNumberWhite: {
-      fontSize: 24,
-      fontWeight: '700',
-      color: '#FFFFFF',
-      marginTop: 3,
-    },
+  statNumberWhite: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginTop: 3,
+  },
 
-    statLabelWhite: {
-      fontSize: 12,
-      color: '#FFFFFF',
-      opacity: 0.8,
-      marginTop: 2,
-    },
+  statLabelWhite: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    opacity: 0.8,
+    marginTop: 2,
+  },
 
-    statIconContainer: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: Spacing.xs,
-    },
+  statIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.xs,
+  },
 
-    statNumber: {
-      fontSize: 24,
-      fontWeight: '700',
-    },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: '700',
+  },
 
-    statLabel: {
-      fontSize: 12,
-      marginTop: 2,
-    },
+  statLabel: {
+    fontSize: 12,
+    marginTop: 2,
+  },
 
-    addButtonWrapper: {
-      marginBottom: Spacing.lg,
-      borderRadius: BorderRadius.lg,
-      overflow: 'hidden',
-    },
+  addButtonWrapper: {
+    marginBottom: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+  },
 
-    addButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: Spacing.md,
-      gap: Spacing.sm,
-    },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    gap: Spacing.sm,
+  },
 
-    addButtonText: {
-      color: '#FFFFFF',
-      fontSize: 16,
-      fontWeight: '600',
-    },
+  addButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 
-    calendarHeader: {
-      alignItems: 'center',
-      gap: Spacing.sm,
-      marginBottom: Spacing.md,
-    },
+  calendarHeader: {
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
 
-    calendarTitle: {
-      fontSize: 16,
-      fontWeight: '600',
-    },
+  calendarTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
 
-    calendarGrid: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-    },
+  calendarGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
 
-    calendarDay: {
-      alignItems: 'center',
-      gap: 4,
-    },
+  calendarDay: {
+    alignItems: 'center',
+    gap: 4,
+  },
 
-    calendarDayText: {
-      fontSize: 12,
-      fontWeight: '500',
-    },
+  calendarDayText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
 
-    calendarDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-    },
+  calendarDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
 
-    medicationSection: {
-      marginBottom: Spacing.lg,
-    },
+  medicationSection: {
+    marginBottom: Spacing.lg,
+  },
 
-    sectionHeader: {
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: Spacing.md,
-    },
+  sectionHeader: {
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
 
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: '600',
-    },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
 
-    viewAllButton: {
-      alignItems: 'center',
-      gap: 2,
-    },
+  viewAllButton: {
+    alignItems: 'center',
+    gap: 2,
+  },
 
-    viewAll: {
-      fontSize: 14,
-      fontWeight: '500',
-    },
+  viewAll: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
 
-    medicationCard: {
-      padding: Spacing.md,
-    },
+  medicationCard: {
+    padding: Spacing.md,
+  },
 
-    medicationRow: {
-      alignItems: 'flex-start',
-    },
+  medicationRow: {
+    alignItems: 'flex-start',
+  },
 
-    medicationIcon: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginHorizontal: Spacing.sm,
-    },
+  medicationIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: Spacing.sm,
+  },
 
-    medicationInfo: {
-      flex: 1,
-      minWidth: 0,
-    },
+  medicationInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
 
-    medicationName: {
-      fontSize: 16,
-      fontWeight: '600',
-      marginBottom: 4,
-    },
+  medicationName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
 
-    medicationDetails: {
-      alignItems: 'center',
-      gap: 8,
-      marginBottom: 4,
-    },
+  medicationDetails: {
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
 
-    medicationDosage: {
-      fontSize: 13,
-    },
+  medicationDosage: {
+    fontSize: 13,
+  },
 
-    medicationType: {
-      alignItems: 'center',
-      gap: 4,
-    },
+  medicationType: {
+    alignItems: 'center',
+    gap: 4,
+  },
 
-    medicationTypeText: {
-      fontSize: 12,
-    },
+  medicationTypeText: {
+    fontSize: 12,
+  },
 
-    timeContainer: {
-      alignItems: 'center',
-      gap: 4,
-      marginBottom: 6,
-    },
+  timeContainer: {
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 6,
+  },
 
-    medicationTime: {
-      fontSize: 12,
-    },
+  medicationTime: {
+    fontSize: 12,
+  },
 
-    adherenceContainer: {
-      alignItems: 'center',
-      gap: 8,
-    },
+  adherenceContainer: {
+    alignItems: 'center',
+    gap: 8,
+  },
 
-    adherenceBar: {
-      flex: 1,
-      height: 4,
-      borderRadius: 2,
-      overflow: 'hidden',
-    },
+  adherenceBar: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
 
-    adherenceFill: {
-      height: '100%',
-      borderRadius: 2,
-    },
+  adherenceFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
 
-    adherenceText: {
-      fontSize: 10,
-    },
+  adherenceText: {
+    fontSize: 10,
+  },
 
-    statusButton: {
-      paddingVertical: 6,
-      paddingHorizontal: 7,
-      borderRadius: BorderRadius.md,
-      marginLeft: 4,
-      minWidth: 68,
-      borderWidth: 1,
-    },
+  statusButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 7,
+    borderRadius: BorderRadius.md,
+    marginLeft: 4,
+    minWidth: 68,
+    borderWidth: 1,
+  },
 
-    statusContainer: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 4,
-    },
+  statusContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
 
-    emptyCard: {
-      padding: Spacing.xl,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: Spacing.sm,
-    },
+  emptyCard: {
+    padding: Spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+  },
 
-    emptyText: {
-      fontSize: 13,
-      textAlign: 'center',
-    },
+  emptyText: {
+    fontSize: 13,
+    textAlign: 'center',
+  },
 
-    bottomSpace: {
-      height: 100,
-    },
-  });
+  bottomSpace: {
+    height: 100,
+  },
+});

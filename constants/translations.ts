@@ -221,7 +221,7 @@ export const translations = {
     addedSuccessfully: 'با موفقیت اضافه شد!',
 
     // ===== Medication History =====
-    medicationHistory: 'تاریخچه داروها 📋',
+    medicationHistory: 'تاریخچه داروها ',
     july: 'تیر',
     missedBadge: 'فراموش شده',
 
