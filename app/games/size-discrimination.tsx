@@ -1,3 +1,4 @@
+
 import React, {
   useCallback,
   useEffect,
@@ -49,10 +50,6 @@ import { saveGameResult } from './gameResults';
 
 /* ================================================================
    SHAPE VISUAL
-   Renders the shape currently in play (circle / square /
-   triangle / rectangle) inside a `size` x `size` bounding box,
-   so the size-comparison logic stays exactly the same regardless
-   of which shape is shown.
 ================================================================ */
 
 const ShapeVisual = ({
@@ -123,7 +120,6 @@ const ShapeVisual = ({
     );
   }
 
-  /* triangle */
   const points = `${size / 2},0 ${size},${size} 0,${size}`;
 
   return (
@@ -162,8 +158,7 @@ const SHAPE_TYPES: ShapeType[] = [
 const pickRandomShape = (): ShapeType =>
   SHAPE_TYPES[
     Math.floor(
-      Math.random() *
-        SHAPE_TYPES.length
+      Math.random() * SHAPE_TYPES.length
     )
   ];
 
@@ -180,19 +175,12 @@ type TrialResult = {
 
 type DifficultyConfig = {
   level: number;
-
   nameFa: string;
-
   nameEn: string;
-
   minDifference: number;
-
   maxDifference: number;
-
   timeLimit: number;
-
   baseSize: number;
-
   circleCount: number;
 };
 
@@ -215,23 +203,23 @@ const STORAGE_KEY =
  * Difficulty progression:
  *
  * Level 1:
- *   Easy, but slightly harder than the previous version.
+ *   Easy — 2 shapes with a clearly visible size difference.
  *
  * Level 2:
- *   Smaller size difference.
+ *   Medium — 2 shapes with a smaller size difference.
  *
  * Level 3:
- *   Fine discrimination.
+ *   Precise — 4 shapes with fine size discrimination.
  *
  * Level 4:
- *   Three circles + small size difference.
+ *   Hard — 4 shapes with a small size difference.
  *
  * Level 5:
- *   Four circles + very small size difference.
+ *   Expert — 4 shapes with a very small size difference.
  *
- * The final two levels intentionally contain more
- * visual distractors so the user cannot simply compare
- * two isolated circles.
+ * The final three levels intentionally use four visual
+ * choices so the player must compare multiple objects
+ * instead of relying on a simple two-choice comparison.
  */
 const CONFIGS: DifficultyConfig[] = [
   {
@@ -285,7 +273,7 @@ const CONFIGS: DifficultyConfig[] = [
 
     baseSize: 78,
 
-    circleCount: 2,
+    circleCount: 4,
   },
 
   {
@@ -303,7 +291,7 @@ const CONFIGS: DifficultyConfig[] = [
 
     baseSize: 74,
 
-    circleCount: 3,
+    circleCount: 4,
   },
 
   {
@@ -351,11 +339,13 @@ const getConfig = (
   ];
 
 /*
- * Creates a set of visually similar circle sizes.
+ * Creates a set of visually similar shape sizes.
  *
- * The first value is the largest target.
- * Other circles are deliberately kept close to it
- * on the final two levels.
+ * Exactly one shape is the largest.
+ * All remaining shapes are smaller distractors.
+ *
+ * Higher levels keep distractors increasingly close
+ * to the target size.
  */
 const generateCircleSizes = (
   config: DifficultyConfig,
@@ -372,11 +362,6 @@ const generateCircleSizes = (
     largest,
   ];
 
-  /*
-   * Distractor circles are always smaller than
-   * the target, but increasingly close to it
-   * at higher difficulty levels.
-   */
   for (
     let i = 1;
     i < config.circleCount;
@@ -393,10 +378,15 @@ const generateCircleSizes = (
               0.48,
               0.88
             )
-          : randomBetween(
-              0.20,
-              0.70
-            );
+          : config.level >= 3
+            ? randomBetween(
+                0.35,
+                0.78
+              )
+            : randomBetween(
+                0.20,
+                0.70
+              );
 
     const distractorDifference =
       difference *
@@ -412,8 +402,9 @@ const generateCircleSizes = (
   }
 
   /*
-   * Shuffle the circles so that the largest
-   * circle is not always in the first position.
+   * Randomly distribute the largest shape.
+   * This prevents the correct answer from appearing
+   * in a predictable position.
    */
   for (
     let i =
@@ -559,7 +550,7 @@ export default function SizeDiscriminationScreen() {
               'عملکرد',
 
             startDescription:
-              'در هر مرحله یک شکل تصادفی (دایره، مربع، مثلث یا مستطیل) با اندازه‌های نزدیک به هم نمایش داده می‌شود. شکل بزرگ‌تر را سریع و دقیق انتخاب کن.',
+              'در هر مرحله یک شکل تصادفی (دایره، مربع، مثلث یا مستطیل) با اندازه‌های نزدیک به هم نمایش داده می‌شود. در سطوح بالاتر چهار گزینه نمایش داده می‌شود. شکل بزرگ‌تر را سریع و دقیق انتخاب کن.',
           }
         : {
             title: 'Size Guess',
@@ -661,7 +652,7 @@ export default function SizeDiscriminationScreen() {
               'Performance',
 
             startDescription:
-              'Each round shows a random shape (circle, square, triangle, or rectangle) with similar sizes. Choose the bigger one as quickly and accurately as possible.',
+              'Each round shows a random shape (circle, square, triangle, or rectangle) with similar sizes. Higher levels show four choices. Choose the bigger one as quickly and accurately as possible.',
           },
     [language]
   );
@@ -705,8 +696,8 @@ export default function SizeDiscriminationScreen() {
   );
 
   /*
-   * Instead of only two values, the game now
-   * supports 2 / 3 / 4 circles depending on level.
+   * Easy / Medium -> 2 shapes
+   * Precise / Hard / Expert -> 4 shapes
    */
   const [
     circleSizes,
@@ -948,10 +939,6 @@ export default function SizeDiscriminationScreen() {
         null
       );
 
-      /*
-       * Randomize the difference inside the
-       * current difficulty range.
-       */
       const difference =
         randomBetween(
           config.minDifference,
@@ -965,17 +952,17 @@ export default function SizeDiscriminationScreen() {
         );
 
       /*
-       * Each trial shows a freshly-picked random
-       * shape (circle / square / triangle /
-       * rectangle) so the player can't rely on
-       * memorized shape outlines.
+       * One randomly selected shape type is used
+       * for all choices in the current trial.
+       * This keeps the task focused on size rather
+       * than shape recognition.
        */
       setCurrentShape(
         pickRandomShape()
       );
 
       /*
-       * Find the largest circle after
+       * Find the largest shape after
        * randomization.
        */
       let largestIndex = 0;
@@ -1181,30 +1168,47 @@ export default function SizeDiscriminationScreen() {
 
         await saveGameResult({
           gameId: 'size-discrimination',
+
           gameName:
             language === 'fa'
               ? 'تمایز اندازه'
               : 'Size Discrimination',
+
           timestamp: Date.now(),
-          score: Math.round(accuracy),
+
+          score:
+            Math.round(
+              accuracy
+            ),
 
           metrics: [
             {
               id: 'size_discrimination_accuracy',
+
               label:
                 language === 'fa'
                   ? 'دقت'
                   : 'Accuracy',
-              value: Math.round(accuracy),
+
+              value:
+                Math.round(
+                  accuracy
+                ),
+
               unit: '%',
             },
+
             {
               id: 'size_discrimination_reaction_time',
+
               label:
                 language === 'fa'
                   ? 'زمان پاسخ'
                   : 'Reaction Time',
-              value: avgRt,
+
+              value:
+                avgRt,
+
               unit: 'ms',
             },
           ],
@@ -1337,11 +1341,6 @@ export default function SizeDiscriminationScreen() {
               )
             );
 
-          /*
-           * Harder levels reward slightly more
-           * for correct responses because the
-           * discrimination task is more difficult.
-           */
           const difficultyBonus =
             Math.max(
               0,
@@ -1670,7 +1669,7 @@ export default function SizeDiscriminationScreen() {
             }
           </Text>
 
-          {/* Preview */}
+          {/* PREVIEW */}
 
           <View
             style={[
@@ -1758,7 +1757,7 @@ export default function SizeDiscriminationScreen() {
             </Text>
           </View>
 
-          {/* Adaptive */}
+          {/* ADAPTIVE */}
 
           <View
             style={[
@@ -1835,7 +1834,7 @@ export default function SizeDiscriminationScreen() {
             </View>
           </View>
 
-          {/* Current Level */}
+          {/* CURRENT LEVEL */}
 
           <View
             style={[
@@ -2613,11 +2612,13 @@ export default function SizeDiscriminationScreen() {
   ================================================================= */
 
   /*
-   * We now render a dynamic number of circles.
+   * Shape count:
    *
-   * Level 1-3 -> 2 circles
-   * Level 4   -> 3 circles
-   * Level 5   -> 4 circles
+   * Level 1 -> 2 shapes
+   * Level 2 -> 2 shapes
+   * Level 3 -> 4 shapes
+   * Level 4 -> 4 shapes
+   * Level 5 -> 4 shapes
    */
 
   const renderedCircleSizes =
@@ -2635,14 +2636,21 @@ export default function SizeDiscriminationScreen() {
       72
     );
 
+  /*
+   * Four-choice levels use a compact 2x2 grid.
+   * Two-choice levels keep the original wider layout.
+   */
+  const isFourChoice =
+    config.circleCount >= 4;
+
   const choiceAreaWidth =
-    config.circleCount >= 4
+    isFourChoice
       ? Math.max(
-          78,
+          88,
           Math.min(
-            110,
+            112,
             maxCircleSize +
-              22
+              24
           )
         )
       : Math.max(
@@ -2652,8 +2660,8 @@ export default function SizeDiscriminationScreen() {
         );
 
   const choiceAreaHeight =
-    config.circleCount >= 4
-      ? 170
+    isFourChoice
+      ? 156
       : 190;
 
   const timerWidth =
@@ -2939,16 +2947,17 @@ export default function SizeDiscriminationScreen() {
             styles.circleRow,
             {
               flexWrap:
-                config.circleCount >=
-                4
+                isFourChoice
                   ? 'wrap'
                   : 'nowrap',
 
               maxWidth:
-                config.circleCount >=
-                4
-                  ? 370
+                isFourChoice
+                  ? 360
                   : '100%',
+
+              alignSelf:
+                'center',
 
               transform: [
                 {
@@ -3006,15 +3015,13 @@ export default function SizeDiscriminationScreen() {
                         choiceAreaHeight,
 
                       marginHorizontal:
-                        config.circleCount >=
-                        4
+                        isFourChoice
                           ? 4
                           : 0,
 
                       marginVertical:
-                        config.circleCount >=
-                        4
-                          ? 2
+                        isFourChoice
+                          ? 3
                           : 0,
                     },
                   ]}
@@ -3986,6 +3993,9 @@ const styles =
 
       overflow:
         'hidden',
+
+      borderRadius:
+        BorderRadius.lg,
     },
 
     circle: {
