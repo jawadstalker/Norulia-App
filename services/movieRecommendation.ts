@@ -1,4 +1,3 @@
-
 import { GameResult } from '../app/games/gameResults';
 
 /**
@@ -17,16 +16,21 @@ import { GameResult } from '../app/games/gameResults';
  * Authentication:
  * X-API-Key
  *
- * Current response format:
+ * Current response format (bilingual):
  *
  * {
  *   "success": true,
  *   "recommendations": [
  *     {
  *       "movie_id": 497,
- *       "title": "The Green Mile",
- *       "overview": "...",
- *       "genres": ["Drama", "Fantasy"],
+ *       "title_en": "The Green Mile",
+ *       "title_fa": "مسیر سبز",
+ *       "overview_en": "...",
+ *       "overview_fa": "...",
+ *       "genres_en": ["Drama", "Fantasy"],
+ *       "genres_fa": ["درام", "فانتزی"],
+ *       "reason_en": "Recommended because...",
+ *       "reason_fa": "توصیه می‌شود زیرا...",
  *       "similarity": 0.3667,
  *       "matched_tags": ["emotional", "thoughtful"]
  *     }
@@ -88,15 +92,31 @@ const REQUEST_TIMEOUT_MS = 45000;
 
 /**
  * ============================================================================
- * MOVIE RECOMMENDATION
+ * MOVIE RECOMMENDATION (BILINGUAL)
  * ============================================================================
  */
 
 export type MovieRecommendation = {
   movieId: number;
+
+  // English
+  titleEn: string;
+  overviewEn: string;
+  genresEn: string[];
+  reasonEn: string;
+
+  // Persian
+  titleFa: string;
+  overviewFa: string;
+  genresFa: string[];
+  reasonFa: string;
+
+  // Current language (based on language param)
   title: string;
   overview: string;
   genres: string[];
+  reason: string;
+
   similarity: number;
   matchedTags: string[];
 };
@@ -159,25 +179,37 @@ export type MovieRecommendationResponse = {
 
 type MovieRecommendationRequest = {
   games: GameResult[];
-
   top_k: number;
+  language: 'fa' | 'en';
 };
 
 
 /**
  * ============================================================================
- * RAW API MOVIE
+ * RAW API MOVIE (BILINGUAL)
  * ============================================================================
  */
 
 type RawMovieRecommendation = {
   movie_id?: number | string;
 
+  // Old / compatibility
   title?: string;
-
   overview?: string;
-
   genres?: string[] | string;
+  reason?: string;
+
+  // English
+  title_en?: string;
+  overview_en?: string;
+  genres_en?: string[] | string;
+  reason_en?: string;
+
+  // Persian
+  title_fa?: string;
+  overview_fa?: string;
+  genres_fa?: string[] | string;
+  reason_fa?: string;
 
   similarity?: number | string;
 
@@ -196,15 +228,10 @@ type RawMovieRecommendationProfile = {
 
   dimensions?: {
     processing_speed?: number | string;
-
     attention?: number | string;
-
     memory?: number | string;
-
     motor_accuracy?: number | string;
-
     resilience?: number | string;
-
     reasoning?: number | string;
   };
 
@@ -284,24 +311,13 @@ function safeNumber(
 
 /**
  * ============================================================================
- * NORMALIZE MOVIE
+ * NORMALIZE MOVIE (BILINGUAL)
  * ============================================================================
- *
- * Converts:
- *
- * movie_id
- * matched_tags
- *
- * into:
- *
- * movieId
- * matchedTags
- *
- * for React Native.
  */
 
 function normalizeMovie(
-  movie: RawMovieRecommendation
+  movie: RawMovieRecommendation,
+  language: 'fa' | 'en'
 ): MovieRecommendation | null {
   if (
     !movie ||
@@ -310,51 +326,70 @@ function normalizeMovie(
     return null;
   }
 
-  const title =
-    typeof movie.title === 'string'
-      ? movie.title.trim()
-      : '';
-
-  /**
-   * A movie without a title is unusable by the UI.
-   */
-  if (!title) {
-    return null;
-  }
-
-  /**
-   * Movie ID.
-   */
   const movieId = safeNumber(
     movie.movie_id,
     0
   );
 
-  /**
-   * Overview.
-   */
-  const overview =
-    typeof movie.overview === 'string'
-      ? movie.overview.trim()
-      : '';
+  // ==========================================================
+  // ENGLISH
+  // ==========================================================
 
-  /**
-   * Similarity.
-   */
-  const similarity = safeNumber(
-    movie.similarity,
-    0
-  );
+  const titleEn =
+    typeof movie.title_en === 'string'
+      ? movie.title_en.trim()
+      : typeof movie.title === 'string'
+        ? movie.title.trim()
+        : '';
 
-  /**
-   * Genres.
-   */
-  let genres: string[] = [];
+  const overviewEn =
+    typeof movie.overview_en === 'string'
+      ? movie.overview_en.trim()
+      : typeof movie.overview === 'string'
+        ? movie.overview.trim()
+        : '';
+
+  const reasonEn =
+    typeof movie.reason_en === 'string'
+      ? movie.reason_en.trim()
+      : typeof movie.reason === 'string'
+        ? movie.reason.trim()
+        : '';
+
+  // ==========================================================
+  // PERSIAN
+  // ==========================================================
+
+  const titleFa =
+    typeof movie.title_fa === 'string'
+      ? movie.title_fa.trim()
+      : titleEn;
+
+  const overviewFa =
+    typeof movie.overview_fa === 'string'
+      ? movie.overview_fa.trim()
+      : overviewEn;
+
+  const reasonFa =
+    typeof movie.reason_fa === 'string'
+      ? movie.reason_fa.trim()
+      : reasonEn;
+
+  // ==========================================================
+  // ENGLISH GENRES
+  // ==========================================================
+
+  let genresEn: string[] = [];
+
+  const rawGenresEn =
+    movie.genres_en ??
+    movie.genres ??
+    [];
 
   if (
-    Array.isArray(movie.genres)
+    Array.isArray(rawGenresEn)
   ) {
-    genres = movie.genres
+    genresEn = rawGenresEn
       .filter(
         (
           genre
@@ -366,9 +401,9 @@ function normalizeMovie(
       )
       .filter(Boolean);
   } else if (
-    typeof movie.genres === 'string'
+    typeof rawGenresEn === 'string'
   ) {
-    genres = movie.genres
+    genresEn = rawGenresEn
       .split(',')
       .map(
         genre => genre.trim()
@@ -376,9 +411,87 @@ function normalizeMovie(
       .filter(Boolean);
   }
 
-  /**
-   * Matched tags.
-   */
+  // ==========================================================
+  // PERSIAN GENRES
+  // ==========================================================
+
+  let genresFa: string[] = [];
+
+  const rawGenresFa =
+    movie.genres_fa ??
+    [];
+
+  if (
+    Array.isArray(rawGenresFa)
+  ) {
+    genresFa = rawGenresFa
+      .filter(
+        (
+          genre
+        ): genre is string =>
+          typeof genre === 'string'
+      )
+      .map(
+        genre => genre.trim()
+      )
+      .filter(Boolean);
+  } else if (
+    typeof rawGenresFa === 'string'
+  ) {
+    genresFa = rawGenresFa
+      .split(',')
+      .map(
+        genre => genre.trim()
+      )
+      .filter(Boolean);
+  }
+
+  // ==========================================================
+  // FALLBACK
+  // ==========================================================
+
+  if (
+    genresFa.length === 0 &&
+    genresEn.length > 0
+  ) {
+    genresFa = genresEn;
+  }
+
+  if (!titleEn && !titleFa) {
+    return null;
+  }
+
+  // ==========================================================
+  // CURRENT LANGUAGE
+  // ==========================================================
+
+  const isPersian =
+    language === 'fa';
+
+  const title =
+    isPersian
+      ? titleFa
+      : titleEn;
+
+  const overview =
+    isPersian
+      ? overviewFa
+      : overviewEn;
+
+  const genres =
+    isPersian
+      ? genresFa
+      : genresEn;
+
+  const reason =
+    isPersian
+      ? reasonFa
+      : reasonEn;
+
+  // ==========================================================
+  // MATCHED TAGS
+  // ==========================================================
+
   const matchedTags =
     Array.isArray(
       movie.matched_tags
@@ -396,12 +509,34 @@ function normalizeMovie(
           .filter(Boolean)
       : [];
 
+  // ==========================================================
+  // RETURN
+  // ==========================================================
+
   return {
     movieId,
+
+    titleEn,
+    overviewEn,
+    genresEn,
+    reasonEn,
+
+    titleFa,
+    overviewFa,
+    genresFa,
+    reasonFa,
+
     title,
     overview,
     genres,
-    similarity,
+    reason,
+
+    similarity:
+      safeNumber(
+        movie.similarity,
+        0
+      ),
+
     matchedTags,
   };
 }
@@ -573,11 +708,13 @@ function validateGames(
 
 function buildRequest(
   games: GameResult[],
-  topK: number
+  topK: number,
+  language: 'fa' | 'en'
 ): MovieRecommendationRequest {
   return {
     games,
     top_k: normalizeTopK(topK),
+    language,
   };
 }
 
@@ -596,7 +733,8 @@ function buildRequest(
 
 async function requestMovieAPI(
   games: GameResult[],
-  topK: number
+  topK: number,
+  language: 'fa' | 'en'
 ): Promise<RawMovieRecommendationResponse> {
   validateGames(games);
 
@@ -606,13 +744,12 @@ async function requestMovieAPI(
   const payload =
     buildRequest(
       games,
-      safeTopK
+      safeTopK,
+      language
     );
 
   const endpoint =
     `${MOVIE_API_URL.replace(/\/+$/, '')}/recommend`;
-
-
 
   console.log(
     '[MovieRecommendation] Request:',
@@ -620,6 +757,7 @@ async function requestMovieAPI(
       endpoint,
       games: games.length,
       topK: safeTopK,
+      language,
     }
   );
 
@@ -825,7 +963,8 @@ async function requestMovieAPI(
  * const result =
  *   await getMovieRecommendationResult(
  *     gameResults,
- *     3
+ *     3,
+ *     "fa"
  *   );
  *
  * result.recommendations
@@ -837,7 +976,8 @@ async function requestMovieAPI(
 
 export async function getMovieRecommendationResult(
   games: GameResult[],
-  topK: number = DEFAULT_TOP_K
+  topK: number = DEFAULT_TOP_K,
+  language: 'fa' | 'en' = 'en'
 ): Promise<MovieRecommendationResponse> {
   validateGames(games);
 
@@ -847,11 +987,12 @@ export async function getMovieRecommendationResult(
   const data =
     await requestMovieAPI(
       games,
-      safeTopK
+      safeTopK,
+      language
     );
 
   /**
-   * Normalize movies.
+   * Normalize movies with language.
    */
   const rawRecommendations =
     Array.isArray(
@@ -863,7 +1004,11 @@ export async function getMovieRecommendationResult(
   const recommendations =
     rawRecommendations
       .map(
-        normalizeMovie
+        movie =>
+          normalizeMovie(
+            movie,
+            language
+          )
       )
       .filter(
         (
@@ -906,6 +1051,7 @@ export async function getMovieRecommendationResult(
         returnedTopK,
       profileLoaded:
         profile !== null,
+      language,
     }
   );
 
@@ -955,12 +1101,14 @@ export async function getMovieRecommendationResult(
 
 export async function getMovieRecommendations(
   games: GameResult[],
-  topK: number = DEFAULT_TOP_K
+  topK: number = DEFAULT_TOP_K,
+  language: 'fa' | 'en' = 'en'
 ): Promise<MovieRecommendation[]> {
   const result =
     await getMovieRecommendationResult(
       games,
-      topK
+      topK,
+      language
     );
 
   return result.recommendations;
@@ -979,11 +1127,13 @@ export async function getMovieRecommendations(
 
 export async function getTopMovieRecommendations(
   games: GameResult[],
-  topK: number = DEFAULT_TOP_K
+  topK: number = DEFAULT_TOP_K,
+  language: 'fa' | 'en' = 'en'
 ): Promise<MovieRecommendation[]> {
   return getMovieRecommendations(
     games,
-    topK
+    topK,
+    language
   );
 }
 
@@ -1002,13 +1152,14 @@ export async function getTopMovieRecommendations(
  * {
  *   "status": "ok",
  *   "service": "norulia-movie-recommendation",
- *   "version": "2.0.0",
+ *   "version": "3.0.0",
  *   "authentication": true,
  *   "engine_loaded": true,
- *   "minimum_games": 3
+ *   "minimum_games": 3,
+ *   "bilingual": true
  * }
  *
- * We accept both the new v2 response and the older health response
+ * We accept both the new v3 response and the older health response
  * so the app does not unnecessarily fail during development.
  *
  * ============================================================================
@@ -1056,10 +1207,21 @@ export async function checkMovieRecommendationHealth(): Promise<boolean> {
       await response.json();
 
     /**
-     * Current API:
+     * Current API (v3):
      *
-     * status = ok
+     * status = healthy
      * engine_loaded = true
+     * bilingual = true
+     */
+    if (
+      data?.status === 'healthy' &&
+      data?.engine_loaded === true
+    ) {
+      return true;
+    }
+
+    /**
+     * Backward compatibility with v2 API.
      */
     if (
       data?.status === 'ok' &&
@@ -1069,7 +1231,7 @@ export async function checkMovieRecommendationHealth(): Promise<boolean> {
     }
 
     /**
-     * Backward compatibility with the old API.
+     * Backward compatibility with older API.
      */
     if (
       data?.status === 'ok' &&
@@ -1133,6 +1295,8 @@ export type MovieRecommendationHealth = {
   engineLoaded?: boolean;
 
   minimumGames?: number;
+
+  bilingual?: boolean;
 
   error?: string;
 };
@@ -1198,6 +1362,7 @@ export async function getMovieRecommendationHealth(): Promise<MovieRecommendatio
 
     return {
       reachable:
+        data?.status === 'healthy' ||
         data?.status === 'ok',
 
       status:
@@ -1220,6 +1385,9 @@ export async function getMovieRecommendationHealth(): Promise<MovieRecommendatio
           data?.minimum_games,
           MINIMUM_GAMES
         ),
+
+      bilingual:
+        data?.bilingual === true,
     };
   } catch (error) {
     clearTimeout(timeoutId);
@@ -1234,4 +1402,3 @@ export async function getMovieRecommendationHealth(): Promise<MovieRecommendatio
     };
   }
 }
-

@@ -1,4 +1,3 @@
-
 import React, {
   useCallback,
   useEffect,
@@ -147,7 +146,7 @@ function getMovieGenres(
         );
     }
   } catch {
-    // The value may simply be a comma-separated string.
+    // Comma-separated fallback.
   }
 
   return trimmed
@@ -236,7 +235,8 @@ export default function GameResultsScreen({
       language === 'fa'
         ? {
             title: 'نتایج عملکرد',
-            subtitle: 'تحلیل عملکرد بازی‌های شما',
+            subtitle:
+              'تحلیل عملکرد بازی‌های شما',
             latest: 'آخرین نتیجه',
             allResults: 'سابقه بازی‌ها',
             noResults:
@@ -250,27 +250,33 @@ export default function GameResultsScreen({
             performance: 'عملکرد',
             excellent: 'عملکرد عالی',
             good: 'عملکرد خوب',
-            needsPractice: 'نیاز به تمرین',
+            needsPractice:
+              'نیاز به تمرین',
             visualFlow: 'جریان بصری',
             completed: 'تکمیل شد',
-            viewDetails: 'مشاهده جزئیات',
+            viewDetails:
+              'مشاهده جزئیات',
             today: 'امروز',
             yesterday: 'دیروز',
             daysAgo: 'روز پیش',
             seconds: 'ثانیه',
-            milliseconds: 'میلی‌ثانیه',
+            milliseconds:
+              'میلی‌ثانیه',
             outOf: 'از',
             cognitiveProfile:
               'پروفایل عملکرد شناختی',
-            strongest: 'قوی‌ترین حوزه',
+            strongest:
+              'قوی‌ترین حوزه',
             needsImprovement:
               'نیازمند بهبود',
             overall: 'عملکرد کلی',
-            gamesPlayed: 'بازی انجام‌شده',
+            gamesPlayed:
+              'بازی انجام‌شده',
             refresh: 'به‌روزرسانی',
             back: 'بازگشت',
             game: 'بازی',
-            metrics: 'شاخص‌های عملکرد',
+            metrics:
+              'شاخص‌های عملکرد',
             noMetric:
               'اطلاعات عملکردی ثبت نشده است.',
             exportData:
@@ -281,7 +287,8 @@ export default function GameResultsScreen({
               'ذخیره فایل نتایج با خطا مواجه شد.',
             exportEmpty:
               'هنوز داده‌ای برای دانلود وجود ندارد.',
-            cancelled: 'ذخیره فایل لغو شد.',
+            cancelled:
+              'ذخیره فایل لغو شد.',
             movieTitle:
               'پیشنهاد فیلم برای شما',
             movieSubtitle:
@@ -292,18 +299,26 @@ export default function GameResultsScreen({
               'برای دریافت پیشنهاد فیلم، حداقل ۳ بازی متفاوت انجام دهید.',
             movieError:
               'دریافت پیشنهاد فیلم در حال حاضر امکان‌پذیر نیست.',
-            movieRetry: 'تلاش دوباره',
+            movieRetry:
+              'تلاش دوباره',
             movieEmpty:
               'هنوز فیلمی برای پیشنهاد پیدا نشد.',
-            movieSimilarity: 'تناسب',
-            movieOverview: 'درباره فیلم',
-            movieGenres: 'ژانر',
-            movieId: 'شناسه فیلم',
+            movieSimilarity:
+              'تناسب',
+            movieOverview:
+              'درباره فیلم',
+            movieGenres:
+              'ژانر',
+            movieReason:
+              'چرا این فیلم پیشنهاد شده؟',
+            movieId:
+              'شناسه فیلم',
             movieMatchedTags:
-              'دلیل پیشنهاد',
+              'ویژگی‌های مرتبط',
             recommendationReady:
               'پیشنهادهای شخصی‌سازی‌شده',
-            gamesRequired: 'بازی دیگر',
+            gamesRequired:
+              'بازی دیگر',
             gamesProgress:
               'بازی متفاوت تکمیل شده',
             allGamesCompleted:
@@ -312,44 +327,68 @@ export default function GameResultsScreen({
               'اتصال به سرویس پیشنهاد فیلم برقرار نشد.',
           }
         : {
-            title: 'Performance Results',
+            title:
+              'Performance Results',
             subtitle:
               'Your game performance analysis',
-            latest: 'Latest Result',
-            allResults: 'Game History',
-            noResults: 'No results yet.',
+            latest:
+              'Latest Result',
+            allResults:
+              'Game History',
+            noResults:
+              'No results yet.',
             noResultsDescription:
               'Complete a game to see your performance data here.',
-            startGame: 'Start a Game',
+            startGame:
+              'Start a Game',
             score: 'Score',
-            accuracy: 'Accuracy',
-            responseTime: 'Response Time',
-            performance: 'Performance',
+            accuracy:
+              'Accuracy',
+            responseTime:
+              'Response Time',
+            performance:
+              'Performance',
             excellent:
               'Excellent Performance',
-            good: 'Good Performance',
+            good:
+              'Good Performance',
             needsPractice:
               'Needs Practice',
-            visualFlow: 'Visual Flow',
-            completed: 'Completed',
-            viewDetails: 'View Details',
+            visualFlow:
+              'Visual Flow',
+            completed:
+              'Completed',
+            viewDetails:
+              'View Details',
             today: 'Today',
-            yesterday: 'Yesterday',
-            daysAgo: 'days ago',
-            seconds: 'seconds',
-            milliseconds: 'ms',
-            outOf: 'out of',
+            yesterday:
+              'Yesterday',
+            daysAgo:
+              'days ago',
+            seconds:
+              'seconds',
+            milliseconds:
+              'ms',
+            outOf:
+              'out of',
             cognitiveProfile:
               'Cognitive Performance Profile',
-            strongest: 'Strongest Area',
+            strongest:
+              'Strongest Area',
             needsImprovement:
               'Needs Improvement',
-            overall: 'Overall Performance',
-            gamesPlayed: 'Games Played',
-            refresh: 'Refresh',
-            back: 'Back',
-            game: 'Game',
-            metrics: 'Performance Metrics',
+            overall:
+              'Overall Performance',
+            gamesPlayed:
+              'Games Played',
+            refresh:
+              'Refresh',
+            back:
+              'Back',
+            game:
+              'Game',
+            metrics:
+              'Performance Metrics',
             noMetric:
               'No performance data recorded.',
             exportData:
@@ -372,18 +411,26 @@ export default function GameResultsScreen({
               'Complete at least 3 different games to receive movie recommendations.',
             movieError:
               'Movie recommendations are currently unavailable.',
-            movieRetry: 'Try Again',
+            movieRetry:
+              'Try Again',
             movieEmpty:
               'No movie recommendations were found.',
-            movieSimilarity: 'Match',
-            movieOverview: 'About the movie',
-            movieGenres: 'Genres',
-            movieId: 'Movie ID',
+            movieSimilarity:
+              'Match',
+            movieOverview:
+              'About the movie',
+            movieGenres:
+              'Genres',
+            movieReason:
+              'Why this movie was recommended',
+            movieId:
+              'Movie ID',
             movieMatchedTags:
-              'Why this was recommended',
+              'Related traits',
             recommendationReady:
               'Personalized Recommendations',
-            gamesRequired: 'more games',
+            gamesRequired:
+              'more games',
             gamesProgress:
               'different games completed',
             allGamesCompleted:
@@ -473,32 +520,46 @@ export default function GameResultsScreen({
 
   const movieRequestSignature =
     useMemo(() => {
-      return results
-        .map((result) => ({
-          gameId:
-            normalizeGameId(
-              result.gameId
-            ),
-          timestamp:
-            result.timestamp,
-          score: result.score,
-          metrics:
-            result.metrics,
-        }))
-        .sort(
-          (a, b) =>
-            Number(
-              a.timestamp || 0
-            ) -
-            Number(
-              b.timestamp || 0
-            )
-        )
-        .map((item) =>
-          JSON.stringify(item)
-        )
-        .join('|');
-    }, [results]);
+      return [
+        language,
+        ...results
+          .map((result) => ({
+            gameId:
+              normalizeGameId(
+                result.gameId
+              ),
+            timestamp:
+              result.timestamp,
+            score:
+              result.score,
+            metrics:
+              result.metrics,
+          }))
+          .sort(
+            (a, b) =>
+              Number(
+                a.timestamp || 0
+              ) -
+              Number(
+                b.timestamp || 0
+              )
+          )
+          .map((item) =>
+            JSON.stringify(item)
+          ),
+      ].join('|');
+    }, [
+      results,
+      language,
+    ]);
+
+  useEffect(() => {
+    setMovieRecommendations([]);
+    setMovieError(null);
+
+    movieRequestedSignatureRef.current =
+      null;
+  }, [language]);
 
   const requestMovieRecommendations =
     useCallback(
@@ -542,6 +603,7 @@ export default function GameResultsScreen({
                 results.length,
               differentGames:
                 completedGamesCount,
+              language,
               signature:
                 movieRequestSignature,
             }
@@ -550,7 +612,10 @@ export default function GameResultsScreen({
           const recommendations =
             await getMovieRecommendations(
               results,
-              3
+              3,
+              language === 'fa'
+                ? 'fa'
+                : 'en'
             );
 
           const normalizedRecommendations =
@@ -627,6 +692,7 @@ export default function GameResultsScreen({
         hasEnoughGamesForMovies,
         results,
         completedGamesCount,
+        language,
         movieRequestSignature,
         text.noConnection,
       ]
@@ -668,7 +734,8 @@ export default function GameResultsScreen({
       return {
         exportedAt:
           new Date().toISOString(),
-        count: results.length,
+        count:
+          results.length,
         results,
       };
     }, [results]);
@@ -1116,7 +1183,8 @@ export default function GameResultsScreen({
           style={[
             styles.loadingText,
             {
-              color: colors.text,
+              color:
+                colors.text,
             },
           ]}
         >
@@ -1162,7 +1230,9 @@ export default function GameResultsScreen({
           >
             <Gamepad2
               size={42}
-              color={colors.primary}
+              color={
+                colors.primary
+              }
             />
           </View>
 
@@ -1170,7 +1240,8 @@ export default function GameResultsScreen({
             style={[
               styles.emptyTitle,
               {
-                color: colors.text,
+                color:
+                  colors.text,
               },
             ]}
           >
@@ -1254,14 +1325,14 @@ export default function GameResultsScreen({
       >
         {/* ======================================================
             HEADER
-            BACK BUTTON IS ALWAYS ON THE LEFT
            ====================================================== */}
 
         <View
           style={[
             styles.header,
             {
-              flexDirection: 'row',
+              flexDirection:
+                'row',
             },
           ]}
         >
@@ -1282,7 +1353,9 @@ export default function GameResultsScreen({
           >
             <ArrowLeft
               size={21}
-              color={colors.text}
+              color={
+                colors.text
+              }
             />
           </TouchableOpacity>
 
@@ -1831,6 +1904,12 @@ export default function GameResultsScreen({
                           movie.matchedTags
                         );
 
+                      const reason =
+                        typeof movie.reason ===
+                        'string'
+                          ? movie.reason.trim()
+                          : '';
+
                       return (
                         <View
                           key={`${movie.movieId}-${index}`}
@@ -1879,6 +1958,7 @@ export default function GameResultsScreen({
                               styles.movieContent
                             }
                           >
+                            {/* MOVIE TITLE - ALWAYS ENGLISH */}
                             <View
                               style={[
                                 styles.movieNameRow,
@@ -1900,15 +1980,11 @@ export default function GameResultsScreen({
                                     color:
                                       colors.text,
                                     textAlign:
-                                      isRTL
-                                        ? 'right'
-                                        : 'left',
+                                      'left',
                                   },
                                 ]}
                               >
-                                {
-                                  movie.title
-                                }
+                                {movie.titleEn}
                               </Text>
 
                               <View
@@ -1937,6 +2013,7 @@ export default function GameResultsScreen({
                               </View>
                             </View>
 
+                            {/* GENRES */}
                             {genres.length >
                               0 && (
                               <View
@@ -1991,22 +2068,46 @@ export default function GameResultsScreen({
                               </View>
                             )}
 
-                            {matchedTags.length >
-                              0 && (
+                            {/* WHY RECOMMENDED */}
+                            {reason && (
                               <View
                                 style={[
-                                  styles.matchedTagsContainer,
+                                  styles.reasonContainer,
                                   {
                                     alignItems:
                                       isRTL
                                         ? 'flex-end'
                                         : 'flex-start',
+                                    backgroundColor:
+                                      colors.primary +
+                                      '08',
+                                    borderColor:
+                                      colors.primary +
+                                      '20',
                                   },
                                 ]}
                               >
                                 <Text
                                   style={[
-                                    styles.matchedTagsLabel,
+                                    styles.reasonLabel,
+                                    {
+                                      color:
+                                        colors.primary,
+                                      textAlign:
+                                        isRTL
+                                          ? 'right'
+                                          : 'left',
+                                    },
+                                  ]}
+                                >
+                                  {
+                                    text.movieReason
+                                  }
+                                </Text>
+
+                                <Text
+                                  style={[
+                                    styles.reasonText,
                                     {
                                       color:
                                         colors.textSecondary,
@@ -2018,96 +2119,154 @@ export default function GameResultsScreen({
                                   ]}
                                 >
                                   {
-                                    text.movieMatchedTags
+                                    reason
                                   }
                                 </Text>
-
-                                <View
-                                  style={[
-                                    styles.genreRow,
-                                    {
-                                      flexDirection:
-                                        isRTL
-                                          ? 'row-reverse'
-                                          : 'row',
-                                    },
-                                  ]}
-                                >
-                                  {matchedTags
-                                    .slice(
-                                      0,
-                                      4
-                                    )
-                                    .map(
-                                      (
-                                        tag,
-                                        tagIndex
-                                      ) => (
-                                        <View
-                                          key={`${tag}-${tagIndex}`}
-                                          style={[
-                                            styles.tagChip,
-                                            {
-                                              backgroundColor:
-                                                colors.primary +
-                                                '12',
-                                              borderColor:
-                                                colors.primary +
-                                                '35',
-                                            },
-                                          ]}
-                                        >
-                                          <Text
-                                            style={[
-                                              styles.tagText,
-                                              {
-                                                color:
-                                                  colors.primary,
-                                              },
-                                            ]}
-                                          >
-                                            {
-                                              tag
-                                            }
-                                          </Text>
-                                        </View>
-                                      )
-                                    )}
-                                </View>
                               </View>
                             )}
 
+                            {/* MATCHED TAGS - ONLY IN ENGLISH */}
+                            {language === 'en' &&
+                              matchedTags.length >
+                                0 && (
+                                <View
+                                  style={[
+                                    styles.matchedTagsContainer,
+                                    {
+                                      alignItems:
+                                        'flex-start',
+                                    },
+                                  ]}
+                                >
+                                  <Text
+                                    style={[
+                                      styles.matchedTagsLabel,
+                                      {
+                                        color:
+                                          colors.textSecondary,
+                                        textAlign:
+                                          'left',
+                                      },
+                                    ]}
+                                  >
+                                    {
+                                      text.movieMatchedTags
+                                    }
+                                  </Text>
+
+                                  <View
+                                    style={[
+                                      styles.genreRow,
+                                      {
+                                        flexDirection:
+                                          'row',
+                                      },
+                                    ]}
+                                  >
+                                    {matchedTags
+                                      .slice(
+                                        0,
+                                        4
+                                      )
+                                      .map(
+                                        (
+                                          tag,
+                                          tagIndex
+                                        ) => (
+                                          <View
+                                            key={`${tag}-${tagIndex}`}
+                                            style={[
+                                              styles.tagChip,
+                                              {
+                                                backgroundColor:
+                                                  colors.primary +
+                                                  '12',
+                                                borderColor:
+                                                  colors.primary +
+                                                  '35',
+                                              },
+                                            ]}
+                                          >
+                                            <Text
+                                              style={[
+                                                styles.tagText,
+                                                {
+                                                  color:
+                                                    colors.primary,
+                                                },
+                                              ]}
+                                            >
+                                              {
+                                                tag
+                                              }
+                                            </Text>
+                                          </View>
+                                        )
+                                      )}
+                                  </View>
+                                </View>
+                              )}
+
+                            {/* OVERVIEW */}
                             {movie.overview ? (
-                              <Text
-                                style={[
-                                  styles.movieOverview,
-                                  {
-                                    color:
-                                      colors.textSecondary,
-                                    textAlign:
-                                      isRTL
-                                        ? 'right'
-                                        : 'left',
-                                  },
-                                ]}
-                                numberOfLines={
-                                  4
+                              <View
+                                style={
+                                  styles.overviewContainer
                                 }
                               >
-                                {
-                                  movie.overview
-                                }
-                              </Text>
+                                <Text
+                                  style={[
+                                    styles.overviewLabel,
+                                    {
+                                      color:
+                                        colors.text,
+                                      textAlign:
+                                        isRTL
+                                          ? 'right'
+                                          : 'left',
+                                    },
+                                  ]}
+                                >
+                                  {
+                                    text.movieOverview
+                                  }
+                                </Text>
+
+                                <Text
+                                  style={[
+                                    styles.movieOverview,
+                                    {
+                                      color:
+                                        colors.textSecondary,
+                                      textAlign:
+                                        isRTL
+                                          ? 'right'
+                                          : 'left',
+                                    },
+                                  ]}
+                                  numberOfLines={
+                                    5
+                                  }
+                                >
+                                  {
+                                    movie.overview
+                                  }
+                                </Text>
+                              </View>
                             ) : null}
 
+                            {/* META - LEFT ALIGNED */}
                             <View
                               style={[
                                 styles.movieMeta,
                                 {
                                   flexDirection:
-                                    isRTL
-                                      ? 'row-reverse'
-                                      : 'row',
+                                    'row',
+                                  justifyContent:
+                                    'space-between',
+                                  alignItems:
+                                    'center',
+                                  marginTop: 11,
                                 },
                               ]}
                             >
@@ -2117,16 +2276,13 @@ export default function GameResultsScreen({
                                   {
                                     color:
                                       colors.textSecondary,
+                                    textAlign:
+                                      'left',
                                   },
                                 ]}
                               >
-                                {
-                                  text.movieId
-                                }
-                                :{' '}
-                                {
-                                  movie.movieId
-                                }
+                                {text.movieId}:{' '}
+                                {movie.movieId}
                               </Text>
 
                               <Text
@@ -2135,12 +2291,12 @@ export default function GameResultsScreen({
                                   {
                                     color:
                                       colors.primary,
+                                    textAlign:
+                                      'right',
                                   },
                                 ]}
                               >
-                                {
-                                  text.movieSimilarity
-                                }{' '}
+                                {text.movieSimilarity}{' '}
                                 {formatSimilarity(
                                   movie.similarity
                                 )}
@@ -2731,7 +2887,7 @@ const styles =
     },
 
     header: {
-      paddingTop:20,
+      paddingTop: 20,
       alignItems:
         'center',
       marginBottom: 20,
@@ -3077,6 +3233,27 @@ const styles =
       fontWeight: '600',
     },
 
+    reasonContainer: {
+      width: '100%',
+      borderWidth: 1,
+      borderRadius: 12,
+      padding: 11,
+      marginTop: 10,
+    },
+
+    reasonLabel: {
+      width: '100%',
+      fontSize: 10,
+      fontWeight: '800',
+      marginBottom: 5,
+    },
+
+    reasonText: {
+      width: '100%',
+      fontSize: 12,
+      lineHeight: 19,
+    },
+
     matchedTagsContainer: {
       marginTop: 9,
       width: '100%',
@@ -3100,17 +3277,27 @@ const styles =
       fontWeight: '700',
     },
 
-    movieOverview: {
-      fontSize: 12,
-      lineHeight: 19,
+    overviewContainer: {
+      width: '100%',
       marginTop: 10,
     },
 
+    overviewLabel: {
+      fontSize: 11,
+      fontWeight: '800',
+      marginBottom: 4,
+    },
+
+    movieOverview: {
+      fontSize: 12,
+      lineHeight: 19,
+    },
+
     movieMeta: {
-      justifyContent:
-        'space-between',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
       marginTop: 11,
-      gap: 8,
     },
 
     movieMetaText: {
@@ -3260,4 +3447,3 @@ const styles =
       height: 20,
     },
   });
-

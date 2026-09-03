@@ -396,7 +396,7 @@ export default function BilingualSequenceScreen() {
   ).current;
 
   const opacity = useRef(
-    new Animated.Value(0),
+    new Animated.Value(1),
   ).current;
 
   const progress = useRef(
@@ -606,10 +606,13 @@ export default function BilingualSequenceScreen() {
   }, [appLanguage]);
 
   const animateCard = useCallback(() => {
+    // نکته: opacity دیگر هرگز روی 0 ست نمی‌شود تا کلمات همیشه
+    // به‌صورت پیش‌فرض قابل‌مشاهده باشند، حتی اگر انیمیشن روی
+    // بیلد native (به‌خصوص با New Architecture) اجرا نشود یا گیر کند.
     scale.setValue(0.86);
-    opacity.setValue(0);
+    opacity.setValue(0.4);
 
-    Animated.parallel([
+    const animation = Animated.parallel([
       Animated.spring(scale, {
         toValue: 1,
         useNativeDriver: true,
@@ -622,7 +625,18 @@ export default function BilingualSequenceScreen() {
         easing: Easing.out(Easing.ease),
         useNativeDriver: true,
       }),
-    ]).start();
+    ]);
+
+    animation.start();
+
+    // Safety net: اگر به هر دلیلی (مثلاً تداخل Animated کلاسیک با
+    // react-native-reanimated روی Fabric) انیمیشن native کامل
+    // نشود، بعد از مهلت کوتاهی opacity/scale را دستی روی مقدار
+    // نهایی قفل می‌کنیم تا کلمه هیچ‌وقت نامرئی نماند.
+    setTimeout(() => {
+      opacity.setValue(1);
+      scale.setValue(1);
+    }, 500);
   }, [opacity, scale]);
 
   const animateProgress = useCallback(

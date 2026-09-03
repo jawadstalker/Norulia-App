@@ -65,7 +65,7 @@ const bilingualGames = [
     route: '/games/stroop',
   },
   {
-    id: 'language-challenge',
+    id: 'analogram',
     title: 'Analogram',
     titleFa: 'آنالوگرام',
     description: 'Improve vocabulary and language recognition',
