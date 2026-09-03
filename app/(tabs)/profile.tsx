@@ -71,7 +71,6 @@ export default function ProfileScreen() {
       icon: Star,
     },
   ];
-
   return (
     <ScrollView
       style={[

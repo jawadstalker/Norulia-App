@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+
 import {
   View,
   Text,
@@ -6,13 +12,11 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Dimensions,
-  SafeAreaView,
   ActivityIndicator,
   Image,
 } from 'react-native';
+
 import { MotiView } from 'moti';
-import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 
@@ -26,45 +30,26 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleCheck,
-  ClipboardCheck,
-  Home,
-  PartyPopper,
-  PenLine,
   Sparkles,
   Users,
-  UserRound,
   Target,
-  TrendingUp,
-  Clock3,
   CheckCircle2,
-  Play,
   RotateCcw,
   Brain,
   UsersRound,
   Feather,
   Lock,
   ChevronDown,
+  RefreshCw,
+  Zap,
+  Clock3,
+  AlertCircle,
+  Activity,
 } from 'lucide-react-native';
 
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const MODES = {
-  single: {
-    icon: UserRound,
-  },
-
-  dyad: {
-    icon: Users,
-  },
-
-  group: {
-    icon: UsersRound,
-  },
-} as const;
 
 type ProtocolMode = 'single' | 'dyad' | 'group';
 type ViewMode = 'home' | 'day' | 'report';
@@ -78,6 +63,7 @@ interface Task {
   text: Bilingual;
   type: 'checkbox' | 'text';
   unit?: Bilingual;
+  taskId?: string;
 }
 
 interface DayEntry {
@@ -94,10 +80,80 @@ interface DayEntry {
 interface TaskProgress {
   done: boolean;
   value: string;
+  status?: 'completed' | 'failed' | 'skipped' | 'pending';
+  difficulty?: number;
+  failureReason?: string | null;
 }
 
 type DayProgress = TaskProgress[];
 type Progress = Record<number, DayProgress>;
+
+interface TheoryWeights {
+  CBT: number;
+  Gestalt: number;
+  Hypnotherapy: number;
+}
+
+interface AIPlanTask {
+  task_id: string;
+  duration_minutes: number;
+  confidence?: number;
+}
+
+interface AIPlanResponse {
+  theory_weights?: Partial<TheoryWeights>;
+  today_plan?: AIPlanTask[];
+  final_plan?: AIPlanTask[];
+  plan?: AIPlanTask[];
+  message?: string;
+}
+
+interface AIPlannerPayload {
+  user_id: string;
+  day: number;
+  mode: ProtocolMode;
+  theme: string;
+  resistance_level: string;
+  mood_score: number;
+  stress_level: number;
+  cumulative_adherence_rate: number;
+  dominant_failure_reason: string | null;
+  yesterday_failed_tasks: string[];
+  clinical_tags: string[];
+  completed_ratio: number;
+  failed_ratio: number;
+  skipped_ratio: number;
+  avg_diff: number;
+  daily_task_results: Array<{
+    task_id: string;
+    status: 'completed' | 'failed' | 'skipped';
+    difficulty_reported?: number;
+    failure_reason?: string | null;
+  }>;
+}
+
+interface StoredAIPlan {
+  date: string;
+  day: number;
+  mode: ProtocolMode;
+  response: AIPlanResponse;
+}
+
+// ============================================================
+// API CONFIGURATION
+// ============================================================
+
+const PROTOCOL_AI_URL = 'https://roundness-stuck-stretch.ngrok-free.dev';
+const API_KEY = '3IhN7vwOx7PIS5SxD5zBzezSVih_Yb6aBheAMq9ypaQKPB3G';
+
+const AI_PLAN_STORAGE_KEY = (mode: ProtocolMode, day: number) =>
+  `@neurolia_ai_protocol_plan_${mode}_${day}`;
+
+const USER_ID_STORAGE_KEY = '@neurolia_user_id';
+
+const { width: SCREEN_WIDTH } = {
+  width: 390,
+};
 
 const AYAHS: { text: string; ref: string }[] = [
   {
@@ -141,8 +197,7 @@ const AYAHS: { text: string; ref: string }[] = [
     ref: 'سوره آل‌عمران، آیه ۱۵۹',
   },
   {
-    text:
-      'ای بندگان من که بر خود اسراف کرده‌اید، از رحمت خدا ناامید نشوید.',
+    text: 'ای بندگان من که بر خود اسراف کرده‌اید، از رحمت خدا ناامید نشوید.',
     ref: 'سوره زمر، آیه ۵۳',
   },
   {
@@ -150,8 +205,7 @@ const AYAHS: { text: string; ref: string }[] = [
     ref: 'سوره طلاق، آیه ۳',
   },
   {
-    text:
-      'همانا با سختی، آسانی است؛ همانا با سختی، آسانی است.',
+    text: 'همانا با سختی، آسانی است؛ همانا با سختی، آسانی است.',
     ref: 'سوره انشراح، آیات ۵-۶',
   },
   {
@@ -166,39 +220,34 @@ const AYAHS: { text: string; ref: string }[] = [
 
 const POEMS: { text: string; poet: string }[] = [
   {
-    text:
-      'بنی‌آدم اعضای یک پیکرند\nکه در آفرینش ز یک گوهرند',
+    text: 'بنی‌آدم اعضای یک پیکرند\nکه در آفرینش ز یک گوهرند',
     poet: 'سعدی',
   },
   {
-    text:
-      'بشنو از نی چون حکایت می‌کند\nاز جدایی‌ها شکایت می‌کند',
+    text: 'بشنو از نی چون حکایت می‌کند\nاز جدایی‌ها شکایت می‌کند',
     poet: 'مولانا',
   },
   {
-    text:
-      'این قافله عمر عجب می‌گذرد\nدریاب دمی که با طرب می‌گذرد',
+    text: 'این قافله عمر عجب می‌گذرد\nدریاب دمی که با طرب می‌گذرد',
     poet: 'خیام',
   },
   {
-    text:
-      'هر نفس که فرو می‌رود ممد حیات است\nو چون برمی‌آید مفرح ذات',
+    text: 'هر نفس که فرو می‌رود ممد حیات است\nو چون برمی‌آید مفرح ذات',
     poet: 'سعدی',
   },
   {
-    text:
-      'هر کسی کو دور ماند از اصل خویش\nباز جوید روزگار وصل خویش',
+    text: 'هر کسی کو دور ماند از اصل خویش\nباز جوید روزگار وصل خویش',
     poet: 'مولانا',
   },
   {
-    text:
-      'تن آدمی شریف است به جان آدمیت\nنه همین لباس زیباست نشان آدمیت',
+    text: 'تن آدمی شریف است به جان آدمیت\nنه همین لباس زیباست نشان آدمیت',
     poet: 'سعدی',
   },
 ];
 
 const SINGLE_TASKS: Task[] = [
   {
+    taskId: 'mood_log',
     text: {
       fa: 'ثبت خلق و خو (۱ تا ۱۰)',
       en: 'Log your mood (1–10)',
@@ -206,6 +255,7 @@ const SINGLE_TASKS: Task[] = [
     type: 'checkbox',
   },
   {
+    taskId: 'cbt_negative_thought',
     text: {
       fa: 'شناسایی یک فکر منفی',
       en: 'Identify one negative thought',
@@ -213,6 +263,7 @@ const SINGLE_TASKS: Task[] = [
     type: 'checkbox',
   },
   {
+    taskId: 'deep_breathing',
     text: {
       fa: 'تمرین تنفس عمیق (۵ دقیقه)',
       en: '5 min deep breathing',
@@ -220,6 +271,7 @@ const SINGLE_TASKS: Task[] = [
     type: 'checkbox',
   },
   {
+    taskId: 'enjoyable_activity',
     text: {
       fa: 'یک فعالیت لذت‌بخش',
       en: 'One enjoyable activity',
@@ -227,11 +279,12 @@ const SINGLE_TASKS: Task[] = [
     type: 'checkbox',
   },
   {
+    taskId: 'positive_note',
     text: {
       fa: 'نوشتن یک نکته مثبت',
       en: 'Write one positive note',
     },
-    type: 'checkbox',
+    type: 'text',
   },
 ];
 
@@ -261,16 +314,14 @@ function buildDyadData(): DayEntry[] {
         fa: 'جلسه ۱: آشنایی و اعتمادسازی',
         en: 'Session 1: Getting acquainted',
       },
-
       icon: 'users',
-
       desc: {
         fa: 'تمرینات جفتی برای ایجاد ارتباط مؤثر',
         en: 'Paired exercises for effective connection',
       },
-
       tasks: [
         {
+          taskId: 'dyad_mood_log',
           text: {
             fa: 'ثبت خلق‌وخو (هر دو نفر)',
             en: 'Log mood (both partners)',
@@ -278,6 +329,7 @@ function buildDyadData(): DayEntry[] {
           type: 'checkbox',
         },
         {
+          taskId: 'dyad_introduction',
           text: {
             fa: 'تمرین جفتی: معرفی و آشنایی',
             en: 'Pair exercise: introductions',
@@ -285,6 +337,7 @@ function buildDyadData(): DayEntry[] {
           type: 'checkbox',
         },
         {
+          taskId: 'dyad_positive_note',
           text: {
             fa: 'نوشتن یک نکته مثبت درباره شریک',
             en: 'Write one positive note about your partner',
@@ -292,6 +345,7 @@ function buildDyadData(): DayEntry[] {
           type: 'text',
         },
         {
+          taskId: 'dyad_conversation',
           text: {
             fa: 'گفتگوی ساختاریافته (۵ دقیقه)',
             en: '5 min structured conversation',
@@ -299,6 +353,7 @@ function buildDyadData(): DayEntry[] {
           type: 'checkbox',
         },
         {
+          taskId: 'dyad_shared_task',
           text: {
             fa: 'تکلیف مشارکتی برای جلسه بعد',
             en: 'Shared task for next session',
@@ -317,16 +372,14 @@ function buildGroupData(): DayEntry[] {
         fa: 'جلسه ۱: معرفی و قوانین گروه',
         en: 'Session 1: Intro & group rules',
       },
-
       icon: 'group',
-
       desc: {
         fa: 'تمرینات گروهی برای ایجاد هماهنگی',
         en: 'Group exercises to build cohesion',
       },
-
       tasks: [
         {
+          taskId: 'group_mood_log',
           text: {
             fa: 'ثبت خلق‌وخو (میانگین گروه)',
             en: 'Log mood (group average)',
@@ -334,6 +387,7 @@ function buildGroupData(): DayEntry[] {
           type: 'checkbox',
         },
         {
+          taskId: 'group_introduction',
           text: {
             fa: 'تمرین گروهی: معرفی اعضا',
             en: 'Group exercise: introductions',
@@ -341,6 +395,7 @@ function buildGroupData(): DayEntry[] {
           type: 'checkbox',
         },
         {
+          taskId: 'group_feedback',
           text: {
             fa: 'نوشتن یک بازخورد برای گروه',
             en: 'Write one piece of feedback for the group',
@@ -348,6 +403,7 @@ function buildGroupData(): DayEntry[] {
           type: 'text',
         },
         {
+          taskId: 'group_discussion',
           text: {
             fa: 'بحث گروهی (۱۰ دقیقه)',
             en: '10 min group discussion',
@@ -355,6 +411,7 @@ function buildGroupData(): DayEntry[] {
           type: 'checkbox',
         },
         {
+          taskId: 'group_shared_task',
           text: {
             fa: 'تکلیف گروهی برای جلسه بعد',
             en: 'Group task for next session',
@@ -369,7 +426,6 @@ function buildGroupData(): DayEntry[] {
 function getData(mode: ProtocolMode): DayEntry[] {
   if (mode === 'single') return buildSingleData();
   if (mode === 'dyad') return buildDyadData();
-
   return buildGroupData();
 }
 
@@ -381,24 +437,90 @@ const STORAGE_KEY = (mode: ProtocolMode) =>
   `@neurolia_cbt_progress_${mode}`;
 
 function isTaskDone(progress?: TaskProgress): boolean {
-  return (
-    !!progress?.done ||
-    !!progress?.value?.trim()
-  );
+  return !!progress?.done || !!progress?.value?.trim();
 }
 
 function freshDayProgress(tasks: Task[]): DayProgress {
   return tasks.map(() => ({
     done: false,
     value: '',
+    status: 'pending',
+    difficulty: undefined,
+    failureReason: null,
   }));
+}
+
+function normalizeAIPlan(response: AIPlanResponse): AIPlanTask[] {
+  if (Array.isArray(response.today_plan)) {
+    return response.today_plan;
+  }
+  if (Array.isArray(response.final_plan)) {
+    return response.final_plan;
+  }
+  if (Array.isArray(response.plan)) {
+    return response.plan;
+  }
+  return [];
+}
+
+function humanizeTaskId(taskId: string, fa: boolean): string {
+  const normalized = taskId
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const dictionary: Record<string, Bilingual> = {
+    hypno_pmr: {
+      fa: 'آرام‌سازی عضلانی پیشرونده',
+      en: 'Progressive muscle relaxation',
+    },
+    gestalt_body_awareness: {
+      fa: 'تمرین آگاهی از بدن',
+      en: 'Gestalt body awareness',
+    },
+    cbt_graded_task: {
+      fa: 'تمرین تدریجی شناختی رفتاری',
+      en: 'CBT graded task',
+    },
+    cbt_thought_record: {
+      fa: 'ثبت و بررسی افکار',
+      en: 'CBT thought record',
+    },
+    hypno_safe_place: {
+      fa: 'تمرین مکان امن',
+      en: 'Safe place visualization',
+    },
+    mood_log: {
+      fa: 'ثبت خلق و خو',
+      en: 'Mood log',
+    },
+    deep_breathing: {
+      fa: 'تنفس عمیق',
+      en: 'Deep breathing',
+    },
+  };
+
+  if (dictionary[taskId]) {
+    return fa ? dictionary[taskId].fa : dictionary[taskId].en;
+  }
+
+  if (!normalized) {
+    return fa ? 'فعالیت پیشنهادی' : 'Recommended activity';
+  }
+
+  return normalized
+    .split(' ')
+    .map(word =>
+      word.length ? word.charAt(0).toUpperCase() + word.slice(1) : word,
+    )
+    .join(' ');
 }
 
 export default function ProtocolScreen() {
   const router = useRouter();
 
   const { colors, isDark, isAthlete } = useTheme();
-  const { isRTL, language } = useLanguage();
+  const { language } = useLanguage();
 
   const fa = language === 'fa';
 
@@ -407,29 +529,28 @@ export default function ProtocolScreen() {
   const rowDirection = fa ? 'row-reverse' : 'row';
   const contentAlign = fa ? 'flex-end' : 'flex-start';
 
-  // تعیین رنگ‌ها بر اساس تم - فقط برای آیکون‌ها و progressbar
   const getAccent = () => {
-    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
-    if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
-    return colors.primary; // رنگ پیش‌فرض
+    if (isAthlete) return '#22C55E';
+    if (isDark) return 'rgba(73, 194, 226, 1)';
+    return colors.primary;
   };
 
   const getAccentStrong = () => {
-    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
-    if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
-    return colors.primaryDark || colors.primary; // رنگ پیش‌فرض
+    if (isAthlete) return '#22C55E';
+    if (isDark) return 'rgba(73, 194, 226, 1)';
+    return colors.primaryDark || colors.primary;
   };
 
   const getSoftAccent = () => {
-    if (isAthlete) return 'rgba(34,197,94,0.18)'; // سبز با透明度 برای تم ورزشکار
-    if (isDark) return 'rgba(73, 194, 226, 0.18)'; // آبی با透明度 برای تم تاریک
-    return colors.primary + '12'; // رنگ پیش‌فرض
+    if (isAthlete) return 'rgba(34,197,94,0.18)';
+    if (isDark) return 'rgba(73,194,226,0.18)';
+    return `${colors.primary}12`;
   };
 
   const getSoftAccentStrong = () => {
-    if (isAthlete) return 'rgba(34,197,94,0.28)'; // سبز با透明度 بیشتر برای تم ورزشکار
-    if (isDark) return 'rgba(73, 194, 226, 0.28)'; // آبی با透明度 بیشتر برای تم تاریک
-    return colors.primary + '18'; // رنگ پیش‌فرض
+    if (isAthlete) return 'rgba(34,197,94,0.28)';
+    if (isDark) return 'rgba(73,194,226,0.28)';
+    return `${colors.primary}18`;
   };
 
   const accent = getAccent();
@@ -456,6 +577,11 @@ export default function ProtocolScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<number | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [aiPlan, setAiPlan] = useState<AIPlanTask[]>([]);
+  const [aiWeights, setAiWeights] = useState<Partial<TheoryWeights> | null>(null);
+  const [isAIPlanLoading, setIsAIPlanLoading] = useState(false);
+  const [aiPlanError, setAiPlanError] = useState(false);
+  const [aiPlanSource, setAiPlanSource] = useState<'ai' | 'local' | null>(null);
 
   const data = useMemo(() => getData(mode), [mode]);
   const totalDays = getTotalDays(mode);
@@ -463,10 +589,7 @@ export default function ProtocolScreen() {
 
   const getDayProgress = useCallback(
     (dayIndex: number): DayProgress => {
-      return (
-        progress[dayIndex] ??
-        freshDayProgress(data[dayIndex]?.tasks ?? [])
-      );
+      return progress[dayIndex] ?? freshDayProgress(data[dayIndex]?.tasks ?? []);
     },
     [progress, data],
   );
@@ -492,42 +615,45 @@ export default function ProtocolScreen() {
   const completedDays = useMemo(() => {
     return Array.from(
       { length: totalDays },
-      (_, index) => getDayPercent(index) === 100
+      (_, index) => getDayPercent(index) === 100,
     ).filter(Boolean).length;
   }, [totalDays, getDayPercent]);
 
-  const overallPercent = totalDays > 0
-    ? Math.round((completedDays / totalDays) * 100)
-    : 0;
+  const overallPercent = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
+
+  const getUserId = useCallback(async (): Promise<string> => {
+    try {
+      const existing = await AsyncStorage.getItem(USER_ID_STORAGE_KEY);
+      if (existing) return existing;
+      const generated = `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      await AsyncStorage.setItem(USER_ID_STORAGE_KEY, generated);
+      return generated;
+    } catch {
+      return 'anonymous_user';
+    }
+  }, []);
+
+  const loadProgress = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const raw = await AsyncStorage.getItem(STORAGE_KEY(mode));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setProgress(parsed || {});
+      } else {
+        setProgress({});
+      }
+    } catch (error) {
+      console.log('[Protocol] Failed to load progress:', error);
+      setProgress({});
+    } finally {
+      setIsLoading(false);
+    }
+  }, [mode]);
 
   useEffect(() => {
-    let mounted = true;
-
-    const loadProgress = async () => {
-      try {
-        setIsLoading(true);
-        const raw = await AsyncStorage.getItem(STORAGE_KEY(mode));
-        if (raw && mounted) {
-          const parsed = JSON.parse(raw);
-          setProgress(parsed || {});
-        } else if (mounted) {
-          setProgress({});
-        }
-      } catch (error) {
-        console.log('[Protocol] Failed to load progress:', error);
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
     loadProgress();
-
-    return () => {
-      mounted = false;
-    };
-  }, [mode]);
+  }, [loadProgress]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -536,137 +662,391 @@ export default function ProtocolScreen() {
     });
   }, [progress, mode, isLoading]);
 
-  const lightHaptic = () => {
+  const calculatePlannerStats = useCallback(() => {
+    const allResults: Array<{
+      task_id: string;
+      status: 'completed' | 'failed' | 'skipped';
+      difficulty_reported?: number;
+      failure_reason?: string | null;
+    }> = [];
+
+    Object.entries(progress).forEach(([dayIndex, dayProgress]) => {
+      const tasks = data[Number(dayIndex)]?.tasks ?? [];
+      dayProgress.forEach((item, taskIndex) => {
+        const task = tasks[taskIndex];
+        if (!task) return;
+        const taskId = task.taskId || `task_${taskIndex}`;
+        if (item.status && item.status !== 'pending') {
+          allResults.push({
+            task_id: taskId,
+            status: item.status,
+            difficulty_reported: item.difficulty,
+            failure_reason: item.failureReason,
+          });
+        }
+      });
+    });
+
+    const total = allResults.length;
+    const completed = allResults.filter(item => item.status === 'completed').length;
+    const failed = allResults.filter(item => item.status === 'failed').length;
+    const skipped = allResults.filter(item => item.status === 'skipped').length;
+
+    const difficulties = allResults
+      .map(item => item.difficulty_reported)
+      .filter((value): value is number => typeof value === 'number' && value >= 0);
+
+    const avgDiff = difficulties.length
+      ? difficulties.reduce((sum, value) => sum + value, 0) / difficulties.length
+      : 0;
+
+    const adherence = total > 0 ? completed / total : 0;
+
+    const previousDayProgress = progress[currentDay - 1];
+    const previousTasks = data[currentDay - 1]?.tasks ?? [];
+    const yesterdayFailedTasks = previousDayProgress
+      ? previousDayProgress
+          .map((item, index) => {
+            if (item.status === 'failed') {
+              return previousTasks[index]?.taskId || `task_${index}`;
+            }
+            return null;
+          })
+          .filter((value): value is string => !!value)
+      : [];
+
+    const failureReasons = allResults
+      .map(item => item.failure_reason)
+      .filter((value): value is string => !!value);
+
+    const reasonCount: Record<string, number> = {};
+    failureReasons.forEach(reason => {
+      reasonCount[reason] = (reasonCount[reason] || 0) + 1;
+    });
+
+    const dominantFailureReason = Object.keys(reasonCount).sort(
+      (a, b) => reasonCount[b] - reasonCount[a],
+    )[0] || null;
+
+    return {
+      allResults,
+      total,
+      completed,
+      failed,
+      skipped,
+      adherence,
+      avgDiff,
+      yesterdayFailedTasks,
+      dominantFailureReason,
+    };
+  }, [progress, data, currentDay]);
+
+  const buildPlannerPayload = useCallback(async (): Promise<AIPlannerPayload> => {
+    const userId = await getUserId();
+    const stats = calculatePlannerStats();
+
+    const moodScore = 5;
+    const stressLevel = 5;
+    const clinicalTags: string[] = [];
+    const resistanceLevel = 'medium';
+    const theme = 'general';
+
+    return {
+      user_id: userId,
+      day: currentDay + 1,
+      mode,
+      theme,
+      resistance_level: resistanceLevel,
+      mood_score: moodScore,
+      stress_level: stressLevel,
+      cumulative_adherence_rate: stats.adherence,
+      dominant_failure_reason: stats.dominantFailureReason,
+      yesterday_failed_tasks: stats.yesterdayFailedTasks,
+      clinical_tags: clinicalTags,
+      completed_ratio: stats.total > 0 ? stats.completed / stats.total : 0,
+      failed_ratio: stats.total > 0 ? stats.failed / stats.total : 0,
+      skipped_ratio: stats.total > 0 ? stats.skipped / stats.total : 0,
+      avg_diff: stats.avgDiff,
+      daily_task_results: stats.allResults,
+    };
+  }, [getUserId, calculatePlannerStats, currentDay, mode]);
+
+  const saveAIPlan = useCallback(
+    async (response: AIPlanResponse) => {
+      const stored: StoredAIPlan = {
+        date: new Date().toISOString(),
+        day: currentDay + 1,
+        mode,
+        response,
+      };
+      await AsyncStorage.setItem(AI_PLAN_STORAGE_KEY(mode, currentDay), JSON.stringify(stored));
+    },
+    [currentDay, mode],
+  );
+
+  const loadStoredAIPlan = useCallback(async (): Promise<boolean> => {
+    try {
+      const raw = await AsyncStorage.getItem(AI_PLAN_STORAGE_KEY(mode, currentDay));
+      if (!raw) return false;
+      const stored: StoredAIPlan = JSON.parse(raw);
+      if (stored.mode !== mode || stored.day !== currentDay + 1) return false;
+      const plan = normalizeAIPlan(stored.response);
+      setAiPlan(plan);
+      setAiWeights(stored.response?.theory_weights || null);
+      setAiPlanSource(plan.length ? 'ai' : null);
+      return plan.length > 0;
+    } catch (error) {
+      console.log('[Protocol] Failed to load AI plan:', error);
+      return false;
+    }
+  }, [mode, currentDay]);
+
+  const generateLocalAIPlan = useCallback(() => {
+    const localPlan: AIPlanTask[] = [
+      { task_id: 'deep_breathing', duration_minutes: 5, confidence: 0.7 },
+      { task_id: 'cbt_negative_thought', duration_minutes: 7, confidence: 0.62 },
+      { task_id: 'positive_note', duration_minutes: 3, confidence: 0.58 },
+    ];
+    setAiPlan(localPlan);
+    setAiWeights({ CBT: 40, Gestalt: 25, Hypnotherapy: 35 });
+    setAiPlanSource('local');
+  }, []);
+
+  const fetchAIPlan = useCallback(
+    async (force = false) => {
+      setIsAIPlanLoading(true);
+      setAiPlanError(false);
+
+      try {
+        if (!force) {
+          const loaded = await loadStoredAIPlan();
+          if (loaded) {
+            setIsAIPlanLoading(false);
+            return;
+          }
+        }
+
+        if (!PROTOCOL_AI_URL) {
+          generateLocalAIPlan();
+          setIsAIPlanLoading(false);
+          return;
+        }
+
+        const payload = await buildPlannerPayload();
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+
+        try {
+          const response = await fetch(PROTOCOL_AI_URL + '/recommend', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+              'X-API-Key': API_KEY,
+            },
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeout);
+
+          if (!response.ok) {
+            throw new Error(`Planner API returned ${response.status}`);
+          }
+
+          const result: AIPlanResponse = await response.json();
+          const normalized = normalizeAIPlan(result);
+
+          if (!normalized.length) {
+            throw new Error('AI planner returned an empty plan');
+          }
+
+          setAiPlan(normalized);
+          setAiWeights(result.theory_weights || null);
+          setAiPlanSource('ai');
+          await saveAIPlan(result);
+        } catch (error) {
+          clearTimeout(timeout);
+          throw error;
+        }
+      } catch (error) {
+        console.log('[Protocol] AI planner unavailable:', error);
+        setAiPlanError(true);
+        generateLocalAIPlan();
+      } finally {
+        setIsAIPlanLoading(false);
+      }
+    },
+    [loadStoredAIPlan, generateLocalAIPlan, buildPlannerPayload, saveAIPlan],
+  );
+
+  useEffect(() => {
+    if (isLoading || view !== 'home') return;
+    fetchAIPlan();
+  }, [currentDay, mode, isLoading, view, fetchAIPlan]);
+
+  const lightHaptic = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-  };
+  }, []);
 
-  const successHaptic = () => {
+  const successHaptic = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-  };
+  }, []);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     lightHaptic();
     if (view === 'day' || view === 'report') {
       setView('home');
       return;
     }
     router.back();
-  };
+  }, [view, lightHaptic, router]);
 
-  const changeMode = (nextMode: ProtocolMode) => {
-    if (nextMode === mode) return;
-    lightHaptic();
-    setMode(nextMode);
-    setView('home');
-    setCurrentDay(0);
-    setSelectedTask(null);
-  };
+  const changeMode = useCallback(
+    (nextMode: ProtocolMode) => {
+      if (nextMode === mode) return;
+      lightHaptic();
+      setMode(nextMode);
+      setView('home');
+      setCurrentDay(0);
+      setSelectedTask(null);
+      setAiPlan([]);
+      setAiWeights(null);
+      setAiPlanSource(null);
+    },
+    [mode, lightHaptic],
+  );
 
-  const openDay = (dayIndex: number) => {
-    lightHaptic();
-    setCurrentDay(Math.max(0, Math.min(dayIndex, totalDays - 1)));
-    setView('day');
-    setSelectedTask(null);
-  };
+  const openDay = useCallback(
+    (dayIndex: number) => {
+      lightHaptic();
+      setCurrentDay(Math.max(0, Math.min(dayIndex, totalDays - 1)));
+      setView('day');
+      setSelectedTask(null);
+    },
+    [lightHaptic, totalDays],
+  );
 
-  const toggleTask = (taskIndex: number) => {
-    lightHaptic();
-    setProgress(prev => {
-      const current = prev[currentDay] ?? freshDayProgress(currentEntry?.tasks ?? []);
-      const updated = [...current];
-      updated[taskIndex] = {
-        ...updated[taskIndex],
-        done: !updated[taskIndex]?.done,
-      };
-      return {
-        ...prev,
-        [currentDay]: updated,
-      };
-    });
-  };
+  const updateTaskStatus = useCallback(
+    (taskIndex: number, status: 'completed' | 'failed' | 'skipped') => {
+      setProgress(prev => {
+        const current = prev[currentDay] ?? freshDayProgress(currentEntry?.tasks ?? []);
+        const updated = [...current];
+        updated[taskIndex] = {
+          ...updated[taskIndex],
+          done: status === 'completed',
+          status,
+        };
+        return { ...prev, [currentDay]: updated };
+      });
+    },
+    [currentDay, currentEntry],
+  );
 
-  const updateTextTask = (taskIndex: number, value: string) => {
-    setProgress(prev => {
-      const current = prev[currentDay] ?? freshDayProgress(currentEntry?.tasks ?? []);
-      const updated = [...current];
-      updated[taskIndex] = {
-        ...updated[taskIndex],
-        value,
-        done: value.trim().length > 0,
-      };
-      return {
-        ...prev,
-        [currentDay]: updated,
-      };
-    });
-  };
+  const toggleTask = useCallback(
+    (taskIndex: number) => {
+      lightHaptic();
+      setProgress(prev => {
+        const current = prev[currentDay] ?? freshDayProgress(currentEntry?.tasks ?? []);
+        const updated = [...current];
+        const currentItem = updated[taskIndex];
+        const nextDone = !currentItem?.done;
+        updated[taskIndex] = {
+          ...currentItem,
+          done: nextDone,
+          status: nextDone ? 'completed' : 'pending',
+          failureReason: nextDone ? null : currentItem?.failureReason,
+        };
+        return { ...prev, [currentDay]: updated };
+      });
+    },
+    [currentDay, currentEntry, lightHaptic],
+  );
 
-  const completeDay = () => {
+  const updateTextTask = useCallback(
+    (taskIndex: number, value: string) => {
+      setProgress(prev => {
+        const current = prev[currentDay] ?? freshDayProgress(currentEntry?.tasks ?? []);
+        const updated = [...current];
+        updated[taskIndex] = {
+          ...updated[taskIndex],
+          value,
+          done: value.trim().length > 0,
+          status: value.trim().length > 0 ? 'completed' : 'pending',
+        };
+        return { ...prev, [currentDay]: updated };
+      });
+    },
+    [currentDay, currentEntry],
+  );
+
+  const completeDay = useCallback(() => {
     const tasks = currentEntry?.tasks ?? [];
     if (!tasks.length) return;
+
     const current = getDayProgress(currentDay);
     const allDone = current.every(item => isTaskDone(item));
+
     if (!allDone) {
       lightHaptic();
       return;
     }
+
     successHaptic();
+
     setProgress(prev => ({
       ...prev,
-      [currentDay]: current.map(item => ({
-        ...item,
-        done: true,
-      })),
+      [currentDay]: current.map(item => ({ ...item, done: true, status: 'completed' })),
     }));
-    setShowCelebration(true);
-    setTimeout(() => {
-      setShowCelebration(false);
-    }, 2200);
-  };
 
-  const previousDay = () => {
+    setShowCelebration(true);
+    setTimeout(() => setShowCelebration(false), 2200);
+  }, [currentEntry, getDayProgress, currentDay, lightHaptic, successHaptic]);
+
+  const previousDay = useCallback(() => {
     if (currentDay <= 0) return;
     lightHaptic();
     setCurrentDay(currentDay - 1);
     setSelectedTask(null);
-  };
+  }, [currentDay, lightHaptic]);
 
-  const nextDay = () => {
+  const nextDay = useCallback(() => {
     if (currentDay >= totalDays - 1) return;
     lightHaptic();
     setCurrentDay(currentDay + 1);
     setSelectedTask(null);
-  };
+  }, [currentDay, totalDays, lightHaptic]);
 
-  const resetProtocol = async () => {
+  const resetProtocol = useCallback(async () => {
     lightHaptic();
     try {
       await AsyncStorage.removeItem(STORAGE_KEY(mode));
+      await AsyncStorage.removeItem(AI_PLAN_STORAGE_KEY(mode, currentDay));
       setProgress({});
+      setAiPlan([]);
+      setAiWeights(null);
+      setAiPlanSource(null);
       setCurrentDay(0);
       setView('home');
       setSelectedTask(null);
     } catch (error) {
       console.log('[Protocol] Failed to reset:', error);
     }
-  };
+  }, [lightHaptic, mode, currentDay]);
 
-  const tr = (value?: Bilingual) => {
+  const tr = useCallback((value?: Bilingual) => {
     if (!value) return '';
     return fa ? value.fa : value.en;
-  };
+  }, [fa]);
 
-  const getModeTitle = (protocolMode: ProtocolMode) => {
-    if (protocolMode === 'single') {
-      return fa ? 'برنامه فردی' : 'Individual';
-    }
-    if (protocolMode === 'dyad') {
-      return fa ? 'برنامه دونفره' : 'Two-person';
-    }
+  const getModeTitle = useCallback((protocolMode: ProtocolMode) => {
+    if (protocolMode === 'single') return fa ? 'برنامه فردی' : 'Individual';
+    if (protocolMode === 'dyad') return fa ? 'برنامه دونفره' : 'Two-person';
     return fa ? 'برنامه گروهی' : 'Group';
-  };
+  }, [fa]);
 
-  const getModeDescription = (protocolMode: ProtocolMode) => {
+  const getModeDescription = useCallback((protocolMode: ProtocolMode) => {
     if (protocolMode === 'single') {
       return fa
         ? 'تمرین‌های روزانه برای رشد و آرامش ذهن'
@@ -675,23 +1055,21 @@ export default function ProtocolScreen() {
     if (protocolMode === 'dyad') {
       return fa ? 'تمرین‌های مشترک برای دو نفر' : 'Shared exercises for two people';
     }
-    return fa
-      ? 'تمرین‌های مشارکتی برای یک گروه'
-      : 'Collaborative exercises for a group';
-  };
+    return fa ? 'تمرین‌های مشارکتی برای یک گروه' : 'Collaborative exercises for a group';
+  }, [fa]);
 
-  const getModeIcon = (protocolMode: ProtocolMode) => {
+  const getModeIcon = useCallback((protocolMode: ProtocolMode) => {
     if (protocolMode === 'single') return Brain;
     if (protocolMode === 'dyad') return Users;
     return UsersRound;
-  };
+  }, []);
 
-  const getDayLabel = (index: number) => {
+  const getDayLabel = useCallback((index: number) => {
     if (mode === 'single') {
       return fa ? `روز ${index + 1}` : `Day ${index + 1}`;
     }
     return fa ? `جلسه ${index + 1}` : `Session ${index + 1}`;
-  };
+  }, [mode, fa]);
 
   const currentDayPercent = getDayPercent(currentDay);
   const currentCompletedTasks = getCompletedTasks(currentDay);
@@ -719,7 +1097,11 @@ export default function ProtocolScreen() {
           },
         ]}
       >
-        <ArrowLeft size={21} color={colors.text} strokeWidth={2.2} />
+        {fa ? (
+          <ArrowRight size={21} color={colors.text} strokeWidth={2.2} />
+        ) : (
+          <ArrowLeft size={21} color={colors.text} strokeWidth={2.2} />
+        )}
       </TouchableOpacity>
 
       <View style={styles.headerTitleContainer}>
@@ -740,7 +1122,7 @@ export default function ProtocolScreen() {
           style={[
             styles.headerSubtitle,
             {
-              color: colors.textSecondary || colors.text + '80',
+              color: colors.textSecondary || `${colors.text}80`,
               textAlign,
               writingDirection: textDirection,
             },
@@ -767,8 +1149,6 @@ export default function ProtocolScreen() {
         onPress={previousDay}
         disabled={currentDay === 0}
         activeOpacity={0.75}
-        accessibilityRole="button"
-        accessibilityLabel={fa ? 'روز قبلی' : 'Previous day'}
         style={[
           styles.dayNavButton,
           {
@@ -778,7 +1158,11 @@ export default function ProtocolScreen() {
           },
         ]}
       >
-        <ChevronLeft size={22} color={colors.text} strokeWidth={2.2} />
+        {fa ? (
+          <ChevronRight size={22} color={colors.text} strokeWidth={2.2} />
+        ) : (
+          <ChevronLeft size={22} color={colors.text} strokeWidth={2.2} />
+        )}
       </TouchableOpacity>
 
       <View
@@ -795,8 +1179,6 @@ export default function ProtocolScreen() {
             styles.dayIndicatorText,
             {
               color: accent,
-              textAlign,
-              writingDirection: textDirection,
             },
           ]}
         >
@@ -808,8 +1190,6 @@ export default function ProtocolScreen() {
         onPress={nextDay}
         disabled={currentDay >= totalDays - 1}
         activeOpacity={0.75}
-        accessibilityRole="button"
-        accessibilityLabel={fa ? 'روز بعدی' : 'Next day'}
         style={[
           styles.dayNavButton,
           {
@@ -819,7 +1199,11 @@ export default function ProtocolScreen() {
           },
         ]}
       >
-        <ChevronRight size={22} color={colors.text} strokeWidth={2.2} />
+        {fa ? (
+          <ChevronLeft size={22} color={colors.text} strokeWidth={2.2} />
+        ) : (
+          <ChevronRight size={22} color={colors.text} strokeWidth={2.2} />
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -827,7 +1211,6 @@ export default function ProtocolScreen() {
   const renderModeCard = (protocolMode: ProtocolMode) => {
     const Icon = getModeIcon(protocolMode);
     const active = mode === protocolMode;
-    const modeAccent = accent;
 
     return (
       <TouchableOpacity
@@ -838,7 +1221,7 @@ export default function ProtocolScreen() {
           styles.modeCard,
           {
             backgroundColor: active ? softAccentStrong : card,
-            borderColor: active ? modeAccent : softBorder,
+            borderColor: active ? accent : softBorder,
           },
         ]}
       >
@@ -846,13 +1229,13 @@ export default function ProtocolScreen() {
           style={[
             styles.modeIcon,
             {
-              backgroundColor: active ? modeAccent : cardSecondary,
+              backgroundColor: active ? accent : cardSecondary,
             },
           ]}
         >
           <Icon
             size={21}
-            color={active ? colors.background : modeAccent}
+            color={active ? colors.background : accent}
             strokeWidth={2.1}
           />
         </View>
@@ -874,7 +1257,7 @@ export default function ProtocolScreen() {
           style={[
             styles.modeDescription,
             {
-              color: colors.textSecondary || colors.text + '80',
+              color: colors.textSecondary || `${colors.text}80`,
               textAlign,
               writingDirection: textDirection,
             },
@@ -889,7 +1272,9 @@ export default function ProtocolScreen() {
             style={[
               styles.modeActiveIndicator,
               {
-                backgroundColor: modeAccent,
+                backgroundColor: accent,
+                right: fa ? undefined : 8,
+                left: fa ? 8 : undefined,
               },
             ]}
           >
@@ -976,7 +1361,7 @@ export default function ProtocolScreen() {
               style={[
                 styles.dayTasksText,
                 {
-                  color: colors.textSecondary || colors.text + '80',
+                  color: colors.textSecondary || `${colors.text}80`,
                   textAlign,
                   writingDirection: textDirection,
                 },
@@ -1000,7 +1385,7 @@ export default function ProtocolScreen() {
               style={[
                 styles.dayPercentText,
                 {
-                  color: percent === 100 ? accent : colors.textSecondary || colors.text + '60',
+                  color: percent === 100 ? accent : colors.textSecondary || `${colors.text}60`,
                 },
               ]}
             >
@@ -1031,6 +1416,321 @@ export default function ProtocolScreen() {
     );
   };
 
+  const renderAIPlanCard = () => {
+    if (isAIPlanLoading) {
+      return (
+        <View
+          style={[
+            styles.aiLoadingCard,
+            {
+              backgroundColor: softAccent,
+              borderColor: softBorder,
+            },
+          ]}
+        >
+          <ActivityIndicator size="small" color={accent} />
+
+          <View style={styles.aiLoadingContent}>
+            <Text
+              style={[
+                styles.aiLoadingTitle,
+                {
+                  color: colors.text,
+                  textAlign,
+                  writingDirection: textDirection,
+                },
+              ]}
+            >
+              {fa ? 'در حال تنظیم برنامه هوشمند...' : 'Building your smart plan...'}
+            </Text>
+
+            <Text
+              style={[
+                styles.aiLoadingSubtitle,
+                {
+                  color: colors.textSecondary || `${colors.text}80`,
+                  textAlign,
+                  writingDirection: textDirection,
+                },
+              ]}
+            >
+              {fa
+                ? 'برنامه بر اساس عملکرد شما تنظیم می‌شود.'
+                : 'Your plan is being adapted to your performance.'}
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
+    if (!aiPlan.length) return null;
+
+    return (
+      <View
+        style={[
+          styles.aiPlanCard,
+          {
+            backgroundColor: card,
+            borderColor: accent,
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.aiPlanHeader,
+            {
+              flexDirection: rowDirection,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.aiPlanIcon,
+              {
+                backgroundColor: softAccentStrong,
+              },
+            ]}
+          >
+            <Sparkles size={20} color={accent} strokeWidth={2.2} />
+          </View>
+
+          <View
+            style={[
+              styles.aiPlanHeaderContent,
+              {
+                alignItems: contentAlign,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.aiPlanTitle,
+                {
+                  color: colors.text,
+                  textAlign,
+                  writingDirection: textDirection,
+                },
+              ]}
+            >
+              {fa ? 'برنامه هوشمند امروز' : "Today's AI plan"}
+            </Text>
+
+            <Text
+              style={[
+                styles.aiPlanSubtitle,
+                {
+                  color: colors.textSecondary || `${colors.text}80`,
+                  textAlign,
+                  writingDirection: textDirection,
+                },
+              ]}
+            >
+              {aiPlanSource === 'ai'
+                ? fa
+                  ? 'تنظیم‌شده بر اساس عملکرد شما'
+                  : 'Personalized from your performance'
+                : fa
+                ? 'برنامه پیشنهادی محلی'
+                : 'Local recommended plan'}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => fetchAIPlan(true)}
+            activeOpacity={0.75}
+            style={[
+              styles.aiRefreshButton,
+              {
+                backgroundColor: softAccent,
+              },
+            ]}
+          >
+            <RefreshCw size={17} color={accent} strokeWidth={2.2} />
+          </TouchableOpacity>
+        </View>
+
+        {aiWeights && (
+          <View
+            style={[
+              styles.aiWeightsRow,
+              {
+                flexDirection: rowDirection,
+              },
+            ]}
+          >
+            <View style={styles.aiWeightItem}>
+              <Text
+                style={[
+                  styles.aiWeightValue,
+                  {
+                    color: accent,
+                  },
+                ]}
+              >
+                {Math.round(aiWeights.CBT || 0)}%
+              </Text>
+
+              <Text
+                style={[
+                  styles.aiWeightLabel,
+                  {
+                    color: colors.textSecondary || `${colors.text}70`,
+                  },
+                ]}
+              >
+                CBT
+              </Text>
+            </View>
+
+            <View style={styles.aiWeightItem}>
+              <Text
+                style={[
+                  styles.aiWeightValue,
+                  {
+                    color: accent,
+                  },
+                ]}
+              >
+                {Math.round(aiWeights.Gestalt || 0)}%
+              </Text>
+
+              <Text
+                style={[
+                  styles.aiWeightLabel,
+                  {
+                    color: colors.textSecondary || `${colors.text}70`,
+                  },
+                ]}
+              >
+                Gestalt
+              </Text>
+            </View>
+
+            <View style={styles.aiWeightItem}>
+              <Text
+                style={[
+                  styles.aiWeightValue,
+                  {
+                    color: accent,
+                  },
+                ]}
+              >
+                {Math.round(aiWeights.Hypnotherapy || 0)}%
+              </Text>
+
+              <Text
+                style={[
+                  styles.aiWeightLabel,
+                  {
+                    color: colors.textSecondary || `${colors.text}70`,
+                  },
+                ]}
+              >
+                Hypno
+              </Text>
+            </View>
+          </View>
+        )}
+
+        <View style={styles.aiPlanTasks}>
+          {aiPlan.map((planTask, index) => (
+            <View
+              key={`${planTask.task_id}-${index}`}
+              style={[
+                styles.aiPlanTask,
+                {
+                  flexDirection: rowDirection,
+                  backgroundColor: softAccent,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.aiPlanTaskNumber,
+                  {
+                    backgroundColor: accent,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.aiPlanTaskNumberText,
+                    {
+                      color: colors.background,
+                    },
+                  ]}
+                >
+                  {index + 1}
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.aiPlanTaskContent,
+                  {
+                    alignItems: contentAlign,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.aiPlanTaskTitle,
+                    {
+                      color: colors.text,
+                      textAlign,
+                      writingDirection: textDirection,
+                    },
+                  ]}
+                >
+                  {humanizeTaskId(planTask.task_id, fa)}
+                </Text>
+
+                <View
+                  style={[
+                    styles.aiPlanTaskMeta,
+                    {
+                      flexDirection: rowDirection,
+                    },
+                  ]}
+                >
+                  <Clock3 size={13} color={colors.textSecondary || `${colors.text}70`} />
+
+                  <Text
+                    style={[
+                      styles.aiPlanTaskMetaText,
+                      {
+                        color: colors.textSecondary || `${colors.text}70`,
+                      },
+                    ]}
+                  >
+                    {fa
+                      ? `${planTask.duration_minutes} دقیقه`
+                      : `${planTask.duration_minutes} min`}
+                  </Text>
+
+                  {typeof planTask.confidence === 'number' && (
+                    <Text
+                      style={[
+                        styles.aiPlanTaskConfidence,
+                        {
+                          color: accent,
+                        },
+                      ]}
+                    >
+                      {Math.round(planTask.confidence * 100)}%
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              <Zap size={16} color={accent} strokeWidth={2.2} />
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
   if (isLoading) {
     return (
       <View
@@ -1042,11 +1742,12 @@ export default function ProtocolScreen() {
         ]}
       >
         <ActivityIndicator size="large" color={accent} />
+
         <Text
           style={[
             styles.loadingText,
             {
-              color: colors.textSecondary || colors.text + '80',
+              color: colors.textSecondary || `${colors.text}80`,
               textAlign,
               writingDirection: textDirection,
             },
@@ -1059,7 +1760,7 @@ export default function ProtocolScreen() {
   }
 
   return (
-    <SafeAreaView
+    <View
       style={[
         styles.safeArea,
         {
@@ -1085,7 +1786,6 @@ export default function ProtocolScreen() {
               fa ? 'برنامه روزانه شما' : 'Your daily program',
             )}
 
-            {/* ===== تغییر رنگ پس‌زمینه هیرو برای تم لایت ===== */}
             <MotiView
               from={{
                 opacity: 0,
@@ -1104,12 +1804,8 @@ export default function ProtocolScreen() {
               style={[
                 styles.heroCard,
                 {
-                  backgroundColor: isDark 
-                    ? 'rgba(73, 194, 226, 0.12)'
-                    : '#F0F4FF',  // ← رنگ جدید برای تم لایت (آبی ملایم)
-                  borderColor: isDark
-                    ? 'rgba(73, 194, 226, 0.20)'
-                    : '#D0D9E8',  // ← رنگ حاشیه جدید برای تم لایت
+                  backgroundColor: isDark ? 'rgba(73,194,226,0.12)' : '#F0F4FF',
+                  borderColor: isDark ? 'rgba(73,194,226,0.20)' : '#D0D9E8',
                 },
               ]}
             >
@@ -1118,9 +1814,7 @@ export default function ProtocolScreen() {
                 style={[
                   styles.heroGlowOne,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(73, 194, 226, 0.08)'
-                      : 'rgba(73, 194, 226, 0.10)',
+                    backgroundColor: isDark ? 'rgba(73,194,226,0.08)' : 'rgba(73,194,226,0.10)',
                   },
                 ]}
               />
@@ -1130,9 +1824,7 @@ export default function ProtocolScreen() {
                 style={[
                   styles.heroGlowTwo,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(73, 194, 226, 0.05)'
-                      : 'rgba(73, 194, 226, 0.06)',
+                    backgroundColor: isDark ? 'rgba(73,194,226,0.05)' : 'rgba(73,194,226,0.06)',
                   },
                 ]}
               />
@@ -1183,16 +1875,14 @@ export default function ProtocolScreen() {
                     style={[
                       styles.heroBadge,
                       {
-                        backgroundColor: isDark
-                          ? 'rgba(73, 194, 226, 0.20)'
-                          : 'rgba(73, 194, 226, 0.15)',
+                        backgroundColor: isDark ? 'rgba(73,194,226,0.20)' : 'rgba(73,194,226,0.15)',
                         flexDirection: rowDirection,
                       },
                     ]}
                   >
                     <Sparkles
                       size={14}
-                      color={isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(73, 194, 226, 1)')}
+                      color={isAthlete ? '#22C55E' : 'rgba(73,194,226,1)'}
                       strokeWidth={2.2}
                     />
 
@@ -1200,7 +1890,11 @@ export default function ProtocolScreen() {
                       style={[
                         styles.heroBadgeText,
                         {
-                          color: isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : '#1A1A1A'),
+                          color: isAthlete
+                            ? '#22C55E'
+                            : isDark
+                            ? 'rgba(73,194,226,1)'
+                            : '#1A1A1A',
                           textAlign,
                           writingDirection: textDirection,
                         },
@@ -1242,12 +1936,8 @@ export default function ProtocolScreen() {
                 style={[
                   styles.heroProgressPanel,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(0,0,0,0.18)'
-                      : 'rgba(73, 194, 226, 0.10)',
-                    borderColor: isDark
-                      ? 'rgba(73, 194, 226, 0.20)'
-                      : 'rgba(73, 194, 226, 0.20)',
+                    backgroundColor: isDark ? 'rgba(0,0,0,0.18)' : 'rgba(73,194,226,0.10)',
+                    borderColor: 'rgba(73,194,226,0.20)',
                   },
                 ]}
               >
@@ -1298,7 +1988,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.heroProgressValue,
                       {
-                        color: isAthlete ? '#22C55E' : (isDark ? colors.text : '#1A1A1A'),
+                        color: isAthlete ? '#22C55E' : isDark ? colors.text : '#1A1A1A',
                       },
                     ]}
                   >
@@ -1310,9 +2000,7 @@ export default function ProtocolScreen() {
                   style={[
                     styles.heroProgressTrack,
                     {
-                      backgroundColor: isDark
-                        ? 'rgba(73, 194, 226, 0.15)'
-                        : 'rgba(73, 194, 226, 0.15)',
+                      backgroundColor: 'rgba(73,194,226,0.15)',
                     },
                   ]}
                 >
@@ -1330,7 +2018,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.heroProgressFill,
                       {
-                        backgroundColor: isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(73, 194, 226, 1)'),
+                        backgroundColor: isAthlete ? '#22C55E' : 'rgba(73,194,226,1)',
                       },
                     ]}
                   />
@@ -1349,19 +2037,17 @@ export default function ProtocolScreen() {
                   style={[
                     styles.heroStat,
                     {
-                      borderColor: isDark
-                        ? 'rgba(73, 194, 226, 0.15)'
-                        : 'rgba(73, 194, 226, 0.20)',
+                      borderColor: 'rgba(73,194,226,0.20)',
                     },
                   ]}
                 >
-                  <Target
-                    size={17}
-                    color={isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(73, 194, 226, 1)')}
-                    strokeWidth={2}
-                  />
+                  <Target size={17} color={isAthlete ? '#22C55E' : 'rgba(73,194,226,1)'} strokeWidth={2} />
 
-                  <View style={{ alignItems: contentAlign }}>
+                  <View
+                    style={{
+                      alignItems: contentAlign,
+                    }}
+                  >
                     <Text
                       style={[
                         styles.heroStatValue,
@@ -1392,19 +2078,21 @@ export default function ProtocolScreen() {
                   style={[
                     styles.heroStat,
                     {
-                      borderColor: isDark
-                        ? 'rgba(73, 194, 226, 0.15)'
-                        : 'rgba(73, 194, 226, 0.20)',
+                      borderColor: 'rgba(73,194,226,0.20)',
                     },
                   ]}
                 >
                   <CheckCircle2
                     size={17}
-                    color={isAthlete ? '#22C55E' : (isDark ? 'rgba(73, 194, 226, 1)' : 'rgba(73, 194, 226, 1)')}
+                    color={isAthlete ? '#22C55E' : 'rgba(73,194,226,1)'}
                     strokeWidth={2}
                   />
 
-                  <View style={{ alignItems: contentAlign }}>
+                  <View
+                    style={{
+                      alignItems: contentAlign,
+                    }}
+                  >
                     <Text
                       style={[
                         styles.heroStatValue,
@@ -1485,6 +2173,75 @@ export default function ProtocolScreen() {
                       },
                     ]}
                   >
+                    {fa ? 'برنامه هوشمند' : 'Smart plan'}
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.sectionSubtitle,
+                      {
+                        color: colors.textSecondary || `${colors.text}80`,
+                        textAlign,
+                        writingDirection: textDirection,
+                      },
+                    ]}
+                  >
+                    {fa ? 'برنامه بر اساس عملکرد شما' : 'Adapted to your performance'}
+                  </Text>
+                </View>
+
+                {aiPlanError && (
+                  <View
+                    style={[
+                      styles.aiWarning,
+                      {
+                        backgroundColor: 'rgba(245,158,11,0.12)',
+                      },
+                    ]}
+                  >
+                    <AlertCircle size={15} color="#F59E0B" />
+
+                    <Text
+                      style={[
+                        styles.aiWarningText,
+                        {
+                          color: '#F59E0B',
+                        },
+                      ]}
+                    >
+                      {fa ? 'حالت محلی' : 'Local mode'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {renderAIPlanCard()}
+            </View>
+
+            <View style={styles.section}>
+              <View
+                style={[
+                  styles.sectionHeader,
+                  {
+                    flexDirection: rowDirection,
+                  },
+                ]}
+              >
+                <View
+                  style={{
+                    alignItems: contentAlign,
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.sectionTitle,
+                      {
+                        color: colors.text,
+                        textAlign,
+                        writingDirection: textDirection,
+                      },
+                    ]}
+                  >
                     {fa ? 'گزارش امروز' : "Today's report"}
                   </Text>
 
@@ -1492,7 +2249,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.sectionSubtitle,
                       {
-                        color: colors.textSecondary || colors.text + '80',
+                        color: colors.textSecondary || `${colors.text}80`,
                         textAlign,
                         writingDirection: textDirection,
                       },
@@ -1517,6 +2274,7 @@ export default function ProtocolScreen() {
                   ]}
                 >
                   <BarChart3 size={17} color={accent} strokeWidth={2} />
+
                   <Text
                     style={[
                       styles.reportButtonText,
@@ -1566,7 +2324,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.circularProgressLabel,
                         {
-                          color: colors.textSecondary || colors.text + '80',
+                          color: colors.textSecondary || `${colors.text}80`,
                           textAlign: 'center',
                           writingDirection: textDirection,
                         },
@@ -1601,7 +2359,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.reportStatsValue,
                         {
-                          color: colors.textSecondary || colors.text + '80',
+                          color: colors.textSecondary || `${colors.text}80`,
                           textAlign,
                           writingDirection: textDirection,
                         },
@@ -1666,7 +2424,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.sectionSubtitle,
                       {
-                        color: colors.textSecondary || colors.text + '80',
+                        color: colors.textSecondary || `${colors.text}80`,
                         textAlign,
                         writingDirection: textDirection,
                       },
@@ -1717,9 +2475,7 @@ export default function ProtocolScreen() {
                       style={[
                         styles.todayTaskText,
                         {
-                          color: done
-                            ? colors.textSecondary || colors.text + '80'
-                            : colors.text,
+                          color: done ? colors.textSecondary || `${colors.text}80` : colors.text,
                           textAlign,
                           writingDirection: textDirection,
                           textDecorationLine: done ? 'line-through' : 'none',
@@ -1729,16 +2485,9 @@ export default function ProtocolScreen() {
                       {tr(task.text)}
                     </Text>
 
-                    <ChevronLeft
+                    <ChevronRight
                       size={18}
-                      color={colors.textTertiary || colors.text + '40'}
-                      style={{
-                        transform: [
-                          {
-                            rotate: fa ? '0deg' : '180deg',
-                          },
-                        ],
-                      }}
+                      color={colors.textTertiary || `${colors.text}40`}
                     />
                   </TouchableOpacity>
                 );
@@ -1757,8 +2506,12 @@ export default function ProtocolScreen() {
                 ]}
               >
                 {mode === 'single'
-                  ? fa ? 'روزهای پروتکل' : 'Protocol days'
-                  : fa ? 'جلسات پروتکل' : 'Protocol sessions'}
+                  ? fa
+                    ? 'روزهای پروتکل'
+                    : 'Protocol days'
+                  : fa
+                  ? 'جلسات پروتکل'
+                  : 'Protocol sessions'}
               </Text>
 
               {data.map((_, index) => renderDayCard(index))}
@@ -1776,12 +2529,17 @@ export default function ProtocolScreen() {
                 },
               ]}
             >
-              <RotateCcw size={17} color={colors.textSecondary || colors.text + '60'} strokeWidth={2} />
+              <RotateCcw
+                size={17}
+                color={colors.textSecondary || `${colors.text}60`}
+                strokeWidth={2}
+              />
+
               <Text
                 style={[
                   styles.resetButtonText,
                   {
-                    color: colors.textSecondary || colors.text + '60',
+                    color: colors.textSecondary || `${colors.text}60`,
                     textAlign,
                     writingDirection: textDirection,
                   },
@@ -1800,10 +2558,7 @@ export default function ProtocolScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
           >
-            {renderPageHeader(
-              getDayLabel(currentDay),
-              getModeTitle(mode),
-            )}
+            {renderPageHeader(getDayLabel(currentDay), getModeTitle(mode))}
 
             <View
               style={[
@@ -1844,9 +2599,7 @@ export default function ProtocolScreen() {
                     style={[
                       styles.dayProgressSubtitle,
                       {
-                        color: colors.textSecondary || colors.text + '80',
-                        textAlign,
-                        writingDirection: textDirection,
+                        color: colors.textSecondary || `${colors.text}80`,
                       },
                     ]}
                   >
@@ -1861,7 +2614,6 @@ export default function ProtocolScreen() {
                     styles.dayProgressPercent,
                     {
                       color: accent,
-                      textAlign: 'center',
                     },
                   ]}
                 >
@@ -1994,7 +2746,7 @@ export default function ProtocolScreen() {
                         style={[
                           styles.poemPoet,
                           {
-                            color: colors.textSecondary || colors.text + '80',
+                            color: colors.textSecondary || `${colors.text}80`,
                             textAlign,
                             writingDirection: textDirection,
                           },
@@ -2089,7 +2841,7 @@ export default function ProtocolScreen() {
 
                       <ChevronDown
                         size={18}
-                        color={colors.textSecondary || colors.text + '60'}
+                        color={colors.textSecondary || `${colors.text}60`}
                         style={{
                           transform: [
                             {
@@ -2114,7 +2866,7 @@ export default function ProtocolScreen() {
                             value={taskProgress?.value ?? ''}
                             onChangeText={value => updateTextTask(index, value)}
                             placeholder={fa ? 'پاسخ خود را بنویسید...' : 'Write your response...'}
-                            placeholderTextColor={colors.textTertiary || colors.text + '40'}
+                            placeholderTextColor={colors.textTertiary || `${colors.text}40`}
                             multiline
                             style={[
                               styles.taskInput,
@@ -2156,11 +2908,96 @@ export default function ProtocolScreen() {
                               ]}
                             >
                               {done
-                                ? fa ? 'انجام شد' : 'Completed'
-                                : fa ? 'انجام دادم' : 'Mark complete'}
+                                ? fa
+                                  ? 'انجام شد'
+                                  : 'Completed'
+                                : fa
+                                ? 'انجام دادم'
+                                : 'Mark complete'}
                             </Text>
                           </TouchableOpacity>
                         )}
+
+                        <View
+                          style={[
+                            styles.taskFeedbackRow,
+                            {
+                              flexDirection: rowDirection,
+                            },
+                          ]}
+                        >
+                          <TouchableOpacity
+                            onPress={() => updateTaskStatus(index, 'failed')}
+                            style={[
+                              styles.feedbackButton,
+                              {
+                                borderColor: 'rgba(239,68,68,0.25)',
+                                backgroundColor: 'rgba(239,68,68,0.08)',
+                              },
+                            ]}
+                          >
+                            <AlertCircle size={15} color="#EF4444" />
+
+                            <Text
+                              style={[
+                                styles.feedbackButtonText,
+                                {
+                                  color: '#EF4444',
+                                },
+                              ]}
+                            >
+                              {fa ? 'سخت بود' : 'Difficult'}
+                            </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            onPress={() => updateTaskStatus(index, 'skipped')}
+                            style={[
+                              styles.feedbackButton,
+                              {
+                                borderColor: softBorder,
+                                backgroundColor: cardSecondary,
+                              },
+                            ]}
+                          >
+                            <Activity size={15} color={colors.textSecondary || colors.text} />
+
+                            <Text
+                              style={[
+                                styles.feedbackButtonText,
+                                {
+                                  color: colors.textSecondary || colors.text,
+                                },
+                              ]}
+                            >
+                              {fa ? 'رد شد' : 'Skipped'}
+                            </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            onPress={() => toggleTask(index)}
+                            style={[
+                              styles.feedbackButton,
+                              {
+                                borderColor: softBorder,
+                                backgroundColor: softAccent,
+                              },
+                            ]}
+                          >
+                            <Check size={15} color={accent} />
+
+                            <Text
+                              style={[
+                                styles.feedbackButtonText,
+                                {
+                                  color: accent,
+                                },
+                              ]}
+                            >
+                              {fa ? 'انجام شد' : 'Done'}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     )}
                   </View>
@@ -2185,24 +3022,29 @@ export default function ProtocolScreen() {
               {currentDayPercent === 100 ? (
                 <CheckCircle2 size={21} color={colors.background} strokeWidth={2.3} />
               ) : (
-                <Lock size={19} color={colors.textSecondary || colors.text + '60'} strokeWidth={2} />
+                <Lock size={19} color={colors.textSecondary || `${colors.text}60`} strokeWidth={2} />
               )}
 
               <Text
                 style={[
                   styles.completeDayText,
                   {
-                    color: currentDayPercent === 100
-                      ? colors.background
-                      : colors.textSecondary || colors.text + '60',
+                    color:
+                      currentDayPercent === 100
+                        ? colors.background
+                        : colors.textSecondary || `${colors.text}60`,
                     textAlign,
                     writingDirection: textDirection,
                   },
                 ]}
               >
                 {currentDayPercent === 100
-                  ? fa ? 'تکمیل روز' : 'Complete day'
-                  : fa ? 'تمام فعالیت‌ها را انجام دهید' : 'Complete all tasks first'}
+                  ? fa
+                    ? 'تکمیل روز'
+                    : 'Complete day'
+                  : fa
+                  ? 'تمام فعالیت‌ها را انجام دهید'
+                  : 'Complete all tasks first'}
               </Text>
             </TouchableOpacity>
 
@@ -2253,7 +3095,7 @@ export default function ProtocolScreen() {
                   style={[
                     styles.reportCircleLabel,
                     {
-                      color: colors.textSecondary || colors.text + '80',
+                      color: colors.textSecondary || `${colors.text}80`,
                       textAlign: 'center',
                       writingDirection: textDirection,
                     },
@@ -2280,7 +3122,7 @@ export default function ProtocolScreen() {
                 style={[
                   styles.reportHeroSubtitle,
                   {
-                    color: colors.textSecondary || colors.text + '80',
+                    color: colors.textSecondary || `${colors.text}80`,
                     textAlign,
                     writingDirection: textDirection,
                   },
@@ -2325,7 +3167,6 @@ export default function ProtocolScreen() {
                     styles.reportStatValue,
                     {
                       color: colors.text,
-                      textAlign: 'center',
                     },
                   ]}
                 >
@@ -2336,8 +3177,7 @@ export default function ProtocolScreen() {
                   style={[
                     styles.reportStatLabel,
                     {
-                      color: colors.textSecondary || colors.text + '80',
-                      textAlign: 'center',
+                      color: colors.textSecondary || `${colors.text}80`,
                       writingDirection: textDirection,
                     },
                   ]}
@@ -2371,7 +3211,6 @@ export default function ProtocolScreen() {
                     styles.reportStatValue,
                     {
                       color: colors.text,
-                      textAlign: 'center',
                     },
                   ]}
                 >
@@ -2382,8 +3221,7 @@ export default function ProtocolScreen() {
                   style={[
                     styles.reportStatLabel,
                     {
-                      color: colors.textSecondary || colors.text + '80',
-                      textAlign: 'center',
+                      color: colors.textSecondary || `${colors.text}80`,
                       writingDirection: textDirection,
                     },
                   ]}
@@ -2417,7 +3255,6 @@ export default function ProtocolScreen() {
                     styles.reportStatValue,
                     {
                       color: colors.text,
-                      textAlign: 'center',
                     },
                   ]}
                 >
@@ -2435,8 +3272,7 @@ export default function ProtocolScreen() {
                   style={[
                     styles.reportStatLabel,
                     {
-                      color: colors.textSecondary || colors.text + '80',
-                      textAlign: 'center',
+                      color: colors.textSecondary || `${colors.text}80`,
                       writingDirection: textDirection,
                     },
                   ]}
@@ -2554,15 +3390,19 @@ export default function ProtocolScreen() {
                   ]}
                 >
                   {overallPercent === 100
-                    ? fa ? 'پروتکل را کامل کرده‌اید' : 'You completed the protocol'
-                    : fa ? 'به مسیر خود ادامه دهید' : 'Keep moving forward'}
+                    ? fa
+                      ? 'پروتکل را کامل کرده‌اید'
+                      : 'You completed the protocol'
+                    : fa
+                    ? 'به مسیر خود ادامه دهید'
+                    : 'Keep moving forward'}
                 </Text>
 
                 <Text
                   style={[
                     styles.summaryText,
                     {
-                      color: colors.textSecondary || colors.text + '80',
+                      color: colors.textSecondary || `${colors.text}80`,
                       textAlign,
                       writingDirection: textDirection,
                     },
@@ -2645,19 +3485,21 @@ export default function ProtocolScreen() {
                 style={[
                   styles.celebrationText,
                   {
-                    color: colors.textSecondary || colors.text + '80',
-                    textAlign,
+                    color: colors.textSecondary || `${colors.text}80`,
+                    textAlign: 'center',
                     writingDirection: textDirection,
                   },
                 ]}
               >
-                {fa ? 'آفرین! یک قدم دیگر به جلو رفتید.' : 'Great job! You took another step forward.'}
+                {fa
+                  ? 'آفرین! یک قدم دیگر به جلو رفتید.'
+                  : 'Great job! You took another step forward.'}
               </Text>
             </MotiView>
           </MotiView>
         )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -2739,13 +3581,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     minHeight: 245,
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.18,
-    shadowRadius: 22,
-    elevation: 7,
   },
 
   heroGlowOne: {
@@ -2943,12 +3778,164 @@ const styles = StyleSheet.create({
   modeActiveIndicator: {
     position: 'absolute',
     top: 8,
-    right: 8,
     width: 20,
     height: 20,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  aiLoadingCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+
+  aiLoadingContent: {
+    flex: 1,
+  },
+
+  aiLoadingTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  aiLoadingSubtitle: {
+    fontSize: 11,
+    marginTop: 3,
+  },
+
+  aiPlanCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 15,
+    overflow: 'hidden',
+  },
+
+  aiPlanHeader: {
+    alignItems: 'center',
+    gap: 10,
+  },
+
+  aiPlanIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  aiPlanHeaderContent: {
+    flex: 1,
+  },
+
+  aiPlanTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+
+  aiPlanSubtitle: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+
+  aiRefreshButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  aiWeightsRow: {
+    marginTop: 14,
+    gap: 8,
+  },
+
+  aiWeightItem: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: 12,
+    backgroundColor: 'rgba(128,128,128,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  aiWeightValue: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+
+  aiWeightLabel: {
+    fontSize: 9,
+    marginTop: 2,
+  },
+
+  aiPlanTasks: {
+    marginTop: 12,
+    gap: 8,
+  },
+
+  aiPlanTask: {
+    alignItems: 'center',
+    padding: 11,
+    borderRadius: 14,
+    gap: 10,
+  },
+
+  aiPlanTaskNumber: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  aiPlanTaskNumberText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+
+  aiPlanTaskContent: {
+    flex: 1,
+  },
+
+  aiPlanTaskTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  aiPlanTaskMeta: {
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 4,
+  },
+
+  aiPlanTaskMetaText: {
+    fontSize: 10,
+  },
+
+  aiPlanTaskConfidence: {
+    fontSize: 10,
+    fontWeight: '700',
+    marginLeft: 4,
+  },
+
+  aiWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+
+  aiWarningText: {
+    fontSize: 10,
+    fontWeight: '600',
   },
 
   reportButton: {
@@ -3291,6 +4278,27 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
+  taskFeedbackRow: {
+    marginTop: 10,
+    gap: 7,
+  },
+
+  feedbackButton: {
+    flex: 1,
+    minHeight: 38,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: 5,
+  },
+
+  feedbackButtonText: {
+    fontSize: 9,
+    fontWeight: '600',
+  },
+
   completeDayButton: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -3372,6 +4380,7 @@ const styles = StyleSheet.create({
   reportStatValue: {
     fontSize: 18,
     fontWeight: '700',
+    textAlign: 'center',
   },
 
   reportStatLabel: {
@@ -3484,7 +4493,6 @@ const styles = StyleSheet.create({
 
   celebrationText: {
     fontSize: 14,
-    textAlign: 'center',
     opacity: 0.7,
   },
 });

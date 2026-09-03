@@ -1,13 +1,21 @@
+
 import React, { ReactNode, useMemo } from 'react';
+
 import {
   View,
   StyleSheet,
   ViewStyle,
   StyleProp,
 } from 'react-native';
+
 import { MotiView } from 'moti';
+
 import { useTheme } from '../../context/ThemeContext';
-import { Spacing, BorderRadius } from '../../constants/theme';
+
+import {
+  Spacing,
+  BorderRadius,
+} from '../../constants/theme';
 
 interface CardProps {
   children: ReactNode;
@@ -26,7 +34,7 @@ export function Card({
   animate = true,
   delay = 0,
 }: CardProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   const cardStyle = useMemo<StyleProp<ViewStyle>>(
     () => [
@@ -55,35 +63,19 @@ export function Card({
             }
           : {
               backgroundColor: colors.surface,
-
-              shadowColor: isDark
-                ? colors.primary
-                : '#000000',
-
-              shadowOffset: {
-                width: 0,
-                height: 4,
-              },
-
-              shadowOpacity: isDark
-                ? 0.15
-                : 0.08,
-
-              shadowRadius: 12,
-
-              elevation: 8,
             },
 
       style,
     ],
+
     [
       colors,
-      isDark,
       padding,
       variant,
       style,
     ],
   );
+
   if (animate) {
     return (
       <MotiView
@@ -122,3 +114,4 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 });
+
