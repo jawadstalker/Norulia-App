@@ -1,7 +1,7 @@
 {
   "name": "neurolia-clean",
   "version": "1.0.0",
- "main": "./index.ts",
+  "main": "./index.ts",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -25,10 +25,11 @@
     "expo-camera": "~16.1.11",
     "expo-clipboard": "~7.1.5",
     "expo-constants": "~17.1.8",
-    "expo-font": "~13.3.2",
     "expo-file-system": "~18.0.10",
+    "expo-font": "~13.3.2",
     "expo-haptics": "~14.1.4",
     "expo-image": "~2.4.1",
+    "expo-intent-launcher": "~12.1.5",
     "expo-linear-gradient": "~14.1.5",
     "expo-linking": "~7.1.7",
     "expo-navigation-bar": "~4.2.8",

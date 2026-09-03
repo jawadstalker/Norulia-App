@@ -86,6 +86,16 @@ type DifficultyConfig = {
   maxObjects: number;
   objectSize: number;
   duration: number;
+  dangerProbability: number;
+  /*
+   * Movement makes objects drift around in the air
+   * instead of sitting still, so the player has to
+   * track a moving target — harder difficulty means
+   * a wider drift radius and a faster drift speed.
+   */
+  wobbleRadius: number;
+  wobbleMinDuration: number;
+  wobbleMaxDuration: number;
 };
 
 const DIFFICULTIES: DifficultyConfig[] = [
@@ -99,8 +109,9 @@ const DIFFICULTIES: DifficultyConfig[] = [
     objectSize: 76,
     duration: 30000,
     dangerProbability: 0.25,
-  } as DifficultyConfig & {
-    dangerProbability: number;
+    wobbleRadius: 26,
+    wobbleMinDuration: 520,
+    wobbleMaxDuration: 820,
   },
 
   {
@@ -113,8 +124,9 @@ const DIFFICULTIES: DifficultyConfig[] = [
     objectSize: 70,
     duration: 35000,
     dangerProbability: 0.35,
-  } as DifficultyConfig & {
-    dangerProbability: number;
+    wobbleRadius: 38,
+    wobbleMinDuration: 420,
+    wobbleMaxDuration: 700,
   },
 
   {
@@ -127,8 +139,9 @@ const DIFFICULTIES: DifficultyConfig[] = [
     objectSize: 64,
     duration: 40000,
     dangerProbability: 0.45,
-  } as DifficultyConfig & {
-    dangerProbability: number;
+    wobbleRadius: 50,
+    wobbleMinDuration: 340,
+    wobbleMaxDuration: 580,
   },
 
   {
@@ -141,8 +154,9 @@ const DIFFICULTIES: DifficultyConfig[] = [
     objectSize: 58,
     duration: 45000,
     dangerProbability: 0.55,
-  } as DifficultyConfig & {
-    dangerProbability: number;
+    wobbleRadius: 64,
+    wobbleMinDuration: 260,
+    wobbleMaxDuration: 460,
   },
 ];
 
@@ -157,6 +171,13 @@ type GameObject = {
   y: number;
   scale: Animated.Value;
   opacity: Animated.Value;
+  /*
+   * translateX / translateY drive the continuous
+   * in-air drift so the object keeps shifting
+   * position while it's alive.
+   */
+  translateX: Animated.Value;
+  translateY: Animated.Value;
 };
 
 type ScorePopup = {
@@ -437,9 +458,7 @@ export default function LastSurvivalScreen() {
           DIFFICULTIES.length - 1
         )
       )
-    ] as DifficultyConfig & {
-      dangerProbability: number;
-    };
+    ];
 
   const difficultyName =
     language === 'fa'
@@ -719,6 +738,74 @@ export default function LastSurvivalScreen() {
     );
 
   /* ================================================================
+     WOBBLE (in-air drift)
+  ================================================================= */
+
+  const wobbleObject =
+    useCallback(
+      (
+        id: number,
+        translateX: Animated.Value,
+        translateY: Animated.Value,
+        maxOffsetX: number,
+        maxOffsetY: number
+      ) => {
+        if (
+          !mounted.current ||
+          isLeavingRef.current ||
+          removingIds.current.has(id)
+        ) {
+          return;
+        }
+
+        const nextX =
+          maxOffsetX > 0
+            ? (Math.random() * 2 - 1) *
+              maxOffsetX
+            : 0;
+
+        const nextY =
+          maxOffsetY > 0
+            ? (Math.random() * 2 - 1) *
+              maxOffsetY
+            : 0;
+
+        const duration =
+          currentConfig.wobbleMinDuration +
+          Math.random() *
+            (currentConfig.wobbleMaxDuration -
+              currentConfig.wobbleMinDuration);
+
+        Animated.parallel([
+          Animated.timing(translateX, {
+            toValue: nextX,
+            duration,
+            useNativeDriver: true,
+          }),
+
+          Animated.timing(translateY, {
+            toValue: nextY,
+            duration,
+            useNativeDriver: true,
+          }),
+        ]).start(({ finished }) => {
+          if (!finished) {
+            return;
+          }
+
+          wobbleObject(
+            id,
+            translateX,
+            translateY,
+            maxOffsetX,
+            maxOffsetY
+          );
+        });
+      },
+      [currentConfig]
+    );
+
+  /* ================================================================
      SPAWN
   ================================================================= */
 
@@ -779,6 +866,12 @@ export default function LastSurvivalScreen() {
       const opacity =
         new Animated.Value(1);
 
+      const translateX =
+        new Animated.Value(0);
+
+      const translateY =
+        new Animated.Value(0);
+
       const object: GameObject = {
         id,
         isDanger,
@@ -786,6 +879,8 @@ export default function LastSurvivalScreen() {
         y,
         scale,
         opacity,
+        translateX,
+        translateY,
       };
 
       setObjects(previous => [
@@ -799,6 +894,43 @@ export default function LastSurvivalScreen() {
         tension: 70,
         useNativeDriver: true,
       }).start();
+
+      /*
+       * Keep the object drifting around in the air
+       * for as long as it stays alive, clamped so it
+       * never drifts outside the play field.
+       */
+      const maxOffsetX =
+        Math.max(
+          0,
+          Math.min(
+            currentConfig.wobbleRadius,
+            x - PLAY_SIDE_MARGIN,
+            PLAY_SIDE_MARGIN +
+              maxX -
+              x
+          )
+        );
+
+      const maxOffsetY =
+        Math.max(
+          0,
+          Math.min(
+            currentConfig.wobbleRadius,
+            y - PLAY_SIDE_MARGIN,
+            PLAY_SIDE_MARGIN +
+              maxY -
+              y
+          )
+        );
+
+      wobbleObject(
+        id,
+        translateX,
+        translateY,
+        maxOffsetX,
+        maxOffsetY
+      );
 
       const timer =
         setTimeout(() => {
@@ -844,6 +976,7 @@ export default function LastSurvivalScreen() {
       playFieldHeight,
       currentConfig,
       removeObject,
+      wobbleObject,
     ]);
 
   /* ================================================================
@@ -2568,6 +2701,14 @@ export default function LastSurvivalScreen() {
                     {
                       scale:
                         object.scale,
+                    },
+                    {
+                      translateX:
+                        object.translateX,
+                    },
+                    {
+                      translateY:
+                        object.translateY,
                     },
                   ],
                 },

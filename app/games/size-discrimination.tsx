@@ -39,13 +39,133 @@ import {
   BorderRadius,
 } from '../../constants/theme';
 
+import Svg, {
+  Circle as SvgCircle,
+  Rect as SvgRect,
+  Polygon as SvgPolygon,
+} from 'react-native-svg';
+
 import { saveGameResult } from './gameResults';
+
+/* ================================================================
+   SHAPE VISUAL
+   Renders the shape currently in play (circle / square /
+   triangle / rectangle) inside a `size` x `size` bounding box,
+   so the size-comparison logic stays exactly the same regardless
+   of which shape is shown.
+================================================================ */
+
+const ShapeVisual = ({
+  shape,
+  size,
+  color,
+  opacity,
+}: {
+  shape: ShapeType;
+  size: number;
+  color: string;
+  opacity: number;
+}) => {
+  if (shape === 'circle') {
+    return (
+      <Svg
+        width={size}
+        height={size}
+        style={{ opacity }}
+      >
+        <SvgCircle
+          cx={size / 2}
+          cy={size / 2}
+          r={size / 2}
+          fill={color}
+        />
+      </Svg>
+    );
+  }
+
+  if (shape === 'square') {
+    return (
+      <Svg
+        width={size}
+        height={size}
+        style={{ opacity }}
+      >
+        <SvgRect
+          x={0}
+          y={0}
+          width={size}
+          height={size}
+          rx={size * 0.14}
+          fill={color}
+        />
+      </Svg>
+    );
+  }
+
+  if (shape === 'rectangle') {
+    const height = size * 0.62;
+
+    return (
+      <Svg
+        width={size}
+        height={size}
+        style={{ opacity }}
+      >
+        <SvgRect
+          x={0}
+          y={(size - height) / 2}
+          width={size}
+          height={height}
+          rx={size * 0.1}
+          fill={color}
+        />
+      </Svg>
+    );
+  }
+
+  /* triangle */
+  const points = `${size / 2},0 ${size},${size} 0,${size}`;
+
+  return (
+    <Svg
+      width={size}
+      height={size}
+      style={{ opacity }}
+    >
+      <SvgPolygon
+        points={points}
+        fill={color}
+      />
+    </Svg>
+  );
+};
 
 /* ================================================================
    TYPES
 ================================================================ */
 
 type Side = 'left' | 'right';
+
+type ShapeType =
+  | 'circle'
+  | 'square'
+  | 'triangle'
+  | 'rectangle';
+
+const SHAPE_TYPES: ShapeType[] = [
+  'circle',
+  'square',
+  'triangle',
+  'rectangle',
+];
+
+const pickRandomShape = (): ShapeType =>
+  SHAPE_TYPES[
+    Math.floor(
+      Math.random() *
+        SHAPE_TYPES.length
+    )
+  ];
 
 type Phase =
   | 'intro'
@@ -346,7 +466,7 @@ export default function SizeDiscriminationScreen() {
               'تفاوت ظریف اندازه‌ها را تشخیص بده',
 
             instruction:
-              'کدام دایره بزرگ‌تر است؟',
+              'کدام شکل بزرگ‌تر است؟',
 
             left:
               'سمت چپ',
@@ -439,7 +559,7 @@ export default function SizeDiscriminationScreen() {
               'عملکرد',
 
             startDescription:
-              'دایره‌هایی با اندازه‌های نزدیک نمایش داده می‌شوند. دایره بزرگ‌تر را سریع و دقیق انتخاب کن.',
+              'در هر مرحله یک شکل تصادفی (دایره، مربع، مثلث یا مستطیل) با اندازه‌های نزدیک به هم نمایش داده می‌شود. شکل بزرگ‌تر را سریع و دقیق انتخاب کن.',
           }
         : {
             title: 'Size Guess',
@@ -448,7 +568,7 @@ export default function SizeDiscriminationScreen() {
               'Detect subtle differences in size',
 
             instruction:
-              'Which circle is bigger?',
+              'Which shape is bigger?',
 
             left:
               'Left',
@@ -541,7 +661,7 @@ export default function SizeDiscriminationScreen() {
               'Performance',
 
             startDescription:
-              'Circles with similar sizes will appear. Choose the bigger one as quickly and accurately as possible.',
+              'Each round shows a random shape (circle, square, triangle, or rectangle) with similar sizes. Choose the bigger one as quickly and accurately as possible.',
           },
     [language]
   );
@@ -595,6 +715,11 @@ export default function SizeDiscriminationScreen() {
     90,
     70,
   ]);
+
+  const [
+    currentShape,
+    setCurrentShape,
+  ] = useState<ShapeType>('circle');
 
   const [
     correctIndex,
@@ -838,6 +963,16 @@ export default function SizeDiscriminationScreen() {
           config,
           difference
         );
+
+      /*
+       * Each trial shows a freshly-picked random
+       * shape (circle / square / triangle /
+       * rectangle) so the player can't rely on
+       * memorized shape outlines.
+       */
+      setCurrentShape(
+        pickRandomShape()
+      );
 
       /*
        * Find the largest circle after
@@ -2884,33 +3019,34 @@ export default function SizeDiscriminationScreen() {
                     },
                   ]}
                 >
-                  <Animated.View
-                    style={[
-                      styles.circle,
-                      {
-                        width:
-                          size,
-
-                        height:
-                          size,
-
-                        borderRadius:
-                          size /
-                          2,
-
-                        backgroundColor:
-                          colors.primary,
-
-                        opacity:
-                          feedback ===
-                            'wrong' &&
-                          !ready &&
-                          isCorrect
-                            ? 0.95
-                            : 1,
-                      },
-                    ]}
-                  />
+                  <View
+                    style={{
+                      width: size,
+                      height: size,
+                      alignItems:
+                        'center',
+                      justifyContent:
+                        'center',
+                    }}
+                  >
+                    <ShapeVisual
+                      shape={
+                        currentShape
+                      }
+                      size={size}
+                      color={
+                        colors.primary
+                      }
+                      opacity={
+                        feedback ===
+                          'wrong' &&
+                        !ready &&
+                        isCorrect
+                          ? 0.95
+                          : 1
+                      }
+                    />
+                  </View>
 
                   {config.circleCount <=
                     2 && (

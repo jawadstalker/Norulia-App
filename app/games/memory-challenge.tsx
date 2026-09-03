@@ -1,5 +1,6 @@
 import React, {
   useEffect,
+  useRef,
   useState,
 } from 'react';
 
@@ -62,21 +63,25 @@ const difficultyConfig = {
   1: {
     optionCount: 4,
     similarity: 0.9,
+    timeLimit: 5500,
   },
 
   2: {
     optionCount: 6,
     similarity: 0.7,
+    timeLimit: 4500,
   },
 
   3: {
     optionCount: 6,
     similarity: 0.5,
+    timeLimit: 3600,
   },
 
   4: {
     optionCount: 9,
     similarity: 0.3,
+    timeLimit: 2800,
   },
 } as const;
 
@@ -113,6 +118,8 @@ const text = {
     correctAnswers: 'پاسخ صحیح',
     answers: 'پاسخ',
     of: 'از',
+    timeLabel: 'زمان',
+    timeUp: 'زمان تمام شد',
     adaptive: 'سختی تطبیقی',
     adaptiveUp: 'عملکرد شما عالی بود. مرحله بعد کمی سخت‌تر خواهد بود.',
     adaptiveDown: 'این مرحله کمی دشوار بود. مرحله بعد کمی آسان‌تر خواهد بود.',
@@ -157,6 +164,8 @@ const text = {
     correctAnswers: 'Correct Answers',
     answers: 'answers',
     of: 'of',
+    timeLabel: 'Time',
+    timeUp: "Time's up",
     adaptive: 'Adaptive Difficulty',
     adaptiveUp: 'Excellent performance. The next session will be slightly harder.',
     adaptiveDown: 'This session was challenging. The next session will be slightly easier.',
@@ -608,9 +617,86 @@ export default function MemoryChallenge() {
     'up' | 'down' | 'same' | null
   >(null);
 
+  /*
+   * Countdown for the current round. Shortening
+   * this per difficulty level is what makes the
+   * game more challenging — the player has to
+   * recall the target shape/color faster.
+   */
+  const [
+    timeLeft,
+    setTimeLeft,
+  ] = useState<number>(
+    difficultyConfig[
+      1 as keyof typeof difficultyConfig
+    ].timeLimit
+  );
+
+  const timerInterval =
+    useRef<ReturnType<
+      typeof setInterval
+    > | null>(null);
+
+  const clearRoundTimer =
+    () => {
+      if (timerInterval.current) {
+        clearInterval(
+          timerInterval.current
+        );
+
+        timerInterval.current = null;
+      }
+    };
+
   useEffect(() => {
     loadAdaptiveState();
   }, []);
+
+  /*
+   * Round countdown — resets whenever a new round
+   * starts (currentRound changes) or the difficulty
+   * changes, and stops while the game isn't actively
+   * being played.
+   */
+  useEffect(() => {
+    if (!gameStarted || gameFinished) {
+      clearRoundTimer();
+
+      return;
+    }
+
+    const config =
+      difficultyConfig[
+        difficulty as keyof typeof difficultyConfig
+      ] || difficultyConfig[1];
+
+    setTimeLeft(config.timeLimit);
+
+    clearRoundTimer();
+
+    timerInterval.current =
+      setInterval(() => {
+        setTimeLeft(previous => {
+          if (previous <= 100) {
+            clearRoundTimer();
+
+            handleTimeout();
+
+            return 0;
+          }
+
+          return previous - 100;
+        });
+      }, 100);
+
+    return () => clearRoundTimer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    gameStarted,
+    gameFinished,
+    currentRound,
+    difficulty,
+  ]);
 
   async function loadAdaptiveState() {
     try {
@@ -716,15 +802,9 @@ export default function MemoryChallenge() {
     setAdaptiveResult(null);
   }
 
-  function selectShape(
-    selectedShape: Shape
+  function advanceRound(
+    isCorrect: boolean
   ) {
-    const isCorrect =
-      selectedShape.shape ===
-        target.shape &&
-      selectedShape.color ===
-        target.color;
-
     const newCorrectAnswers =
       isCorrect
         ? correctAnswers + 1
@@ -771,6 +851,26 @@ export default function MemoryChallenge() {
         difficulty
       )
     );
+  }
+
+  function selectShape(
+    selectedShape: Shape
+  ) {
+    clearRoundTimer();
+
+    const isCorrect =
+      selectedShape.shape ===
+        target.shape &&
+      selectedShape.color ===
+        target.color;
+
+    advanceRound(isCorrect);
+  }
+
+  function handleTimeout() {
+    clearRoundTimer();
+
+    advanceRound(false);
   }
 
   async function finishGame(
@@ -1613,6 +1713,27 @@ export default function MemoryChallenge() {
       target.color
     );
 
+  const roundTimeLimit =
+    (
+      difficultyConfig[
+        difficulty as keyof typeof difficultyConfig
+      ] || difficultyConfig[1]
+    ).timeLimit;
+
+  const timeLeftRatio =
+    Math.max(
+      0,
+      Math.min(
+        1,
+        timeLeft / roundTimeLimit
+      )
+    );
+
+  const timerColor =
+    timeLeftRatio <= 0.25
+      ? '#EF4444'
+      : colors.primary;
+
   return (
     <View
       style={[
@@ -1696,6 +1817,66 @@ export default function MemoryChallenge() {
               {
                 backgroundColor:
                   colors.primary,
+              },
+            ]}
+          />
+        </View>
+
+        <View
+          style={
+            styles.timerRow
+          }
+        >
+          <Text
+            style={[
+              styles.timerLabel,
+              {
+                color:
+                  timerColor,
+              },
+            ]}
+          >
+            {
+              currentText.timeLabel
+            }
+          </Text>
+
+          <Text
+            style={[
+              styles.timerLabel,
+              {
+                color:
+                  timerColor,
+              },
+            ]}
+          >
+            {(
+              timeLeft / 1000
+            ).toFixed(1)}
+            s
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.timerBackground,
+            {
+              backgroundColor:
+                colors.border,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.timerFill,
+              {
+                width: `${
+                  timeLeftRatio *
+                  100
+                }%`,
+
+                backgroundColor:
+                  timerColor,
               },
             ]}
           />
@@ -2003,6 +2184,32 @@ const styles =
     },
 
     progressFill: {
+      height: '100%',
+      borderRadius:
+        BorderRadius.full,
+    },
+
+    timerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: 10,
+      marginBottom: 6,
+    },
+
+    timerLabel: {
+      fontSize: 12,
+      fontWeight: '600',
+    },
+
+    timerBackground: {
+      height: 6,
+      borderRadius:
+        BorderRadius.full,
+      overflow: 'hidden',
+    },
+
+    timerFill: {
       height: '100%',
       borderRadius:
         BorderRadius.full,
