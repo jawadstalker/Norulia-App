@@ -1958,7 +1958,7 @@ export default function GameResultsScreen({
                               styles.movieContent
                             }
                           >
-                            {/* MOVIE TITLE - ALWAYS ENGLISH */}
+                            {/* MOVIE TITLE - BILINGUAL */}
                             <View
                               style={[
                                 styles.movieNameRow,
@@ -1980,11 +1980,15 @@ export default function GameResultsScreen({
                                     color:
                                       colors.text,
                                     textAlign:
-                                      'left',
+                                      isRTL
+                                        ? 'right'
+                                        : 'left',
                                   },
                                 ]}
                               >
-                                {movie.titleEn}
+                                {language === 'fa'
+                                  ? movie.titleFa || movie.titleEn
+                                  : movie.titleEn}
                               </Text>
 
                               <View

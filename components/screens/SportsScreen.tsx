@@ -8,9 +8,11 @@ import {
   Modal,
   Platform,
 } from 'react-native';
+
 import { AppText as Text } from '../ui/AppText';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+
 import {
   ArrowLeft,
   Activity,
@@ -34,6 +36,7 @@ import {
   X,
   ImageOff,
 } from 'lucide-react-native';
+
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -67,7 +70,12 @@ const EXERCISE_MEDIA: Partial<Record<string, ExerciseMediaItem>> = {
   },
 };
 
-type Category = 'mobility' | 'strength' | 'cardio' | 'balance' | 'recovery';
+type Category =
+  | 'mobility'
+  | 'strength'
+  | 'cardio'
+  | 'balance'
+  | 'recovery';
 
 interface Exercise {
   id: string;
@@ -88,15 +96,76 @@ export default function SportsScreen() {
 
   const [selectedMood, setSelectedMood] = useState('good');
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<'all' | Category>('all');
-  const [activeExerciseId, setActiveExerciseId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<'all' | Category>('all');
+  const [activeExerciseId, setActiveExerciseId] =
+    useState<string | null>(null);
+
+  /*
+   * Athlete mode can be connected to your athlete/profile context later.
+   * Normal mode:
+   * Dark  -> Turquoise
+   * Light -> Purple
+   */
+  const isAthlete = false;
+
+  /*
+   * Main accent colors
+   *
+   * Athlete:
+   *   Green
+   *
+   * Dark:
+   *   Turquoise
+   *
+   * Light:
+   *   Purple
+   */
+  const iconColor = isAthlete
+    ? '#22C55E'
+    : isDark
+      ? '#49C2E2'
+      : '#6B5AA6';
+
+  const iconColorSoft = isAthlete
+    ? 'rgba(34, 197, 94, 0.12)'
+    : isDark
+      ? 'rgba(73, 194, 226, 0.12)'
+      : 'rgba(107, 90, 166, 0.12)';
+
+  const iconColorMedium = isAthlete
+    ? 'rgba(34, 197, 94, 0.18)'
+    : isDark
+      ? 'rgba(73, 194, 226, 0.18)'
+      : 'rgba(107, 90, 166, 0.18)';
+
+  /*
+   * Text displayed on strong accent backgrounds.
+   *
+   * Dark turquoise background needs a dark foreground.
+   * Light purple background needs a white foreground.
+   */
+  const buttonTextColor = isDark
+    ? '#07151A'
+    : '#FFFFFF';
+
+  const accentSurface = isDark
+    ? '#0D2027'
+    : colors.surface;
+
+  const secondarySurface = isDark
+    ? '#10252D'
+    : colors.surfaceSecondary;
+
+  const tertiaryText =
+    colors.textTertiary || colors.textSecondary;
 
   const CATEGORY_ACCENTS: Record<Category, string> = {
-    mobility: colors.primaryLight || colors.primary,
-    strength: colors.primary,
-    cardio: colors.success || colors.primary,
-    balance: colors.primaryDark || colors.primary,
-    recovery: colors.primaryDark || colors.primary,
+    mobility: iconColor,
+    strength: iconColor,
+    cardio: iconColor,
+    balance: iconColor,
+    recovery: iconColor,
   };
 
   const TEXTS = {
@@ -105,40 +174,52 @@ export default function SportsScreen() {
       badge: 'Brain × Body × Performance',
       title: 'ورزش',
       subtitle: 'برنامه روزانه‌ای برای تقویت بدن، ذهن و انرژی شما',
+
       today: 'امروز',
       todayPlan: 'برنامه امروز',
       completed: 'تکمیل شده',
       remaining: 'باقی مانده',
+
       yourMood: 'حال امروزت چطوره؟',
       moodSubtitle: 'برنامه امروز با وضعیت فعلی شما هماهنگ می‌شود',
+
       great: 'عالی',
       good: 'خوب',
       normal: 'معمولی',
       tired: 'خسته',
       stressed: 'پراسترس',
+
       body: 'بدن',
       mind: 'ذهن',
       energy: 'انرژی',
+
       todaysWorkout: 'تمرین امروز',
       recommendedForYou: 'پیشنهاد شده برای شما',
+
       warmup: 'گرم کردن',
       mainWorkout: 'تمرین اصلی',
       cooldown: 'سرد کردن',
+
       duration: 'دقیقه',
       seconds: 'ثانیه',
       reps: 'تکرار',
       sets: 'ست',
+
       startWorkout: 'شروع تمرین',
       continueWorkout: 'ادامه تمرین',
+
       exercises: 'حرکات',
       exercise: 'حرکت',
+
       weeklyPlan: 'برنامه هفتگی',
       weeklyReport: 'گزارش هفتگی',
       weekProgress: 'پیشرفت این هفته',
+
       workoutsCompleted: 'تمرین انجام شده',
       totalMinutes: 'دقیقه فعالیت',
       activeDays: 'روز فعال',
       currentStreak: 'روز متوالی',
+
       monday: 'دوشنبه',
       tuesday: 'سه‌شنبه',
       wednesday: 'چهارشنبه',
@@ -146,71 +227,104 @@ export default function SportsScreen() {
       friday: 'جمعه',
       saturday: 'شنبه',
       sunday: 'یکشنبه',
+
       todayShort: 'امروز',
+
       recovery: 'ریکاوری',
       strength: 'قدرتی',
       mobility: 'انعطاف',
       cardio: 'هوازی',
       balance: 'تعادل',
+
       weeklyInsight: 'بینش هفتگی',
-      weeklyInsightText: 'این هفته تمرکز برنامه روی حفظ انرژی، حرکت منظم و ایجاد تعادل بین عملکرد ذهنی و بدنی است.',
+      weeklyInsightText:
+        'این هفته تمرکز برنامه روی حفظ انرژی، حرکت منظم و ایجاد تعادل بین عملکرد ذهنی و بدنی است.',
+
       performance: 'عملکرد',
       bodyPerformance: 'عملکرد بدنی',
       mentalPerformance: 'عملکرد ذهنی',
       viewReport: 'مشاهده گزارش کامل',
+
       start: 'شروع',
       done: 'انجام شد',
-      noPressure: 'اگر امروز انرژی کمتری داری، شدت تمرین را کاهش بده.',
-      safeTraining: 'حرکات را با فرم مناسب و در محدوده توانایی خود انجام دهید.',
+
+      noPressure:
+        'اگر امروز انرژی کمتری داری، شدت تمرین را کاهش بده.',
+
+      safeTraining:
+        'حرکات را با فرم مناسب و در محدوده توانایی خود انجام دهید.',
+
       filterAll: 'همه',
+
       tapToViewDemo: 'برای مشاهده مدل حرکت لمس کنید',
+
       howToPerform: 'روش انجام حرکت',
+
       markDone: 'علامت به‌عنوان انجام‌شده',
       markUndone: 'حذف علامت انجام‌شده',
+
       noMediaTitle: 'مدل این حرکت هنوز اضافه نشده',
-      noMediaSubtitle: 'یک تصویر یا GIF برای این حرکت در EXERCISE_MEDIA اضافه کنید.',
+      noMediaSubtitle:
+        'یک تصویر یا GIF برای این حرکت در EXERCISE_MEDIA اضافه کنید.',
+
       close: 'بستن',
+
       moderate: 'متوسط',
     },
+
     en: {
       back: 'Back',
       badge: 'Brain × Body × Performance',
       title: 'Sports',
-      subtitle: 'A daily plan to improve your body, mind and energy',
+      subtitle:
+        'A daily plan to improve your body, mind and energy',
+
       today: 'Today',
       todayPlan: "Today's Plan",
       completed: 'Completed',
       remaining: 'Remaining',
+
       yourMood: 'How are you feeling today?',
-      moodSubtitle: 'Your daily plan adapts to your current state',
+      moodSubtitle:
+        'Your daily plan adapts to your current state',
+
       great: 'Great',
       good: 'Good',
       normal: 'Normal',
       tired: 'Tired',
       stressed: 'Stressed',
+
       body: 'Body',
       mind: 'Mind',
       energy: 'Energy',
+
       todaysWorkout: "Today's Workout",
       recommendedForYou: 'Recommended for you',
+
       warmup: 'Warm Up',
       mainWorkout: 'Main Workout',
       cooldown: 'Cool Down',
+
       duration: 'min',
       seconds: 'sec',
       reps: 'reps',
       sets: 'sets',
+
       startWorkout: 'Start Workout',
       continueWorkout: 'Continue Workout',
+
       exercises: 'Exercises',
       exercise: 'Exercise',
+
       weeklyPlan: 'Weekly Plan',
       weeklyReport: 'Weekly Report',
       weekProgress: 'This Week',
+
       workoutsCompleted: 'Workouts',
       totalMinutes: 'Active Minutes',
       activeDays: 'Active Days',
       currentStreak: 'Day Streak',
+
       monday: 'Monday',
       tuesday: 'Tuesday',
       wednesday: 'Wednesday',
@@ -218,30 +332,48 @@ export default function SportsScreen() {
       friday: 'Friday',
       saturday: 'Saturday',
       sunday: 'Sunday',
+
       todayShort: 'Today',
+
       recovery: 'Recovery',
       strength: 'Strength',
       mobility: 'Mobility',
       cardio: 'Cardio',
       balance: 'Balance',
+
       weeklyInsight: 'Weekly Insight',
-      weeklyInsightText: 'This week focuses on maintaining energy, consistent movement and balancing mental and physical performance.',
+      weeklyInsightText:
+        'This week focuses on maintaining energy, consistent movement and balancing mental and physical performance.',
+
       performance: 'Performance',
       bodyPerformance: 'Body Performance',
       mentalPerformance: 'Mental Performance',
       viewReport: 'View Full Report',
+
       start: 'Start',
       done: 'Done',
-      noPressure: 'If your energy is lower today, reduce the workout intensity.',
-      safeTraining: 'Perform movements with proper form and within your ability.',
+
+      noPressure:
+        'If your energy is lower today, reduce the workout intensity.',
+
+      safeTraining:
+        'Perform movements with proper form and within your ability.',
+
       filterAll: 'All',
+
       tapToViewDemo: 'Tap to view the exercise demo',
+
       howToPerform: 'How to perform',
+
       markDone: 'Mark as done',
       markUndone: 'Mark as not done',
+
       noMediaTitle: 'No demo added yet',
-      noMediaSubtitle: 'Add an image or GIF for this exercise in EXERCISE_MEDIA.',
+      noMediaSubtitle:
+        'Add an image or GIF for this exercise in EXERCISE_MEDIA.',
+
       close: 'Close',
+
       moderate: 'Moderate',
     },
   };
@@ -249,11 +381,31 @@ export default function SportsScreen() {
   const text = isRTL ? TEXTS.fa : TEXTS.en;
 
   const moods = [
-    { id: 'great', label: text.great, icon: Sparkles },
-    { id: 'good', label: text.good, icon: Zap },
-    { id: 'normal', label: text.normal, icon: Activity },
-    { id: 'tired', label: text.tired, icon: Wind },
-    { id: 'stressed', label: text.stressed, icon: HeartPulse },
+    {
+      id: 'great',
+      label: text.great,
+      icon: Sparkles,
+    },
+    {
+      id: 'good',
+      label: text.good,
+      icon: Zap,
+    },
+    {
+      id: 'normal',
+      label: text.normal,
+      icon: Activity,
+    },
+    {
+      id: 'tired',
+      label: text.tired,
+      icon: Wind,
+    },
+    {
+      id: 'stressed',
+      label: text.stressed,
+      icon: HeartPulse,
+    },
   ];
 
   const exercises: Exercise[] = [
@@ -276,6 +428,7 @@ export default function SportsScreen() {
             'Open up your ankles and knees with slow circles.',
           ],
     },
+
     {
       id: 'squat',
       title: isRTL ? 'اسکوات' : 'Bodyweight Squat',
@@ -297,6 +450,7 @@ export default function SportsScreen() {
             'Drive through your heels to stand back up.',
           ],
     },
+
     {
       id: 'walk',
       title: isRTL ? 'راه رفتن سریع' : 'Brisk Walk',
@@ -316,6 +470,7 @@ export default function SportsScreen() {
             'Keep your spine tall and eyes forward.',
           ],
     },
+
     {
       id: 'balance',
       title: isRTL ? 'تمرین تعادل' : 'Balance Hold',
@@ -335,6 +490,7 @@ export default function SportsScreen() {
             'Hold a wall or chair lightly if you need support.',
           ],
     },
+
     {
       id: 'cooldown',
       title: text.cooldown,
@@ -356,53 +512,164 @@ export default function SportsScreen() {
     },
   ];
 
-  const categoryFilters: { id: 'all' | Category; label: string }[] = [
-    { id: 'all', label: text.filterAll },
-    { id: 'strength', label: text.strength },
-    { id: 'cardio', label: text.cardio },
-    { id: 'mobility', label: text.mobility },
-    { id: 'balance', label: text.balance },
-    { id: 'recovery', label: text.recovery },
+  const categoryFilters: {
+    id: 'all' | Category;
+    label: string;
+  }[] = [
+    {
+      id: 'all',
+      label: text.filterAll,
+    },
+    {
+      id: 'strength',
+      label: text.strength,
+    },
+    {
+      id: 'cardio',
+      label: text.cardio,
+    },
+    {
+      id: 'mobility',
+      label: text.mobility,
+    },
+    {
+      id: 'balance',
+      label: text.balance,
+    },
+    {
+      id: 'recovery',
+      label: text.recovery,
+    },
   ];
 
   const filteredExercises =
     selectedCategory === 'all'
       ? exercises
-      : exercises.filter((exercise) => exercise.category === selectedCategory);
+      : exercises.filter(
+          (exercise) =>
+            exercise.category === selectedCategory
+        );
 
   const weeklyPlan = [
-    { id: 'mon', day: text.monday, short: isRTL ? 'د' : 'M', type: text.strength, duration: 25, completed: true },
-    { id: 'tue', day: text.tuesday, short: isRTL ? 'س' : 'T', type: text.cardio, duration: 30, completed: true },
-    { id: 'wed', day: text.wednesday, short: isRTL ? 'چ' : 'W', type: text.mobility, duration: 20, completed: true },
-    { id: 'thu', day: text.thursday, short: isRTL ? 'پ' : 'T', type: text.strength, duration: 30, completed: false, today: true },
-    { id: 'fri', day: text.friday, short: isRTL ? 'ج' : 'F', type: text.cardio, duration: 25, completed: false },
-    { id: 'sat', day: text.saturday, short: isRTL ? 'ش' : 'S', type: text.balance, duration: 20, completed: false },
-    { id: 'sun', day: text.sunday, short: isRTL ? 'ی' : 'S', type: text.recovery, duration: 15, completed: false },
+    {
+      id: 'mon',
+      day: text.monday,
+      short: isRTL ? 'د' : 'M',
+      type: text.strength,
+      duration: 25,
+      completed: true,
+    },
+    {
+      id: 'tue',
+      day: text.tuesday,
+      short: isRTL ? 'س' : 'T',
+      type: text.cardio,
+      duration: 30,
+      completed: true,
+    },
+    {
+      id: 'wed',
+      day: text.wednesday,
+      short: isRTL ? 'چ' : 'W',
+      type: text.mobility,
+      duration: 20,
+      completed: true,
+    },
+    {
+      id: 'thu',
+      day: text.thursday,
+      short: isRTL ? 'پ' : 'T',
+      type: text.strength,
+      duration: 30,
+      completed: false,
+      today: true,
+    },
+    {
+      id: 'fri',
+      day: text.friday,
+      short: isRTL ? 'ج' : 'F',
+      type: text.cardio,
+      duration: 25,
+      completed: false,
+    },
+    {
+      id: 'sat',
+      day: text.saturday,
+      short: isRTL ? 'ش' : 'S',
+      type: text.balance,
+      duration: 20,
+      completed: false,
+    },
+    {
+      id: 'sun',
+      day: text.sunday,
+      short: isRTL ? 'ی' : 'S',
+      type: text.recovery,
+      duration: 15,
+      completed: false,
+    },
   ];
 
   const completedCount = completedExercises.length;
-  const progress = exercises.length > 0 ? Math.round((completedCount / exercises.length) * 100) : 0;
+
+  const progress =
+    exercises.length > 0
+      ? Math.round(
+          (completedCount / exercises.length) * 100
+        )
+      : 0;
 
   const weeklyStats = useMemo(
     () => [
-      { label: text.workoutsCompleted, value: '3', icon: CheckCircle2 },
-      { label: text.totalMinutes, value: '95', icon: Clock3 },
-      { label: text.activeDays, value: '3', icon: CalendarDays },
-      { label: text.currentStreak, value: '3', icon: Flame },
+      {
+        label: text.workoutsCompleted,
+        value: '3',
+        icon: CheckCircle2,
+      },
+      {
+        label: text.totalMinutes,
+        value: '95',
+        icon: Clock3,
+      },
+      {
+        label: text.activeDays,
+        value: '3',
+        icon: CalendarDays,
+      },
+      {
+        label: text.currentStreak,
+        value: '3',
+        icon: Flame,
+      },
     ],
     [text]
   );
 
   const toggleExercise = (id: string) => {
     setCompletedExercises((current) =>
-      current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+      current.includes(id)
+        ? current.filter((item) => item !== id)
+        : [...current, id]
     );
   };
 
-  const activeExercise = exercises.find((exercise) => exercise.id === activeExerciseId) || null;
-  const activeMedia = activeExerciseId ? EXERCISE_MEDIA[activeExerciseId] : undefined;
-  const activeAccent = activeExercise ? CATEGORY_ACCENTS[activeExercise.category] : colors.primary;
-  const activeCompleted = activeExerciseId ? completedExercises.includes(activeExerciseId) : false;
+  const activeExercise =
+    exercises.find(
+      (exercise) =>
+        exercise.id === activeExerciseId
+    ) || null;
+
+  const activeMedia = activeExerciseId
+    ? EXERCISE_MEDIA[activeExerciseId]
+    : undefined;
+
+  const activeAccent = activeExercise
+    ? CATEGORY_ACCENTS[activeExercise.category]
+    : iconColor;
+
+  const activeCompleted = activeExerciseId
+    ? completedExercises.includes(activeExerciseId)
+    : false;
 
   const statValueFor = (exercise: Exercise) => {
     return exercise.reps ?? exercise.duration ?? 0;
@@ -412,7 +679,10 @@ export default function SportsScreen() {
     if (exercise.reps) {
       return text.reps;
     }
-    return exercise.unit === 'sec' ? text.seconds : text.duration;
+
+    return exercise.unit === 'sec'
+      ? text.seconds
+      : text.duration;
   };
 
   const renderThumb = (exercise: Exercise) => {
@@ -421,110 +691,385 @@ export default function SportsScreen() {
     const accent = CATEGORY_ACCENTS[exercise.category];
 
     if (media) {
-      return <Image source={media.source} style={styles.exerciseThumbImage} resizeMode="contain" />;
+      return (
+        <Image
+          source={media.source}
+          style={styles.exerciseThumbImage}
+          resizeMode="contain"
+        />
+      );
     }
 
     return (
-      <View style={[styles.exerciseThumbFallback, { backgroundColor: `${accent}18` }]}>
-        <Icon size={25} color={accent} />
-        <ImageOff size={11} color={colors.textTertiary || colors.textSecondary} style={styles.missingIcon} />
+      <View
+        style={[
+          styles.exerciseThumbFallback,
+          {
+            backgroundColor: `${accent}18`,
+          },
+        ]}
+      >
+        <Icon
+          size={25}
+          color={accent}
+          strokeWidth={2}
+        />
+
+        <ImageOff
+          size={11}
+          color={tertiaryText}
+          style={styles.missingIcon}
+        />
       </View>
     );
   };
 
   const renderModalMedia = () => {
     if (!activeMedia) {
-      const Icon = activeExercise ? activeExercise.icon : ImageOff;
+      const Icon = activeExercise
+        ? activeExercise.icon
+        : ImageOff;
+
       return (
-        <View style={[styles.modalFallback, { backgroundColor: `${activeAccent}12` }]}>
-          <Icon size={42} color={activeAccent} />
-          <Text style={[styles.modalFallbackTitle, { color: colors.text }]}>{text.noMediaTitle}</Text>
-          <Text style={[styles.modalFallbackText, { color: colors.textSecondary }]}>{text.noMediaSubtitle}</Text>
+        <View
+          style={[
+            styles.modalFallback,
+            {
+              backgroundColor: `${activeAccent}12`,
+            },
+          ]}
+        >
+          <Icon
+            size={42}
+            color={activeAccent}
+            strokeWidth={2}
+          />
+
+          <Text
+            style={[
+              styles.modalFallbackTitle,
+              {
+                color: colors.text,
+              },
+            ]}
+          >
+            {text.noMediaTitle}
+          </Text>
+
+          <Text
+            style={[
+              styles.modalFallbackText,
+              {
+                color: colors.textSecondary,
+              },
+            ]}
+          >
+            {text.noMediaSubtitle}
+          </Text>
         </View>
       );
     }
 
-    return <Image source={activeMedia.source} style={styles.modalImage} resizeMode="contain" />;
+    return (
+      <Image
+        source={activeMedia.source}
+        style={styles.modalImage}
+        resizeMode="contain"
+      />
+    );
   };
 
-  const gradientColors: readonly [string, string] = isDark
-    ? [colors.primary, colors.primaryDark || colors.primary] as const
-    : [colors.primary, colors.primaryLight || colors.primary] as const;
+  const gradientColors: readonly [
+    string,
+    string,
+  ] = isAthlete
+    ? ['#22C55E', '#16A34A']
+    : isDark
+      ? ['#49C2E2', '#2FA8C8']
+      : ['#6B5AA6', '#806DB8'];
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.background,
+        },
+      ]}
+    >
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        {/* HEADER */}
+
         <View style={styles.header}>
           <TouchableOpacity
             activeOpacity={0.75}
             onPress={() => router.back()}
-            style={[styles.headerBackButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            style={[
+              styles.headerBackButton,
+              {
+                backgroundColor: accentSurface,
+                borderColor: colors.border,
+              },
+            ]}
             accessibilityRole="button"
           >
-            <ArrowLeft size={21} strokeWidth={2.2} color={colors.text} />
+            <ArrowLeft
+              size={21}
+              strokeWidth={2.2}
+              color={iconColor}
+            />
           </TouchableOpacity>
 
           <View style={styles.headerTitleWrapper}>
             <View
               style={[
                 styles.athleteBadge,
-                { backgroundColor: `${colors.primary}18`, borderColor: colors.border },
+                {
+                  backgroundColor: iconColorSoft,
+                  borderColor: `${iconColor}45`,
+                },
               ]}
             >
-              <View style={[styles.liveDot, { backgroundColor: colors.primary }]} />
-              <Text style={[styles.badgeText, { color: colors.primary }]}>{text.badge}</Text>
+              <View
+                style={[
+                  styles.liveDot,
+                  {
+                    backgroundColor: iconColor,
+                  },
+                ]}
+              />
+
+              <Text
+                style={[
+                  styles.badgeText,
+                  {
+                    color: iconColor,
+                  },
+                ]}
+              >
+                {text.badge}
+              </Text>
             </View>
 
-            <Text numberOfLines={1} style={[styles.headerTitle, { color: colors.text }]}>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.headerTitle,
+                {
+                  color: colors.text,
+                },
+              ]}
+            >
               {text.title}
             </Text>
 
-            <Text numberOfLines={2} style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+            <Text
+              numberOfLines={2}
+              style={[
+                styles.headerSubtitle,
+                {
+                  color: colors.textSecondary,
+                },
+              ]}
+            >
               {text.subtitle}
             </Text>
           </View>
 
-          <View style={[styles.headerIcon, { backgroundColor: `${colors.primary}18` }]}>
-            <Activity size={22} strokeWidth={2} color={colors.primary} />
+          <View
+            style={[
+              styles.headerIcon,
+              {
+                backgroundColor: iconColorSoft,
+              },
+            ]}
+          >
+            <Activity
+              size={22}
+              strokeWidth={2}
+              color={iconColor}
+            />
           </View>
         </View>
 
-        <View style={[styles.todayCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={[styles.todayTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <View style={[styles.todayIcon, { backgroundColor: `${colors.primary}18` }]}>
-              <Activity size={23} color={colors.primary} />
+        {/* TODAY */}
+
+        <View
+          style={[
+            styles.todayCard,
+            {
+              backgroundColor: accentSurface,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.todayTop,
+              {
+                flexDirection: isRTL
+                  ? 'row-reverse'
+                  : 'row',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.todayIcon,
+                {
+                  backgroundColor: iconColorSoft,
+                },
+              ]}
+            >
+              <Activity
+                size={23}
+                color={iconColor}
+              />
             </View>
-            <View style={[styles.todayInfo, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-              <Text style={[styles.todayLabel, { color: colors.textSecondary }]}>{text.todayPlan}</Text>
-              <Text style={[styles.todayValue, { color: colors.text }]}>
-                {completedCount} / {exercises.length} {text.exercises}
+
+            <View
+              style={[
+                styles.todayInfo,
+                {
+                  alignItems: isRTL
+                    ? 'flex-end'
+                    : 'flex-start',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.todayLabel,
+                  {
+                    color: colors.textSecondary,
+                  },
+                ]}
+              >
+                {text.todayPlan}
+              </Text>
+
+              <Text
+                style={[
+                  styles.todayValue,
+                  {
+                    color: colors.text,
+                  },
+                ]}
+              >
+                {completedCount} / {exercises.length}{' '}
+                {text.exercises}
               </Text>
             </View>
-            <Text style={[styles.todayPercent, { color: colors.primary }]}>{progress}%</Text>
+
+            <Text
+              style={[
+                styles.todayPercent,
+                {
+                  color: iconColor,
+                },
+              ]}
+            >
+              {progress}%
+            </Text>
           </View>
 
-          <View style={[styles.progressTrack, { backgroundColor: colors.surfaceSecondary }]}>
-            <View style={[styles.progressFill, { width: `${Math.max(progress, 2)}%`, backgroundColor: colors.primary }]} />
+          <View
+            style={[
+              styles.progressTrack,
+              {
+                backgroundColor: secondarySurface,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width: `${Math.max(progress, 2)}%`,
+                  backgroundColor: iconColor,
+                },
+              ]}
+            />
           </View>
 
-          <View style={[styles.todayBottom, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.smallText, { color: colors.textSecondary }]}>
+          <View
+            style={[
+              styles.todayBottom,
+              {
+                flexDirection: isRTL
+                  ? 'row-reverse'
+                  : 'row',
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.smallText,
+                {
+                  color: colors.textSecondary,
+                },
+              ]}
+            >
               {text.completed}: {completedCount}
             </Text>
-            <Text style={[styles.smallText, { color: colors.textSecondary }]}>
-              {text.remaining}: {exercises.length - completedCount}
+
+            <Text
+              style={[
+                styles.smallText,
+                {
+                  color: colors.textSecondary,
+                },
+              ]}
+            >
+              {text.remaining}:{' '}
+              {Math.max(
+                exercises.length - completedCount,
+                0
+              )}
             </Text>
           </View>
         </View>
 
-        <View style={[styles.sectionHeader, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
+        {/* MOOD */}
+
+        <View
+          style={[
+            styles.sectionHeader,
+            {
+              alignItems: isRTL
+                ? 'flex-end'
+                : 'flex-start',
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: colors.text,
+                textAlign: isRTL
+                  ? 'right'
+                  : 'left',
+              },
+            ]}
+          >
             {text.yourMood}
           </Text>
-          <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+
+          <Text
+            style={[
+              styles.sectionSubtitle,
+              {
+                color: colors.textSecondary,
+                textAlign: isRTL
+                  ? 'right'
+                  : 'left',
+              },
+            ]}
+          >
             {text.moodSubtitle}
           </Text>
         </View>
@@ -534,19 +1079,30 @@ export default function SportsScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.moodScroll}
         >
-          {(isRTL ? [...moods].reverse() : moods).map((mood) => {
+          {(isRTL
+            ? [...moods].reverse()
+            : moods
+          ).map((mood) => {
             const Icon = mood.icon;
-            const selected = selectedMood === mood.id;
+            const selected =
+              selectedMood === mood.id;
+
             return (
               <TouchableOpacity
                 key={mood.id}
                 activeOpacity={0.8}
-                onPress={() => setSelectedMood(mood.id)}
+                onPress={() =>
+                  setSelectedMood(mood.id)
+                }
                 style={[
                   styles.moodCard,
                   {
-                    backgroundColor: selected ? `${colors.primary}18` : colors.surface,
-                    borderColor: selected ? colors.primary : colors.border,
+                    backgroundColor: selected
+                      ? iconColorSoft
+                      : accentSurface,
+                    borderColor: selected
+                      ? iconColor
+                      : colors.border,
                   },
                 ]}
               >
@@ -554,62 +1110,238 @@ export default function SportsScreen() {
                   style={[
                     styles.moodIcon,
                     {
-                      backgroundColor: selected ? colors.primary : colors.surfaceSecondary,
+                      backgroundColor: selected
+                        ? iconColor
+                        : secondarySurface,
                     },
                   ]}
                 >
-                  <Icon size={19} color={selected ? colors.background : colors.primary} strokeWidth={selected ? 2.5 : 2} />
+                  <Icon
+                    size={19}
+                    color={
+                      selected
+                        ? buttonTextColor
+                        : iconColor
+                    }
+                    strokeWidth={
+                      selected ? 2.5 : 2
+                    }
+                  />
                 </View>
-                <Text style={[styles.moodText, { color: selected ? colors.primary : colors.text }]}>{mood.label}</Text>
+
+                <Text
+                  style={[
+                    styles.moodText,
+                    {
+                      color: selected
+                        ? iconColor
+                        : colors.text,
+                    },
+                  ]}
+                >
+                  {mood.label}
+                </Text>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
 
-        <View style={[styles.sectionHeader, { marginTop: 30, alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
+        {/* TODAY'S WORKOUT */}
+
+        <View
+          style={[
+            styles.sectionHeader,
+            {
+              marginTop: 30,
+              alignItems: isRTL
+                ? 'flex-end'
+                : 'flex-start',
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: colors.text,
+                textAlign: isRTL
+                  ? 'right'
+                  : 'left',
+              },
+            ]}
+          >
             {text.todaysWorkout}
           </Text>
-          <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+
+          <Text
+            style={[
+              styles.sectionSubtitle,
+              {
+                color: colors.textSecondary,
+                textAlign: isRTL
+                  ? 'right'
+                  : 'left',
+              },
+            ]}
+          >
             {text.recommendedForYou}
           </Text>
         </View>
 
         <LinearGradient
-          colors={[colors.surfaceSecondary, colors.surface]}
+          colors={
+            isDark
+              ? [colors.surface, accentSurface]
+              : [colors.surfaceSecondary, colors.surface]
+          }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[styles.workoutHero, { borderColor: colors.border }]}
+          style={[
+            styles.workoutHero,
+            {
+              borderColor: colors.border,
+            },
+          ]}
         >
-          <View style={[styles.workoutHeroGlow, { backgroundColor: `${colors.primary}18` }]} />
-          <View style={[styles.workoutHeroTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <View style={[styles.workoutHeroIcon, { backgroundColor: colors.primary }]}>
-              <Dumbbell size={27} color={colors.background} />
+          <View
+            style={[
+              styles.workoutHeroGlow,
+              {
+                backgroundColor: iconColorSoft,
+              },
+            ]}
+          />
+
+          <View
+            style={[
+              styles.workoutHeroTop,
+              {
+                flexDirection: isRTL
+                  ? 'row-reverse'
+                  : 'row',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.workoutHeroIcon,
+                {
+                  backgroundColor: iconColor,
+                },
+              ]}
+            >
+              <Dumbbell
+                size={27}
+                color={buttonTextColor}
+                strokeWidth={2.3}
+              />
             </View>
-            <View style={[styles.workoutHeroInfo, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-              <Text style={[styles.workoutHeroTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
-                {isRTL ? 'تمرین ترکیبی امروز' : 'Full Body Session'}
+
+            <View
+              style={[
+                styles.workoutHeroInfo,
+                {
+                  alignItems: isRTL
+                    ? 'flex-end'
+                    : 'flex-start',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.workoutHeroTitle,
+                  {
+                    color: colors.text,
+                    textAlign: isRTL
+                      ? 'right'
+                      : 'left',
+                  },
+                ]}
+              >
+                {isRTL
+                  ? 'تمرین ترکیبی امروز'
+                  : 'Full Body Session'}
               </Text>
-              <Text style={[styles.workoutHeroSubtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
-                {text.strength} • {text.mobility} • {text.cardio}
+
+              <Text
+                style={[
+                  styles.workoutHeroSubtitle,
+                  {
+                    color: colors.textSecondary,
+                    textAlign: isRTL
+                      ? 'right'
+                      : 'left',
+                  },
+                ]}
+              >
+                {text.strength} • {text.mobility} •{' '}
+                {text.cardio}
               </Text>
             </View>
           </View>
 
-          <View style={[styles.workoutMeta, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <View
+            style={[
+              styles.workoutMeta,
+              {
+                flexDirection: isRTL
+                  ? 'row-reverse'
+                  : 'row',
+              },
+            ]}
+          >
             <View style={styles.metaItem}>
-              <Clock3 size={15} color={colors.primary} />
-              <Text style={[styles.metaText, { color: colors.textSecondary }]}>30 {text.duration}</Text>
+              <Clock3
+                size={15}
+                color={iconColor}
+              />
+
+              <Text
+                style={[
+                  styles.metaText,
+                  {
+                    color: colors.textSecondary,
+                  },
+                ]}
+              >
+                30 {text.duration}
+              </Text>
             </View>
+
             <View style={styles.metaItem}>
-              <Target size={15} color={colors.primary} />
-              <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+              <Target
+                size={15}
+                color={iconColor}
+              />
+
+              <Text
+                style={[
+                  styles.metaText,
+                  {
+                    color: colors.textSecondary,
+                  },
+                ]}
+              >
                 {exercises.length} {text.exercises}
               </Text>
             </View>
+
             <View style={styles.metaItem}>
-              <Activity size={15} color={colors.primary} />
-              <Text style={[styles.metaText, { color: colors.textSecondary }]}>{text.moderate}</Text>
+              <Activity
+                size={15}
+                color={iconColor}
+              />
+
+              <Text
+                style={[
+                  styles.metaText,
+                  {
+                    color: colors.textSecondary,
+                  },
+                ]}
+              >
+                {text.moderate}
+              </Text>
             </View>
           </View>
 
@@ -617,7 +1349,9 @@ export default function SportsScreen() {
             activeOpacity={0.85}
             onPress={() => {
               if (exercises.length) {
-                setActiveExerciseId(exercises[0].id);
+                setActiveExerciseId(
+                  exercises[0].id
+                );
               }
             }}
           >
@@ -627,16 +1361,52 @@ export default function SportsScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.startButton}
             >
-              <Play size={17} color={colors.background} fill={colors.background} />
-              <Text style={[styles.startButtonText, { color: colors.background }]}>
-                {completedCount > 0 ? text.continueWorkout : text.startWorkout}
+              <Play
+                size={17}
+                color={buttonTextColor}
+                fill={buttonTextColor}
+              />
+
+              <Text
+                style={[
+                  styles.startButtonText,
+                  {
+                    color: buttonTextColor,
+                  },
+                ]}
+              >
+                {completedCount > 0
+                  ? text.continueWorkout
+                  : text.startWorkout}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
         </LinearGradient>
 
-        <View style={[styles.sectionHeader, { marginTop: 30, alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
+        {/* EXERCISES */}
+
+        <View
+          style={[
+            styles.sectionHeader,
+            {
+              marginTop: 30,
+              alignItems: isRTL
+                ? 'flex-end'
+                : 'flex-start',
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: colors.text,
+                textAlign: isRTL
+                  ? 'right'
+                  : 'left',
+              },
+            ]}
+          >
             {text.exercises}
           </Text>
         </View>
@@ -646,23 +1416,51 @@ export default function SportsScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterScroll}
         >
-          {(isRTL ? [...categoryFilters].reverse() : categoryFilters).map((filter) => {
-            const active = selectedCategory === filter.id;
-            const accent = filter.id === 'all' ? colors.primary : CATEGORY_ACCENTS[filter.id as Category];
+          {(isRTL
+            ? [...categoryFilters].reverse()
+            : categoryFilters
+          ).map((filter) => {
+            const active =
+              selectedCategory === filter.id;
+
+            const accent =
+              filter.id === 'all'
+                ? iconColor
+                : CATEGORY_ACCENTS[
+                    filter.id as Category
+                  ];
+
             return (
               <TouchableOpacity
                 key={filter.id}
                 activeOpacity={0.8}
-                onPress={() => setSelectedCategory(filter.id)}
+                onPress={() =>
+                  setSelectedCategory(
+                    filter.id
+                  )
+                }
                 style={[
                   styles.filterChip,
                   {
-                    backgroundColor: active ? accent : colors.surface,
-                    borderColor: active ? accent : colors.border,
+                    backgroundColor: active
+                      ? accent
+                      : accentSurface,
+                    borderColor: active
+                      ? accent
+                      : colors.border,
                   },
                 ]}
               >
-                <Text style={[styles.filterChipText, { color: active ? colors.background : colors.textSecondary }]}>
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    {
+                      color: active
+                        ? buttonTextColor
+                        : colors.textSecondary,
+                    },
+                  ]}
+                >
                   {filter.label}
                 </Text>
               </TouchableOpacity>
@@ -671,104 +1469,312 @@ export default function SportsScreen() {
         </ScrollView>
 
         <View style={styles.exerciseList}>
-          {filteredExercises.map((exercise, index) => {
-            const completed = completedExercises.includes(exercise.id);
-            const accent = CATEGORY_ACCENTS[exercise.category];
-            const hasMedia = !!EXERCISE_MEDIA[exercise.id];
+          {filteredExercises.map(
+            (exercise, index) => {
+              const completed =
+                completedExercises.includes(
+                  exercise.id
+                );
 
-            return (
-              <View
-                key={exercise.id}
-                style={[
-                  styles.exerciseCard,
-                  {
-                    backgroundColor: completed ? `${colors.primary}0B` : colors.surface,
-                    borderColor: completed ? accent : colors.border,
-                    flexDirection: isRTL ? 'row-reverse' : 'row',
-                  },
-                ]}
-              >
-                <TouchableOpacity
-                  activeOpacity={0.75}
-                  onPress={() => toggleExercise(exercise.id)}
+              const accent =
+                CATEGORY_ACCENTS[
+                  exercise.category
+                ];
+
+              const hasMedia =
+                !!EXERCISE_MEDIA[
+                  exercise.id
+                ];
+
+              return (
+                <View
+                  key={exercise.id}
                   style={[
-                    styles.exerciseNumber,
+                    styles.exerciseCard,
                     {
-                      backgroundColor: completed ? accent : colors.surfaceSecondary,
+                      backgroundColor:
+                        completed
+                          ? iconColorSoft
+                          : accentSurface,
+
+                      borderColor: completed
+                        ? accent
+                        : colors.border,
+
+                      flexDirection: isRTL
+                        ? 'row-reverse'
+                        : 'row',
                     },
                   ]}
                 >
-                  {completed ? (
-                    <Check size={16} color={colors.background} strokeWidth={3} />
-                  ) : (
-                    <Text style={[styles.exerciseNumberText, { color: colors.textSecondary }]}>{index + 1}</Text>
-                  )}
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    activeOpacity={0.75}
+                    onPress={() =>
+                      toggleExercise(
+                        exercise.id
+                      )
+                    }
+                    style={[
+                      styles.exerciseNumber,
+                      {
+                        backgroundColor:
+                          completed
+                            ? accent
+                            : secondarySurface,
+                      },
+                    ]}
+                  >
+                    {completed ? (
+                      <Check
+                        size={16}
+                        color={buttonTextColor}
+                        strokeWidth={3}
+                      />
+                    ) : (
+                      <Text
+                        style={[
+                          styles.exerciseNumberText,
+                          {
+                            color:
+                              colors.textSecondary,
+                          },
+                        ]}
+                      >
+                        {index + 1}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
 
-                <TouchableOpacity
-                  activeOpacity={0.82}
-                  onPress={() => setActiveExerciseId(exercise.id)}
-                  style={[styles.exerciseTapArea, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-                >
-                  <View style={[styles.exerciseThumb, { backgroundColor: colors.surfaceSecondary }]}>
-                    {renderThumb(exercise)}
+                  <TouchableOpacity
+                    activeOpacity={0.82}
+                    onPress={() =>
+                      setActiveExerciseId(
+                        exercise.id
+                      )
+                    }
+                    style={[
+                      styles.exerciseTapArea,
+                      {
+                        flexDirection: isRTL
+                          ? 'row-reverse'
+                          : 'row',
+                      },
+                    ]}
+                  >
                     <View
                       style={[
-                        styles.playBadge,
-                        { backgroundColor: accent },
-                        isRTL ? { left: -3 } : { right: -3 },
-                      ]}
-                    >
-                      <PlayCircle size={14} color={colors.background} fill={hasMedia ? colors.background : 'transparent'} />
-                    </View>
-                  </View>
-
-                  <View style={[styles.exerciseContent, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.exerciseTitle,
+                        styles.exerciseThumb,
                         {
-                          color: colors.text,
-                          textAlign: isRTL ? 'right' : 'left',
-                          textDecorationLine: completed ? 'line-through' : 'none',
+                          backgroundColor:
+                            secondarySurface,
                         },
                       ]}
                     >
-                      {exercise.title}
-                    </Text>
-                    <View style={[styles.categoryBadgeRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                      <View style={[styles.categoryDot, { backgroundColor: accent }]} />
-                      <Text style={[styles.exerciseSubtitle, { color: colors.textSecondary }]}>
-                        {text[exercise.category]}
-                      </Text>
-                      {exercise.sets ? (
-                        <Text style={[styles.exerciseSubtitle, { color: colors.textTertiary || colors.textSecondary }]}>
-                          {' '}
-                          • {exercise.sets} {text.sets}
-                        </Text>
-                      ) : null}
+                      {renderThumb(exercise)}
+
+                      <View
+                        style={[
+                          styles.playBadge,
+                          {
+                            backgroundColor:
+                              accent,
+                            borderColor:
+                              accentSurface,
+                          },
+                          isRTL
+                            ? { left: -3 }
+                            : { right: -3 },
+                        ]}
+                      >
+                        <PlayCircle
+                          size={14}
+                          color={
+                            buttonTextColor
+                          }
+                          fill={
+                            hasMedia
+                              ? buttonTextColor
+                              : 'transparent'
+                          }
+                        />
+                      </View>
                     </View>
-                    <Text style={[styles.demoHint, { color: colors.textTertiary || colors.textSecondary }]}>
-                      {text.tapToViewDemo}
+
+                    <View
+                      style={[
+                        styles.exerciseContent,
+                        {
+                          alignItems: isRTL
+                            ? 'flex-end'
+                            : 'flex-start',
+                        },
+                      ]}
+                    >
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.exerciseTitle,
+                          {
+                            color: colors.text,
+                            textAlign: isRTL
+                              ? 'right'
+                              : 'left',
+                            textDecorationLine:
+                              completed
+                                ? 'line-through'
+                                : 'none',
+                          },
+                        ]}
+                      >
+                        {exercise.title}
+                      </Text>
+
+                      <View
+                        style={[
+                          styles.categoryBadgeRow,
+                          {
+                            flexDirection:
+                              isRTL
+                                ? 'row-reverse'
+                                : 'row',
+                          },
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.categoryDot,
+                            {
+                              backgroundColor:
+                                accent,
+                            },
+                          ]}
+                        />
+
+                        <Text
+                          style={[
+                            styles.exerciseSubtitle,
+                            {
+                              color:
+                                colors.textSecondary,
+                            },
+                          ]}
+                        >
+                          {text[
+                            exercise.category
+                          ]}
+                        </Text>
+
+                        {exercise.sets ? (
+                          <Text
+                            style={[
+                              styles.exerciseSubtitle,
+                              {
+                                color:
+                                  tertiaryText,
+                              },
+                            ]}
+                          >
+                            {' '}
+                            • {exercise.sets}{' '}
+                            {text.sets}
+                          </Text>
+                        ) : null}
+                      </View>
+
+                      <Text
+                        style={[
+                          styles.demoHint,
+                          {
+                            color: tertiaryText,
+                          },
+                        ]}
+                      >
+                        {text.tapToViewDemo}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+
+                  <View
+                    style={[
+                      styles.exerciseStats,
+                      {
+                        alignItems: isRTL
+                          ? 'flex-start'
+                          : 'flex-end',
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.exerciseStatValue,
+                        {
+                          color: colors.text,
+                        },
+                      ]}
+                    >
+                      {statValueFor(
+                        exercise
+                      )}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.exerciseStatLabel,
+                        {
+                          color:
+                            colors.textSecondary,
+                        },
+                      ]}
+                    >
+                      {statLabelFor(
+                        exercise
+                      )}
                     </Text>
                   </View>
-                </TouchableOpacity>
-
-                <View style={[styles.exerciseStats, { alignItems: isRTL ? 'flex-start' : 'flex-end' }]}>
-                  <Text style={[styles.exerciseStatValue, { color: colors.text }]}>{statValueFor(exercise)}</Text>
-                  <Text style={[styles.exerciseStatLabel, { color: colors.textSecondary }]}>{statLabelFor(exercise)}</Text>
                 </View>
-              </View>
-            );
-          })}
+              );
+            }
+          )}
         </View>
 
-        <View style={[styles.sectionHeader, { marginTop: 32, alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
+        {/* WEEKLY PLAN */}
+
+        <View
+          style={[
+            styles.sectionHeader,
+            {
+              marginTop: 32,
+              alignItems: isRTL
+                ? 'flex-end'
+                : 'flex-start',
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: colors.text,
+                textAlign: isRTL
+                  ? 'right'
+                  : 'left',
+              },
+            ]}
+          >
             {text.weeklyPlan}
           </Text>
-          <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+
+          <Text
+            style={[
+              styles.sectionSubtitle,
+              {
+                color: colors.textSecondary,
+                textAlign: isRTL
+                  ? 'right'
+                  : 'left',
+              },
+            ]}
+          >
             {text.weekProgress}
           </Text>
         </View>
@@ -778,69 +1784,234 @@ export default function SportsScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.weekScroll}
         >
-          {(isRTL ? [...weeklyPlan].reverse() : weeklyPlan).map((day) => (
+          {(isRTL
+            ? [...weeklyPlan].reverse()
+            : weeklyPlan
+          ).map((day) => (
             <View
               key={day.id}
               style={[
                 styles.dayCard,
                 {
-                  backgroundColor: day.today ? `${colors.primary}18` : colors.surface,
-                  borderColor: day.today ? colors.primary : colors.border,
+                  backgroundColor: day.today
+                    ? iconColorSoft
+                    : accentSurface,
+
+                  borderColor: day.today
+                    ? iconColor
+                    : colors.border,
                 },
               ]}
             >
-              <Text style={[styles.dayName, { color: colors.textSecondary }]}>{day.day}</Text>
+              <Text
+                style={[
+                  styles.dayName,
+                  {
+                    color: colors.textSecondary,
+                  },
+                ]}
+              >
+                {day.day}
+              </Text>
+
               <View
                 style={[
                   styles.dayCircle,
                   {
-                    backgroundColor: day.completed || day.today ? colors.primary : colors.surfaceSecondary,
+                    backgroundColor:
+                      day.completed ||
+                      day.today
+                        ? iconColor
+                        : secondarySurface,
                   },
                 ]}
               >
                 {day.completed ? (
-                  <Check size={17} color={colors.background} strokeWidth={3} />
+                  <Check
+                    size={17}
+                    color={buttonTextColor}
+                    strokeWidth={3}
+                  />
                 ) : (
-                  <Text style={[styles.dayLetter, { color: day.today ? colors.background : colors.textSecondary }]}>
+                  <Text
+                    style={[
+                      styles.dayLetter,
+                      {
+                        color: day.today
+                          ? buttonTextColor
+                          : colors.textSecondary,
+                      },
+                    ]}
+                  >
                     {day.short}
                   </Text>
                 )}
               </View>
-              <Text style={[styles.dayType, { color: colors.text }]} numberOfLines={1}>
+
+              <Text
+                style={[
+                  styles.dayType,
+                  {
+                    color: colors.text,
+                  },
+                ]}
+                numberOfLines={1}
+              >
                 {day.type}
               </Text>
-              <Text style={[styles.dayDuration, { color: colors.textSecondary }]}>
+
+              <Text
+                style={[
+                  styles.dayDuration,
+                  {
+                    color: colors.textSecondary,
+                  },
+                ]}
+              >
                 {day.duration} {text.duration}
               </Text>
+
               {day.today && (
-                <View style={[styles.todayBadge, { backgroundColor: colors.primary }]}>
-                  <Text style={[styles.todayBadgeText, { color: colors.background }]}>{text.todayShort}</Text>
+                <View
+                  style={[
+                    styles.todayBadge,
+                    {
+                      backgroundColor:
+                        iconColor,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.todayBadgeText,
+                      {
+                        color:
+                          buttonTextColor,
+                      },
+                    ]}
+                  >
+                    {text.todayShort}
+                  </Text>
                 </View>
               )}
             </View>
           ))}
         </ScrollView>
 
-        <View style={[styles.reportHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          <View style={[styles.reportTitleContainer, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>{text.weeklyReport}</Text>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>{text.weekProgress}</Text>
+        {/* WEEKLY REPORT */}
+
+        <View
+          style={[
+            styles.reportHeader,
+            {
+              flexDirection: isRTL
+                ? 'row-reverse'
+                : 'row',
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.reportTitleContainer,
+              {
+                alignItems: isRTL
+                  ? 'flex-end'
+                  : 'flex-start',
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.sectionTitle,
+                {
+                  color: colors.text,
+                },
+              ]}
+            >
+              {text.weeklyReport}
+            </Text>
+
+            <Text
+              style={[
+                styles.sectionSubtitle,
+                {
+                  color: colors.textSecondary,
+                },
+              ]}
+            >
+              {text.weekProgress}
+            </Text>
           </View>
-          <View style={[styles.reportIcon, { backgroundColor: `${colors.primary}18` }]}>
-            <BarChart3 size={21} color={colors.primary} />
+
+          <View
+            style={[
+              styles.reportIcon,
+              {
+                backgroundColor:
+                  iconColorSoft,
+              },
+            ]}
+          >
+            <BarChart3
+              size={21}
+              color={iconColor}
+            />
           </View>
         </View>
 
         <View style={styles.statsGrid}>
           {weeklyStats.map((stat) => {
             const Icon = stat.icon;
+
             return (
-              <View key={stat.label} style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <View style={[styles.statIcon, { backgroundColor: `${colors.primary}18` }]}>
-                  <Icon size={17} color={colors.primary} />
+              <View
+                key={stat.label}
+                style={[
+                  styles.statCard,
+                  {
+                    backgroundColor:
+                      accentSurface,
+                    borderColor:
+                      colors.border,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.statIcon,
+                    {
+                      backgroundColor:
+                        iconColorSoft,
+                    },
+                  ]}
+                >
+                  <Icon
+                    size={17}
+                    color={iconColor}
+                  />
                 </View>
-                <Text style={[styles.statValue, { color: colors.text }]}>{stat.value}</Text>
-                <Text style={[styles.statLabel, { color: colors.textSecondary }]} numberOfLines={2}>
+
+                <Text
+                  style={[
+                    styles.statValue,
+                    {
+                      color: colors.text,
+                    },
+                  ]}
+                >
+                  {stat.value}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.statLabel,
+                    {
+                      color:
+                        colors.textSecondary,
+                    },
+                  ]}
+                  numberOfLines={2}
+                >
                   {stat.label}
                 </Text>
               </View>
@@ -848,80 +2019,390 @@ export default function SportsScreen() {
           })}
         </View>
 
-        <View style={[styles.performanceCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={[styles.performanceHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <View style={[styles.performanceIcon, { backgroundColor: `${colors.primary}18` }]}>
-              <Brain size={20} color={colors.primary} />
+        {/* PERFORMANCE */}
+
+        <View
+          style={[
+            styles.performanceCard,
+            {
+              backgroundColor: accentSurface,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.performanceHeader,
+              {
+                flexDirection: isRTL
+                  ? 'row-reverse'
+                  : 'row',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.performanceIcon,
+                {
+                  backgroundColor:
+                    iconColorSoft,
+                },
+              ]}
+            >
+              <Brain
+                size={20}
+                color={iconColor}
+              />
             </View>
-            <Text style={[styles.performanceTitle, { color: colors.text }]}>{text.performance}</Text>
+
+            <Text
+              style={[
+                styles.performanceTitle,
+                {
+                  color: colors.text,
+                },
+              ]}
+            >
+              {text.performance}
+            </Text>
           </View>
-          <View style={[styles.performanceRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.performanceLabel, { color: colors.text }]}>{text.bodyPerformance}</Text>
-            <View style={[styles.performanceBar, { backgroundColor: colors.surfaceSecondary }]}>
-              <View style={[styles.performanceFill, { width: '72%', backgroundColor: colors.primary }]} />
+
+          <View
+            style={[
+              styles.performanceRow,
+              {
+                flexDirection: isRTL
+                  ? 'row-reverse'
+                  : 'row',
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.performanceLabel,
+                {
+                  color: colors.text,
+                },
+              ]}
+            >
+              {text.bodyPerformance}
+            </Text>
+
+            <View
+              style={[
+                styles.performanceBar,
+                {
+                  backgroundColor:
+                    secondarySurface,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.performanceFill,
+                  {
+                    width: '72%',
+                    backgroundColor:
+                      iconColor,
+                  },
+                ]}
+              />
             </View>
-            <Text style={[styles.performanceValue, { color: colors.primary }]}>72%</Text>
+
+            <Text
+              style={[
+                styles.performanceValue,
+                {
+                  color: iconColor,
+                },
+              ]}
+            >
+              72%
+            </Text>
           </View>
-          <View style={[styles.performanceRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.performanceLabel, { color: colors.text }]}>{text.mentalPerformance}</Text>
-            <View style={[styles.performanceBar, { backgroundColor: colors.surfaceSecondary }]}>
-              <View style={[styles.performanceFill, { width: '84%', backgroundColor: colors.primaryLight || colors.primary }]} />
+
+          <View
+            style={[
+              styles.performanceRow,
+              {
+                flexDirection: isRTL
+                  ? 'row-reverse'
+                  : 'row',
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.performanceLabel,
+                {
+                  color: colors.text,
+                },
+              ]}
+            >
+              {text.mentalPerformance}
+            </Text>
+
+            <View
+              style={[
+                styles.performanceBar,
+                {
+                  backgroundColor:
+                    secondarySurface,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.performanceFill,
+                  {
+                    width: '84%',
+                    backgroundColor:
+                      iconColor,
+                  },
+                ]}
+              />
             </View>
-            <Text style={[styles.performanceValue, { color: colors.primary }]}>84%</Text>
+
+            <Text
+              style={[
+                styles.performanceValue,
+                {
+                  color: iconColor,
+                },
+              ]}
+            >
+              84%
+            </Text>
           </View>
         </View>
 
-        <View style={[styles.insightCard, { backgroundColor: `${colors.primary}18`, borderColor: colors.border }]}>
-          <View style={[styles.insightTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <View style={[styles.insightIcon, { backgroundColor: colors.primary }]}>
-              <Sparkles size={17} color={colors.background} />
+        {/* INSIGHT */}
+
+        <View
+          style={[
+            styles.insightCard,
+            {
+              backgroundColor:
+                iconColorSoft,
+              borderColor: `${iconColor}35`,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.insightTop,
+              {
+                flexDirection: isRTL
+                  ? 'row-reverse'
+                  : 'row',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.insightIcon,
+                {
+                  backgroundColor:
+                    iconColor,
+                },
+              ]}
+            >
+              <Sparkles
+                size={17}
+                color={buttonTextColor}
+              />
             </View>
-            <Text style={[styles.insightTitle, { color: colors.primary }]}>{text.weeklyInsight}</Text>
+
+            <Text
+              style={[
+                styles.insightTitle,
+                {
+                  color: iconColor,
+                },
+              ]}
+            >
+              {text.weeklyInsight}
+            </Text>
           </View>
-          <Text style={[styles.insightText, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+
+          <Text
+            style={[
+              styles.insightText,
+              {
+                color: colors.text,
+                textAlign: isRTL
+                  ? 'right'
+                  : 'left',
+              },
+            ]}
+          >
             {text.weeklyInsightText}
           </Text>
         </View>
 
-        <View style={[styles.noteCard, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          <View style={[styles.noteIcon, { backgroundColor: `${colors.primary}18` }]}>
-            <HeartPulse size={17} color={colors.primary} />
+        {/* NOTE */}
+
+        <View
+          style={[
+            styles.noteCard,
+            {
+              backgroundColor:
+                accentSurface,
+              borderColor: colors.border,
+              flexDirection: isRTL
+                ? 'row-reverse'
+                : 'row',
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.noteIcon,
+              {
+                backgroundColor:
+                  iconColorSoft,
+              },
+            ]}
+          >
+            <HeartPulse
+              size={17}
+              color={iconColor}
+            />
           </View>
-          <Text style={[styles.noteText, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+
+          <Text
+            style={[
+              styles.noteText,
+              {
+                color:
+                  colors.textSecondary,
+                textAlign: isRTL
+                  ? 'right'
+                  : 'left',
+              },
+            ]}
+          >
             {text.noPressure}
           </Text>
         </View>
 
-        <Text style={[styles.safeTraining, { color: colors.textTertiary || colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+        <Text
+          style={[
+            styles.safeTraining,
+            {
+              color: tertiaryText,
+              textAlign: isRTL
+                ? 'right'
+                : 'left',
+            },
+          ]}
+        >
           {text.safeTraining}
         </Text>
+
         <View style={styles.bottomSpace} />
       </ScrollView>
+
+      {/* EXERCISE MODAL */}
 
       <Modal
         visible={!!activeExercise}
         animationType="slide"
         transparent
-        onRequestClose={() => setActiveExerciseId(null)}
+        onRequestClose={() =>
+          setActiveExerciseId(null)
+        }
       >
-        <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.78)' }]}>
+        <View
+          style={[
+            styles.modalOverlay,
+            {
+              backgroundColor:
+                'rgba(0,0,0,0.78)',
+            },
+          ]}
+        >
           {activeExercise && (
-            <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <View style={[styles.modalHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                <View style={[styles.modalTitleContainer, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-                  <Text style={[styles.modalTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
+            <View
+              style={[
+                styles.modalCard,
+                {
+                  backgroundColor:
+                    colors.surface,
+                  borderColor:
+                    colors.border,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.modalHeader,
+                  {
+                    flexDirection: isRTL
+                      ? 'row-reverse'
+                      : 'row',
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.modalTitleContainer,
+                    {
+                      alignItems: isRTL
+                        ? 'flex-end'
+                        : 'flex-start',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.modalTitle,
+                      {
+                        color: colors.text,
+                        textAlign: isRTL
+                          ? 'right'
+                          : 'left',
+                      },
+                    ]}
+                  >
                     {activeExercise.title}
                   </Text>
-                  <Text style={[styles.modalSubtitle, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+
+                  <Text
+                    style={[
+                      styles.modalSubtitle,
+                      {
+                        color:
+                          colors.textSecondary,
+                        textAlign: isRTL
+                          ? 'right'
+                          : 'left',
+                      },
+                    ]}
+                  >
                     {text.howToPerform}
                   </Text>
                 </View>
+
                 <TouchableOpacity
                   activeOpacity={0.75}
-                  onPress={() => setActiveExerciseId(null)}
-                  style={[styles.closeButton, { backgroundColor: colors.surfaceSecondary }]}
+                  onPress={() =>
+                    setActiveExerciseId(
+                      null
+                    )
+                  }
+                  style={[
+                    styles.closeButton,
+                    {
+                      backgroundColor:
+                        secondarySurface,
+                    },
+                  ]}
                 >
-                  <X size={19} color={colors.text} />
+                  <X
+                    size={19}
+                    color={colors.text}
+                  />
                 </TouchableOpacity>
               </View>
 
@@ -929,50 +2410,164 @@ export default function SportsScreen() {
                 style={[
                   styles.modalMediaContainer,
                   {
-                    backgroundColor: colors.surfaceSecondary,
-                    borderColor: colors.border,
+                    backgroundColor:
+                      secondarySurface,
+                    borderColor:
+                      colors.border,
                   },
                 ]}
               >
                 {renderModalMedia()}
               </View>
 
-              <View style={[styles.modalMeta, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                <View style={[styles.modalMetaItem, { backgroundColor: `${colors.primary}18` }]}>
-                  <Clock3 size={14} color={colors.primary} />
-                  <Text style={[styles.modalMetaText, { color: colors.textSecondary }]}>
-                    {statValueFor(activeExercise)} {statLabelFor(activeExercise)}
+              <View
+                style={[
+                  styles.modalMeta,
+                  {
+                    flexDirection: isRTL
+                      ? 'row-reverse'
+                      : 'row',
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.modalMetaItem,
+                    {
+                      backgroundColor:
+                        iconColorSoft,
+                    },
+                  ]}
+                >
+                  <Clock3
+                    size={14}
+                    color={iconColor}
+                  />
+
+                  <Text
+                    style={[
+                      styles.modalMetaText,
+                      {
+                        color:
+                          colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    {statValueFor(
+                      activeExercise
+                    )}{' '}
+                    {statLabelFor(
+                      activeExercise
+                    )}
                   </Text>
                 </View>
+
                 {activeExercise.sets ? (
-                  <View style={[styles.modalMetaItem, { backgroundColor: `${colors.primary}18` }]}>
-                    <Flame size={14} color={colors.primary} />
-                    <Text style={[styles.modalMetaText, { color: colors.textSecondary }]}>
-                      {activeExercise.sets} {text.sets}
+                  <View
+                    style={[
+                      styles.modalMetaItem,
+                      {
+                        backgroundColor:
+                          iconColorSoft,
+                      },
+                    ]}
+                  >
+                    <Flame
+                      size={14}
+                      color={iconColor}
+                    />
+
+                    <Text
+                      style={[
+                        styles.modalMetaText,
+                        {
+                          color:
+                            colors.textSecondary,
+                        },
+                      ]}
+                    >
+                      {activeExercise.sets}{' '}
+                      {text.sets}
                     </Text>
                   </View>
                 ) : null}
               </View>
 
-              <ScrollView style={styles.instructionsScroll} showsVerticalScrollIndicator={false}>
-                <View style={styles.instructions}>
-                  {activeExercise.instructions.map((instruction, index) => (
-                    <View key={index} style={[styles.instructionRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                      <View style={[styles.instructionNumber, { backgroundColor: colors.primary }]}>
-                        <Text style={[styles.instructionNumberText, { color: colors.background }]}>{index + 1}</Text>
+              <ScrollView
+                style={styles.instructionsScroll}
+                showsVerticalScrollIndicator={
+                  false
+                }
+              >
+                <View
+                  style={styles.instructions}
+                >
+                  {activeExercise.instructions.map(
+                    (
+                      instruction,
+                      index
+                    ) => (
+                      <View
+                        key={index}
+                        style={[
+                          styles.instructionRow,
+                          {
+                            flexDirection:
+                              isRTL
+                                ? 'row-reverse'
+                                : 'row',
+                          },
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.instructionNumber,
+                            {
+                              backgroundColor:
+                                iconColor,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.instructionNumberText,
+                              {
+                                color:
+                                  buttonTextColor,
+                              },
+                            ]}
+                          >
+                            {index + 1}
+                          </Text>
+                        </View>
+
+                        <Text
+                          style={[
+                            styles.instructionText,
+                            {
+                              color:
+                                colors.textSecondary,
+                              textAlign:
+                                isRTL
+                                  ? 'right'
+                                  : 'left',
+                            },
+                          ]}
+                        >
+                          {instruction}
+                        </Text>
                       </View>
-                      <Text style={[styles.instructionText, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
-                        {instruction}
-                      </Text>
-                    </View>
-                  ))}
+                    )
+                  )}
                 </View>
               </ScrollView>
 
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={() => {
-                  toggleExercise(activeExercise.id);
+                  toggleExercise(
+                    activeExercise.id
+                  );
                   setActiveExerciseId(null);
                 }}
               >
@@ -982,9 +2577,23 @@ export default function SportsScreen() {
                   end={{ x: 1, y: 0 }}
                   style={styles.modalAction}
                 >
-                  <Check size={18} color={colors.background} />
-                  <Text style={[styles.modalActionText, { color: colors.background }]}>
-                    {activeCompleted ? text.markUndone : text.markDone}
+                  <Check
+                    size={18}
+                    color={buttonTextColor}
+                  />
+
+                  <Text
+                    style={[
+                      styles.modalActionText,
+                      {
+                        color:
+                          buttonTextColor,
+                      },
+                    ]}
+                  >
+                    {activeCompleted
+                      ? text.markUndone
+                      : text.markDone}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -1000,11 +2609,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
   scrollContent: {
-    paddingTop: Platform.OS === 'ios' ? 58 : 44,
+    paddingTop:
+      Platform.OS === 'ios' ? 58 : 44,
     paddingHorizontal: 18,
     paddingBottom: 120,
   },
+
   header: {
     minHeight: 76,
     flexDirection: 'row',
@@ -1012,6 +2624,7 @@ const styles = StyleSheet.create({
     gap: 13,
     marginBottom: 22,
   },
+
   headerBackButton: {
     width: 42,
     height: 42,
@@ -1021,12 +2634,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexShrink: 0,
   },
+
   headerTitleWrapper: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 0,
   },
+
   headerIcon: {
     width: 42,
     height: 42,
@@ -1035,6 +2650,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
+
   athleteBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1045,36 +2661,43 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 10,
   },
+
   liveDot: {
     width: 7,
     height: 7,
     borderRadius: 4,
   },
+
   badgeText: {
     fontSize: 9,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
+
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
     textAlign: 'center',
   },
+
   headerSubtitle: {
     marginTop: 3,
     fontSize: 12,
     fontWeight: '500',
     textAlign: 'center',
   },
+
   todayCard: {
     borderRadius: 22,
     borderWidth: 1,
     padding: 16,
     marginBottom: 26,
   },
+
   todayTop: {
     alignItems: 'center',
   },
+
   todayIcon: {
     width: 45,
     height: 45,
@@ -1082,56 +2705,69 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   todayInfo: {
     flex: 1,
     marginHorizontal: 11,
   },
+
   todayLabel: {
     fontSize: 10,
     fontWeight: '600',
   },
+
   todayValue: {
     fontSize: 14,
     fontWeight: '800',
     marginTop: 3,
   },
+
   todayPercent: {
     fontSize: 17,
     fontWeight: '900',
   },
+
   progressTrack: {
     height: 7,
     borderRadius: 4,
     overflow: 'hidden',
     marginTop: 15,
   },
+
   progressFill: {
     height: '100%',
     borderRadius: 4,
   },
+
   todayBottom: {
     justifyContent: 'space-between',
     marginTop: 9,
   },
+
   smallText: {
     fontSize: 9,
   },
+
   sectionHeader: {
     marginBottom: 13,
   },
+
   sectionTitle: {
     fontSize: 18,
     fontWeight: '800',
   },
+
   sectionSubtitle: {
     fontSize: 11,
     marginTop: 4,
     lineHeight: 17,
   },
+
   moodScroll: {
     gap: 9,
     paddingBottom: 3,
   },
+
   moodCard: {
     width: 79,
     height: 80,
@@ -1141,6 +2777,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 7,
   },
+
   moodIcon: {
     width: 34,
     height: 34,
@@ -1148,10 +2785,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   moodText: {
     fontSize: 10,
     fontWeight: '700',
   },
+
   workoutHero: {
     borderRadius: 25,
     borderWidth: 1,
@@ -1159,6 +2798,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
   },
+
   workoutHeroGlow: {
     position: 'absolute',
     width: 170,
@@ -1166,11 +2806,13 @@ const styles = StyleSheet.create({
     borderRadius: 85,
     right: -90,
     top: -85,
-    opacity: 0.5,
+    opacity: 0.65,
   },
+
   workoutHeroTop: {
     alignItems: 'center',
   },
+
   workoutHeroIcon: {
     width: 53,
     height: 53,
@@ -1178,33 +2820,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   workoutHeroInfo: {
     flex: 1,
     marginHorizontal: 12,
   },
+
   workoutHeroTitle: {
     fontSize: 16,
     fontWeight: '800',
   },
+
   workoutHeroSubtitle: {
     fontSize: 10,
     marginTop: 5,
   },
+
   workoutMeta: {
     alignItems: 'center',
     gap: 15,
     marginTop: 20,
     flexWrap: 'wrap',
   },
+
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
   },
+
   metaText: {
     fontSize: 10,
     fontWeight: '600',
   },
+
   startButton: {
     height: 50,
     borderRadius: 16,
@@ -1214,14 +2863,17 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 20,
   },
+
   startButtonText: {
     fontSize: 12,
     fontWeight: '900',
   },
+
   filterScroll: {
     gap: 8,
     paddingBottom: 14,
   },
+
   filterChip: {
     height: 34,
     paddingHorizontal: 14,
@@ -1230,13 +2882,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   filterChipText: {
     fontSize: 10,
     fontWeight: '800',
   },
+
   exerciseList: {
     gap: 10,
   },
+
   exerciseCard: {
     minHeight: 91,
     borderRadius: 20,
@@ -1245,6 +2900,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
   },
+
   exerciseNumber: {
     width: 29,
     height: 29,
@@ -1252,15 +2908,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   exerciseNumberText: {
     fontSize: 10,
     fontWeight: '800',
   },
+
   exerciseTapArea: {
     flex: 1,
     alignItems: 'center',
     marginHorizontal: 8,
   },
+
   exerciseThumb: {
     width: 65,
     height: 65,
@@ -1270,11 +2929,13 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     position: 'relative',
   },
+
   exerciseThumbImage: {
     width: 56,
     height: 56,
     borderRadius: 14,
   },
+
   exerciseThumbFallback: {
     width: '100%',
     height: '100%',
@@ -1282,11 +2943,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   missingIcon: {
     position: 'absolute',
     right: 5,
     bottom: 5,
   },
+
   playBadge: {
     position: 'absolute',
     bottom: -3,
@@ -1297,47 +2960,58 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
   },
+
   exerciseContent: {
     flex: 1,
     minWidth: 0,
   },
+
   exerciseTitle: {
     width: '100%',
     fontSize: 13,
     fontWeight: '800',
   },
+
   categoryBadgeRow: {
     alignItems: 'center',
     gap: 5,
     marginTop: 6,
   },
+
   categoryDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
   },
+
   exerciseSubtitle: {
     fontSize: 9,
   },
+
   demoHint: {
     fontSize: 8,
     marginTop: 6,
   },
+
   exerciseStats: {
     width: 40,
   },
+
   exerciseStatValue: {
     fontSize: 16,
     fontWeight: '900',
   },
+
   exerciseStatLabel: {
     fontSize: 8,
     marginTop: 2,
   },
+
   weekScroll: {
     gap: 9,
     paddingBottom: 4,
   },
+
   dayCard: {
     width: 88,
     minHeight: 138,
@@ -1346,10 +3020,12 @@ const styles = StyleSheet.create({
     padding: 10,
     alignItems: 'center',
   },
+
   dayName: {
     fontSize: 8,
     fontWeight: '700',
   },
+
   dayCircle: {
     width: 39,
     height: 39,
@@ -1358,20 +3034,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 8,
   },
+
   dayLetter: {
     fontSize: 13,
     fontWeight: '800',
   },
+
   dayType: {
     fontSize: 9,
     fontWeight: '800',
     marginTop: 8,
     textAlign: 'center',
   },
+
   dayDuration: {
     fontSize: 8,
     marginTop: 3,
   },
+
   todayBadge: {
     paddingHorizontal: 7,
     height: 19,
@@ -1380,19 +3060,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 7,
   },
+
   todayBadgeText: {
     fontSize: 7,
     fontWeight: '900',
   },
+
   reportHeader: {
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 30,
     marginBottom: 13,
   },
+
   reportTitleContainer: {
     flex: 1,
   },
+
   reportIcon: {
     width: 39,
     height: 39,
@@ -1400,11 +3084,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   statsGrid: {
     flexDirection: 'row',
     gap: 8,
     flexWrap: 'wrap',
   },
+
   statCard: {
     width: '48%',
     minHeight: 115,
@@ -1413,6 +3099,7 @@ const styles = StyleSheet.create({
     padding: 13,
     justifyContent: 'space-between',
   },
+
   statIcon: {
     width: 33,
     height: 33,
@@ -1420,27 +3107,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   statValue: {
     fontSize: 20,
     fontWeight: '900',
     marginTop: 7,
   },
+
   statLabel: {
     fontSize: 9,
     lineHeight: 13,
     marginTop: 2,
   },
+
   performanceCard: {
     borderRadius: 21,
     borderWidth: 1,
     padding: 15,
     marginTop: 12,
   },
+
   performanceHeader: {
     alignItems: 'center',
     gap: 10,
     marginBottom: 17,
   },
+
   performanceIcon: {
     width: 37,
     height: 37,
@@ -1448,46 +3140,55 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   performanceTitle: {
     fontSize: 14,
     fontWeight: '800',
   },
+
   performanceRow: {
     alignItems: 'center',
     gap: 8,
     marginTop: 10,
   },
+
   performanceLabel: {
     width: 82,
     fontSize: 9,
     fontWeight: '700',
   },
+
   performanceBar: {
     flex: 1,
     height: 7,
     borderRadius: 4,
     overflow: 'hidden',
   },
+
   performanceFill: {
     height: '100%',
     borderRadius: 4,
   },
+
   performanceValue: {
     width: 34,
     fontSize: 9,
     fontWeight: '900',
     textAlign: 'right',
   },
+
   insightCard: {
     borderRadius: 21,
     borderWidth: 1,
     padding: 15,
     marginTop: 12,
   },
+
   insightTop: {
     alignItems: 'center',
     gap: 9,
   },
+
   insightIcon: {
     width: 35,
     height: 35,
@@ -1495,16 +3196,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   insightTitle: {
     flex: 1,
     fontSize: 12,
     fontWeight: '900',
   },
+
   insightText: {
     fontSize: 10,
     lineHeight: 17,
     marginTop: 10,
   },
+
   noteCard: {
     alignItems: 'center',
     borderRadius: 17,
@@ -1513,6 +3217,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     gap: 9,
   },
+
   noteIcon: {
     width: 34,
     height: 34,
@@ -1520,25 +3225,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   noteText: {
     flex: 1,
     fontSize: 9,
     lineHeight: 15,
   },
+
   safeTraining: {
     fontSize: 8,
     lineHeight: 14,
     marginTop: 10,
   },
+
   bottomSpace: {
     height: 30,
   },
+
   modalOverlay: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-end',
     paddingHorizontal: 0,
   },
+
   modalCard: {
     width: '100%',
     maxHeight: '91%',
@@ -1548,22 +3258,27 @@ const styles = StyleSheet.create({
     padding: 18,
     paddingBottom: 28,
   },
+
   modalHeader: {
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 15,
   },
+
   modalTitleContainer: {
     flex: 1,
   },
+
   modalTitle: {
     fontSize: 19,
     fontWeight: '900',
   },
+
   modalSubtitle: {
     fontSize: 10,
     marginTop: 4,
   },
+
   closeButton: {
     width: 39,
     height: 39,
@@ -1572,6 +3287,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 10,
   },
+
   modalMediaContainer: {
     height: 280,
     borderRadius: 22,
@@ -1580,11 +3296,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   modalImage: {
     width: '90%',
     height: '90%',
     transform: [{ translateY: 9 }],
   },
+
   modalFallback: {
     width: '100%',
     height: '100%',
@@ -1592,12 +3310,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 30,
   },
+
   modalFallbackTitle: {
     fontSize: 14,
     fontWeight: '800',
     marginTop: 11,
     textAlign: 'center',
   },
+
   modalFallbackText: {
     fontSize: 10,
     lineHeight: 16,
@@ -1605,10 +3325,12 @@ const styles = StyleSheet.create({
     marginTop: 6,
     maxWidth: 300,
   },
+
   modalMeta: {
     gap: 8,
     marginTop: 12,
   },
+
   modalMetaItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1617,22 +3339,27 @@ const styles = StyleSheet.create({
     height: 31,
     borderRadius: 15,
   },
+
   modalMetaText: {
     fontSize: 9,
     fontWeight: '700',
   },
+
   instructionsScroll: {
     maxHeight: 190,
     marginTop: 14,
   },
+
   instructions: {
     gap: 12,
     paddingBottom: 4,
   },
+
   instructionRow: {
     alignItems: 'flex-start',
     gap: 9,
   },
+
   instructionNumber: {
     width: 25,
     height: 25,
@@ -1640,16 +3367,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   instructionNumberText: {
     fontSize: 10,
     fontWeight: '900',
   },
+
   instructionText: {
     flex: 1,
     fontSize: 10,
     lineHeight: 17,
     paddingTop: 3,
   },
+
   modalAction: {
     height: 50,
     borderRadius: 17,
@@ -1659,6 +3389,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 15,
   },
+
   modalActionText: {
     fontSize: 11,
     fontWeight: '900',
