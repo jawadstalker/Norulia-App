@@ -33,6 +33,7 @@ import {
 
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useGameExitGuard } from '../../context/GameExitGuard';
 import { useAssessment } from '../../context/AssessmentContext';
 
 import {
@@ -264,6 +265,9 @@ export default function StroopTestScreen() {
 
   const router = useRouter();
 
+  const { setGuard, confirmExit } =
+    useGameExitGuard();
+
   const { width } = useWindowDimensions();
 
   /* ==============================================================
@@ -297,6 +301,15 @@ export default function StroopTestScreen() {
 
   const [score, setScore] =
     useState(0);
+
+  /*
+   * Register mid-session state with the global exit guard.
+   */
+  useEffect(() => {
+    setGuard(playing, score);
+
+    return () => setGuard(false, 0);
+  }, [playing, score, setGuard]);
 
   const [lives, setLives] =
     useState(3);
@@ -611,7 +624,7 @@ export default function StroopTestScreen() {
      BACK
   ============================================================== */
 
-  const handleBack =
+  const exitScreen =
     useCallback(() => {
       timerRunRef.current?.stop();
 
@@ -623,6 +636,21 @@ export default function StroopTestScreen() {
 
       router.back();
     }, [router]);
+
+  const handleBack =
+    useCallback(() => {
+      if (playing) {
+        confirmExit(exitScreen);
+
+        return;
+      }
+
+      exitScreen();
+    }, [
+      playing,
+      confirmExit,
+      exitScreen,
+    ]);
 
   /* ==============================================================
      FLASH

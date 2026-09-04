@@ -1,5 +1,6 @@
 import React, {
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -25,6 +26,7 @@ import {
 
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useGameExitGuard } from '../../context/GameExitGuard';
 import {
   Spacing,
   BorderRadius,
@@ -295,6 +297,8 @@ export default function WordGameScreen() {
     isRTL,
   } = useLanguage();
 
+  const { setGuard, confirmExit } = useGameExitGuard();
+
   /* ================================================================
      GAME LANGUAGE
   ================================================================= */
@@ -333,6 +337,18 @@ export default function WordGameScreen() {
 
   const [gameCompleted, setGameCompleted] =
     useState(false);
+
+  /*
+   * Register mid-session state with the global exit guard.
+   */
+  useEffect(() => {
+    setGuard(
+      gameLanguage !== null && !gameCompleted,
+      score
+    );
+
+    return () => setGuard(false, 0);
+  }, [gameLanguage, gameCompleted, score, setGuard]);
 
   /* ================================================================
      UI TEXT
@@ -482,9 +498,23 @@ export default function WordGameScreen() {
      BACK
   ================================================================= */
 
-  const handleBack = useCallback(() => {
+  const exitScreen = useCallback(() => {
     router.back();
   }, [router]);
+
+  const handleBack = useCallback(() => {
+    if (gameLanguage !== null && !gameCompleted) {
+      confirmExit(exitScreen);
+      return;
+    }
+
+    exitScreen();
+  }, [
+    gameLanguage,
+    gameCompleted,
+    confirmExit,
+    exitScreen,
+  ]);
 
   /* ================================================================
      START / RESTART GAME

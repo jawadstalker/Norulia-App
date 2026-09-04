@@ -1,0 +1,1158 @@
+diff --git a/app/_layout.tsx b/app/_layout.tsx
+index a02223b..6a296ea 100644
+--- a/app/_layout.tsx
++++ b/app/_layout.tsx
+@@ -61,6 +61,11 @@ import {
+   AssessmentProvider,
+ } from '../context/AssessmentContext';
+ 
++import {
++  GameExitGuardProvider,
++  useGameExitGuard,
++} from '../context/GameExitGuard';
++
+ // ============================================================
+ // اضافه کردن GameDataProvider
+ // ============================================================
+@@ -464,6 +469,10 @@ function AppContent() {
+   const pathname =
+     usePathname();
+ 
++  const {
++    confirmExit,
++  } = useGameExitGuard();
++
+   const [
+     showSplash,
+     setShowSplash,
+@@ -553,30 +562,41 @@ function AppContent() {
+           return;
+         }
+ 
+-        /*
+-         * replace() prevents the navigation stack
+-         * from growing.
+-         */
+-        router.replace(
+-          route as any
+-        );
++        const navigate =
++          () => {
++            /*
++             * replace() prevents the navigation stack
++             * from growing.
++             */
++            router.replace(
++              route as any
++            );
++
++            /*
++             * Restore Android immersive navigation
++             * after route change.
++             */
++            if (
++              Platform.OS ===
++              'android'
++            ) {
++              setTimeout(() => {
++                hideAndroidNavigationBar();
++              }, 150);
++            }
++          };
+ 
+         /*
+-         * Restore Android immersive navigation
+-         * after route change.
++         * If a game screen is currently active, ask for
++         * confirmation (with the current score) before
++         * navigating away via the bottom nav bar.
+          */
+-        if (
+-          Platform.OS ===
+-          'android'
+-        ) {
+-          setTimeout(() => {
+-            hideAndroidNavigationBar();
+-          }, 150);
+-        }
++        confirmExit(navigate);
+       },
+       [
+         pathname,
+         router,
++        confirmExit,
+       ]
+     );
+ 
+@@ -786,7 +806,8 @@ export default function RootLayout() {
+      PROVIDERS
+ 
+      ترتیب Providerها:
+-     ThemeProvider → LanguageProvider → GameDataProvider → AuthProvider → AssessmentProvider
++     ThemeProvider → LanguageProvider → GameDataProvider → AuthProvider →
++     AssessmentProvider → GameExitGuardProvider
+   ============================================================== */
+ 
+   return (
+@@ -805,7 +826,9 @@ export default function RootLayout() {
+             <GameDataProvider>
+               <AuthProvider>
+                 <AssessmentProvider>
+-                  <AppContent />
++                  <GameExitGuardProvider>
++                    <AppContent />
++                  </GameExitGuardProvider>
+                 </AssessmentProvider>
+               </AuthProvider>
+             </GameDataProvider>
+diff --git a/app/games/AnologramGame.tsx b/app/games/AnologramGame.tsx
+index a3492be..0abd306 100644
+--- a/app/games/AnologramGame.tsx
++++ b/app/games/AnologramGame.tsx
+@@ -29,6 +29,7 @@ import {
+ } from 'lucide-react-native';
+ import { useTheme } from '../../context/ThemeContext';
+ import { useLanguage } from '../../context/LanguageContext';
++import { useGameExitGuard } from '../../context/GameExitGuard';
+ import { saveGameResult } from './gameResults';
+ 
+ type GameLanguage = 'fa' | 'en';
+@@ -185,6 +186,7 @@ export default function AnagramScreen() {
+   const router = useRouter();
+   const { colors } = useTheme();
+   const { language: appLanguage, isRTL } = useLanguage();
++  const { setGuard, confirmExit } = useGameExitGuard();
+   const { width } = useWindowDimensions();
+   const [gameLanguage, setGameLanguage] = useState<GameLanguage>(isRTL ? 'fa' : 'en');
+   const [currentLevel, setCurrentLevel] = useState(0);
+@@ -201,6 +203,15 @@ export default function AnagramScreen() {
+   const [isRunning, setIsRunning] = useState(false);
+   const [showResult, setShowResult] = useState(false);
+   const [gameFinished, setGameFinished] = useState(false);
++
++  /*
++   * Register mid-session state with the global exit guard.
++   */
++  useEffect(() => {
++    setGuard(isRunning && !gameFinished, score);
++
++    return () => setGuard(false, 0);
++  }, [isRunning, gameFinished, score, setGuard]);
+   const t = TEXT[gameLanguage];
+   const config = LEVEL_CONFIG[currentLevel];
+   const selectedWord = useMemo(() => {
+@@ -379,13 +390,23 @@ export default function AnagramScreen() {
+     reportGameResult();
+   };
+ 
+-  const quitGame = () => {
++  const exitScreen = () => {
+     setIsRunning(false);
+     setShowResult(false);
+     setGameFinished(false);
+     router.back();
+   };
+ 
++  const quitGame = () => {
++    if (isRunning) {
++      confirmExit(exitScreen);
++
++      return;
++    }
++
++    exitScreen();
++  };
++
+   const renderStat = (icon: React.ReactNode, label: string, value: string | number) => (
+     <View style={[styles.statItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+       {icon}
+diff --git a/app/games/BilingualSequence.tsx b/app/games/BilingualSequence.tsx
+index 84614b1..6e9a7eb 100644
+--- a/app/games/BilingualSequence.tsx
++++ b/app/games/BilingualSequence.tsx
+@@ -34,6 +34,7 @@ import {
+ 
+ import { useTheme } from '../../context/ThemeContext';
+ import { useLanguage } from '../../context/LanguageContext';
++import { useGameExitGuard } from '../../context/GameExitGuard';
+ import {
+   BorderRadius,
+   Spacing,
+@@ -330,6 +331,8 @@ function getLevelTitle(
+ export default function BilingualSequenceScreen() {
+   const router = useRouter();
+ 
++  const { setGuard, confirmExit } = useGameExitGuard();
++
+   const { colors } = useTheme();
+ 
+   const {
+@@ -361,6 +364,20 @@ export default function BilingualSequenceScreen() {
+   const [score, setScore] =
+     useState(0);
+ 
++  /*
++   * Register mid-session state with the global exit guard.
++   */
++  useEffect(() => {
++    setGuard(
++      phase === 'preview' ||
++        phase === 'playing' ||
++        phase === 'feedback',
++      score
++    );
++
++    return () => setGuard(false, 0);
++  }, [phase, score, setGuard]);
++
+   const [correctCount, setCorrectCount] =
+     useState(0);
+ 
+@@ -987,21 +1004,35 @@ export default function BilingualSequenceScreen() {
+     setOptions([]);
+   }, []);
+ 
+-  const handleBack = useCallback(() => {
+-    if (phase !== 'language') {
+-      restartGame();
+-      return;
+-    }
+-
++  const exitScreen = useCallback(() => {
+     if (router.canGoBack()) {
+       router.back();
+     } else {
+       router.replace('/bilingual-games');
+     }
++  }, [router]);
++
++  const handleBack = useCallback(() => {
++    if (
++      phase === 'preview' ||
++      phase === 'playing' ||
++      phase === 'feedback'
++    ) {
++      confirmExit(exitScreen);
++      return;
++    }
++
++    if (phase === 'completed') {
++      restartGame();
++      return;
++    }
++
++    exitScreen();
+   }, [
+     phase,
++    confirmExit,
++    exitScreen,
+     restartGame,
+-    router,
+   ]);
+ 
+   const accuracy =
+diff --git a/app/games/Relaxe.tsx b/app/games/Relaxe.tsx
+index 71c7a81..bccd1fc 100644
+--- a/app/games/Relaxe.tsx
++++ b/app/games/Relaxe.tsx
+@@ -21,6 +21,7 @@ import {
+ } from 'lucide-react-native';
+ import { useTheme } from '../../context/ThemeContext';
+ import { useLanguage } from '../../context/LanguageContext';
++import { useGameExitGuard } from '../../context/GameExitGuard';
+ import { Spacing, BorderRadius } from '../../constants/theme';
+ import { saveGameResult } from './gameResults';
+ 
+@@ -32,6 +33,7 @@ export default function CalmBreathingScreen() {
+   const router = useRouter();
+   const { colors } = useTheme();
+   const { language, isRTL } = useLanguage();
++  const { setGuard, confirmExit } = useGameExitGuard();
+ 
+   const [isStarted, setIsStarted] = useState(false);
+   const [isRunning, setIsRunning] = useState(false);
+@@ -41,6 +43,20 @@ export default function CalmBreathingScreen() {
+   const [seconds, setSeconds] = useState(4);
+   const [round, setRound] = useState(1);
+ 
++  /*
++   * Register mid-session state with the global exit guard.
++   * This exercise has no score, so the modal shows round
++   * progress instead.
++   */
++  useEffect(() => {
++    setGuard(isRunning, round, {
++      fa: 'دور فعلی',
++      en: 'Current round',
++    });
++
++    return () => setGuard(false, 0);
++  }, [isRunning, round, setGuard]);
++
+   const scale = useRef(new Animated.Value(0.65)).current;
+   const opacity = useRef(new Animated.Value(0.7)).current;
+ 
+@@ -172,7 +188,7 @@ export default function CalmBreathingScreen() {
+      BACK
+   ============================================================ */
+ 
+-  const goBack = () => {
++  const exitScreen = () => {
+     clearTimer();
+     stopAnimation();
+ 
+@@ -186,6 +202,15 @@ export default function CalmBreathingScreen() {
+     }
+   };
+ 
++  const goBack = () => {
++    if (isRunning) {
++      confirmExit(exitScreen);
++      return;
++    }
++
++    exitScreen();
++  };
++
+   /* ============================================================
+      START
+   ============================================================ */
+diff --git a/app/games/Word.tsx b/app/games/Word.tsx
+index bc8730f..97ffc60 100644
+--- a/app/games/Word.tsx
++++ b/app/games/Word.tsx
+@@ -1,5 +1,6 @@
+ import React, {
+   useCallback,
++  useEffect,
+   useMemo,
+   useState,
+ } from 'react';
+@@ -25,6 +26,7 @@ import {
+ 
+ import { useTheme } from '../../context/ThemeContext';
+ import { useLanguage } from '../../context/LanguageContext';
++import { useGameExitGuard } from '../../context/GameExitGuard';
+ import {
+   Spacing,
+   BorderRadius,
+@@ -295,6 +297,8 @@ export default function WordGameScreen() {
+     isRTL,
+   } = useLanguage();
+ 
++  const { setGuard, confirmExit } = useGameExitGuard();
++
+   /* ================================================================
+      GAME LANGUAGE
+   ================================================================= */
+@@ -334,6 +338,18 @@ export default function WordGameScreen() {
+   const [gameCompleted, setGameCompleted] =
+     useState(false);
+ 
++  /*
++   * Register mid-session state with the global exit guard.
++   */
++  useEffect(() => {
++    setGuard(
++      gameLanguage !== null && !gameCompleted,
++      score
++    );
++
++    return () => setGuard(false, 0);
++  }, [gameLanguage, gameCompleted, score, setGuard]);
++
+   /* ================================================================
+      UI TEXT
+   ================================================================= */
+@@ -482,10 +498,24 @@ export default function WordGameScreen() {
+      BACK
+   ================================================================= */
+ 
+-  const handleBack = useCallback(() => {
++  const exitScreen = useCallback(() => {
+     router.back();
+   }, [router]);
+ 
++  const handleBack = useCallback(() => {
++    if (gameLanguage !== null && !gameCompleted) {
++      confirmExit(exitScreen);
++      return;
++    }
++
++    exitScreen();
++  }, [
++    gameLanguage,
++    gameCompleted,
++    confirmExit,
++    exitScreen,
++  ]);
++
+   /* ================================================================
+      START / RESTART GAME
+      
+diff --git a/app/games/last-survival.tsx b/app/games/last-survival.tsx
+index b1a9360..94ad1d3 100644
+--- a/app/games/last-survival.tsx
++++ b/app/games/last-survival.tsx
+@@ -39,6 +39,7 @@ import {
+ 
+ import { useTheme } from '../../context/ThemeContext';
+ import { useLanguage } from '../../context/LanguageContext';
++import { useGameExitGuard } from '../../context/GameExitGuard';
+ 
+ import {
+   Spacing,
+@@ -278,6 +279,9 @@ function PageHeader({
+ export default function LastSurvivalScreen() {
+   const router = useRouter();
+ 
++  const { setGuard, confirmExit } =
++    useGameExitGuard();
++
+   const { colors } = useTheme();
+ 
+   const { language, isRTL } = useLanguage();
+@@ -368,6 +372,15 @@ export default function LastSurvivalScreen() {
+   const [score, setScore] =
+     useState(0);
+ 
++  /*
++   * Register mid-session state with the global exit guard.
++   */
++  useEffect(() => {
++    setGuard(playing, score);
++
++    return () => setGuard(false, 0);
++  }, [playing, score, setGuard]);
++
+   const [lives, setLives] =
+     useState(TOTAL_LIVES);
+ 
+@@ -1342,7 +1355,7 @@ export default function LastSurvivalScreen() {
+      BACK / EXIT
+   ================================================================= */
+ 
+-  const handleBack =
++  const exitScreen =
+     useCallback(() => {
+       /*
+        * This is the most important guard.
+@@ -1407,6 +1420,30 @@ export default function LastSurvivalScreen() {
+       router,
+     ]);
+ 
++  const handleBack =
++    useCallback(() => {
++      if (isLeavingRef.current) {
++        return;
++      }
++
++      /*
++       * Mid-session: confirm before actually leaving.
++       * Pause is implicit — nothing is torn down until
++       * the user confirms.
++       */
++      if (playing) {
++        confirmExit(exitScreen);
++
++        return;
++      }
++
++      exitScreen();
++    }, [
++      playing,
++      confirmExit,
++      exitScreen,
++    ]);
++
+   /* ================================================================
+      ANDROID HARDWARE BACK
+   ================================================================= */
+diff --git a/app/games/memory-challenge.tsx b/app/games/memory-challenge.tsx
+index 37bda0f..a724eff 100644
+--- a/app/games/memory-challenge.tsx
++++ b/app/games/memory-challenge.tsx
+@@ -29,6 +29,7 @@ import {
+ 
+ import { useTheme } from '../../context/ThemeContext';
+ import { useLanguage } from '../../context/LanguageContext';
++import { useGameExitGuard } from '../../context/GameExitGuard';
+ 
+ import {
+   Spacing,
+@@ -545,6 +546,8 @@ function PageHeader({
+ export default function MemoryChallenge() {
+   const router = useRouter();
+ 
++  const { setGuard, confirmExit } = useGameExitGuard();
++
+   const {
+     colors,
+   } = useTheme();
+@@ -598,6 +601,17 @@ export default function MemoryChallenge() {
+     setCorrectAnswers,
+   ] = useState(0);
+ 
++  /*
++   * Register this game's "is the user mid-session" state
++   * with the global exit guard, so leaving via the back
++   * button or the bottom nav bar asks for confirmation.
++   */
++  useEffect(() => {
++    setGuard(gameStarted && !gameFinished, score);
++
++    return () => setGuard(false, 0);
++  }, [gameStarted, gameFinished, score, setGuard]);
++
+   const [
+     target,
+     setTarget,
+@@ -987,11 +1001,31 @@ export default function MemoryChallenge() {
+     setAdaptiveResult(null);
+   }
+ 
++  function exitScreen() {
++    if (router.canGoBack()) {
++      router.back();
++    } else {
++      router.replace(
++        '/(tabs)/psycho'
++      );
++    }
++  }
++
+   function handleBack() {
++    /*
++     * Mid-session: ask for confirmation (with the current
++     * score) before actually leaving the screen.
++     */
+     if (
+-      gameStarted ||
+-      gameFinished
++      gameStarted &&
++      !gameFinished
+     ) {
++      confirmExit(exitScreen);
++
++      return;
++    }
++
++    if (gameFinished) {
+       setGameStarted(false);
+ 
+       setGameFinished(false);
+@@ -1005,13 +1039,7 @@ export default function MemoryChallenge() {
+       return;
+     }
+ 
+-    if (router.canGoBack()) {
+-      router.back();
+-    } else {
+-      router.replace(
+-        '/(tabs)/psycho'
+-      );
+-    }
++    exitScreen();
+   }
+ 
+   function getShapeName(
+diff --git a/app/games/size-discrimination.tsx b/app/games/size-discrimination.tsx
+index 3d386da..401e450 100644
+--- a/app/games/size-discrimination.tsx
++++ b/app/games/size-discrimination.tsx
+@@ -34,6 +34,7 @@ import {
+ 
+ import { useTheme } from '../../context/ThemeContext';
+ import { useLanguage } from '../../context/LanguageContext';
++import { useGameExitGuard } from '../../context/GameExitGuard';
+ 
+ import {
+   Spacing,
+@@ -443,6 +444,9 @@ export default function SizeDiscriminationScreen() {
+   const { language, isRTL } =
+     useLanguage();
+ 
++  const { setGuard, confirmExit } =
++    useGameExitGuard();
++
+   /* ================================================================
+      TEXT
+   ================================================================= */
+@@ -688,6 +692,15 @@ export default function SizeDiscriminationScreen() {
+     setScore,
+   ] = useState(0);
+ 
++  /*
++   * Register mid-session state with the global exit guard.
++   */
++  useEffect(() => {
++    setGuard(phase === 'playing', score);
++
++    return () => setGuard(false, 0);
++  }, [phase, score, setGuard]);
++
+   const [
+     responses,
+     setResponses,
+@@ -1435,7 +1448,7 @@ export default function SizeDiscriminationScreen() {
+      BACK
+   ================================================================= */
+ 
+-  const handleBack =
++  const exitScreen =
+     useCallback(() => {
+       clearTimers();
+ 
+@@ -1451,6 +1464,21 @@ export default function SizeDiscriminationScreen() {
+       router,
+     ]);
+ 
++  const handleBack =
++    useCallback(() => {
++      if (phase === 'playing') {
++        confirmExit(exitScreen);
++
++        return;
++      }
++
++      exitScreen();
++    }, [
++      phase,
++      confirmExit,
++      exitScreen,
++    ]);
++
+   /* ================================================================
+      RESULTS
+   ================================================================= */
+diff --git a/app/games/stroop.tsx b/app/games/stroop.tsx
+index 03d8bd2..276c74f 100644
+--- a/app/games/stroop.tsx
++++ b/app/games/stroop.tsx
+@@ -33,6 +33,7 @@ import {
+ 
+ import { useTheme } from '../../context/ThemeContext';
+ import { useLanguage } from '../../context/LanguageContext';
++import { useGameExitGuard } from '../../context/GameExitGuard';
+ import { useAssessment } from '../../context/AssessmentContext';
+ 
+ import {
+@@ -264,6 +265,9 @@ export default function StroopTestScreen() {
+ 
+   const router = useRouter();
+ 
++  const { setGuard, confirmExit } =
++    useGameExitGuard();
++
+   const { width } = useWindowDimensions();
+ 
+   /* ==============================================================
+@@ -298,6 +302,15 @@ export default function StroopTestScreen() {
+   const [score, setScore] =
+     useState(0);
+ 
++  /*
++   * Register mid-session state with the global exit guard.
++   */
++  useEffect(() => {
++    setGuard(playing, score);
++
++    return () => setGuard(false, 0);
++  }, [playing, score, setGuard]);
++
+   const [lives, setLives] =
+     useState(3);
+ 
+@@ -611,7 +624,7 @@ export default function StroopTestScreen() {
+      BACK
+   ============================================================== */
+ 
+-  const handleBack =
++  const exitScreen =
+     useCallback(() => {
+       timerRunRef.current?.stop();
+ 
+@@ -624,6 +637,21 @@ export default function StroopTestScreen() {
+       router.back();
+     }, [router]);
+ 
++  const handleBack =
++    useCallback(() => {
++      if (playing) {
++        confirmExit(exitScreen);
++
++        return;
++      }
++
++      exitScreen();
++    }, [
++      playing,
++      confirmExit,
++      exitScreen,
++    ]);
++
+   /* ==============================================================
+      FLASH
+   ============================================================== */
+diff --git a/app/games/visual-flow.tsx b/app/games/visual-flow.tsx
+index 087c514..79335ec 100644
+--- a/app/games/visual-flow.tsx
++++ b/app/games/visual-flow.tsx
+@@ -34,6 +34,7 @@ import {
+ 
+ import { useTheme } from '../../context/ThemeContext';
+ import { useLanguage } from '../../context/LanguageContext';
++import { useGameExitGuard } from '../../context/GameExitGuard';
+ import { Spacing, BorderRadius } from '../../constants/theme';
+ 
+ // ============================================================
+@@ -158,6 +159,7 @@ export default function VisualFlowScreen() {
+ 
+   const { colors, isAthlete } = useTheme();
+   const { language, isRTL } = useLanguage();
++  const { setGuard, confirmExit } = useGameExitGuard();
+ 
+   // تعیین رنگ اصلی بر اساس تم
+   const primaryColor = isAthlete ? '#22C55E' : colors.primary;
+@@ -312,6 +314,15 @@ export default function VisualFlowScreen() {
+ 
+   const [score, setScore] = useState(0);
+ 
++  /*
++   * Register mid-session state with the global exit guard.
++   */
++  useEffect(() => {
++    setGuard(phase === 'playing', score);
++
++    return () => setGuard(false, 0);
++  }, [phase, score, setGuard]);
++
+   const [feedback, setFeedback] =
+     useState<Feedback>('idle');
+ 
+@@ -1651,7 +1662,7 @@ export default function VisualFlowScreen() {
+    * Back button
+    */
+ 
+-  const handleBack =
++  const exitScreen =
+     useCallback(() => {
+       clearTimers();
+ 
+@@ -1670,32 +1681,25 @@ export default function VisualFlowScreen() {
+ 
+       setDots([]);
+ 
+-      if (
+-        phaseRef.current ===
+-        'playing'
+-      ) {
+-        phaseRef.current =
+-          'intro';
+-
+-        setPhase('intro');
++      phaseRef.current =
++        'intro';
+ 
+-        trialRef.current =
+-          0;
++      setPhase('intro');
+ 
+-        resultsRef.current =
+-          [];
++      trialRef.current =
++        0;
+ 
+-        scoreRef.current =
+-          0;
++      resultsRef.current =
++        [];
+ 
+-        setResults([]);
++      scoreRef.current =
++        0;
+ 
+-        setScore(0);
++      setResults([]);
+ 
+-        setFeedback('idle');
++      setScore(0);
+ 
+-        return;
+-      }
++      setFeedback('idle');
+ 
+       if (router.canGoBack()) {
+         router.back();
+@@ -1709,6 +1713,26 @@ export default function VisualFlowScreen() {
+       router,
+     ]);
+ 
++  const handleBack =
++    useCallback(() => {
++      /*
++       * Mid-session: confirm before actually leaving.
++       */
++      if (
++        phaseRef.current ===
++        'playing'
++      ) {
++        confirmExit(exitScreen);
++
++        return;
++      }
++
++      exitScreen();
++    }, [
++      confirmExit,
++      exitScreen,
++    ]);
++
+   /*
+    * Statistics
+    */
+diff --git a/context/GameExitGuard.tsx b/context/GameExitGuard.tsx
+new file mode 100644
+index 0000000..f751679
+--- /dev/null
++++ b/context/GameExitGuard.tsx
+@@ -0,0 +1,339 @@
++import React, {
++  createContext,
++  useCallback,
++  useContext,
++  useMemo,
++  useRef,
++  useState,
++  ReactNode,
++} from 'react';
++
++import {
++  Modal,
++  StyleSheet,
++  Text,
++  TouchableOpacity,
++  View,
++} from 'react-native';
++
++import {
++  AlertTriangle,
++} from 'lucide-react-native';
++
++import { useTheme } from './ThemeContext';
++import { useLanguage } from './LanguageContext';
++
++/**
++ * ============================================================================
++ * GAME EXIT GUARD
++ * ============================================================================
++ *
++ * هر صفحه‌ی بازی وضعیت «در حال بازی بودن» و امتیاز فعلی خودش را با
++ * setGuard(active, score) در این context ثبت می‌کند.
++ *
++ * هر جایی که کاربر ممکن است از بازی خارج شود (دکمه‌ی برگشت داخل صفحه،
++ * دکمه‌ی برگشت گوشی، یا زدن روی نوبار پایین) به‌جای خروج مستقیم،
++ * confirmExit(exitAction) صدا زده می‌شود. اگر بازی «فعال» باشد، یک
++ * مودال تأیید (با امتیاز فعلی) نشان داده می‌شود؛ در غیر این صورت
++ * exitAction بلافاصله اجرا می‌شود.
++ * ============================================================================
++ */
++
++type GuardMetricLabel = { fa: string; en: string };
++
++type GameExitGuardContextType = {
++  setGuard: (
++    active: boolean,
++    value?: number,
++    label?: GuardMetricLabel
++  ) => void;
++  confirmExit: (onExit: () => void) => void;
++};
++
++const DEFAULT_LABEL: GuardMetricLabel = {
++  fa: 'امتیاز فعلی',
++  en: 'Current score',
++};
++
++const GameExitGuardContext =
++  createContext<GameExitGuardContextType | undefined>(undefined);
++
++export function GameExitGuardProvider({
++  children,
++}: {
++  children: ReactNode;
++}) {
++  const { colors, isDark } = useTheme();
++  const { language, isRTL } = useLanguage();
++
++  const guardRef = useRef({
++    active: false,
++    value: 0,
++    label: DEFAULT_LABEL,
++  });
++
++  const [modalVisible, setModalVisible] = useState(false);
++  const [modalValue, setModalValue] = useState(0);
++  const [modalLabel, setModalLabel] =
++    useState<GuardMetricLabel>(DEFAULT_LABEL);
++
++  const pendingExitRef = useRef<(() => void) | null>(null);
++
++  const setGuard = useCallback(
++    (
++      active: boolean,
++      value: number = 0,
++      label: GuardMetricLabel = DEFAULT_LABEL
++    ) => {
++      guardRef.current = { active, value, label };
++    },
++    []
++  );
++
++  const confirmExit = useCallback((onExit: () => void) => {
++    if (!guardRef.current.active) {
++      onExit();
++      return;
++    }
++
++    setModalValue(guardRef.current.value);
++    setModalLabel(guardRef.current.label);
++    pendingExitRef.current = onExit;
++    setModalVisible(true);
++  }, []);
++
++  const handleCancel = useCallback(() => {
++    setModalVisible(false);
++    pendingExitRef.current = null;
++  }, []);
++
++  const handleConfirm = useCallback(() => {
++    const exit = pendingExitRef.current;
++
++    setModalVisible(false);
++    pendingExitRef.current = null;
++    guardRef.current = {
++      active: false,
++      value: 0,
++      label: DEFAULT_LABEL,
++    };
++
++    exit?.();
++  }, []);
++
++  const text =
++    language === 'fa'
++      ? {
++          title: 'ترک بازی؟',
++          message: 'اگر الان خارج شوی، این نوبت بازی ذخیره نمی‌شود.',
++          cancel: 'ادامه‌ی بازی',
++          exit: 'خروج',
++        }
++      : {
++          title: 'Leave the game?',
++          message: 'If you exit now, this session will not be saved.',
++          cancel: 'Keep playing',
++          exit: 'Exit',
++        };
++
++  const value = useMemo<GameExitGuardContextType>(
++    () => ({ setGuard, confirmExit }),
++    [setGuard, confirmExit]
++  );
++
++  return (
++    <GameExitGuardContext.Provider value={value}>
++      {children}
++
++      <Modal
++        visible={modalVisible}
++        transparent
++        animationType="fade"
++        onRequestClose={handleCancel}
++      >
++        <View style={styles.backdrop}>
++          <View
++            style={[
++              styles.card,
++              {
++                backgroundColor: colors.surface,
++                borderColor: colors.border,
++              },
++            ]}
++          >
++            <View
++              style={[
++                styles.iconCircle,
++                { backgroundColor: `${colors.error}18` },
++              ]}
++            >
++              <AlertTriangle size={30} color={colors.error} />
++            </View>
++
++            <Text style={[styles.title, { color: colors.text }]}>
++              {text.title}
++            </Text>
++
++            <Text
++              style={[
++                styles.message,
++                { color: colors.textSecondary },
++              ]}
++            >
++              {text.message}
++            </Text>
++
++            <View
++              style={[
++                styles.scoreBox,
++                {
++                  backgroundColor: colors.background,
++                  borderColor: colors.border,
++                  flexDirection: isRTL ? 'row-reverse' : 'row',
++                },
++              ]}
++            >
++              <Text
++                style={[
++                  styles.scoreLabel,
++                  { color: colors.textSecondary },
++                ]}
++              >
++                {language === 'fa' ? modalLabel.fa : modalLabel.en}
++              </Text>
++              <Text style={[styles.scoreValue, { color: colors.primary }]}>
++                {modalValue}
++              </Text>
++            </View>
++
++            <View style={styles.actions}>
++              <TouchableOpacity
++                activeOpacity={0.85}
++                onPress={handleCancel}
++                style={[
++                  styles.secondaryButton,
++                  { borderColor: colors.border },
++                ]}
++              >
++                <Text
++                  style={[styles.secondaryText, { color: colors.text }]}
++                >
++                  {text.cancel}
++                </Text>
++              </TouchableOpacity>
++
++              <TouchableOpacity
++                activeOpacity={0.85}
++                onPress={handleConfirm}
++                style={[
++                  styles.primaryButton,
++                  { backgroundColor: colors.error },
++                ]}
++              >
++                <Text style={styles.primaryText}>{text.exit}</Text>
++              </TouchableOpacity>
++            </View>
++          </View>
++        </View>
++      </Modal>
++    </GameExitGuardContext.Provider>
++  );
++}
++
++export function useGameExitGuard(): GameExitGuardContextType {
++  const context = useContext(GameExitGuardContext);
++
++  if (!context) {
++    throw new Error(
++      'useGameExitGuard must be used within a GameExitGuardProvider'
++    );
++  }
++
++  return context;
++}
++
++const styles = StyleSheet.create({
++  backdrop: {
++    flex: 1,
++    backgroundColor: 'rgba(0,0,0,0.55)',
++    alignItems: 'center',
++    justifyContent: 'center',
++    paddingHorizontal: 28,
++  },
++  card: {
++    width: '100%',
++    maxWidth: 360,
++    borderRadius: 22,
++    borderWidth: 1,
++    paddingVertical: 26,
++    paddingHorizontal: 22,
++    alignItems: 'center',
++  },
++  iconCircle: {
++    width: 60,
++    height: 60,
++    borderRadius: 30,
++    alignItems: 'center',
++    justifyContent: 'center',
++    marginBottom: 14,
++  },
++  title: {
++    fontSize: 18,
++    fontWeight: '700',
++    textAlign: 'center',
++    marginBottom: 6,
++  },
++  message: {
++    fontSize: 13.5,
++    textAlign: 'center',
++    lineHeight: 19,
++    marginBottom: 16,
++  },
++  scoreBox: {
++    width: '100%',
++    borderRadius: 14,
++    borderWidth: 1,
++    paddingVertical: 10,
++    paddingHorizontal: 14,
++    alignItems: 'center',
++    justifyContent: 'space-between',
++    marginBottom: 20,
++  },
++  scoreLabel: {
++    fontSize: 13,
++    fontWeight: '500',
++  },
++  scoreValue: {
++    fontSize: 16,
++    fontWeight: '800',
++  },
++  actions: {
++    width: '100%',
++    flexDirection: 'row',
++    gap: 10,
++  },
++  secondaryButton: {
++    flex: 1,
++    borderWidth: 1,
++    borderRadius: 14,
++    paddingVertical: 13,
++    alignItems: 'center',
++    justifyContent: 'center',
++  },
++  secondaryText: {
++    fontSize: 14,
++    fontWeight: '600',
++  },
++  primaryButton: {
++    flex: 1,
++    borderRadius: 14,
++    paddingVertical: 13,
++    alignItems: 'center',
++    justifyContent: 'center',
++  },
++  primaryText: {
++    fontSize: 14,
++    fontWeight: '700',
++    color: '#FFFFFF',
++  },
++});

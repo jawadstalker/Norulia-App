@@ -34,6 +34,7 @@ import {
 
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useGameExitGuard } from '../../context/GameExitGuard';
 import {
   BorderRadius,
   Spacing,
@@ -330,6 +331,8 @@ function getLevelTitle(
 export default function BilingualSequenceScreen() {
   const router = useRouter();
 
+  const { setGuard, confirmExit } = useGameExitGuard();
+
   const { colors } = useTheme();
 
   const {
@@ -360,6 +363,20 @@ export default function BilingualSequenceScreen() {
 
   const [score, setScore] =
     useState(0);
+
+  /*
+   * Register mid-session state with the global exit guard.
+   */
+  useEffect(() => {
+    setGuard(
+      phase === 'preview' ||
+        phase === 'playing' ||
+        phase === 'feedback',
+      score
+    );
+
+    return () => setGuard(false, 0);
+  }, [phase, score, setGuard]);
 
   const [correctCount, setCorrectCount] =
     useState(0);
@@ -987,21 +1004,35 @@ export default function BilingualSequenceScreen() {
     setOptions([]);
   }, []);
 
-  const handleBack = useCallback(() => {
-    if (phase !== 'language') {
-      restartGame();
-      return;
-    }
-
+  const exitScreen = useCallback(() => {
     if (router.canGoBack()) {
       router.back();
     } else {
       router.replace('/bilingual-games');
     }
+  }, [router]);
+
+  const handleBack = useCallback(() => {
+    if (
+      phase === 'preview' ||
+      phase === 'playing' ||
+      phase === 'feedback'
+    ) {
+      confirmExit(exitScreen);
+      return;
+    }
+
+    if (phase === 'completed') {
+      restartGame();
+      return;
+    }
+
+    exitScreen();
   }, [
     phase,
+    confirmExit,
+    exitScreen,
     restartGame,
-    router,
   ]);
 
   const accuracy =

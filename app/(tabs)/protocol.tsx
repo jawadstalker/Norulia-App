@@ -43,6 +43,8 @@ import {
   Clock3,
   AlertCircle,
   Activity,
+  Book,
+  Percent,
 } from 'lucide-react-native';
 
 import { useRouter } from 'expo-router';
@@ -73,6 +75,7 @@ interface DayEntry {
   icon?: string;
   desc?: Bilingual;
   tasks: Task[];
+  book?: Bilingual; // کتاب پیشنهادی برای این روز
 }
 
 interface TaskProgress {
@@ -81,6 +84,7 @@ interface TaskProgress {
   status?: 'completed' | 'failed' | 'skipped' | 'pending';
   difficulty?: number;
   failureReason?: string | null;
+  bookProgress?: number; // درصد مطالعه کتاب (۰ تا ۱۰۰)
 }
 
 type DayProgress = TaskProgress[];
@@ -243,6 +247,42 @@ const POEMS: { text: string; poet: string }[] = [
   },
 ];
 
+// کتاب‌های پیشنهادی برای هر روز
+const BOOKS: Bilingual[] = [
+  { fa: 'کتاب اول - فصل ۱', en: 'Book 1 - Chapter 1' },
+  { fa: 'کتاب اول - فصل ۲', en: 'Book 1 - Chapter 2' },
+  { fa: 'کتاب اول - فصل ۳', en: 'Book 1 - Chapter 3' },
+  { fa: 'کتاب اول - فصل ۴', en: 'Book 1 - Chapter 4' },
+  { fa: 'کتاب اول - فصل ۵', en: 'Book 1 - Chapter 5' },
+  { fa: 'کتاب دوم - فصل ۱', en: 'Book 2 - Chapter 1' },
+  { fa: 'کتاب دوم - فصل ۲', en: 'Book 2 - Chapter 2' },
+  { fa: 'کتاب دوم - فصل ۳', en: 'Book 2 - Chapter 3' },
+  { fa: 'کتاب دوم - فصل ۴', en: 'Book 2 - Chapter 4' },
+  { fa: 'کتاب دوم - فصل ۵', en: 'Book 2 - Chapter 5' },
+  { fa: 'کتاب سوم - فصل ۱', en: 'Book 3 - Chapter 1' },
+  { fa: 'کتاب سوم - فصل ۲', en: 'Book 3 - Chapter 2' },
+  { fa: 'کتاب سوم - فصل ۳', en: 'Book 3 - Chapter 3' },
+  { fa: 'کتاب سوم - فصل ۴', en: 'Book 3 - Chapter 4' },
+  { fa: 'کتاب سوم - فصل ۵', en: 'Book 3 - Chapter 5' },
+  { fa: 'کتاب چهارم - فصل ۱', en: 'Book 4 - Chapter 1' },
+  { fa: 'کتاب چهارم - فصل ۲', en: 'Book 4 - Chapter 2' },
+  { fa: 'کتاب چهارم - فصل ۳', en: 'Book 4 - Chapter 3' },
+  { fa: 'کتاب چهارم - فصل ۴', en: 'Book 4 - Chapter 4' },
+  { fa: 'کتاب چهارم - فصل ۵', en: 'Book 4 - Chapter 5' },
+  { fa: 'کتاب پنجم - فصل ۱', en: 'Book 5 - Chapter 1' },
+  { fa: 'کتاب پنجم - فصل ۲', en: 'Book 5 - Chapter 2' },
+  { fa: 'کتاب پنجم - فصل ۳', en: 'Book 5 - Chapter 3' },
+  { fa: 'کتاب پنجم - فصل ۴', en: 'Book 5 - Chapter 4' },
+  { fa: 'کتاب پنجم - فصل ۵', en: 'Book 5 - Chapter 5' },
+  { fa: 'کتاب ششم - فصل ۱', en: 'Book 6 - Chapter 1' },
+  { fa: 'کتاب ششم - فصل ۲', en: 'Book 6 - Chapter 2' },
+  { fa: 'کتاب ششم - فصل ۳', en: 'Book 6 - Chapter 3' },
+  { fa: 'کتاب ششم - فصل ۴', en: 'Book 6 - Chapter 4' },
+  { fa: 'کتاب ششم - فصل ۵', en: 'Book 6 - Chapter 5' },
+  { fa: 'کتاب هفتم - فصل ۱', en: 'Book 7 - Chapter 1' },
+  { fa: 'کتاب هفتم - فصل ۲', en: 'Book 7 - Chapter 2' },
+];
+
 const SINGLE_TASKS: Task[] = [
   {
     taskId: 'mood_log',
@@ -292,12 +332,14 @@ function buildSingleData(): DayEntry[] {
   for (let i = 0; i < 31; i++) {
     const ayah = AYAHS[i % AYAHS.length];
     const poem = POEMS[i % POEMS.length];
+    const book = BOOKS[i % BOOKS.length];
 
     result.push({
       ayah: ayah.text,
       ayahRef: ayah.ref,
       poem: poem.text,
       poemPoet: poem.poet,
+      book: book,
       tasks: SINGLE_TASKS,
     });
   }
@@ -316,6 +358,10 @@ function buildDyadData(): DayEntry[] {
       desc: {
         fa: 'تمرینات جفتی برای ایجاد ارتباط مؤثر',
         en: 'Paired exercises for effective connection',
+      },
+      book: {
+        fa: 'کتاب مهارت‌های ارتباطی - فصل ۱',
+        en: 'Communication Skills - Chapter 1',
       },
       tasks: [
         {
@@ -374,6 +420,10 @@ function buildGroupData(): DayEntry[] {
       desc: {
         fa: 'تمرینات گروهی برای ایجاد هماهنگی',
         en: 'Group exercises to build cohesion',
+      },
+      book: {
+        fa: 'کتاب کار گروهی - فصل ۱',
+        en: 'Group Work - Chapter 1',
       },
       tasks: [
         {
@@ -445,6 +495,7 @@ function freshDayProgress(tasks: Task[]): DayProgress {
     status: 'pending',
     difficulty: undefined,
     failureReason: null,
+    bookProgress: 0,
   }));
 }
 
@@ -600,6 +651,16 @@ export default function ProtocolScreen() {
     [getDayProgress],
   );
 
+  const getBookProgress = useCallback(
+    (dayIndex: number): number => {
+      const dayProgress = getDayProgress(dayIndex);
+      // از اولین آیتم (یا هر آیتمی) درصد مطالعه کتاب را می‌گیریم
+      // فرض می‌کنیم همه آیتم‌ها bookProgress یکسانی دارند
+      return dayProgress[0]?.bookProgress ?? 0;
+    },
+    [getDayProgress],
+  );
+
   const getDayPercent = useCallback(
     (dayIndex: number): number => {
       const tasks = data[dayIndex]?.tasks ?? [];
@@ -613,9 +674,9 @@ export default function ProtocolScreen() {
   const completedDays = useMemo(() => {
     return Array.from(
       { length: totalDays },
-      (_, index) => getDayPercent(index) === 100,
+      (_, index) => getDayPercent(index) === 100 && getBookProgress(index) >= 100,
     ).filter(Boolean).length;
-  }, [totalDays, getDayPercent]);
+  }, [totalDays, getDayPercent, getBookProgress]);
 
   const overallPercent = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
 
@@ -637,7 +698,16 @@ export default function ProtocolScreen() {
       const raw = await AsyncStorage.getItem(STORAGE_KEY(mode));
       if (raw) {
         const parsed = JSON.parse(raw);
-        setProgress(parsed || {});
+        // اطمینان از وجود bookProgress برای همه آیتم‌ها
+        const normalized: Progress = {};
+        Object.entries(parsed).forEach(([key, value]) => {
+          const dayProgress = value as DayProgress;
+          normalized[Number(key)] = dayProgress.map(item => ({
+            ...item,
+            bookProgress: item.bookProgress ?? 0,
+          }));
+        });
+        setProgress(normalized);
       } else {
         setProgress({});
       }
@@ -979,14 +1049,30 @@ export default function ProtocolScreen() {
     [currentDay, currentEntry],
   );
 
+  const updateBookProgress = useCallback(
+    (value: number) => {
+      const clampedValue = Math.max(0, Math.min(100, value));
+      setProgress(prev => {
+        const current = prev[currentDay] ?? freshDayProgress(currentEntry?.tasks ?? []);
+        const updated = current.map(item => ({
+          ...item,
+          bookProgress: clampedValue,
+        }));
+        return { ...prev, [currentDay]: updated };
+      });
+    },
+    [currentDay, currentEntry],
+  );
+
   const completeDay = useCallback(() => {
     const tasks = currentEntry?.tasks ?? [];
     if (!tasks.length) return;
 
     const current = getDayProgress(currentDay);
     const allDone = current.every(item => isTaskDone(item));
+    const bookProgress = getBookProgress(currentDay);
 
-    if (!allDone) {
+    if (!allDone || bookProgress < 100) {
       lightHaptic();
       return;
     }
@@ -1000,7 +1086,7 @@ export default function ProtocolScreen() {
 
     setShowCelebration(true);
     setTimeout(() => setShowCelebration(false), 2200);
-  }, [currentEntry, getDayProgress, currentDay, lightHaptic, successHaptic]);
+  }, [currentEntry, getDayProgress, getBookProgress, currentDay, lightHaptic, successHaptic]);
 
   const previousDay = useCallback(() => {
     if (currentDay <= 0) return;
@@ -1072,6 +1158,7 @@ export default function ProtocolScreen() {
   const currentDayPercent = getDayPercent(currentDay);
   const currentCompletedTasks = getCompletedTasks(currentDay);
   const currentTotalTasks = currentEntry?.tasks?.length ?? 0;
+  const currentBookProgress = getBookProgress(currentDay);
 
   // ============================================================
   // renderPageHeader - Back button only in day/report
@@ -1086,7 +1173,6 @@ export default function ProtocolScreen() {
         },
       ]}
     >
-      {/* Back button ONLY in internal pages (day/report) */}
       {view !== 'home' ? (
         <TouchableOpacity
           onPress={handleBack}
@@ -1101,7 +1187,6 @@ export default function ProtocolScreen() {
             },
           ]}
         >
-          {/* Always left, no RTL rotation */}
           <ArrowLeft
             size={21}
             color={colors.text}
@@ -1158,7 +1243,6 @@ export default function ProtocolScreen() {
           },
         ]}
       >
-        {/* Previous day - always with ChevronLeft */}
         <TouchableOpacity
           onPress={previousDay}
           disabled={currentDay === 0}
@@ -1177,7 +1261,6 @@ export default function ProtocolScreen() {
           <ChevronLeft size={22} color={colors.text} strokeWidth={2.2} />
         </TouchableOpacity>
 
-        {/* Day indicator */}
         <View
           style={[
             styles.dayIndicator,
@@ -1201,7 +1284,6 @@ export default function ProtocolScreen() {
           </Text>
         </View>
 
-        {/* Next day - always with ChevronRight */}
         <TouchableOpacity
           onPress={nextDay}
           disabled={currentDay >= totalDays - 1}
@@ -1219,6 +1301,281 @@ export default function ProtocolScreen() {
         >
           <ChevronRight size={22} color={colors.text} strokeWidth={2.2} />
         </TouchableOpacity>
+      </View>
+    );
+  };
+
+  // ============================================================
+  // renderBookProgress - Component for book progress
+  // ============================================================
+
+  const renderBookProgress = () => {
+    const book = currentEntry?.book;
+    if (!book) return null;
+
+    return (
+      <View
+        style={[
+          styles.bookProgressCard,
+          {
+            backgroundColor: card,
+            borderColor: softBorder,
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.bookProgressHeader,
+            {
+              flexDirection: rowDirection,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.bookProgressIcon,
+              {
+                backgroundColor: softAccent,
+              },
+            ]}
+          >
+            <Book size={18} color={accent} strokeWidth={2} />
+          </View>
+
+          <View
+            style={[
+              styles.bookProgressContent,
+              {
+                alignItems: contentAlign,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.bookProgressTitle,
+                {
+                  color: colors.text,
+                  textAlign,
+                  writingDirection: textDirection,
+                },
+              ]}
+            >
+              {fa ? 'مطالعه کتاب' : 'Book Reading'}
+            </Text>
+
+            <Text
+              style={[
+                styles.bookProgressSubtitle,
+                {
+                  color: colors.textSecondary || `${colors.text}80`,
+                  textAlign,
+                  writingDirection: textDirection,
+                },
+              ]}
+            >
+              {tr(book)}
+            </Text>
+          </View>
+        </View>
+
+        <View
+          style={[
+            styles.bookProgressRow,
+            {
+              flexDirection: rowDirection,
+            },
+          ]}
+        >
+          <View style={styles.bookProgressSliderContainer}>
+            <View
+              style={[
+                styles.bookProgressTrack,
+                {
+                  backgroundColor: progressTrack,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.bookProgressFill,
+                  {
+                    width: `${currentBookProgress}%`,
+                    backgroundColor: accent,
+                  },
+                ]}
+              />
+            </View>
+
+            <View
+              style={[
+                styles.bookProgressLabels,
+                {
+                  flexDirection: rowDirection,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.bookProgressLabel,
+                  {
+                    color: colors.textSecondary || `${colors.text}60`,
+                  },
+                ]}
+              >
+                0%
+              </Text>
+
+              <Text
+                style={[
+                  styles.bookProgressLabel,
+                  {
+                    color: colors.textSecondary || `${colors.text}60`,
+                  },
+                ]}
+              >
+                50%
+              </Text>
+
+              <Text
+                style={[
+                  styles.bookProgressLabel,
+                  {
+                    color: colors.textSecondary || `${colors.text}60`,
+                  },
+                ]}
+              >
+                100%
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.bookProgressInputContainer}>
+            <TextInput
+              value={String(currentBookProgress)}
+              onChangeText={(text) => {
+                const num = parseInt(text);
+                if (!isNaN(num)) {
+                  updateBookProgress(num);
+                }
+              }}
+              keyboardType="number-pad"
+              placeholder="0"
+              placeholderTextColor={colors.textTertiary || `${colors.text}40`}
+              style={[
+                styles.bookProgressInput,
+                {
+                  color: colors.text,
+                  backgroundColor: cardSecondary,
+                  borderColor: softBorder,
+                  textAlign: 'center',
+                },
+              ]}
+            />
+            <Text
+              style={[
+                styles.bookProgressPercent,
+                {
+                  color: colors.textSecondary || `${colors.text}60`,
+                },
+              ]}
+            >
+              %
+            </Text>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                if (currentBookProgress < 100) {
+                  updateBookProgress(currentBookProgress + 10);
+                  lightHaptic();
+                }
+              }}
+              style={[
+                styles.bookProgressPlusButton,
+                {
+                  backgroundColor: softAccent,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.bookProgressPlusText,
+                  {
+                    color: accent,
+                  },
+                ]}
+              >
+                +10%
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View
+          style={[
+            styles.bookProgressStatus,
+            {
+              flexDirection: rowDirection,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.bookProgressStatusBadge,
+              {
+                backgroundColor: currentBookProgress >= 100 ? softAccentStrong : cardSecondary,
+              },
+            ]}
+          >
+            {currentBookProgress >= 100 ? (
+              <Check size={14} color={accent} strokeWidth={2.5} />
+            ) : (
+              <Percent size={14} color={colors.textSecondary || `${colors.text}50`} strokeWidth={2} />
+            )}
+            <Text
+              style={[
+                styles.bookProgressStatusText,
+                {
+                  color: currentBookProgress >= 100 ? accent : colors.textSecondary || `${colors.text}60`,
+                },
+              ]}
+            >
+              {currentBookProgress >= 100
+                ? fa ? 'تکمیل شده' : 'Completed'
+                : fa
+                ? `${currentBookProgress}% مطالعه شده`
+                : `${currentBookProgress}% read`}
+            </Text>
+          </View>
+
+          {currentBookProgress < 100 && (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                updateBookProgress(100);
+                successHaptic();
+              }}
+              style={[
+                styles.bookProgressCompleteButton,
+                {
+                  backgroundColor: softAccent,
+                },
+              ]}
+            >
+              <Check size={14} color={accent} strokeWidth={2.5} />
+              <Text
+                style={[
+                  styles.bookProgressCompleteText,
+                  {
+                    color: accent,
+                  },
+                ]}
+              >
+                {fa ? 'تکمیل شد' : 'Complete'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     );
   };
@@ -1302,9 +1659,10 @@ export default function ProtocolScreen() {
 
   const renderDayCard = (dayIndex: number) => {
     const percent = getDayPercent(dayIndex);
+    const bookProgress = getBookProgress(dayIndex);
     const completed = getCompletedTasks(dayIndex);
     const total = data[dayIndex]?.tasks?.length ?? 0;
-    const completedDay = percent === 100;
+    const completedDay = percent === 100 && bookProgress >= 100;
 
     return (
       <TouchableOpacity
@@ -1383,8 +1741,8 @@ export default function ProtocolScreen() {
               ]}
             >
               {fa
-                ? `${completed} از ${total} فعالیت`
-                : `${completed} of ${total} activities`}
+                ? `${completed} از ${total} فعالیت | کتاب ${bookProgress}%`
+                : `${completed} of ${total} activities | Book ${bookProgress}%`}
             </Text>
           </View>
 
@@ -1392,7 +1750,7 @@ export default function ProtocolScreen() {
             style={[
               styles.dayPercent,
               {
-                backgroundColor: percent === 100 ? softAccentStrong : cardSecondary,
+                backgroundColor: completedDay ? softAccentStrong : cardSecondary,
               },
             ]}
           >
@@ -1400,11 +1758,11 @@ export default function ProtocolScreen() {
               style={[
                 styles.dayPercentText,
                 {
-                  color: percent === 100 ? accent : colors.textSecondary || `${colors.text}60`,
+                  color: completedDay ? accent : colors.textSecondary || `${colors.text}60`,
                 },
               ]}
             >
-              {percent}%
+              {Math.round((percent + bookProgress) / 2)}%
             </Text>
           </View>
         </View>
@@ -1421,7 +1779,7 @@ export default function ProtocolScreen() {
             style={[
               styles.progressFill,
               {
-                width: `${percent}%`,
+                width: `${Math.round((percent + bookProgress) / 2)}%`,
                 backgroundColor: accent,
               },
             ]}
@@ -2332,7 +2690,7 @@ export default function ProtocolScreen() {
                         },
                       ]}
                     >
-                      {currentDayPercent}%
+                      {Math.round((currentDayPercent + currentBookProgress) / 2)}%
                     </Text>
 
                     <Text
@@ -2381,8 +2739,8 @@ export default function ProtocolScreen() {
                       ]}
                     >
                       {fa
-                        ? `${currentCompletedTasks} از ${currentTotalTasks} فعالیت انجام شده`
-                        : `${currentCompletedTasks} of ${currentTotalTasks} activities completed`}
+                        ? `${currentCompletedTasks} از ${currentTotalTasks} فعالیت | کتاب ${currentBookProgress}%`
+                        : `${currentCompletedTasks} of ${currentTotalTasks} activities | Book ${currentBookProgress}%`}
                     </Text>
 
                     <View
@@ -2397,7 +2755,7 @@ export default function ProtocolScreen() {
                         style={[
                           styles.progressFill,
                           {
-                            width: `${currentDayPercent}%`,
+                            width: `${Math.round((currentDayPercent + currentBookProgress) / 2)}%`,
                             backgroundColor: accent,
                           },
                         ]}
@@ -2619,8 +2977,8 @@ export default function ProtocolScreen() {
                     ]}
                   >
                     {fa
-                      ? `${currentCompletedTasks} از ${currentTotalTasks} فعالیت`
-                      : `${currentCompletedTasks} of ${currentTotalTasks} activities`}
+                      ? `${currentCompletedTasks} از ${currentTotalTasks} فعالیت | کتاب ${currentBookProgress}%`
+                      : `${currentCompletedTasks} of ${currentTotalTasks} activities | Book ${currentBookProgress}%`}
                   </Text>
                 </View>
 
@@ -2632,7 +2990,7 @@ export default function ProtocolScreen() {
                     },
                   ]}
                 >
-                  {currentDayPercent}%
+                  {Math.round((currentDayPercent + currentBookProgress) / 2)}%
                 </Text>
               </View>
 
@@ -2648,7 +3006,7 @@ export default function ProtocolScreen() {
                   style={[
                     styles.progressFill,
                     {
-                      width: `${currentDayPercent}%`,
+                      width: `${Math.round((currentDayPercent + currentBookProgress) / 2)}%`,
                       backgroundColor: accent,
                     },
                   ]}
@@ -2788,6 +3146,8 @@ export default function ProtocolScreen() {
                 </Text>
               </View>
             )}
+
+            {renderBookProgress()}
 
             <View style={styles.tasksSection}>
               <Text
@@ -3023,19 +3383,19 @@ export default function ProtocolScreen() {
 
             <TouchableOpacity
               activeOpacity={0.82}
-              disabled={currentDayPercent !== 100}
+              disabled={currentDayPercent !== 100 || currentBookProgress < 100}
               onPress={completeDay}
               style={[
                 styles.completeDayButton,
                 {
-                  backgroundColor: currentDayPercent === 100 ? accent : cardSecondary,
-                  borderColor: currentDayPercent === 100 ? accent : softBorder,
-                  opacity: currentDayPercent === 100 ? 1 : 0.75,
+                  backgroundColor: currentDayPercent === 100 && currentBookProgress >= 100 ? accent : cardSecondary,
+                  borderColor: currentDayPercent === 100 && currentBookProgress >= 100 ? accent : softBorder,
+                  opacity: currentDayPercent === 100 && currentBookProgress >= 100 ? 1 : 0.75,
                   flexDirection: rowDirection,
                 },
               ]}
             >
-              {currentDayPercent === 100 ? (
+              {currentDayPercent === 100 && currentBookProgress >= 100 ? (
                 <CheckCircle2 size={21} color={colors.background} strokeWidth={2.3} />
               ) : (
                 <Lock size={19} color={colors.textSecondary || `${colors.text}60`} strokeWidth={2} />
@@ -3046,7 +3406,7 @@ export default function ProtocolScreen() {
                   styles.completeDayText,
                   {
                     color:
-                      currentDayPercent === 100
+                      currentDayPercent === 100 && currentBookProgress >= 100
                         ? colors.background
                         : colors.textSecondary || `${colors.text}60`,
                     textAlign,
@@ -3054,13 +3414,13 @@ export default function ProtocolScreen() {
                   },
                 ]}
               >
-                {currentDayPercent === 100
+                {currentDayPercent === 100 && currentBookProgress >= 100
                   ? fa
                     ? 'تکمیل روز'
                     : 'Complete day'
                   : fa
-                  ? 'تمام فعالیت‌ها را انجام دهید'
-                  : 'Complete all tasks first'}
+                  ? 'تمام فعالیت‌ها را انجام دهید و کتاب را کامل کنید'
+                  : 'Complete all tasks and book reading'}
               </Text>
             </TouchableOpacity>
 
@@ -3263,7 +3623,7 @@ export default function ProtocolScreen() {
                     },
                   ]}
                 >
-                  <Target size={19} color={accent} strokeWidth={2} />
+                  <Book size={19} color={accent} strokeWidth={2} />
                 </View>
 
                 <Text
@@ -3274,14 +3634,7 @@ export default function ProtocolScreen() {
                     },
                   ]}
                 >
-                  {data.reduce((sum, item) => sum + (item.tasks?.length ?? 0), 0) > 0
-                    ? Math.round(
-                        (data.reduce((sum, _, i) => sum + getCompletedTasks(i), 0) /
-                          data.reduce((sum, item) => sum + (item.tasks?.length ?? 0), 0)) *
-                          100,
-                      )
-                    : 0}
-                  %
+                  {data.reduce((sum, _, i) => sum + (getBookProgress(i) >= 100 ? 1 : 0), 0)}
                 </Text>
 
                 <Text
@@ -3293,7 +3646,7 @@ export default function ProtocolScreen() {
                     },
                   ]}
                 >
-                  {fa ? 'تکمیل فعالیت‌ها' : 'Task completion'}
+                  {fa ? 'کتاب کامل شده' : 'Books completed'}
                 </Text>
               </View>
             </View>
@@ -3334,6 +3687,8 @@ export default function ProtocolScreen() {
               <View style={styles.reportDays}>
                 {data.map((_, index) => {
                   const percent = getDayPercent(index);
+                  const bookProgress = getBookProgress(index);
+                  const avgProgress = Math.round((percent + bookProgress) / 2);
 
                   return (
                     <TouchableOpacity
@@ -3354,8 +3709,8 @@ export default function ProtocolScreen() {
                           style={[
                             styles.reportDayBar,
                             {
-                              height: `${Math.max(percent, 5)}%`,
-                              backgroundColor: percent === 100 ? accent : accentStrong,
+                              height: `${Math.max(avgProgress, 5)}%`,
+                              backgroundColor: avgProgress === 100 ? accent : accentStrong,
                             },
                           ]}
                         />
@@ -4241,6 +4596,142 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontStyle: 'italic',
     textAlign: 'center',
+  },
+
+  // Book Progress Styles
+  bookProgressCard: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+
+  bookProgressHeader: {
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+
+  bookProgressIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  bookProgressContent: {
+    flex: 1,
+  },
+
+  bookProgressTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  bookProgressSubtitle: {
+    fontSize: 12,
+    opacity: 0.7,
+    marginTop: 2,
+  },
+
+  bookProgressRow: {
+    alignItems: 'center',
+    gap: 12,
+  },
+
+  bookProgressSliderContainer: {
+    flex: 1,
+  },
+
+  bookProgressTrack: {
+    width: '100%',
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+
+  bookProgressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+
+  bookProgressLabels: {
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+
+  bookProgressLabel: {
+    fontSize: 9,
+    opacity: 0.6,
+  },
+
+  bookProgressInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+
+  bookProgressInput: {
+    width: 50,
+    height: 40,
+    borderWidth: 1,
+    borderRadius: 9,
+    paddingHorizontal: 6,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  bookProgressPercent: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginRight: 4,
+  },
+
+  bookProgressPlusButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+
+  bookProgressPlusText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  bookProgressStatus: {
+    marginTop: 12,
+    gap: 8,
+  },
+
+  bookProgressStatusBadge: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+
+  bookProgressStatusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  bookProgressCompleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+
+  bookProgressCompleteText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 
   tasksSection: {

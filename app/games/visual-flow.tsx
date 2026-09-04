@@ -34,6 +34,7 @@ import {
 
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useGameExitGuard } from '../../context/GameExitGuard';
 import { Spacing, BorderRadius } from '../../constants/theme';
 
 // ============================================================
@@ -158,6 +159,7 @@ export default function VisualFlowScreen() {
 
   const { colors, isAthlete } = useTheme();
   const { language, isRTL } = useLanguage();
+  const { setGuard, confirmExit } = useGameExitGuard();
 
   // تعیین رنگ اصلی بر اساس تم
   const primaryColor = isAthlete ? '#22C55E' : colors.primary;
@@ -311,6 +313,15 @@ export default function VisualFlowScreen() {
     useState(0);
 
   const [score, setScore] = useState(0);
+
+  /*
+   * Register mid-session state with the global exit guard.
+   */
+  useEffect(() => {
+    setGuard(phase === 'playing', score);
+
+    return () => setGuard(false, 0);
+  }, [phase, score, setGuard]);
 
   const [feedback, setFeedback] =
     useState<Feedback>('idle');
@@ -1651,7 +1662,7 @@ export default function VisualFlowScreen() {
    * Back button
    */
 
-  const handleBack =
+  const exitScreen =
     useCallback(() => {
       clearTimers();
 
@@ -1670,32 +1681,25 @@ export default function VisualFlowScreen() {
 
       setDots([]);
 
-      if (
-        phaseRef.current ===
-        'playing'
-      ) {
-        phaseRef.current =
-          'intro';
+      phaseRef.current =
+        'intro';
 
-        setPhase('intro');
+      setPhase('intro');
 
-        trialRef.current =
-          0;
+      trialRef.current =
+        0;
 
-        resultsRef.current =
-          [];
+      resultsRef.current =
+        [];
 
-        scoreRef.current =
-          0;
+      scoreRef.current =
+        0;
 
-        setResults([]);
+      setResults([]);
 
-        setScore(0);
+      setScore(0);
 
-        setFeedback('idle');
-
-        return;
-      }
+      setFeedback('idle');
 
       if (router.canGoBack()) {
         router.back();
@@ -1707,6 +1711,26 @@ export default function VisualFlowScreen() {
     }, [
       clearTimers,
       router,
+    ]);
+
+  const handleBack =
+    useCallback(() => {
+      /*
+       * Mid-session: confirm before actually leaving.
+       */
+      if (
+        phaseRef.current ===
+        'playing'
+      ) {
+        confirmExit(exitScreen);
+
+        return;
+      }
+
+      exitScreen();
+    }, [
+      confirmExit,
+      exitScreen,
     ]);
 
   /*

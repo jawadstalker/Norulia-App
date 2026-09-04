@@ -21,6 +21,7 @@ import {
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useGameExitGuard } from '../../context/GameExitGuard';
 import { Spacing, BorderRadius } from '../../constants/theme';
 import { saveGameResult } from './gameResults';
 
@@ -32,6 +33,7 @@ export default function CalmBreathingScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { language, isRTL } = useLanguage();
+  const { setGuard, confirmExit } = useGameExitGuard();
 
   const [isStarted, setIsStarted] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
@@ -40,6 +42,20 @@ export default function CalmBreathingScreen() {
   const [phase, setPhase] = useState<Phase>('inhale');
   const [seconds, setSeconds] = useState(4);
   const [round, setRound] = useState(1);
+
+  /*
+   * Register mid-session state with the global exit guard.
+   * This exercise has no score, so the modal shows round
+   * progress instead.
+   */
+  useEffect(() => {
+    setGuard(isRunning, round, {
+      fa: 'دور فعلی',
+      en: 'Current round',
+    });
+
+    return () => setGuard(false, 0);
+  }, [isRunning, round, setGuard]);
 
   const scale = useRef(new Animated.Value(0.65)).current;
   const opacity = useRef(new Animated.Value(0.7)).current;
@@ -172,7 +188,7 @@ export default function CalmBreathingScreen() {
      BACK
   ============================================================ */
 
-  const goBack = () => {
+  const exitScreen = () => {
     clearTimer();
     stopAnimation();
 
@@ -184,6 +200,15 @@ export default function CalmBreathingScreen() {
     } else {
       router.replace('/(tabs)/psycho');
     }
+  };
+
+  const goBack = () => {
+    if (isRunning) {
+      confirmExit(exitScreen);
+      return;
+    }
+
+    exitScreen();
   };
 
   /* ============================================================

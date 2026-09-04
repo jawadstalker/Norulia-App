@@ -61,6 +61,11 @@ import {
   AssessmentProvider,
 } from '../context/AssessmentContext';
 
+import {
+  GameExitGuardProvider,
+  useGameExitGuard,
+} from '../context/GameExitGuard';
+
 // ============================================================
 // اضافه کردن GameDataProvider
 // ============================================================
@@ -464,6 +469,10 @@ function AppContent() {
   const pathname =
     usePathname();
 
+  const {
+    confirmExit,
+  } = useGameExitGuard();
+
   const [
     showSplash,
     setShowSplash,
@@ -553,30 +562,41 @@ function AppContent() {
           return;
         }
 
-        /*
-         * replace() prevents the navigation stack
-         * from growing.
-         */
-        router.replace(
-          route as any
-        );
+        const navigate =
+          () => {
+            /*
+             * replace() prevents the navigation stack
+             * from growing.
+             */
+            router.replace(
+              route as any
+            );
+
+            /*
+             * Restore Android immersive navigation
+             * after route change.
+             */
+            if (
+              Platform.OS ===
+              'android'
+            ) {
+              setTimeout(() => {
+                hideAndroidNavigationBar();
+              }, 150);
+            }
+          };
 
         /*
-         * Restore Android immersive navigation
-         * after route change.
+         * If a game screen is currently active, ask for
+         * confirmation (with the current score) before
+         * navigating away via the bottom nav bar.
          */
-        if (
-          Platform.OS ===
-          'android'
-        ) {
-          setTimeout(() => {
-            hideAndroidNavigationBar();
-          }, 150);
-        }
+        confirmExit(navigate);
       },
       [
         pathname,
         router,
+        confirmExit,
       ]
     );
 
@@ -786,7 +806,8 @@ export default function RootLayout() {
      PROVIDERS
 
      ترتیب Providerها:
-     ThemeProvider → LanguageProvider → GameDataProvider → AuthProvider → AssessmentProvider
+     ThemeProvider → LanguageProvider → GameDataProvider → AuthProvider →
+     AssessmentProvider → GameExitGuardProvider
   ============================================================== */
 
   return (
@@ -805,7 +826,9 @@ export default function RootLayout() {
             <GameDataProvider>
               <AuthProvider>
                 <AssessmentProvider>
-                  <AppContent />
+                  <GameExitGuardProvider>
+                    <AppContent />
+                  </GameExitGuardProvider>
                 </AssessmentProvider>
               </AuthProvider>
             </GameDataProvider>

@@ -39,6 +39,7 @@ import {
 
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useGameExitGuard } from '../../context/GameExitGuard';
 
 import {
   Spacing,
@@ -278,6 +279,9 @@ function PageHeader({
 export default function LastSurvivalScreen() {
   const router = useRouter();
 
+  const { setGuard, confirmExit } =
+    useGameExitGuard();
+
   const { colors } = useTheme();
 
   const { language, isRTL } = useLanguage();
@@ -367,6 +371,15 @@ export default function LastSurvivalScreen() {
 
   const [score, setScore] =
     useState(0);
+
+  /*
+   * Register mid-session state with the global exit guard.
+   */
+  useEffect(() => {
+    setGuard(playing, score);
+
+    return () => setGuard(false, 0);
+  }, [playing, score, setGuard]);
 
   const [lives, setLives] =
     useState(TOTAL_LIVES);
@@ -1342,7 +1355,7 @@ export default function LastSurvivalScreen() {
      BACK / EXIT
   ================================================================= */
 
-  const handleBack =
+  const exitScreen =
     useCallback(() => {
       /*
        * This is the most important guard.
@@ -1405,6 +1418,30 @@ export default function LastSurvivalScreen() {
       cleanupGame,
       flashAnimation,
       router,
+    ]);
+
+  const handleBack =
+    useCallback(() => {
+      if (isLeavingRef.current) {
+        return;
+      }
+
+      /*
+       * Mid-session: confirm before actually leaving.
+       * Pause is implicit — nothing is torn down until
+       * the user confirms.
+       */
+      if (playing) {
+        confirmExit(exitScreen);
+
+        return;
+      }
+
+      exitScreen();
+    }, [
+      playing,
+      confirmExit,
+      exitScreen,
     ]);
 
   /* ================================================================

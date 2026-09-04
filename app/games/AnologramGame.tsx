@@ -29,6 +29,7 @@ import {
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useGameExitGuard } from '../../context/GameExitGuard';
 import { saveGameResult } from './gameResults';
 
 type GameLanguage = 'fa' | 'en';
@@ -185,6 +186,7 @@ export default function AnagramScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { language: appLanguage, isRTL } = useLanguage();
+  const { setGuard, confirmExit } = useGameExitGuard();
   const { width } = useWindowDimensions();
   const [gameLanguage, setGameLanguage] = useState<GameLanguage>(isRTL ? 'fa' : 'en');
   const [currentLevel, setCurrentLevel] = useState(0);
@@ -201,6 +203,15 @@ export default function AnagramScreen() {
   const [isRunning, setIsRunning] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
+
+  /*
+   * Register mid-session state with the global exit guard.
+   */
+  useEffect(() => {
+    setGuard(isRunning && !gameFinished, score);
+
+    return () => setGuard(false, 0);
+  }, [isRunning, gameFinished, score, setGuard]);
   const t = TEXT[gameLanguage];
   const config = LEVEL_CONFIG[currentLevel];
   const selectedWord = useMemo(() => {
@@ -379,11 +390,21 @@ export default function AnagramScreen() {
     reportGameResult();
   };
 
-  const quitGame = () => {
+  const exitScreen = () => {
     setIsRunning(false);
     setShowResult(false);
     setGameFinished(false);
     router.back();
+  };
+
+  const quitGame = () => {
+    if (isRunning) {
+      confirmExit(exitScreen);
+
+      return;
+    }
+
+    exitScreen();
   };
 
   const renderStat = (icon: React.ReactNode, label: string, value: string | number) => (

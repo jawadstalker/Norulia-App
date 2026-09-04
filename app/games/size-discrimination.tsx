@@ -34,6 +34,7 @@ import {
 
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useGameExitGuard } from '../../context/GameExitGuard';
 
 import {
   Spacing,
@@ -443,6 +444,9 @@ export default function SizeDiscriminationScreen() {
   const { language, isRTL } =
     useLanguage();
 
+  const { setGuard, confirmExit } =
+    useGameExitGuard();
+
   /* ================================================================
      TEXT
   ================================================================= */
@@ -687,6 +691,15 @@ export default function SizeDiscriminationScreen() {
     score,
     setScore,
   ] = useState(0);
+
+  /*
+   * Register mid-session state with the global exit guard.
+   */
+  useEffect(() => {
+    setGuard(phase === 'playing', score);
+
+    return () => setGuard(false, 0);
+  }, [phase, score, setGuard]);
 
   const [
     responses,
@@ -1435,7 +1448,7 @@ export default function SizeDiscriminationScreen() {
      BACK
   ================================================================= */
 
-  const handleBack =
+  const exitScreen =
     useCallback(() => {
       clearTimers();
 
@@ -1449,6 +1462,21 @@ export default function SizeDiscriminationScreen() {
     }, [
       clearTimers,
       router,
+    ]);
+
+  const handleBack =
+    useCallback(() => {
+      if (phase === 'playing') {
+        confirmExit(exitScreen);
+
+        return;
+      }
+
+      exitScreen();
+    }, [
+      phase,
+      confirmExit,
+      exitScreen,
     ]);
 
   /* ================================================================
