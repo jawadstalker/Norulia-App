@@ -549,11 +549,16 @@ const styles = StyleSheet.create({
 
   imageWrapper: {
     position: 'relative',
+    overflow: 'hidden',
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
   },
 
   cover: {
     width: '100%',
     height: 175,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
   },
 
   imageBadge: {

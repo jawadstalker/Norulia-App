@@ -795,10 +795,14 @@ const styles = StyleSheet.create({
     height: 175,
     overflow: 'hidden',
     backgroundColor: '#111111',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   cover: {
     width: '100%',
     height: '100%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   coverOverlay: {
     ...StyleSheet.absoluteFillObject,
