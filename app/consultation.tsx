@@ -958,7 +958,6 @@ const styles = StyleSheet.create({
     justifyContent:
       'center',
   },
-
   infoText: {
     flex: 1,
 
