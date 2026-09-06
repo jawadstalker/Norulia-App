@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/logo2.png" alt="NeuroLia Logo" width="180"/>
+</p>
+
 # NeuroLia
 
 A modern cross-platform cognitive wellness and performance application built with **React Native, Expo, and TypeScript**.
