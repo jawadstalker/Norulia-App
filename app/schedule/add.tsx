@@ -1,3 +1,4 @@
+// app/schedule/add.tsx
 import React, {
   useMemo,
   useState,
@@ -18,6 +19,7 @@ import {
 
 import {
   useRouter,
+  useLocalSearchParams,
 } from 'expo-router';
 
 import {
@@ -118,6 +120,8 @@ export default function AddSchedule() {
   const router =
     useRouter();
 
+  const params = useLocalSearchParams<{ type?: string }>();
+
   const {
     colors,
   } = useTheme();
@@ -125,6 +129,15 @@ export default function AddSchedule() {
   const {
     isRTL,
   } = useLanguage();
+
+  // ===== دریافت نوع فعالیت از پارامترها =====
+  const getInitialType = (): ActivityKey => {
+    const type = params.type;
+    if (type === 'training' || type === 'medication' || type === 'consultation') {
+      return type;
+    }
+    return 'training';
+  };
 
   const TEXTS = {
     headerTitle:
@@ -146,11 +159,6 @@ export default function AddSchedule() {
       isRTL
         ? 'یک فعالیت جدید برای برنامه روزانه‌ات بساز.'
         : 'Create a new activity for your daily routine.',
-
-    activityTypeLabel:
-      isRTL
-        ? 'نوع فعالیت'
-        : 'Activity type',
 
     detailsLabel:
       isRTL
@@ -240,8 +248,6 @@ export default function AddSchedule() {
 
   /*
    * مهم:
-   * دیگر برای هر نوع فعالیت رنگ جداگانه نداریم.
-   *
    * همه Activity ها از colors.primary استفاده می‌کنند
    * تا با Theme انتخاب‌شده هماهنگ باشند.
    */
@@ -252,6 +258,7 @@ export default function AddSchedule() {
     color: string;
     icon: typeof Brain;
     category: string;
+    duration: string;
   }[] = [
     {
       key: 'training',
@@ -276,6 +283,11 @@ export default function AddSchedule() {
         isRTL
           ? 'تمرین ذهنی'
           : 'Brain Training',
+
+      duration:
+        isRTL
+          ? '۲۰ دقیقه'
+          : '20 min',
     },
 
     {
@@ -301,6 +313,11 @@ export default function AddSchedule() {
         isRTL
           ? 'سلامت'
           : 'Health',
+
+      duration:
+        isRTL
+          ? '۵ دقیقه'
+          : '5 min',
     },
 
     {
@@ -326,6 +343,11 @@ export default function AddSchedule() {
         isRTL
           ? 'سلامت روان'
           : 'Mental Health',
+
+      duration:
+        isRTL
+          ? '۴۵ دقیقه'
+          : '45 min',
     },
   ];
 
@@ -388,7 +410,7 @@ export default function AddSchedule() {
     setSelectedKey,
   ] =
     useState<ActivityKey>(
-      'training',
+      getInitialType(),
     );
 
   const [
@@ -460,17 +482,6 @@ export default function AddSchedule() {
     () => {
       Haptics.selectionAsync().catch(
         () => {},
-      );
-    };
-
-  const handleSelectType =
-    (
-      key: ActivityKey,
-    ) => {
-      selectionHaptic();
-
-      setSelectedKey(
-        key,
       );
     };
 
@@ -633,19 +644,7 @@ export default function AddSchedule() {
               selectedActivity.category,
 
             duration:
-              selectedKey ===
-              'consultation'
-                ? isRTL
-                  ? '۴۵ دقیقه'
-                  : '45 min'
-                : selectedKey ===
-                    'training'
-                  ? isRTL
-                    ? '۲۰ دقیقه'
-                    : '20 min'
-                  : isRTL
-                    ? '۵ دقیقه'
-                    : '5 min',
+              selectedActivity.duration,
 
             completed:
               false,
@@ -659,9 +658,6 @@ export default function AddSchedule() {
                   ? 'pill'
                   : 'heart',
 
-            /*
-             * رنگ ذخیره‌شده هم از Theme فعلی می‌آید.
-             */
             color:
               colors.primary,
 
@@ -722,6 +718,92 @@ export default function AddSchedule() {
       }
     };
 
+  // ===== نمایش نوع فعالیت انتخاب‌شده =====
+  const renderSelectedType = () => {
+    const Icon = selectedActivity.icon;
+
+    return (
+      <View
+        style={[
+          styles.selectedTypeCard,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            flexDirection: isRTL ? 'row-reverse' : 'row',
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.selectedTypeIcon,
+            {
+              backgroundColor: colors.primary + '15',
+            },
+          ]}
+        >
+          <Icon
+            size={24}
+            color={colors.primary}
+            strokeWidth={2.2}
+          />
+        </View>
+
+        <View
+          style={[
+            styles.selectedTypeInfo,
+            {
+              alignItems: isRTL ? 'flex-end' : 'flex-start',
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.selectedTypeName,
+              {
+                color: colors.text,
+                textAlign: isRTL ? 'right' : 'left',
+              },
+            ]}
+          >
+            {selectedActivity.name}
+          </Text>
+
+          <Text
+            style={[
+              styles.selectedTypeDesc,
+              {
+                color: colors.textSecondary,
+                textAlign: isRTL ? 'right' : 'left',
+              },
+            ]}
+          >
+            {selectedActivity.description}
+          </Text>
+
+          <View
+            style={[
+              styles.selectedTypeBadge,
+              {
+                backgroundColor: colors.primary + '12',
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.selectedTypeBadgeText,
+                {
+                  color: colors.primary,
+                },
+              ]}
+            >
+              {selectedActivity.category}
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <LinearGradient
       colors={[
@@ -761,11 +843,6 @@ export default function AddSchedule() {
             style={[
               styles.header,
               {
-                /*
-                 * عمداً row-reverse نداریم.
-                 *
-                 * بنابراین Back همیشه سمت چپ می‌ماند.
-                 */
                 flexDirection:
                   'row',
               },
@@ -986,7 +1063,7 @@ export default function AddSchedule() {
             </MotiView>
 
             {/* ======================================================== */}
-            {/* ACTIVITY TYPE                                            */}
+            {/* SELECTED ACTIVITY TYPE - نمایش نوع انتخاب‌شده            */}
             {/* ======================================================== */}
 
             <View
@@ -994,7 +1071,6 @@ export default function AddSchedule() {
                 styles.section
               }
             >
-
               <Text
                 style={[
                   styles.sectionTitle,
@@ -1009,168 +1085,10 @@ export default function AddSchedule() {
                   },
                 ]}
               >
-                {
-                  TEXTS.activityTypeLabel
-                }
+                {isRTL ? 'نوع فعالیت' : 'Activity Type'}
               </Text>
 
-              <View
-                style={[
-                  styles.typeRow,
-                  {
-                    flexDirection:
-                      isRTL
-                        ? 'row-reverse'
-                        : 'row',
-                  },
-                ]}
-              >
-
-                {ACTIVITY_CONFIG.map(
-                  (
-                    activity,
-                  ) => {
-                    const Icon =
-                      activity.icon;
-
-                    const selected =
-                      selectedKey ===
-                      activity.key;
-
-                    return (
-                      <Pressable
-                        key={
-                          activity.key
-                        }
-                        onPress={() =>
-                          handleSelectType(
-                            activity.key,
-                          )
-                        }
-                        style={({ pressed }) => [
-                          styles.typeCard,
-
-                          {
-                            backgroundColor:
-                              selected
-                                ? colors.primary +
-                                  '12'
-                                : colors.surface,
-
-                            borderColor:
-                              selected
-                                ? colors.primary
-                                : colors.border,
-
-                            transform: [
-                              {
-                                scale:
-                                  pressed
-                                    ? 0.97
-                                    : 1,
-                              },
-                            ],
-                          },
-                        ]}
-                      >
-
-                        <View
-                          style={[
-                            styles.typeIcon,
-                            {
-                              backgroundColor:
-                                colors.primary +
-                                '18',
-                            },
-                          ]}
-                        >
-                          <Icon
-                            size={
-                              20
-                            }
-                            color={
-                              colors.primary
-                            }
-                            strokeWidth={
-                              2.1
-                            }
-                          />
-                        </View>
-
-                        <Text
-                          style={[
-                            styles.typeName,
-                            {
-                              color:
-                                colors.text,
-
-                              textAlign:
-                                isRTL
-                                  ? 'right'
-                                  : 'left',
-                            },
-                          ]}
-                          numberOfLines={
-                            1
-                          }
-                        >
-                          {
-                            activity.name
-                          }
-                        </Text>
-
-                        <Text
-                          style={[
-                            styles.typeDescription,
-                            {
-                              color:
-                                colors.textSecondary,
-
-                              textAlign:
-                                isRTL
-                                  ? 'right'
-                                  : 'left',
-                            },
-                          ]}
-                          numberOfLines={
-                            2
-                          }
-                        >
-                          {
-                            activity.description
-                          }
-                        </Text>
-
-                        {selected && (
-                          <View
-                            style={[
-                              styles.typeCheck,
-                              {
-                                backgroundColor:
-                                  colors.primary,
-                              },
-                            ]}
-                          >
-                            <Check
-                              size={
-                                11
-                              }
-                              color={
-                                colors.background
-                              }
-                              strokeWidth={
-                                3
-                              }
-                            />
-                          </View>
-                        )}
-
-                      </Pressable>
-                    );
-                  },
-                )}
-
-              </View>
+              {renderSelectedType()}
             </View>
 
             {/* ======================================================== */}
@@ -1994,19 +1912,7 @@ export default function AddSchedule() {
                         },
                       ]}
                     >
-                      {selectedKey ===
-                      'consultation'
-                        ? isRTL
-                          ? '۴۵ دقیقه'
-                          : '45 min'
-                        : selectedKey ===
-                            'training'
-                          ? isRTL
-                            ? '۲۰ دقیقه'
-                            : '20 min'
-                          : isRTL
-                            ? '۵ دقیقه'
-                            : '5 min'}
+                      {selectedActivity.duration}
                     </Text>
 
                   </View>
@@ -2143,41 +2049,6 @@ export default function AddSchedule() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Section Header                                                              */
-/* -------------------------------------------------------------------------- */
-
-function SectionHeader({
-  title,
-  colors,
-  isRTL,
-}: {
-  title: string;
-  colors: any;
-  isRTL: boolean;
-}) {
-  return (
-    <Text
-      style={[
-        styles.sectionTitle,
-        {
-          color:
-            colors.text,
-
-          textAlign:
-            isRTL
-              ? 'right'
-              : 'left',
-        },
-      ]}
-    >
-      {
-        title
-      }
-    </Text>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
 /* Styles                                                                     */
 /* -------------------------------------------------------------------------- */
 
@@ -2196,10 +2067,6 @@ const styles =
       flex: 1,
     },
 
-    /*
-     * Header همیشه LTR layout دارد
-     * تا Back در سمت چپ باقی بماند.
-     */
     header: {
       paddingTop: 40,
       minHeight: 66,
@@ -2353,75 +2220,50 @@ const styles =
         'center',
     },
 
-    typeRow: {
-      gap: 8,
-    },
-
-    typeCard: {
-      flex: 1,
-
-      minHeight: 142,
-
+    // ===== استایل‌های نمایش نوع انتخاب‌شده =====
+    selectedTypeCard: {
+      minHeight: 80,
       borderRadius: 18,
-
       borderWidth: 1,
-
-      padding: 10,
-
-      position:
-        'relative',
+      padding: 14,
+      alignItems: 'center',
     },
 
-    typeIcon: {
-      width: 37,
-
-      height: 37,
-
-      borderRadius: 12,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      marginBottom: 9,
+    selectedTypeIcon: {
+      width: 50,
+      height: 50,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginHorizontal: 5,
     },
 
-    typeName: {
+    selectedTypeInfo: {
+      flex: 1,
+      marginHorizontal: 8,
+    },
+
+    selectedTypeName: {
+      fontSize: 14,
+      fontWeight: '800',
+    },
+
+    selectedTypeDesc: {
       fontSize: 11,
-
-      fontWeight:
-        '900',
+      marginTop: 2,
     },
 
-    typeDescription: {
-      fontSize: 8,
-
-      lineHeight: 12,
-
-      marginTop: 4,
+    selectedTypeBadge: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
+      marginTop: 6,
     },
 
-    typeCheck: {
-      position:
-        'absolute',
-
-      top: 9,
-
-      right: 9,
-
-      width: 18,
-
-      height: 18,
-
-      borderRadius: 9,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
+    selectedTypeBadgeText: {
+      fontSize: 10,
+      fontWeight: '700',
     },
 
     fieldLabel: {

@@ -31,6 +31,7 @@ import {
   BorderRadius,
 } from '../../constants/theme';
 import { Card } from '../../components/ui/Card';
+import { launchNoruPuzzle } from '../../utils/externalGame';
 
 const categories = [
   {
@@ -228,13 +229,9 @@ export default function PsychoScreen() {
       return;
     }
 
-    const packageName = 'com.IliyaPardazesh.NoruPuzzle';
-    const intentUrl = `intent:#Intent;package=${packageName};end`;
+    const launched = await launchNoruPuzzle();
 
-    try {
-      await Linking.openURL(intentUrl);
-    } catch (error) {
-      console.error('Failed to open Noru Puzzle:', error);
+    if (!launched) {
       Alert.alert(
         language === 'fa' ? 'بازی نصب نیست' : 'Game Not Installed',
         language === 'fa'

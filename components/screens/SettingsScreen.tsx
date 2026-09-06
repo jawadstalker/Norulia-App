@@ -1,3 +1,4 @@
+// components/screens/SettingsScreen.tsx
 import React from 'react';
 
 import {
@@ -27,8 +28,6 @@ import {
   Sparkles,
   LogOut,
 } from 'lucide-react-native';
-
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { ThemeMode } from '../../types';
 
@@ -407,21 +406,6 @@ export function SettingsScreen() {
           },
         ]}
       >
-        {/* <View
-          style={[
-            styles.heroIcon,
-            {
-              backgroundColor:
-                `${colors.primary}18`,
-
-              borderColor:
-                `${colors.primary}35`,
-            },
-          ]}
-        >
-
-        </View> */}
-
         <Text
           style={[
             styles.title,
@@ -577,82 +561,10 @@ export function SettingsScreen() {
           ))}
         </View>
 
+        {/* =================================================
+            بخش ATHLETE CALLOUT کاملاً حذف شد
+        ================================================= */}
 
-        {/* ATHLETE CALLOUT */}
-
-        {theme === 'athlete' && (
-          <LinearGradient
-            colors={[
-              'rgba(184,255,61,0.14)',
-              'rgba(184,255,61,0.03)',
-              'rgba(184,255,61,0.10)',
-            ]}
-            start={{
-              x: 0,
-              y: 0,
-            }}
-            end={{
-              x: 1,
-              y: 1,
-            }}
-            style={[
-              styles.athleteCallout,
-              {
-                flexDirection: isRTL
-                  ? 'row-reverse'
-                  : 'row',
-
-                borderColor:
-                  'rgba(184,255,61,0.20)',
-              },
-            ]}
-          >
-            <Dumbbell
-              size={19}
-              color="#B8FF3D"
-              strokeWidth={2.4}
-            />
-
-            <View
-              style={[
-                styles.calloutContent,
-                {
-                  alignItems: isRTL
-                    ? 'flex-end'
-                    : 'flex-start',
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.calloutTitle,
-                  {
-                    textAlign: isRTL
-                      ? 'right'
-                      : 'left',
-                  },
-                ]}
-              >
-                Neon Athlete Mode
-              </Text>
-
-              <Text
-                style={[
-                  styles.calloutText,
-                  {
-                    textAlign: isRTL
-                      ? 'right'
-                      : 'left',
-                  },
-                ]}
-              >
-                {isRTL
-                  ? 'تم طراحی‌شده برای Brain × Body × Performance'
-                  : 'Designed for Brain × Body × Performance'}
-              </Text>
-            </View>
-          </LinearGradient>
-        )}
       </Card>
 
 
@@ -1139,6 +1051,8 @@ const styles = StyleSheet.create({
     marginBottom: 5,
 
     maxWidth: '100%',
+
+    flexWrap: 'wrap',
   },
 
   themeIcon: {
@@ -1165,8 +1079,10 @@ const styles = StyleSheet.create({
 
     fontWeight: '700',
 
-    includeFontPadding:
-      false,
+    includeFontPadding: false,
+
+    flexWrap: 'wrap',
+    maxWidth: '100%',
   },
 
   themeSubtitle: {
@@ -1176,8 +1092,10 @@ const styles = StyleSheet.create({
 
     lineHeight: 18,
 
-    includeFontPadding:
-      false,
+    includeFontPadding: false,
+
+    flexWrap: 'wrap',
+    maxWidth: '100%',
   },
 
 
@@ -1204,69 +1122,6 @@ const styles = StyleSheet.create({
 
 
   // =====================================================
-  // ATHLETE CALLOUT
-  // =====================================================
-
-  athleteCallout: {
-    width: '100%',
-
-    marginTop:
-      Spacing.md,
-
-    minHeight: 66,
-
-    borderRadius:
-      BorderRadius.lg,
-
-    borderWidth: 1,
-
-    paddingHorizontal:
-      Spacing.md,
-
-    paddingVertical:
-      Spacing.sm,
-
-    alignItems:
-      'center',
-
-    gap:
-      Spacing.sm,
-  },
-
-  calloutContent: {
-    flex: 1,
-
-    minWidth: 0,
-  },
-
-  calloutTitle: {
-    color: '#B8FF3D',
-
-    fontSize: 13,
-
-    lineHeight: 18,
-
-    fontWeight: '800',
-
-    includeFontPadding:
-      false,
-  },
-
-  calloutText: {
-    color: '#849087',
-
-    fontSize: 11,
-
-    lineHeight: 17,
-
-    marginTop: 2,
-
-    includeFontPadding:
-      false,
-  },
-
-
-  // =====================================================
   // LANGUAGE
   // =====================================================
 
@@ -1278,6 +1133,8 @@ const styles = StyleSheet.create({
 
     gap:
       Spacing.sm,
+
+    flexWrap: 'wrap',
   },
 
   languageOption: {
@@ -1331,8 +1188,9 @@ const styles = StyleSheet.create({
     textAlign:
       'center',
 
-    includeFontPadding:
-      false,
+    includeFontPadding: false,
+
+    flexWrap: 'wrap',
   },
 
 
@@ -1378,8 +1236,7 @@ const styles = StyleSheet.create({
 
     fontWeight: '600',
 
-    includeFontPadding:
-      false,
+    includeFontPadding: false,
   },
 
   bottomSpace: {

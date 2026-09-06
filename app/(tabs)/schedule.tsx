@@ -1,3 +1,4 @@
+// app/schedule.tsx
 import React, {
   useCallback,
   useEffect,
@@ -435,6 +436,33 @@ export default function ScheduleScreen() {
     isDark
       ? '#F472B6'
       : '#EC4899';
+
+  // ===== رنگ پس‌زمینه هیرو برای تم سبز =====
+  const heroBgColor = isAthlete
+    ? 'rgba(34,197,94,0.12)'  // ← رنگ جدید برای تم سبز
+    : isDark
+    ? 'rgba(73, 194, 226, 0.12)'
+    : '#F0F4FF';
+
+  // ===== رنگ border هیرو برای تم سبز =====
+  const heroBorderColor = isAthlete
+    ? 'rgba(34,197,94,0.20)'  // ← رنگ border برای تم سبز
+    : isDark
+    ? 'rgba(73, 194, 226, 0.20)'
+    : 'rgba(73, 194, 226, 0.20)';
+
+  // ===== رنگ حباب‌های تزئینی برای تم سبز =====
+  const heroGlowOneColor = isAthlete
+    ? 'rgba(34,197,94,0.08)'  // ← رنگ حباب اول برای تم سبز
+    : isDark
+    ? 'rgba(73, 194, 226, 0.08)'
+    : 'rgba(73, 194, 226, 0.10)';
+
+  const heroGlowTwoColor = isAthlete
+    ? 'rgba(34,197,94,0.05)'  // ← رنگ حباب دوم برای تم سبز
+    : isDark
+    ? 'rgba(73, 194, 226, 0.05)'
+    : 'rgba(73, 194, 226, 0.06)';
 
   const [
     customEvents,
@@ -962,32 +990,26 @@ export default function ScheduleScreen() {
         ]}
       >
 
-        {/* ===== هیرو با حباب‌های تزئینی مشابه صفحه Protocol ===== */}
+        {/* ===== هیرو با رنگ جدید برای تم سبز ===== */}
         <View
           style={[
             styles.scheduleHero,
             {
-              backgroundColor: isDark 
-                ? 'rgba(73, 194, 226, 0.12)'
-                : '#F0F4FF',
-              borderColor: isDark
-                ? 'rgba(73, 194, 226, 0.20)'
-                : 'rgba(73, 194, 226, 0.20)',
+              backgroundColor: heroBgColor,
+              borderColor: heroBorderColor,
               shadowColor: '#000000',
               shadowOpacity: isDark ? 0.20 : 0.15,
               elevation: isDark ? 8 : 5,
             },
           ]}
         >
-          {/* حباب‌های تزئینی */}
+          {/* حباب‌های تزئینی با رنگ‌های جدید */}
           <View
             pointerEvents="none"
             style={[
               styles.heroGlowOne,
               {
-                backgroundColor: isDark
-                  ? 'rgba(73, 194, 226, 0.08)'
-                  : 'rgba(73, 194, 226, 0.10)',
+                backgroundColor: heroGlowOneColor,
               },
             ]}
           />
@@ -997,9 +1019,7 @@ export default function ScheduleScreen() {
             style={[
               styles.heroGlowTwo,
               {
-                backgroundColor: isDark
-                  ? 'rgba(73, 194, 226, 0.05)'
-                  : 'rgba(73, 194, 226, 0.06)',
+                backgroundColor: heroGlowTwoColor,
               },
             ]}
           />

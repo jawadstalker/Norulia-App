@@ -1,3 +1,4 @@
+// app/profile.tsx
 import React from 'react';
 import {
   View,
@@ -54,6 +55,13 @@ export default function ProfileScreen() {
     ? 'rgba(73, 194, 226, 0.15)'
     : 'rgba(107,90,166,0.10)';
 
+  // ===== رنگ پس‌زمینه هیرو برای تم سبز =====
+  const heroBgColor = isAthlete
+    ? 'rgba(34,197,94,0.12)'  // ← رنگ جدید برای تم سبز
+    : isDark
+    ? 'rgba(73, 194, 226, 0.12)'
+    : '#F0F4FF';
+
   const stats = [
     {
       label: t.level,
@@ -71,6 +79,7 @@ export default function ProfileScreen() {
       icon: Star,
     },
   ];
+
   return (
     <ScrollView
       style={[
@@ -82,15 +91,15 @@ export default function ProfileScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* ===== هیرو با حباب‌های تزئینی مشابه صفحات دیگر ===== */}
+      {/* ===== هیرو با رنگ جدید برای تم سبز ===== */}
       <View
         style={[
           styles.hero,
           {
-            backgroundColor: isDark 
-              ? 'rgba(73, 194, 226, 0.12)'
-              : '#F0F4FF',
-            borderColor: isDark
+            backgroundColor: heroBgColor, // ← استفاده از رنگ جدید
+            borderColor: isAthlete
+              ? 'rgba(34,197,94,0.20)'  // ← رنگ border برای تم سبز
+              : isDark
               ? 'rgba(73, 194, 226, 0.20)'
               : 'rgba(73, 194, 226, 0.20)',
             shadowColor: '#000000',
@@ -104,13 +113,15 @@ export default function ProfileScreen() {
           },
         ]}
       >
-        {/* حباب‌های تزئینی */}
+        {/* حباب‌های تزئینی - تغییر رنگ برای تم سبز */}
         <View
           pointerEvents="none"
           style={[
             styles.heroGlowOne,
             {
-              backgroundColor: isDark
+              backgroundColor: isAthlete
+                ? 'rgba(34,197,94,0.08)'  // ← رنگ حباب برای تم سبز
+                : isDark
                 ? 'rgba(73, 194, 226, 0.08)'
                 : 'rgba(73, 194, 226, 0.10)',
             },
@@ -122,7 +133,9 @@ export default function ProfileScreen() {
           style={[
             styles.heroGlowTwo,
             {
-              backgroundColor: isDark
+              backgroundColor: isAthlete
+                ? 'rgba(34,197,94,0.05)'  // ← رنگ حباب برای تم سبز
+                : isDark
                 ? 'rgba(73, 194, 226, 0.05)'
                 : 'rgba(73, 194, 226, 0.06)',
             },
@@ -472,7 +485,6 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
 
-  // ===== حباب‌های تزئینی هیرو =====
   heroGlowOne: {
     position: 'absolute',
     width: 190,

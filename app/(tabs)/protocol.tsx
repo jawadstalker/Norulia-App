@@ -1,3 +1,4 @@
+// app/protocol.tsx
 import React, {
   useCallback,
   useEffect,
@@ -602,6 +603,31 @@ export default function ProtocolScreen() {
     return `${colors.primary}18`;
   };
 
+  // ===== رنگ‌های هیرو برای تم سبز =====
+  const heroBgColor = isAthlete
+    ? 'rgba(34,197,94,0.12)'  // ← رنگ جدید برای تم سبز
+    : isDark
+    ? 'rgba(73,194,226,0.12)'
+    : '#F0F4FF';
+
+  const heroBorderColor = isAthlete
+    ? 'rgba(34,197,94,0.20)'  // ← رنگ border برای تم سبز
+    : isDark
+    ? 'rgba(73,194,226,0.20)'
+    : '#D0D9E8';
+
+  const heroGlowOneColor = isAthlete
+    ? 'rgba(34,197,94,0.08)'  // ← رنگ حباب اول برای تم سبز
+    : isDark
+    ? 'rgba(73,194,226,0.08)'
+    : 'rgba(73,194,226,0.10)';
+
+  const heroGlowTwoColor = isAthlete
+    ? 'rgba(34,197,94,0.05)'  // ← رنگ حباب دوم برای تم سبز
+    : isDark
+    ? 'rgba(73,194,226,0.05)'
+    : 'rgba(73,194,226,0.06)';
+
   const accent = getAccent();
   const accentStrong = getAccentStrong();
   const softAccent = getSoftAccent();
@@ -654,8 +680,6 @@ export default function ProtocolScreen() {
   const getBookProgress = useCallback(
     (dayIndex: number): number => {
       const dayProgress = getDayProgress(dayIndex);
-      // از اولین آیتم (یا هر آیتمی) درصد مطالعه کتاب را می‌گیریم
-      // فرض می‌کنیم همه آیتم‌ها bookProgress یکسانی دارند
       return dayProgress[0]?.bookProgress ?? 0;
     },
     [getDayProgress],
@@ -698,7 +722,6 @@ export default function ProtocolScreen() {
       const raw = await AsyncStorage.getItem(STORAGE_KEY(mode));
       if (raw) {
         const parsed = JSON.parse(raw);
-        // اطمینان از وجود bookProgress برای همه آیتم‌ها
         const normalized: Progress = {};
         Object.entries(parsed).forEach(([key, value]) => {
           const dayProgress = value as DayProgress;
@@ -2177,8 +2200,8 @@ export default function ProtocolScreen() {
               style={[
                 styles.heroCard,
                 {
-                  backgroundColor: isDark ? 'rgba(73,194,226,0.12)' : '#F0F4FF',
-                  borderColor: isDark ? 'rgba(73,194,226,0.20)' : '#D0D9E8',
+                  backgroundColor: heroBgColor, // ← استفاده از رنگ جدید
+                  borderColor: heroBorderColor, // ← استفاده از رنگ border جدید
                 },
               ]}
             >
@@ -2187,7 +2210,7 @@ export default function ProtocolScreen() {
                 style={[
                   styles.heroGlowOne,
                   {
-                    backgroundColor: isDark ? 'rgba(73,194,226,0.08)' : 'rgba(73,194,226,0.10)',
+                    backgroundColor: heroGlowOneColor, // ← رنگ جدید برای حباب اول
                   },
                 ]}
               />
@@ -2197,7 +2220,7 @@ export default function ProtocolScreen() {
                 style={[
                   styles.heroGlowTwo,
                   {
-                    backgroundColor: isDark ? 'rgba(73,194,226,0.05)' : 'rgba(73,194,226,0.06)',
+                    backgroundColor: heroGlowTwoColor, // ← رنگ جدید برای حباب دوم
                   },
                 ]}
               />
@@ -2248,7 +2271,11 @@ export default function ProtocolScreen() {
                     style={[
                       styles.heroBadge,
                       {
-                        backgroundColor: isDark ? 'rgba(73,194,226,0.20)' : 'rgba(73,194,226,0.15)',
+                        backgroundColor: isAthlete
+                          ? 'rgba(34,197,94,0.20)'
+                          : isDark
+                          ? 'rgba(73,194,226,0.20)'
+                          : 'rgba(73,194,226,0.15)',
                         flexDirection: rowDirection,
                       },
                     ]}
@@ -2309,8 +2336,14 @@ export default function ProtocolScreen() {
                 style={[
                   styles.heroProgressPanel,
                   {
-                    backgroundColor: isDark ? 'rgba(0,0,0,0.18)' : 'rgba(73,194,226,0.10)',
-                    borderColor: 'rgba(73,194,226,0.20)',
+                    backgroundColor: isAthlete
+                      ? 'rgba(34,197,94,0.10)'
+                      : isDark
+                      ? 'rgba(0,0,0,0.18)'
+                      : 'rgba(73,194,226,0.10)',
+                    borderColor: isAthlete
+                      ? 'rgba(34,197,94,0.20)'
+                      : 'rgba(73,194,226,0.20)',
                   },
                 ]}
               >
@@ -2373,7 +2406,9 @@ export default function ProtocolScreen() {
                   style={[
                     styles.heroProgressTrack,
                     {
-                      backgroundColor: 'rgba(73,194,226,0.15)',
+                      backgroundColor: isAthlete
+                        ? 'rgba(34,197,94,0.15)'
+                        : 'rgba(73,194,226,0.15)',
                     },
                   ]}
                 >
@@ -2410,7 +2445,9 @@ export default function ProtocolScreen() {
                   style={[
                     styles.heroStat,
                     {
-                      borderColor: 'rgba(73,194,226,0.20)',
+                      borderColor: isAthlete
+                        ? 'rgba(34,197,94,0.20)'
+                        : 'rgba(73,194,226,0.20)',
                     },
                   ]}
                 >
@@ -2451,7 +2488,9 @@ export default function ProtocolScreen() {
                   style={[
                     styles.heroStat,
                     {
-                      borderColor: 'rgba(73,194,226,0.20)',
+                      borderColor: isAthlete
+                        ? 'rgba(34,197,94,0.20)'
+                        : 'rgba(73,194,226,0.20)',
                     },
                   ]}
                 >
