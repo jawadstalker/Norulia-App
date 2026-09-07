@@ -50,15 +50,15 @@ interface ExerciseMediaItem {
 const EXERCISE_MEDIA: Partial<Record<string, ExerciseMediaItem>> = {
   warmup: {
     type: 'image',
-    source: require('../../assets/exercises/three.png'),
+    source: require('../../assets/exercises/one.png'),
   },
   squat: {
     type: 'image',
-    source: require('../../assets/exercises/one.png'),
+    source: require('../../assets/exercises/two.png'),
   },
   walk: {
     type: 'image',
-    source: require('../../assets/exercises/two.png'),
+    source: require('../../assets/exercises/three.png'),
   },
   balance: {
     type: 'image',
@@ -66,7 +66,7 @@ const EXERCISE_MEDIA: Partial<Record<string, ExerciseMediaItem>> = {
   },
   cooldown: {
     type: 'image',
-    source: require('../../assets/exercises/three.png'),
+    source: require('../../assets/exercises/five.png'),
   },
 };
 

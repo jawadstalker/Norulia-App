@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   View,
@@ -5,7 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Linking,
   Platform,
   Image,
 } from 'react-native';
@@ -18,11 +18,11 @@ import * as Haptics from 'expo-haptics';
 
 import {
   ArrowLeft,
-  Stethoscope,
-  Phone,
-  Clock,
+  SlidersHorizontal,
+  Sparkles,
   ShieldCheck,
 } from 'lucide-react-native';
+
 import { ColorValue } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -30,8 +30,6 @@ import {
   Spacing,
   BorderRadius,
 } from '../constants/theme';
-
-const CONSULT_PHONE = '09037661174';
 
 export default function ConsultationScreen() {
   const router = useRouter();
@@ -74,7 +72,12 @@ export default function ConsultationScreen() {
 
   const getButtonGradient = (): readonly [string, string] => {
     if (isAthlete) return ['#22C55E', '#16A34A'] as const;
-    if (isDark) return ['rgba(73, 194, 226, 1)', 'rgba(73, 194, 226, 0.8)'] as const;
+    if (isDark) {
+      return [
+        'rgba(73, 194, 226, 1)',
+        'rgba(73, 194, 226, 0.8)',
+      ] as const;
+    }
     return ['#6B5AA6', '#5A4A8C'] as const;
   };
 
@@ -85,14 +88,19 @@ export default function ConsultationScreen() {
   const heroBorder = getHeroBorder();
   const buttonGradient = getButtonGradient();
 
-  const backgroundGradient: readonly [ColorValue, ColorValue] = isDark
-    ? [colors.background, colors.surfaceSecondary] as const
-    : [colors.background, '#FFFFFF'] as const;
+  const backgroundGradient: readonly [ColorValue, ColorValue] =
+    isDark
+      ? [colors.background, colors.surfaceSecondary] as const
+      : [colors.background, '#FFFFFF'] as const;
+
+  // ============================================================
+  // متن‌ها
+  // ============================================================
 
   const TEXTS = {
     headerTitle: isRTL
-      ? 'مشاوره تخصصی'
-      : 'Expert Consultation',
+      ? 'شخصی‌سازی ماژول‌ها'
+      : 'Module Personalization',
 
     speechHello: isRTL
       ? 'سلام، من'
@@ -101,41 +109,33 @@ export default function ConsultationScreen() {
     speechName: 'Neurolia',
 
     speechSub: isRTL
-      ? 'در این بخش مشاوره تخصصی در انتظار شماست'
-      : 'In this section, expert consultation awaits you',
+      ? 'ماژول‌ها را متناسب با نیازها و اهداف خودتان شخصی‌سازی کنید'
+      : 'Personalize your modules based on your needs and goals',
 
     cardTitle: isRTL
-      ? 'جلسات مشاوره تخصصی'
-      : 'Expert Consultation Sessions',
+      ? 'سفارشی‌سازی ماژول‌ها'
+      : 'Customize Your Modules',
 
     cardDesc: isRTL
-      ? 'درخواست جلسه مشاوره ماهانه با متخصص را ثبت کنید. پس از ثبت، تیم پشتیبانی برای هماهنگی زمان با شما تماس می‌گیرد.'
-      : 'Request a monthly consultation session with a specialist. After registration, our support team will contact you to schedule the time.',
+      ? 'ماژول‌های نورولیا را متناسب با نیازها، اهداف و اولویت‌های خود تنظیم کنید. می‌توانید بخش‌های مختلف برنامه را شخصی‌سازی کرده و تجربه‌ای متناسب با خودتان بسازید.'
+      : 'Customize Neurolia modules based on your needs, goals, and priorities. Personalize different parts of the program and create an experience tailored specifically to you.',
 
     btnText: isRTL
-      ? 'درخواست مشاوره'
-      : 'Request Consultation',
-
-    hoursLabel: isRTL
-      ? 'ساعات پاسخگویی:'
-      : 'Support Hours:',
-
-    hoursDays: isRTL
-      ? 'شنبه تا پنجشنبه'
-      : 'Saturday to Thursday',
-
-    hoursTime: isRTL
-      ? '• ۹:۰۰ تا ۱۸:۰۰'
-      : '• 9:00 AM - 6:00 PM',
+      ? 'شخصی‌سازی ماژول‌ها'
+      : 'Customize Modules',
 
     infoBadge: isRTL
-      ? 'ویژه کاربران دارای اشتراک فعال'
-      : 'For users with active subscription',
+      ? 'تجربه‌ای متناسب با شما'
+      : 'Tailored Experience',
 
     infoText: isRTL
-      ? 'برای دریافت مشاوره تخصصی و پیگیری درمان'
-      : 'To receive expert consultation and follow up on treatment',
+      ? 'تنظیمات و ماژول‌های مورد نیاز خود را انتخاب کنید تا برنامه با اولویت‌ها و اهداف شما هماهنگ‌تر شود.'
+      : 'Choose the settings and modules you need so your program can better match your priorities and goals.',
   };
+
+  // ============================================================
+  // بازگشت
+  // ============================================================
 
   const handleBack = () => {
     Haptics.impactAsync(
@@ -149,14 +149,18 @@ export default function ConsultationScreen() {
     }
   };
 
-  const handleRequestConsultation = () => {
+  // ============================================================
+  // ورود به بخش شخصی‌سازی
+  // ============================================================
+
+  const handleCustomizeModules = () => {
     Haptics.notificationAsync(
       Haptics.NotificationFeedbackType.Success,
     ).catch(() => {});
 
-    Linking.openURL(
-      `tel:${CONSULT_PHONE}`,
-    ).catch(() => {});
+    // در صورت وجود صفحه اختصاصی شخصی‌سازی،
+    // این مسیر را به مسیر موردنظر خود تغییر دهید.
+    router.push('/settings');
   };
 
   return (
@@ -185,9 +189,7 @@ export default function ConsultationScreen() {
           }}
           style={styles.header}
         >
-          <View
-            style={styles.headerTitleContainer}
-          >
+          <View style={styles.headerTitleContainer}>
             <Text
               style={[
                 styles.headerTitle,
@@ -206,12 +208,9 @@ export default function ConsultationScreen() {
             style={[
               styles.backButton,
               {
-                backgroundColor:
-                  colors.surface,
-                borderColor:
-                  colors.border,
-                shadowColor:
-                  colors.text,
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                shadowColor: colors.text,
               },
             ]}
             hitSlop={{
@@ -268,8 +267,7 @@ export default function ConsultationScreen() {
                 styles.avatarWrap,
                 {
                   borderColor: iconColor,
-                  backgroundColor:
-                    colors.surface,
+                  backgroundColor: colors.surface,
                   shadowColor: iconColor,
                 },
               ]}
@@ -285,10 +283,8 @@ export default function ConsultationScreen() {
               style={[
                 styles.speechBubble,
                 {
-                  backgroundColor:
-                    colors.surface,
-                  borderColor:
-                    colors.border,
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
                 },
               ]}
             >
@@ -296,17 +292,12 @@ export default function ConsultationScreen() {
                 style={[
                   styles.speechLine1,
                   {
-                    color:
-                      colors.text,
+                    color: colors.text,
                   },
                 ]}
               >
                 {TEXTS.speechHello}{' '}
-                <Text
-                  style={{
-                    color: iconColor,
-                  }}
-                >
+                <Text style={{ color: iconColor }}>
                   {TEXTS.speechName}
                 </Text>{' '}
                 {isRTL ? 'هستم' : ''}
@@ -316,8 +307,7 @@ export default function ConsultationScreen() {
                 style={[
                   styles.speechLine2,
                   {
-                    color:
-                      colors.textSecondary,
+                    color: colors.textSecondary,
                   },
                 ]}
               >
@@ -345,27 +335,22 @@ export default function ConsultationScreen() {
             style={[
               styles.card,
               {
-                backgroundColor:
-                  colors.surface,
+                backgroundColor: colors.surface,
                 shadowColor: iconColor,
               },
             ]}
           >
-            <View
-              style={styles.titleRow}
-            >
+            <View style={styles.titleRow}>
               <View
                 style={[
                   styles.iconBadge,
                   {
-                    backgroundColor:
-                      primarySoft,
-                    borderColor:
-                      primaryMedium,
+                    backgroundColor: primarySoft,
+                    borderColor: primaryMedium,
                   },
                 ]}
               >
-                <Stethoscope
+                <SlidersHorizontal
                   size={24}
                   color={iconColor}
                   strokeWidth={2}
@@ -376,8 +361,7 @@ export default function ConsultationScreen() {
                 style={[
                   styles.cardTitle,
                   {
-                    color:
-                      colors.text,
+                    color: colors.text,
                   },
                 ]}
               >
@@ -389,8 +373,7 @@ export default function ConsultationScreen() {
               style={[
                 styles.cardDesc,
                 {
-                  color:
-                    colors.textSecondary,
+                  color: colors.textSecondary,
                 },
               ]}
             >
@@ -398,9 +381,7 @@ export default function ConsultationScreen() {
             </Text>
 
             <TouchableOpacity
-              onPress={
-                handleRequestConsultation
-              }
+              onPress={handleCustomizeModules}
               activeOpacity={0.85}
               style={[
                 styles.requestButtonWrap,
@@ -411,29 +392,17 @@ export default function ConsultationScreen() {
             >
               <LinearGradient
                 colors={buttonGradient}
-                start={{
-                  x: 0,
-                  y: 0,
-                }}
-                end={{
-                  x: 1,
-                  y: 0,
-                }}
-                style={
-                  styles.requestButton
-                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.requestButton}
               >
-                <Phone
+                <Sparkles
                   size={21}
                   color="#FFFFFF"
                   strokeWidth={2.2}
                 />
 
-                <Text
-                  style={
-                    styles.requestButtonText
-                  }
-                >
+                <Text style={styles.requestButtonText}>
                   {TEXTS.btnText}
                 </Text>
 
@@ -445,64 +414,19 @@ export default function ConsultationScreen() {
               </LinearGradient>
             </TouchableOpacity>
 
-            <View
-              style={styles.hoursRow}
-            >
-              <Clock
-                size={14}
-                color={iconColor}
-                strokeWidth={2}
-              />
-
-              <Text
-                style={[
-                  styles.hoursText,
-                  {
-                    color:
-                      colors.textTertiary,
-                  },
-                ]}
-              >
-                {TEXTS.hoursLabel}{' '}
-
-                <Text
-                  style={{
-                    color: iconColor,
-                  }}
-                >
-                  {TEXTS.hoursDays}
-                </Text>{' '}
-
-                {TEXTS.hoursTime}
-              </Text>
-            </View>
-
-            <View
-              style={[
-                styles.infoBox,
-                {
-                  backgroundColor:
-                    colors.surfaceSecondary,
-                  borderColor:
-                    colors.border,
-                },
-              ]}
-            >
+            <View style={styles.infoBox}>
               <View
                 style={[
                   styles.infoIcon,
                   {
                     backgroundColor:
-                      colors.success +
-                      '15',
+                      colors.success + '15',
                   },
                 ]}
               >
                 <ShieldCheck
                   size={17}
-                  color={
-                    colors.success
-                  }
+                  color={colors.success}
                   strokeWidth={2}
                 />
               </View>
@@ -511,15 +435,13 @@ export default function ConsultationScreen() {
                 style={[
                   styles.infoText,
                   {
-                    color:
-                      colors.textSecondary,
+                    color: colors.textSecondary,
                   },
                 ]}
               >
                 <Text
                   style={{
-                    color:
-                      colors.success,
+                    color: colors.success,
                     fontWeight: '700',
                   }}
                 >
@@ -551,8 +473,7 @@ export default function ConsultationScreen() {
               style={[
                 styles.footerLine,
                 {
-                  backgroundColor:
-                    colors.border,
+                  backgroundColor: colors.border,
                 },
               ]}
             />
@@ -561,14 +482,13 @@ export default function ConsultationScreen() {
               style={[
                 styles.footerText,
                 {
-                  color:
-                    colors.textTertiary,
+                  color: colors.textTertiary,
                 },
               ]}
             >
               {isRTL
-                ? 'نورولیا • همراه شما در مسیر بهتر شدن'
-                : 'Neurolia • Supporting you on your journey'}
+                ? 'نورولیا • تجربه‌ای متناسب با شما'
+                : 'Neurolia • An experience tailored to you'}
             </Text>
           </MotiView>
         </ScrollView>
@@ -589,281 +509,168 @@ const styles = StyleSheet.create({
 
   header: {
     minHeight: 58,
-
-    flexDirection:
-      'row-reverse',
-
+    flexDirection: 'row-reverse',
     alignItems: 'center',
-
-    justifyContent:
-      'space-between',
-
-    paddingHorizontal:
-      Spacing.md,
-
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
     paddingTop: 8,
-
-    paddingBottom:
-      Spacing.xs,
+    paddingBottom: Spacing.xs,
   },
 
   headerTitleContainer: {
     flex: 1,
-
-    alignItems:
-      'flex-end',
-
-    justifyContent:
-      'center',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
 
   headerTitle: {
     fontSize: 18,
-
     fontWeight: '800',
-
     textAlign: 'right',
   },
 
   backButton: {
     width: 42,
-
     height: 42,
-
-    borderRadius:
-      BorderRadius.full,
-
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
-
-    alignItems:
-      'center',
-
-    justifyContent:
-      'center',
-
-    marginLeft:
-      Spacing.xs,
-
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: Spacing.xs,
     shadowOffset: {
       width: 0,
       height: 2,
     },
-
     shadowOpacity: 0.06,
-
     shadowRadius: 6,
-
     elevation: 2,
   },
 
   scrollContent: {
-    paddingHorizontal:
-      Spacing.md,
-
-    paddingTop:
-      Spacing.md,
-
-    alignItems:
-      'center',
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.md,
+    alignItems: 'center',
   },
 
   hero: {
-    flexDirection:
-      'row-reverse',
-
-    alignItems:
-      'center',
-
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
     width: '100%',
-
-    marginTop:
-      Spacing.sm,
-
-    marginBottom:
-      Spacing.lg,
-
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.lg,
     padding: Spacing.md,
-
     borderRadius: 24,
-
     borderWidth: 1,
-
     shadowOffset: {
       width: 0,
       height: 8,
     },
-
     shadowOpacity: 0.10,
-
     shadowRadius: 20,
-
     elevation: 5,
   },
 
   avatarWrap: {
     width: 92,
-
     height: 92,
-
     borderRadius: 46,
-
     borderWidth: 2,
-
-    alignItems:
-      'center',
-
-    justifyContent:
-      'center',
-
+    alignItems: 'center',
+    justifyContent: 'center',
     overflow: 'hidden',
-
     shadowOffset: {
       width: 0,
       height: 8,
     },
-
     shadowOpacity: 0.20,
-
     shadowRadius: 18,
-
     elevation: 7,
   },
 
   avatarImage: {
     width: '100%',
-
     height: '100%',
   },
 
   speechBubble: {
     flex: 1,
-
     borderWidth: 1,
-
-    borderRadius:
-      BorderRadius.xl,
-
+    borderRadius: BorderRadius.xl,
     borderTopRightRadius: 6,
-
-    padding:
-      Spacing.md,
-
+    padding: Spacing.md,
     minHeight: 86,
-
-    justifyContent:
-      'center',
+    justifyContent: 'center',
   },
 
   speechLine1: {
     fontSize: 15,
-
     fontWeight: '700',
-
     textAlign: 'right',
-
     lineHeight: 22,
   },
 
   speechLine2: {
     fontSize: 12,
-
     textAlign: 'right',
-
     marginTop: 4,
-
     lineHeight: 18,
   },
 
   card: {
     width: '100%',
-
-    borderRadius:
-      BorderRadius.xl,
-
-    padding:
-      Spacing.lg,
-
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
     gap: Spacing.md,
-
     shadowOffset: {
       width: 0,
       height: 8,
     },
-
     shadowOpacity: 0.10,
-
     shadowRadius: 24,
-
     elevation: 5,
   },
 
   titleRow: {
-    flexDirection:
-      'row-reverse',
-
-    alignItems:
-      'center',
-
-    justifyContent:
-      'center',
-
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: Spacing.sm,
   },
 
   iconBadge: {
     width: 48,
-
     height: 48,
-
     borderRadius: 24,
-
     borderWidth: 1,
-
-    alignItems:
-      'center',
-
-    justifyContent:
-      'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   cardTitle: {
     flex: 1,
-
     fontSize: 20,
-
     fontWeight: '800',
-
     textAlign: 'right',
   },
 
   cardDesc: {
     fontSize: 14,
-
     textAlign: 'center',
-
     lineHeight: 24,
-
     fontWeight: '400',
-
-    paddingHorizontal:
-      Spacing.xs,
+    paddingHorizontal: Spacing.xs,
   },
 
   requestButtonWrap: {
-    borderRadius:
-      BorderRadius.full,
-
+    borderRadius: BorderRadius.full,
     overflow: 'hidden',
-
     ...Platform.select({
       ios: {
         shadowOffset: {
           width: 0,
           height: 6,
         },
-
         shadowOpacity: 0.28,
-
         shadowRadius: 16,
       },
 
@@ -876,131 +683,64 @@ const styles = StyleSheet.create({
   },
 
   requestButton: {
-    flexDirection:
-      'row-reverse',
-
-    alignItems:
-      'center',
-
-    justifyContent:
-      'center',
-
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: Spacing.sm,
-
-    paddingVertical:
-      Spacing.md + 2,
-
-    paddingHorizontal:
-      Spacing.lg,
+    paddingVertical: Spacing.md + 2,
+    paddingHorizontal: Spacing.lg,
   },
 
   requestButtonText: {
     color: '#FFFFFF',
-
     fontSize: 17,
-
     fontWeight: '700',
-
-    textAlign: 'center',
-  },
-
-  hoursRow: {
-    flexDirection:
-      'row-reverse',
-
-    alignItems:
-      'center',
-
-    justifyContent:
-      'center',
-
-    gap: 6,
-
-    paddingTop: 2,
-  },
-
-  hoursText: {
-    fontSize: 12,
-
-    fontWeight: '400',
-
     textAlign: 'center',
   },
 
   infoBox: {
-    flexDirection:
-      'row-reverse',
-
-    alignItems:
-      'flex-start',
-
+    flexDirection: 'row-reverse',
+    alignItems: 'flex-start',
     gap: Spacing.sm,
-
     borderWidth: 1,
-
-    borderRadius:
-      BorderRadius.md,
-
-    padding:
-      Spacing.md,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
   },
 
   infoIcon: {
     width: 30,
-
     height: 30,
-
     borderRadius: 15,
-
-    alignItems:
-      'center',
-
-    justifyContent:
-      'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+
   infoText: {
     flex: 1,
-
     fontSize: 12,
-
     lineHeight: 20,
-
     fontWeight: '400',
-
     textAlign: 'right',
   },
 
   footer: {
     width: '100%',
-
-    alignItems:
-      'center',
-
-    marginTop:
-      Spacing.lg,
-
-    paddingBottom:
-      Spacing.md,
+    alignItems: 'center',
+    marginTop: Spacing.lg,
+    paddingBottom: Spacing.md,
   },
 
   footerLine: {
     width: 42,
-
     height: 2,
-
     borderRadius: 1,
-
-    marginBottom:
-      Spacing.sm,
+    marginBottom: Spacing.sm,
   },
 
   footerText: {
     fontSize: 10,
-
     fontWeight: '500',
-
     textAlign: 'center',
-
     opacity: 0.75,
   },
 });
