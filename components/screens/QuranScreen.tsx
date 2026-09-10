@@ -2353,19 +2353,10 @@ export default function QuranScreen() {
    * - هر آیه لزوماً یک خط جدا نیست؛ آیه‌های کوتاه می‌توانند
    *   در یک خط با آیه بعدی قرار بگیرند.
    * - آیه‌های بلند به تنهایی در یک خط قرار می‌گیرند.
-   *
-   * روش کار:
-   * طول تخمینی هر آیه (بر اساس تعداد کاراکترهای عربی) را
-   * حساب می‌کنیم و آیه‌ها را پشت سر هم در یک خط جمع می‌کنیم
-   * تا وقتی که به آستانه طول خط برسیم. سپس خط جدید شروع
-   * می‌شود و آیه بعدی از ابتدای همان خط جدید قرار می‌گیرد.
    */
   const QURAN_LINE_GROUPS = useMemo(() => {
     const groups: QuranVerse[][] = [];
 
-    // آستانه طول هر خط (تقریبی).
-    // مقدار بیشتر => آیه‌های بیشتری در یک خط.
-    // مقدار کمتر => خطوط کوتاه‌تر و آیه‌های تنها بیشتر.
     const MAX_LINE_LENGTH = 60;
 
     let currentGroup: QuranVerse[] = [];
@@ -2374,8 +2365,6 @@ export default function QuranScreen() {
     SURAH_YASIN.forEach(verse => {
       const verseLength = verse.arabic.length;
 
-      // اگر آیه به تنهایی از آستانه بزرگ‌تر است،
-      // باید تنها در یک خط قرار بگیرد.
       if (verseLength >= MAX_LINE_LENGTH) {
         if (currentGroup.length > 0) {
           groups.push(currentGroup);
@@ -2387,8 +2376,6 @@ export default function QuranScreen() {
         return;
       }
 
-      // اگر اضافه کردن این آیه باعث عبور از آستانه می‌شود،
-      // خط فعلی را ببند و آیه را در خط جدید شروع کن.
       if (
         currentGroup.length > 0 &&
         currentLength + verseLength > MAX_LINE_LENGTH
@@ -3711,7 +3698,7 @@ export default function QuranScreen() {
                 {
                   flexDirection:
                     isRTL
-                      ? 'row'
+                      ? 'row-reverse'
                       : 'row',
                 },
               ]}
@@ -3722,7 +3709,7 @@ export default function QuranScreen() {
                   {
                     flexDirection:
                       isRTL
-                        ? 'row'
+                        ? 'row-reverse'
                         : 'row',
                   },
                 ]}
@@ -3744,7 +3731,13 @@ export default function QuranScreen() {
                   />
                 </View>
 
-                <View>
+                <View
+                  style={{
+                    alignItems: isRTL
+                      ? 'flex-end'
+                      : 'flex-start',
+                  }}
+                >
                   <Text
                     style={[
                       styles.dayTitle,
@@ -3757,6 +3750,9 @@ export default function QuranScreen() {
                           isRTL
                             ? 'right'
                             : 'left',
+
+                        writingDirection:
+                          isRTL ? 'rtl' : 'ltr',
                       },
                     ]}
                   >
@@ -3777,6 +3773,9 @@ export default function QuranScreen() {
                           isRTL
                             ? 'right'
                             : 'left',
+
+                        writingDirection:
+                          isRTL ? 'rtl' : 'ltr',
                       },
                     ]}
                   >
@@ -3829,6 +3828,8 @@ export default function QuranScreen() {
                     borderColor:
                       colors.border ||
                       'rgba(255,255,255,0.08)',
+
+                    alignItems: isRTL ? 'flex-end' : 'flex-start',
                   },
                 ]}
               >
@@ -3844,6 +3845,9 @@ export default function QuranScreen() {
                         isRTL
                           ? 'right'
                           : 'left',
+
+                      writingDirection:
+                        isRTL ? 'rtl' : 'ltr',
                     },
                   ]}
                 >
@@ -3880,6 +3884,8 @@ export default function QuranScreen() {
                     borderColor:
                       colors.border ||
                       'rgba(255,255,255,0.08)',
+
+                    alignItems: isRTL ? 'flex-end' : 'flex-start',
                   },
                 ]}
               >
@@ -3895,6 +3901,9 @@ export default function QuranScreen() {
                         isRTL
                           ? 'right'
                           : 'left',
+
+                      writingDirection:
+                        isRTL ? 'rtl' : 'ltr',
                     },
                   ]}
                 >
@@ -3931,6 +3940,8 @@ export default function QuranScreen() {
                     borderColor:
                       colors.border ||
                       'rgba(255,255,255,0.08)',
+
+                    alignItems: isRTL ? 'flex-end' : 'flex-start',
                   },
                 ]}
               >
@@ -3946,6 +3957,9 @@ export default function QuranScreen() {
                         isRTL
                           ? 'right'
                           : 'left',
+
+                      writingDirection:
+                        isRTL ? 'rtl' : 'ltr',
                     },
                   ]}
                 >
