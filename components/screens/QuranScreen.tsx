@@ -253,6 +253,11 @@ const LAST_UPDATE_KEY = 'quran_last_update_v2';
 
 const QURAN_FONT_FAMILY = 'UthmanicHafs';
 
+
+const MUSHAF_LINE_FONT_SIZE = 14;
+const MUSHAF_LINE_HEIGHT = 22;
+const MUSHAF_MARK_FONT_SIZE = 7.5;
+
 const SURAH_META = {
   number: 78,
   arabicName: 'النبأ',
@@ -539,12 +544,13 @@ const SURAH_NABA: QuranVerse[] = [
 
 /*
  * ------------------------------------------------------------
- * چیدمان خطوط مصحف مدینه برای سوره نبأ
+ * چیدمان دقیق خطوط مصحف مدینه برای سوره نبأ
  * ------------------------------------------------------------
- * صفحهٔ اول (آیات ۱ تا ۳۰): ۱۵ خط — مطابق تصویر ارسالی
- * صفحهٔ دوم (آیات ۳۱ تا ۴۰): ۷ خط — مطابق مصحف مدینه صفحه ۵۸۳
+ * صفحهٔ اول (آیات ۱ تا ۳۰) — ۱۵ خط — مطابق تصویر ارسالی
+ * صفحهٔ دوم (آیات ۳۱ تا ۴۰) — ۷ خط — مطابق مصحف مدینه صفحه ۵۸۳
  */
 const MUSHAF_LINES: number[][] = [
+  // ===== صفحهٔ اول (آیات ۱ تا ۳۰) =====
   [1, 2, 3],
   [4, 5],
   [6, 7],
@@ -560,6 +566,8 @@ const MUSHAF_LINES: number[][] = [
   [25, 26, 27],
   [28, 29],
   [30],
+
+  // ===== صفحهٔ دوم (آیات ۳۱ تا ۴۰) =====
   [31, 32, 33],
   [34, 35],
   [36],
@@ -834,7 +842,8 @@ const generateQuestions = (
         Math.floor(words.length / 2),
       );
 
-      const firstHalf = words        .slice(0, halfIndex)
+      const firstHalf = words
+        .slice(0, halfIndex)
         .join(' ');
 
       const secondHalf = words
@@ -2670,76 +2679,85 @@ export default function QuranScreen() {
    * ------------------------------------------------------------
    * رندر هر خط از مصحف
    * ------------------------------------------------------------
-   * هر خط دقیقاً شامل آیات تعریف‌شده در MUSHAF_LINES است و
-   * به صورت یک بلوک متنی جدا رندر می‌شود. با استفاده از
-   * numberOfLines={1} و adjustsFontSizeToFit، از شکستن خط
-   * به خط بعد جلوگیری می‌کنیم و متن را در یک خط نگه می‌داریم.
+   * این تابع آیات یک خط را به هم می‌چسباند و شماره هر آیه را
+   * با علامت ۞ در انتهای آن قرار می‌دهد. فونت و lineHeight
+   * مستقیماً روی Text اعمال می‌شود تا از override شدن توسط
+   * AppText جلوگیری شود.
    */
   const renderMushafLine = (
     verseNumbers: number[],
     lineIndex: number,
   ) => {
     return (
-      <Text
+      <View
         key={`mushaf-line-${lineIndex}`}
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.5}
-        style={[
-          styles.mushafLine,
-          {
+        style={{
+          width: '100%',
+          marginBottom: 2,
+        }}
+      >
+        <Text
+          style={{
+            width: '100%',
+            writingDirection: 'rtl',
+            textAlign: 'right',
             color: colors.text || '#fff',
             fontFamily: QURAN_FONT_FAMILY,
-          },
-        ]}
-      >
-        {verseNumbers.map((num, idx) => {
-          const verse = getVerse(num);
+            fontSize: MUSHAF_LINE_FONT_SIZE,
+            lineHeight: MUSHAF_LINE_HEIGHT,
+          }}
+        >
+          {verseNumbers.map((num, idx) => {
+            const verse = getVerse(num);
 
-          if (!verse) return null;
+            if (!verse) return null;
 
-          const today =
-            todayVerses.includes(num);
+            const today =
+              todayVerses.includes(num);
 
-          const review =
-            isReviewMode &&
-            previousVerses.includes(num);
+            const review =
+              isReviewMode &&
+              previousVerses.includes(num);
 
-          const visible = today || review;
+            const visible = today || review;
 
-          const markColor = !visible
-            ? colors.textTertiary ||
-              'rgba(255,255,255,0.35)'
-            : review
-            ? colors.success
-            : colors.primary;
+            const markColor = !visible
+              ? colors.textTertiary ||
+                'rgba(255,255,255,0.35)'
+              : review
+              ? colors.success
+              : colors.primary;
 
-          return (
-            <Text key={num}>
-              <Text
-                style={{
-                  opacity: visible ? 1 : 0.14,
-                }}
-              >
-                {verse.arabic}
-              </Text>
-              {' '}
-              <Text
-                style={[
-                  styles.mushafAyahMark,
-                  {
+            return (
+              <Text key={num}>
+                <Text
+                  style={{
+                    opacity: visible ? 1 : 0.14,
+                    fontSize: MUSHAF_LINE_FONT_SIZE,
+                    lineHeight: MUSHAF_LINE_HEIGHT,
+                    fontFamily: QURAN_FONT_FAMILY,
+                  }}
+                >
+                  {verse.arabic}
+                </Text>
+                {' '}
+                <Text
+                  style={{
                     color: markColor,
                     opacity: visible ? 1 : 0.4,
-                  },
-                ]}
-              >
-                ۞{toArabicDigits(num)}
+                    fontSize: MUSHAF_MARK_FONT_SIZE,
+                    fontWeight: '700',
+                    fontFamily: QURAN_FONT_FAMILY,
+                  }}
+                >
+                  ۞{toArabicDigits(num)}
+                </Text>
+                {idx < verseNumbers.length - 1 ? ' ' : ''}
               </Text>
-              {idx < verseNumbers.length - 1 ? ' ' : ''}
-            </Text>
-          );
-        })}
-      </Text>
+            );
+          })}
+        </Text>
+      </View>
     );
   };
 
@@ -3051,10 +3069,6 @@ export default function QuranScreen() {
             بِسۡمِ اللَّهِ الرَّحۡمَٰنِ الرَّحِيمِ
           </Text>
 
-          {/*
-            رندر خط به خط مطابق MUSHAF_LINES.
-            هر خط دقیقاً شامل آیات تعریف‌شده است.
-          */}
           <View
             style={
               styles.mushafTextContainer
@@ -4942,31 +4956,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 14,
     lineHeight: 28,
-    marginBottom: 10,
+    marginBottom: 8,
   },
 
   mushafTextContainer: {
     width: '100%',
-  },
-
-  /*
-   * هر خط از مصحف در یک بلوک جداگانه رندر می‌شود و با
-   * numberOfLines={1} + adjustsFontSizeToFit از شکستن
-   * خط به خط بعد جلوگیری می‌شود. fontSize فقط اندازه‌ی
-   * پایه است و در صورت نیاز خود RN کوچیک‌ترش می‌کنه.
-   */
-  mushafLine: {
-    width: '100%',
-    writingDirection: 'rtl',
-    textAlign: 'right',
-    fontSize: 13,
-    lineHeight: 32,
-    marginBottom: 2,
-  },
-
-  mushafAyahMark: {
-    fontSize: 11,
-    fontWeight: '700',
   },
 
   mushafNote: {
