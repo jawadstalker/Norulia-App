@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
+  Image,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -48,8 +49,11 @@ import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 const CONTENT_HORIZONTAL = 18;
+const POET_CARD_GAP = 12;
+const POET_CARD_WIDTH =
+  (width - CONTENT_HORIZONTAL * 2 - POET_CARD_GAP) / 2;
 
-type ViewType = 'home' | 'study' | 'plan' | 'session' | 'result';
+type ViewType = 'poets' | 'home' | 'study' | 'plan' | 'session' | 'result';
 
 type ProgressItem = {
   box: number;
@@ -85,6 +89,7 @@ interface Exercise {
 
 interface Poem {
   id: number;
+  poetId: string;
   title: string;
   englishTitle: string;
   fullTitle: string;
@@ -123,9 +128,58 @@ interface TodaySessionData {
   items: Exercise[];
 }
 
+interface Poet {
+  id: string;
+  name: string;
+  englishName: string;
+  era: string;
+  englishEra: string;
+  bio: string;
+  englishBio: string;
+  photo?: any;
+}
+
+const POETS: Poet[] = [
+  {
+    id: 'hafez',
+    name: 'حافظ شیرازی',
+    englishName: 'Hafez Shirazi',
+    era: 'قرن هشتم هجری',
+    englishEra: '14th century',
+    bio: 'غزل‌سرای بزرگ ایرانی که اشعارش آمیزه‌ای از عشق، عرفان و حکمت است.',
+    englishBio:
+      'The great Persian ghazal poet, blending love, mysticism, and wisdom.',
+    photo: require('../../assets/poem/sadi.png'),
+  },
+  {
+    id: 'rumi',
+    name: 'مولانا جلال‌الدین رومی',
+    englishName: 'Rumi (Molana)',
+    era: 'قرن هفتم هجری',
+    englishEra: '13th century',
+    bio: 'شاعر و عارف بزرگ ایرانی، سرایندهٔ مثنوی معنوی و دیوان شمس، پیشوای عرفان و سماع.',
+    englishBio:
+      'The great Persian poet and mystic, author of the Masnavi and Divan-e Shams, a master of Sufi love and ecstasy.',
+    photo: require('../../assets/poem/molana.png'),
+  },
+  {
+    id: 'ferdowsi',
+    name: 'فردوسی',
+    englishName: 'Ferdowsi',
+    era: 'قرن چهارم هجری',
+    englishEra: '10th–11th century',
+    bio: 'حماسه‌سرای بزرگ ایران و سرایندهٔ شاهنامه، گنجینهٔ اسطوره‌ها و تاریخ کهن پارسی.',
+    englishBio:
+      'The great epic poet of Iran and author of the Shahnameh, the treasure of Persian myths and ancient history.',
+     photo: require('../../assets/poem/ferdoosi.png'),
+  },
+
+];
+
 const POEMS: Poem[] = [
   {
     id: 0,
+    poetId: 'hafez',
     title: 'غزل شمارهٔ ۱',
     englishTitle: 'Ghazal No. 1',
     fullTitle: 'الا یا ایها الساقی',
@@ -177,6 +231,7 @@ const POEMS: Poem[] = [
   },
   {
     id: 1,
+    poetId: 'hafez',
     title: 'غزل شمارهٔ ۲',
     englishTitle: 'Ghazal No. 2',
     fullTitle: 'سالها دل طلب جام جم از ما می‌کرد',
@@ -296,6 +351,22 @@ export default function HafezScreen() {
   const t = useMemo(
     () => ({
       back: isPersian ? 'بازگشت' : 'Back',
+
+      poetsTitle: isPersian ? 'شاعران' : 'Poets',
+      poetsSubtitle: isPersian
+        ? 'انتخاب شاعر'
+        : 'Choose a poet',
+      poetsDescription: isPersian
+        ? 'یک شاعر را انتخاب کنید تا غزل‌های او را بخوانید و تمرین کنید.'
+        : 'Choose a poet to read and practice their ghazals.',
+      choosePoet: isPersian
+        ? 'شاعر موردنظر را برای مشاهده اشعار انتخاب کنید.'
+        : 'Select a poet to view their poems.',
+      poets: isPersian ? 'شاعر' : 'Poets',
+      poemsCount: isPersian ? 'غزل' : 'poems',
+      noPoemsYet: isPersian
+        ? 'به‌زودی غزل‌هایی از این شاعر اضافه خواهد شد.'
+        : 'Poems from this poet will be added soon.',
 
       homeTitle: isPersian ? 'اشعار حافظ' : 'Hafez Poetry',
       homeSubtitle: isPersian ? 'مطالعه و تمرین شعر' : 'Read, review, and practice poetry',
@@ -452,7 +523,9 @@ export default function HafezScreen() {
 
   const [currentPoem, setCurrentPoem] = useState<Poem | null>(null);
   const [currentView, setCurrentView] =
-    useState<ViewType>('home');
+    useState<ViewType>('poets');
+  const [selectedPoetId, setSelectedPoetId] =
+    useState<string | null>(null);
 
   const [progress, setProgress] = useState<Progress>({});
 
@@ -1057,6 +1130,72 @@ export default function HafezScreen() {
     refreshHomeStats();
   }, [refreshHomeStats]);
 
+  const selectedPoet = useMemo(
+    () =>
+      POETS.find(
+        (item) => item.id === selectedPoetId,
+      ) || null,
+    [selectedPoetId],
+  );
+
+  const poemsByPoet = useMemo(
+    () =>
+      selectedPoetId
+        ? POEMS.filter(
+            (poem) =>
+              poem.poetId === selectedPoetId,
+          )
+        : [],
+    [selectedPoetId],
+  );
+
+  const poetStatsById = useMemo(() => {
+    const result: Record<
+      string,
+      { poemCount: number; percent: number }
+    > = {};
+
+    POETS.forEach((poet) => {
+      const poetPoems = POEMS.filter(
+        (poem) => poem.poetId === poet.id,
+      );
+
+      const percents = poetPoems.map(
+        (poem) =>
+          poemStats[poem.id]?.percent || 0,
+      );
+
+      const avgPercent = percents.length
+        ? Math.round(
+            percents.reduce(
+              (sum, value) => sum + value,
+              0,
+            ) / percents.length,
+          )
+        : 0;
+
+      result[poet.id] = {
+        poemCount: poetPoems.length,
+        percent: avgPercent,
+      };
+    });
+
+    return result;
+  }, [poemStats]);
+
+  const openPoet = useCallback(
+    (poetId: string) => {
+      setSelectedPoetId(poetId);
+      setCurrentView('home');
+    },
+    [],
+  );
+
+  const goToPoets = useCallback(() => {
+    setCurrentView('poets');
+    setSelectedPoetId(null);
+  }, []);
+
   const openPoem = useCallback(
     async (poemId: number) => {
       const poem = POEMS.find(
@@ -1534,13 +1673,22 @@ export default function HafezScreen() {
   }, [currentPoem, poemStats]);
 
   const renderHeader = () => {
+    const isTopLevel =
+      currentView === 'poets';
     const isHome =
       currentView === 'home';
 
-    let title = t.homeTitle;
-    let subtitle = t.homeSubtitle;
+    let title = t.poetsTitle;
+    let subtitle = t.poetsSubtitle;
 
-    if (!isHome) {
+    if (isHome) {
+      title = selectedPoet
+        ? isPersian
+          ? selectedPoet.name
+          : selectedPoet.englishName
+        : t.homeTitle;
+      subtitle = t.homeSubtitle;
+    } else if (!isTopLevel) {
       if (
         currentView === 'study'
       ) {
@@ -1599,8 +1747,10 @@ export default function HafezScreen() {
       >
         <TouchableOpacity
           onPress={() => {
-            if (isHome) {
+            if (isTopLevel) {
               router.back();
+            } else if (isHome) {
+              goToPoets();
             } else {
               setCurrentView(
                 'home',
@@ -1706,6 +1856,293 @@ export default function HafezScreen() {
       </View>
     );
 
+  const renderPoets = () => {
+    return (
+      <Animated.View
+        style={[
+          styles.screen,
+          {
+            opacity: fadeAnim,
+            transform: [
+              {
+                translateY:
+                  translateAnim,
+              },
+            ],
+          },
+        ]}
+      >
+        <View
+          style={
+            styles.homeHero
+          }
+        >
+          <Text
+            style={[
+              styles.homeHeroTitle,
+              {
+                color:
+                  colors.text,
+                textAlign:
+                  isPersian
+                    ? 'right'
+                    : 'left',
+              },
+            ]}
+          >
+            {t.poetsTitle}
+          </Text>
+
+          <Text
+            style={[
+              styles.homeHeroSubtitle,
+              {
+                color:
+                  colors.textSecondary,
+                textAlign:
+                  isPersian
+                    ? 'right'
+                    : 'left',
+              },
+            ]}
+          >
+            {t.poetsDescription}
+          </Text>
+        </View>
+
+        <View
+          style={
+            styles.sectionHeading
+          }
+        >
+          <View>
+            <Text
+              style={[
+                styles.sectionTitle,
+                {
+                  color:
+                    colors.text,
+                  textAlign:
+                    isPersian
+                      ? 'right'
+                      : 'left',
+                },
+              ]}
+            >
+              {t.poetsTitle}
+            </Text>
+
+            <Text
+              style={[
+                styles.sectionSubtitle,
+                {
+                  color:
+                    colors.textSecondary,
+                  textAlign:
+                    isPersian
+                      ? 'right'
+                      : 'left',
+                },
+              ]}
+            >
+              {t.choosePoet}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.countBadge,
+              {
+                backgroundColor:
+                  mutedSurface,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.countBadgeText,
+                {
+                  color:
+                    colors.textSecondary,
+                },
+              ]}
+            >
+              {POETS.length}{' '}
+              {t.poets}
+            </Text>
+          </View>
+        </View>
+
+        <View
+          style={
+            styles.poetList
+          }
+        >
+          {POETS.map((poet) => {
+            const stats =
+              poetStatsById[
+                poet.id
+              ] || {
+                poemCount: 0,
+                percent: 0,
+              };
+
+            return (
+              <TouchableOpacity
+                key={poet.id}
+                activeOpacity={0.82}
+                onPress={() =>
+                  openPoet(
+                    poet.id,
+                  )
+                }
+                style={[
+                  styles.poetCard,
+                  {
+                    width:
+                      POET_CARD_WIDTH,
+                    backgroundColor:
+                      isDark
+                        ? 'rgba(255,255,255,0.055)'
+                        : '#FFFFFF',
+                    borderColor:
+                      subtleBorder,
+                  },
+                ]}
+              >
+                {poet.photo ? (
+                  <Image
+                    source={
+                      poet.photo
+                    }
+                    style={
+                      styles.poetPhoto
+                    }
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.poetPhoto,
+                      styles.poetPhotoFallback,
+                      {
+                        backgroundColor:
+                          isDark
+                            ? 'rgba(255,255,255,0.08)'
+                            : `${primary}14`,
+                      },
+                    ]}
+                  >
+                    <Feather
+                      size={30}
+                      color={primary}
+                      strokeWidth={
+                        2
+                      }
+                    />
+                  </View>
+                )}
+
+                <View
+                  style={
+                    styles.poetCardBody
+                  }
+                >
+                  <Text
+                    numberOfLines={
+                      1
+                    }
+                    style={[
+                      styles.poetName,
+                      {
+                        color:
+                          colors.text,
+                        textAlign:
+                          isPersian
+                            ? 'right'
+                            : 'left',
+                      },
+                    ]}
+                  >
+                    {isPersian
+                      ? poet.name
+                      : poet.englishName}
+                  </Text>
+
+                  <Text
+                    numberOfLines={
+                      2
+                    }
+                    style={[
+                      styles.poetBio,
+                      {
+                        color:
+                          colors.textSecondary,
+                        textAlign:
+                          isPersian
+                            ? 'right'
+                            : 'left',
+                      },
+                    ]}
+                  >
+                    {isPersian
+                      ? poet.bio
+                      : poet.englishBio}
+                  </Text>
+
+                  <View
+                    style={
+                      styles.poetStatsRow
+                    }
+                  >
+                    <Text
+                      numberOfLines={
+                        1
+                      }
+                      style={[
+                        styles.poemStat,
+                        {
+                          color:
+                            colors.textSecondary,
+                        },
+                      ]}
+                    >
+                      {
+                        stats.poemCount
+                      }{' '}
+                      {t.poemsCount}
+                    </Text>
+
+                    <Text
+                      numberOfLines={
+                        1
+                      }
+                      style={[
+                        styles.poemStat,
+                        {
+                          color:
+                            primary,
+                        },
+                      ]}
+                    >
+                      {stats.percent}%
+                      {' '}
+                      {t.mastery}
+                    </Text>
+                  </View>
+
+                  {renderProgressBar(
+                    stats.percent,
+                    6,
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </Animated.View>
+    );
+  };
+
   const renderHome = () => {
     return (
       <Animated.View
@@ -1740,7 +2177,11 @@ export default function HafezScreen() {
               },
             ]}
           >
-            {t.homeTitle}
+            {selectedPoet
+              ? isPersian
+                ? selectedPoet.name
+                : selectedPoet.englishName
+              : t.homeTitle}
           </Text>
 
           <Text
@@ -1756,7 +2197,11 @@ export default function HafezScreen() {
               },
             ]}
           >
-            {t.homeDescription}
+            {selectedPoet
+              ? isPersian
+                ? selectedPoet.bio
+                : selectedPoet.englishBio
+              : t.homeDescription}
           </Text>
         </View>
 
@@ -1817,167 +2262,204 @@ export default function HafezScreen() {
                 },
               ]}
             >
-              {POEMS.length}{' '}
+              {poemsByPoet.length}{' '}
               {t.ghazals}
             </Text>
           </View>
         </View>
 
-        <View
-          style={
-            styles.poemList
-          }
-        >
-          {POEMS.map((poem) => {
-            const stats =
-              poemStats[
-                poem.id
-              ] || {
-                mastered: 0,
-                total:
-                  poem.couplets
-                    .length,
-                percent: 0,
-              };
+        {poemsByPoet.length === 0 ? (
+          <View
+            style={[
+              styles.homeInfo,
+              {
+                backgroundColor:
+                  isDark
+                    ? 'rgba(255,255,255,0.04)'
+                    : 'rgba(15,23,42,0.035)',
+                borderColor:
+                  subtleBorder,
+              },
+            ]}
+          >
+            <Sparkles
+              size={17}
+              color={primary}
+            />
 
-            return (
-              <TouchableOpacity
-                key={poem.id}
-                activeOpacity={0.82}
-                onPress={() =>
-                  openPoem(
-                    poem.id,
-                  )
-                }
-                style={[
-                  styles.poemCard,
-                  {
-                    backgroundColor:
-                      isDark
-                        ? 'rgba(255,255,255,0.055)'
-                        : '#FFFFFF',
-                    borderColor:
-                      subtleBorder,
-                  },
-                ]}
-              >
-                <View
+            <Text
+              style={[
+                styles.homeInfoText,
+                {
+                  color:
+                    colors.textSecondary,
+                  textAlign:
+                    isPersian
+                      ? 'right'
+                      : 'left',
+                },
+              ]}
+            >
+              {t.noPoemsYet}
+            </Text>
+          </View>
+        ) : (
+          <View
+            style={
+              styles.poemList
+            }
+          >
+            {poemsByPoet.map((poem) => {
+              const stats =
+                poemStats[
+                  poem.id
+                ] || {
+                  mastered: 0,
+                  total:
+                    poem.couplets
+                      .length,
+                  percent: 0,
+                };
+
+              return (
+                <TouchableOpacity
+                  key={poem.id}
+                  activeOpacity={0.82}
+                  onPress={() =>
+                    openPoem(
+                      poem.id,
+                    )
+                  }
                   style={[
-                    styles.poemIcon,
+                    styles.poemCard,
                     {
                       backgroundColor:
                         isDark
-                          ? 'rgba(255,255,255,0.08)'
-                          : `${primary}14`,
+                          ? 'rgba(255,255,255,0.055)'
+                          : '#FFFFFF',
+                      borderColor:
+                        subtleBorder,
                     },
                   ]}
                 >
-                  <Feather
-                    size={24}
-                    color={primary}
-                    strokeWidth={
-                      2
-                    }
-                  />
-                </View>
-
-                <View
-                  style={
-                    styles.poemInfo
-                  }
-                >
-                  <Text
-                    numberOfLines={
-                      1
-                    }
+                  <View
                     style={[
-                      styles.poemTitle,
+                      styles.poemIcon,
                       {
-                        color:
-                          colors.text,
-                        textAlign:
-                          isPersian
-                            ? 'right'
-                            : 'left',
+                        backgroundColor:
+                          isDark
+                            ? 'rgba(255,255,255,0.08)'
+                            : `${primary}14`,
                       },
                     ]}
                   >
-                    {isPersian
-                      ? poem.fullTitle
-                      : poem.englishFullTitle}
-                  </Text>
-
-                  <Text
-                    style={[
-                      styles.poemPoet,
-                      {
-                        color:
-                          colors.textSecondary,
-                        textAlign:
-                          isPersian
-                            ? 'right'
-                            : 'left',
-                      },
-                    ]}
-                  >
-                    {isPersian
-                      ? poem.poet
-                      : poem.englishPoet}
-                  </Text>
+                    <Feather
+                      size={24}
+                      color={primary}
+                      strokeWidth={
+                        2
+                      }
+                    />
+                  </View>
 
                   <View
                     style={
-                      styles.poemStats
+                      styles.poemInfo
                     }
                   >
                     <Text
+                      numberOfLines={
+                        1
+                      }
                       style={[
-                        styles.poemStat,
+                        styles.poemTitle,
                         {
                           color:
-                            colors.textSecondary,
+                            colors.text,
+                          textAlign:
+                            isPersian
+                              ? 'right'
+                              : 'left',
                         },
                       ]}
                     >
-                      {
-                        poem
-                          .couplets
-                          .length
-                      }{' '}
-                      {t.couplets}
+                      {isPersian
+                        ? poem.fullTitle
+                        : poem.englishFullTitle}
                     </Text>
 
                     <Text
                       style={[
-                        styles.poemStat,
+                        styles.poemPoet,
                         {
                           color:
-                            primary,
+                            colors.textSecondary,
+                          textAlign:
+                            isPersian
+                              ? 'right'
+                              : 'left',
                         },
                       ]}
                     >
-                      {stats.percent}%
-                      {' '}
-                      {t.mastery}
+                      {isPersian
+                        ? poem.poet
+                        : poem.englishPoet}
                     </Text>
+
+                    <View
+                      style={
+                        styles.poemStats
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.poemStat,
+                          {
+                            color:
+                              colors.textSecondary,
+                          },
+                        ]}
+                      >
+                        {
+                          poem
+                            .couplets
+                            .length
+                        }{' '}
+                        {t.couplets}
+                      </Text>
+
+                      <Text
+                        style={[
+                          styles.poemStat,
+                          {
+                            color:
+                              primary,
+                          },
+                        ]}
+                      >
+                        {stats.percent}%
+                        {' '}
+                        {t.mastery}
+                      </Text>
+                    </View>
+
+                    {renderProgressBar(
+                      stats.percent,
+                      6,
+                    )}
                   </View>
 
-                  {renderProgressBar(
-                    stats.percent,
-                    6,
-                  )}
-                </View>
-
-                <ChevronLeft
-                  size={20}
-                  color={
-                    colors.textSecondary
-                  }
-                />
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                  <ChevronLeft
+                    size={20}
+                    color={
+                      colors.textSecondary
+                    }
+                  />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
 
         <View
           style={[
@@ -1989,6 +2471,7 @@ export default function HafezScreen() {
                   : 'rgba(15,23,42,0.035)',
               borderColor:
                 subtleBorder,
+              marginTop: 16,
             },
           ]}
         >
@@ -4283,6 +4766,9 @@ export default function HafezScreen() {
       switch (
         currentView
       ) {
+        case 'poets':
+          return renderPoets();
+
         case 'home':
           return renderHome();
 
@@ -4299,7 +4785,7 @@ export default function HafezScreen() {
           return renderResult();
 
         default:
-          return renderHome();
+          return renderPoets();
       }
     };
 
@@ -4672,6 +5158,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent:
       'center',
+  },
+
+  poetList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: POET_CARD_GAP,
+  },
+
+  poetCard: {
+    borderWidth: 1,
+    borderRadius: 18,
+    overflow: 'hidden',
+  },
+
+  poetPhoto: {
+    width: '100%',
+    height: 132,
+  },
+
+  poetPhotoFallback: {
+    alignItems: 'center',
+    justifyContent:
+      'center',
+  },
+
+  poetCardBody: {
+    padding: 12,
+    gap: 4,
+  },
+
+  poetName: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+
+  poetBio: {
+    fontSize: 11,
+    lineHeight: 16,
+    marginBottom: 2,
+  },
+
+  poetStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent:
+      'space-between',
+    marginTop: 6,
+    marginBottom: 6,
   },
 
   poemInfo: {
