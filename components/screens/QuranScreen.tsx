@@ -1,8 +1,16 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Alert,
   Animated,
+  BackHandler,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -78,9 +86,9 @@ const TRANSLATIONS = {
   fa: {
     quran: 'قرآن',
     quranMemorization: 'حفظ قرآن',
-    quranSurahYasin: 'سوره یس',
+    quranSurahYasin: 'سوره نبأ',
     quranProgram: 'برنامه حفظ',
-    quranSixDayProgram: 'برنامه ۶ روزه سوره یس',
+    quranSixDayProgram: 'برنامه ۶ روزه سوره نبأ',
     quranDay: 'روز',
     quranTodayVerses: 'آیات امروز',
     quranVerseCount: 'تعداد آیات',
@@ -115,7 +123,7 @@ const TRANSLATIONS = {
     quranDayCompleted: 'روز کامل شد',
     quranProgramCompleted: 'برنامه کامل شد',
     quranProgramCompletedMessage:
-      'شما برنامه حفظ سوره یس را کامل کردید.',
+      'شما برنامه حفظ سوره نبأ را کامل کردید.',
     quranQuestion: 'سؤال',
     quranOf: 'از',
     quranToday: 'امروز',
@@ -147,14 +155,20 @@ const TRANSLATIONS = {
     quranPage: 'صفحه',
     quranMushafNote:
       'رسم‌الخط بر پایه مصحف مدینه (عثمان طه)',
+
+    exitTitle: 'خروج از آزمون',
+    exitMessage:
+      'در حال حاضر وسط یک آزمون هستید. آیا واقعاً می‌خواهید از این صفحه خارج شوید؟ پیشرفت این آزمون ذخیره نخواهد شد.',
+    exitCancel: 'ادامه آزمون',
+    exitConfirm: 'بله، خارج شو',
   },
 
   en: {
     quran: 'Quran',
     quranMemorization: 'Quran Memorization',
-    quranSurahYasin: 'Surah Yasin',
+    quranSurahYasin: 'Surah An-Naba',
     quranProgram: 'Memorization Plan',
-    quranSixDayProgram: '6-day Surah Yasin plan',
+    quranSixDayProgram: '6-day Surah An-Naba plan',
     quranDay: 'Day',
     quranTodayVerses: "Today's Verses",
     quranVerseCount: 'Verse Count',
@@ -192,7 +206,7 @@ const TRANSLATIONS = {
     quranDayCompleted: 'Day Completed',
     quranProgramCompleted: 'Program Completed',
     quranProgramCompletedMessage:
-      'You have completed the Surah Yasin memorization program.',
+      'You have completed the Surah An-Naba memorization program.',
     quranQuestion: 'Question',
     quranOf: 'of',
     quranToday: 'Today',
@@ -225,6 +239,12 @@ const TRANSLATIONS = {
     quranPage: 'Page',
     quranMushafNote:
       'Script based on the Madinah Mushaf (Uthman Taha)',
+
+    exitTitle: 'Leave the Quiz',
+    exitMessage:
+      'You are currently in the middle of a quiz. Are you sure you want to leave this page? The progress of this quiz will not be saved.',
+    exitCancel: 'Continue Quiz',
+    exitConfirm: 'Yes, Leave',
   },
 };
 
@@ -234,11 +254,11 @@ const LAST_UPDATE_KEY = 'quran_last_update_v2';
 const QURAN_FONT_FAMILY = 'UthmanicHafs';
 
 const SURAH_META = {
-  number: 36,
-  arabicName: 'يس',
-  totalAyahs: 83,
+  number: 78,
+  arabicName: 'النبأ',
+  totalAyahs: 40,
   isMeccan: true,
-  juz: '22 - 23',
+  juz: '30',
 };
 
 const ARABIC_INDIC_DIGITS = [
@@ -266,187 +286,338 @@ const toArabicDigits = (value: number | string) =>
     .join('');
 
 const PLAN: DayPlan[] = [
-  { day: 1, verses: [1, 2, 3] },
-  { day: 2, verses: [4, 5] },
-  { day: 3, verses: [6, 7] },
-  { day: 4, verses: [8, 9] },
-  { day: 5, verses: [10, 11] },
-  { day: 6, verses: [12] },
+  { day: 1, verses: [1, 2, 3, 4, 5, 6, 7] },
+  { day: 2, verses: [8, 9, 10, 11, 12, 13, 14] },
+  { day: 3, verses: [15, 16, 17, 18, 19, 20, 21] },
+  { day: 4, verses: [22, 23, 24, 25, 26, 27, 28] },
+  { day: 5, verses: [29, 30, 31, 32, 33, 34] },
+  { day: 6, verses: [35, 36, 37, 38, 39, 40] },
 ];
 
-const SURAH_YASIN: QuranVerse[] = [
+const SURAH_NABA: QuranVerse[] = [
   {
     number: 1,
-    arabic: 'يسٓ',
-    translation: 'یس',
-    translationEn: 'Ya-Sin',
+    arabic: 'عَمَّ يَتَسَآءَلُونَ',
+    translation: 'درباره چه چیزی از یکدیگر می‌پرسند؟',
+    translationEn: 'About what are they asking one another?',
   },
   {
     number: 2,
-    arabic: 'وَٱلۡقُرۡءَانِ ٱلۡحَكِيمِ',
-    translation: 'سوگند به قرآن حکیم',
-    translationEn: 'By the wise Quran',
+    arabic: 'عَنِ ٱلنَّبَإِ ٱلۡعَظِيمِ',
+    translation: 'درباره خبری بزرگ',
+    translationEn: 'About the great news',
   },
   {
     number: 3,
-    arabic: 'إِنَّكَ لَمِنَ ٱلۡمُرۡسَلِينَ',
-    translation: 'که تو از پیامبرانی',
-    translationEn:
-      'Indeed you are among the messengers',
+    arabic: 'ٱلَّذِي هُمۡ فِيهِ مُخۡتَلِفُونَ',
+    translation: 'که آن‌ها در آن اختلاف دارند',
+    translationEn: 'That over which they are in disagreement',
   },
   {
     number: 4,
-    arabic: 'عَلَىٰ صِرَٰطٖ مُّسۡتَقِيمٖ',
-    translation: 'بر راه راست',
-    translationEn: 'On a straight path',
+    arabic: 'كَلَّا سَيَعۡلَمُونَ',
+    translation: 'نه چنین است، به زودی خواهند دانست',
+    translationEn: 'No! They are going to know',
   },
   {
     number: 5,
-    arabic: 'تَنزِيلَ ٱلۡعَزِيزِ ٱلرَّحِيمِ',
-    translation: 'نازل شده از سوی عزیزِ رحیم',
-    translationEn:
-      'Revealed by the Almighty, the Merciful',
+    arabic: 'ثُمَّ كَلَّا سَيَعۡلَمُونَ',
+    translation: 'سپس نه چنین است، به زودی خواهند دانست',
+    translationEn: 'Then, no! They are going to know',
   },
   {
     number: 6,
-    arabic:
-      'لِتُنذِرَ قَوۡمٗا مَّآ أُنذِرَ ءَابَآؤُهُمۡ فَهُمۡ غَٰفِلُونَ لَقَدۡ حَقَّ ٱلۡقَوۡلُ عَلَىٰٓ أَكۡثَرِهِمۡ فَهُمۡ لَا يُؤۡمِنُونَ',
-    translation:
-      'تا قومی را که پدرانشان انذار نشده‌اند و غافلند، بترسانی',
-    translationEn:
-      'To warn a people whose fathers were not warned, so they are unaware',
+    arabic: 'أَلَمۡ نَجۡعَلِ ٱلۡأَرۡضَ مِهَٰدٗا',
+    translation: 'آیا زمین را بستری قرار ندادیم؟',
+    translationEn: 'Have We not made the earth a resting place?',
   },
   {
     number: 7,
-    arabic:
-      'إِنَّا جَعَلۡنَا فِيٓ أَعۡنَٰقِهِمۡ أَغۡلَٰلٗا فَهِيَ إِلَى ٱلۡأَذۡقَانِ فَهُم مُّقۡمَحُونَ',
-    translation:
-      'به تحقیق که گفتار بر بیشترشان محقق شده، پس ایمان نمی‌آورند',
-    translationEn:
-      'Indeed the word has come true against most of them, so they do not believe',
+    arabic: 'وَٱلۡجِبَالَ أَوۡتَادٗا',
+    translation: 'و کوه‌ها را میخ‌هایی؟',
+    translationEn: 'And the mountains as stakes?',
   },
   {
     number: 8,
-    arabic:
-      'وَجَعَلۡنَا مِنۢ بَيۡنِ أَيۡدِيهِمۡ سَدّٗا وَمِنۡ خَلۡفِهِمۡ سَدّٗا فَأَغۡشَيۡنَٰهُمۡ فَهُمۡ لَا يُبۡصِرُونَ',
-    translation:
-      'ما در گردن‌هایشان غل‌هایی قرار داده‌ایم که تا چانه‌هاست، پس سرهایشان بالا نگه داشته شده',
-    translationEn:
-      'We have placed shackles on their necks up to their chins, so they are forced to raise their heads',
+    arabic: 'وَخَلَقۡنَٰكُمۡ أَزۡوَٰجٗا',
+    translation: 'و شما را جفت‌جفت آفریدیم',
+    translationEn: 'And We created you in pairs',
   },
   {
     number: 9,
-    arabic:
-      'وَسَوَآءٌ عَلَيۡهِمۡ ءَأَنذَرۡتَهُمۡ أَمۡ لَمۡ تُنذِرۡهُمۡ لَا يُؤۡمِنُونَ',
-    translation:
-      'و از پیش رویشان سدی و از پشت سرشان سدی قرار داده‌ایم و بر چشمانشان پرده‌ای افکنده‌ایم، پس نمی‌بینند',
-    translationEn:
-      'And We have placed a barrier before them and a barrier behind them, and We have covered them, so they cannot see',
+    arabic: 'وَجَعَلۡنَا نَوۡمَكُمۡ سُبَاتٗا',
+    translation: 'و خواب شما را مایه آرامش قرار دادیم',
+    translationEn: 'And made your sleep a rest',
   },
   {
     number: 10,
-    arabic:
-      'إِنَّمَا تُنذِرُ مَنِ ٱتَّبَعَ ٱلذِّكۡرَ وَخَشِيَ ٱلرَّحۡمَٰنَ بِٱلۡغَيۡبِۖ فَبَشِّرۡهُ بِمَغۡفِرَةٖ وَأَجۡرٖ كَرِيمٍ',
-    translation:
-      'و برایشان یکسان است، چه انذارشان کنی یا نکنی، ایمان نمی‌آورند',
-    translationEn:
-      'It is all the same to them whether you warn them or do not warn them - they will not believe',
+    arabic: 'وَجَعَلۡنَا ٱلَّيۡلَ لِبَاسٗا',
+    translation: 'و شب را پوششی قرار دادیم',
+    translationEn: 'And made the night a covering',
   },
   {
     number: 11,
-    arabic:
-      'إِنَّا نَحۡنُ نُحۡيِ ٱلۡمَوۡتَىٰ وَنَكۡتُبُ مَا قَدَّمُواْ وَءَاثَٰرَهُمۡۚ وَكُلَّ شَيۡءٍ أَحۡصَيۡنَٰهُ فِيٓ إِمَامٖ مُّبِينٖ',
-    translation:
-      'تنها کسی را انذار می‌کنی که از ذکر پیروی کند و از رحمان در نهان بترسد، پس او را به آمرزش و پاداشی کریم مژده بده',
-    translationEn:
-      'You only warn those who follow the reminder and fear the Most Gracious unseen, so give them good news of forgiveness and a noble reward',
+    arabic: 'وَجَعَلۡنَا ٱلنَّهَارَ مَعَاشٗا',
+    translation: 'و روز را زمانه‌ای برای معاش',
+    translationEn: 'And made the day for livelihood',
   },
   {
     number: 12,
-    arabic:
-      'إِنَّا نَحۡنُ نُحۡيِ ٱلۡمَوۡتَىٰ وَنَكۡتُبُ مَا قَدَّمُواْ وَءَاثَٰرَهُمۡۚ وَكُلَّ شَيۡءٍ أَحۡصَيۡنَٰهُ فِيٓ إِمَامٖ مُّبِينٖ',
-    translation:
-      'همانا ما هستیم که مردگان را زنده می‌کنیم و آنچه را پیش فرستاده‌اند و آثارشان را می‌نویسیم و هر چیزی را در لوحی مبین شمارش کرده‌ایم',
-    translationEn:
-      'Indeed it is We who bring the dead to life and record what they have put forward and their traces, and all things We have enumerated in a clear register',
+    arabic: 'وَبَنَيۡنَا فَوۡقَكُمۡ سَبۡعٗا شِدَادٗا',
+    translation: 'و بالای سرتان هفت آسمان محکم بنا کردیم',
+    translationEn: 'And constructed above you seven strong heavens',
+  },
+  {
+    number: 13,
+    arabic: 'وَجَعَلۡنَا سِرَاجٗا وَهَّاجٗا',
+    translation: 'و چراغی فروزان قرار دادیم',
+    translationEn: 'And made a burning lamp',
+  },
+  {
+    number: 14,
+    arabic: 'وَأَنزَلۡنَا مِنَ ٱلۡمُعۡصِرَٰتِ مَآءٗ ثَجَّاجٗا',
+    translation: 'و از ابرهای باران‌زا آبی ریزان فرو فرستادیم',
+    translationEn: 'And sent down from the rain clouds pouring water',
+  },
+  {
+    number: 15,
+    arabic: 'لِّنُخۡرِجَ بِهِۦ حَبّٗا وَنَبَاتٗا',
+    translation: 'تا با آن دانه و گیاه برویانیم',
+    translationEn: 'That We may bring forth thereby grain and vegetation',
+  },
+  {
+    number: 16,
+    arabic: 'وَجَنَّٰتٍ أَلۡفَافًا',
+    translation: 'و باغ‌هایی انبوه',
+    translationEn: 'And gardens of entwined growth',
+  },
+  {
+    number: 17,
+    arabic: 'إِنَّ يَوۡمَ ٱلۡفَصۡلِ كَانَ مِيقَٰتٗا',
+    translation: 'همانا روز جدايى وقتى معين است',
+    translationEn: 'Indeed, the Day of Judgement is an appointed time',
+  },
+  {
+    number: 18,
+    arabic: 'يَوۡمَ يُنفَخُ فِي ٱلصُّورِ فَتَأۡتُونَ أَفۡوَاجٗا',
+    translation: 'روزی که در صور دمیده شود و دسته‌دسته بیایید',
+    translationEn: 'The Day the Horn is blown and you will come forth in multitudes',
+  },
+  {
+    number: 19,
+    arabic: 'وَفُتِحَتِ ٱلسَّمَآءُ فَكَانَتۡ أَبۡوَٰبٗا',
+    translation: 'و آسمان گشوده شود و به صورت درهایی درآید',
+    translationEn: 'And the heaven is opened and becomes gateways',
+  },
+  {
+    number: 20,
+    arabic: 'وَسُيِّرَتِ ٱلۡجِبَالُ فَكَانَتۡ سَرَابًا',
+    translation: 'و کوه‌ها به حرکت درآیند و سرابی شوند',
+    translationEn: 'And the mountains are moved and become a mirage',
+  },
+  {
+    number: 21,
+    arabic: 'إِنَّ جَهَنَّمَ كَانَتۡ مِرۡصَادٗا',
+    translation: 'همانا جهنم کمین‌گاهی است',
+    translationEn: 'Indeed, Hell has been lying in wait',
+  },
+  {
+    number: 22,
+    arabic: 'لِّلطَّٰغِينَ مَآبٗا',
+    translation: 'برای سرکشان بازگشت‌گاهی',
+    translationEn: 'For the transgressors, a place of return',
+  },
+  {
+    number: 23,
+    arabic: 'لَّٰبِثِينَ فِيهَآ أَحۡقَابٗا',
+    translation: 'که سال‌های طولانی در آن می‌مانند',
+    translationEn: 'In which they will remain for ages',
+  },
+  {
+    number: 24,
+    arabic: 'لَّا يَذُوقُونَ فِيهَا بَرۡدٗا وَلَا شَرَابًا',
+    translation: 'در آن نه خنکی می‌چشند و نه نوشیدنی',
+    translationEn: 'They will not taste therein any coolness or drink',
+  },
+  {
+    number: 25,
+    arabic: 'إِلَّا حَمِيمٗا وَغَسَّاقٗا',
+    translation: 'مگر آب جوشان و چرک',
+    translationEn: 'Except boiling water and pus',
+  },
+  {
+    number: 26,
+    arabic: 'جَزَآءٗ وِفَاقًا',
+    translation: 'پاداشی مناسب',
+    translationEn: 'An appropriate recompense',
+  },
+  {
+    number: 27,
+    arabic: 'إِنَّهُمۡ كَانُواْ لَا يَرۡجُونَ حِسَابٗا',
+    translation: 'همانا آن‌ها به حساب امیدی نداشتند',
+    translationEn: 'Indeed, they were not expecting an account',
+  },
+  {
+    number: 28,
+    arabic: 'وَكَذَّبُواْ بِـَٔايَٰتِنَا كِذَّابٗا',
+    translation: 'و آیات ما را به شدت تکذیب کردند',
+    translationEn: 'And denied Our verses with emphatic denial',
+  },
+  {
+    number: 29,
+    arabic: 'وَكُلَّ شَيۡءٍ أَحۡصَيۡنَٰهُ كِتَٰبٗا',
+    translation: 'و هر چیزی را در کتابی برشمرده‌ایم',
+    translationEn: 'But all things We have enumerated in writing',
+  },
+  {
+    number: 30,
+    arabic: 'فَذُوقُواْ فَلَن نَّزِيدَكُمۡ إِلَّا عَذَابًا',
+    translation: 'پس بچشید که جز عذاب بر شما نمی‌افزاییم',
+    translationEn: 'So taste it, and never will We increase you except in punishment',
+  },
+  {
+    number: 31,
+    arabic: 'إِنَّ لِلۡمُتَّقِينَ مَفَازٗا',
+    translation: 'همانا برای پرهیزگاران رستگاری است',
+    translationEn: 'Indeed, for the righteous is attainment',
+  },
+  {
+    number: 32,
+    arabic: 'حَدَآئِقَ وَأَعۡنَٰبٗا',
+    translation: 'باغ‌ها و تاکستان‌هایی',
+    translationEn: 'Gardens and grapevines',
+  },
+  {
+    number: 33,
+    arabic: 'وَكَوَاعِبَ أَتۡرَابٗا',
+    translation: 'و دخترانی همسال',
+    translationEn: 'And full-breasted maidens of equal age',
+  },
+  {
+    number: 34,
+    arabic: 'وَكَأۡسٗا دِهَاقٗا',
+    translation: 'و جام‌هایی لبریز',
+    translationEn: 'And a full cup',
+  },
+  {
+    number: 35,
+    arabic: 'لَّا يَسۡمَعُونَ فِيهَا لَغۡوٗا وَلَا كِذَّٰبٗا',
+    translation: 'در آن نه بیهوده می‌شنوند و نه دروغ',
+    translationEn: 'No ill speech will they hear therein or any falsehood',
+  },
+  {
+    number: 36,
+    arabic: 'جَزَآءٗ مِّن رَّبِّكَ عَطَآءً حِسَابٗا',
+    translation: 'پاداشی از پروردگارت و بخششی به اندازه',
+    translationEn: 'A reward from your Lord, a gift according to account',
+  },
+  {
+    number: 37,
+    arabic: 'رَّبِّ ٱلسَّمَٰوَٰتِ وَٱلۡأَرۡضِ وَمَا بَيۡنَهُمَا ٱلرَّحۡمَٰنِ لَا يَمۡلِكُونَ مِنۡهُ خِطَابٗا',
+    translation: 'پروردگار آسمان‌ها و زمین و آنچه میان آن‌هاست، رحمان؛ از او سخنی نمی‌توانند بگویند',
+    translationEn: 'The Lord of the heavens and the earth and whatever is between them, the Most Merciful; they possess no power to speak to Him',
+  },
+  {
+    number: 38,
+    arabic: 'يَوۡمَ يَقُومُ ٱلرُّوحُ وَٱلۡمَلَٰٓئِكَةُ صَفّٗا لَّا يَتَكَلَّمُونَ إِلَّا مَنۡ أَذِنَ لَهُ ٱلرَّحۡمَٰنُ وَقَالَ صَوَابٗا',
+    translation: 'روزی که روح و فرشتگان به صف می‌ایستند و سخن نمی‌گویند مگر کسی که رحمان به او اجازه دهد و سخن درست بگوید',
+    translationEn: 'The Day that the Spirit and the angels will stand in rows, they will not speak except for one whom the Most Merciful permits, and he will say what is correct',
+  },
+  {
+    number: 39,
+    arabic: 'ذَٰلِكَ ٱلۡيَوۡمُ ٱلۡحَقُّ فَمَن شَآءَ ٱتَّخَذَ إِلَىٰ رَبِّهِۦ مَآبًا',
+    translation: 'آن روز، روز حق است؛ پس هر کس بخواهد راهی به سوی پروردگارش برگزیند',
+    translationEn: 'That is the True Day; so he who wills may take to his Lord a return',
+  },
+  {
+    number: 40,
+    arabic: 'إِنَّآ أَنذَرۡنَٰكُمۡ عَذَابٗا قَرِيبٗا يَوۡمَ يَنظُرُ ٱلۡمَرۡءُ مَا قَدَّمَتۡ يَدَاهُ وَيَقُولُ ٱلۡكَافِرُ يَٰلَيۡتَنِي كُنتُ تُرَٰبَۢا',
+    translation: 'همانا شما را از عذابی نزدیک هشدار دادیم؛ روزی که انسان آنچه را دستانش پیش فرستاده می‌بیند و کافر می‌گوید: ای کاش خاک بودم!',
+    translationEn: 'Indeed, We have warned you of a near punishment on the Day when a man will observe what his hands have put forth and the disbeliever will say, "Oh, I wish that I were dust!"',
   },
 ];
 
+/*
+ * ------------------------------------------------------------
+ * خطوط دقیق مصحف بر اساس تصویر ارسالی
+ * ------------------------------------------------------------
+ * هر خط شامل آرایه‌ای از شماره آیاتی است که در آن خط قرار دارند.
+ * این دقیقاً مطابق چیدمان مصحف مدینه در تصویر است.
+ */
+const MUSHAF_LINES: number[][] = [
+  [1, 2, 3],
+  [4, 5, 6, 7],
+  [8, 9, 10],
+  [11, 12, 13],
+  [14, 15, 16],
+  [17, 18],
+  [19, 20, 21],
+  [22, 23, 24],
+  [25, 26, 27],
+  [28, 29],
+  [30, 31, 32],
+  [33, 34, 35],
+  [36, 37],
+  [38],
+  [39],
+  [40],
+];
+
 const WORD_LINE_LOCATIONS: Record<string, number> = {
-  يسٓ: 1,
-  'وَٱلۡقُرۡءَانِ': 1,
-  'ٱلۡحَكِيمِ': 1,
-  'إِنَّكَ': 1,
-  'لَمِنَ': 1,
-  'ٱلۡمُرۡسَلِينَ': 1,
-  'عَلَىٰ': 1,
-  'صِرَٰطٖ': 2,
-  'مُّسۡتَقِيمٖ': 2,
-  'تَنزِيلَ': 2,
-  'ٱلۡعَزِيزِ': 2,
-  'ٱلرَّحِيمِ': 2,
-  'لِتُنذِرَ': 3,
-  'قَوۡمٗا': 3,
-  'مَّآ': 3,
-  'أُنذِرَ': 3,
-  'ءَابَآؤُهُمۡ': 3,
-  'غَٰفِلُونَ': 3,
-  'لَقَدۡ': 4,
-  'حَقَّ': 4,
-  'ٱلۡقَوۡلُ': 4,
-  'أَكۡثَرِهِمۡ': 4,
-  'فَهُمۡ': 5,
-  'لَا': 5,
-  'يُؤۡمِنُونَ': 5,
-  'إِنَّا': 5,
-  'جَعَلۡنَا': 5,
-  'فِيٓ': 5,
-  'أَعۡنَٰقِهِمۡ': 5,
-  'أَغۡلَٰلٗا': 5,
-  'فَهِيَ': 5,
-  'إِلَى': 5,
-  'ٱلۡأَذۡقَانِ': 6,
-  'فَهُم': 6,
-  'مُّقۡمَحُونَ': 6,
-  'وَجَعَلۡنَا': 6,
-  'مِنۢ': 6,
-  'بَيۡنِ': 6,
-  'أَيۡدِيهِمۡ': 6,
-  'سَدّٗا': 6,
-  'وَمِنۡ': 7,
-  'خَلۡفِهِمۡ': 7,
-  'فَأَغۡشَيۡنَٰهُمۡ': 7,
-  'يُبۡصِرُونَ': 7,
-  'وَسَوَآءٌ': 7,
-  'عَلَيۡهِمۡ': 8,
-  'ءَأَنذَرۡتَهُمۡ': 8,
-  'أَمۡ': 8,
-  'لَمۡ': 8,
-  'تُنذِرۡهُمۡ': 8,
-  'إِنَّمَا': 8,
-  'تُنذِرُ': 8,
-  'مَنِ': 9,
-  'ٱتَّبَعَ': 9,
-  'ٱلذِّكۡرَ': 9,
-  'وَخَشِيَ': 9,
-  'ٱلرَّحۡمَٰنَ': 9,
-  'بِٱلۡغَيۡبِۖ': 9,
-  'فَبَشِّرۡهُ': 9,
-  'بِمَغۡفِرَةٖ': 9,
-  'وَأَجۡرٖ': 10,
-  'كَرِيمٍ': 10,
-  'نَحۡنُ': 10,
-  'نُحۡيِ': 10,
-  'ٱلۡمَوۡتَىٰ': 10,
-  'وَنَكۡتُبُ': 10,
-  'مَا': 11,
-  'قَدَّمُواْ': 11,
-  'وَءَاثَٰرَهُمۡۚ': 11,
-  'وَكُلَّ': 11,
-  'شَيۡءٍ': 11,
-  'أَحۡصَيۡنَٰهُ': 11,
-  'إِمَامٖ': 11,
-  'مُّبِينٖ': 11,
+  عَمَّ: 1,
+  يَتَسَآءَلُونَ: 1,
+  ٱلنَّبَإِ: 1,
+  ٱلۡعَظِيمِ: 1,
+  مُخۡتَلِفُونَ: 1,
+  سَيَعۡلَمُونَ: 2,
+  ٱلۡأَرۡضَ: 2,
+  مِهَٰدٗا: 2,
+  وَٱلۡجِبَالَ: 2,
+  أَوۡتَادٗا: 2,
+  أَزۡوَٰجٗا: 3,
+  سُبَاتٗا: 3,
+  لِبَاسٗا: 3,
+  مَعَاشٗا: 4,
+  سَبۡعٗا: 4,
+  شِدَادٗا: 4,
+  سِرَاجٗا: 4,
+  وَهَّاجٗا: 4,
+  ٱلۡمُعۡصِرَٰتِ: 5,
+  ثَجَّاجٗا: 5,
+  حَبّٗا: 5,
+  وَنَبَاتٗا: 5,
+  أَلۡفَافًا: 5,
+  ٱلۡفَصۡلِ: 6,
+  مِيقَٰتٗا: 6,
+  ٱلصُّورِ: 6,
+  أَفۡوَاجٗا: 6,
+  أَبۡوَٰبٗا: 7,
+  سَرَابًا: 7,
+  جَهَنَّمَ: 7,
+  مِرۡصَادٗا: 7,
+  لِّلطَّٰغِينَ: 8,
+  أَحۡقَابٗا: 8,
+  حَمِيمٗا: 9,
+  وَغَسَّاقٗا: 9,
+  وِفَاقًا: 9,
+  يَرۡجُونَ: 9,
+  حِسَابٗا: 9,
+  كِتَٰبٗا: 10,
+  عَذَابًا: 11,
+  مَفَازٗا: 11,
+  حَدَآئِقَ: 11,
+  وَأَعۡنَٰبٗا: 11,
+  وَكَوَاعِبَ: 12,
+  أَتۡرَابٗا: 12,
+  دِهَاقٗا: 12,
+  لَغۡوٗا: 12,
+  كِذَّٰبٗا: 12,
+  ٱلرُّوحُ: 14,
+  صَوَابٗا: 14,
+  ٱلۡحَقُّ: 15,
+  مَآبًا: 15,
+  قَرِيبٗا: 16,
+  تُرَٰبَۢا: 16,
 };
 
 const normalizeArabic = (value: string) => {
@@ -461,7 +632,7 @@ const normalizeArabic = (value: string) => {
 };
 
 const getVerse = (number: number) =>
-  SURAH_YASIN.find(v => v.number === number);
+  SURAH_NABA.find(v => v.number === number);
 
 const getDayPlan = (day: number) =>
   PLAN.find(p => p.day === day);
@@ -767,7 +938,7 @@ const generateQuestions = (
         correctLine,
         ...shuffle(
           Array.from(
-            { length: 11 },
+            { length: 16 },
             (_, index) => index + 1,
           ).filter(
             line => line !== correctLine,
@@ -850,6 +1021,9 @@ export default function QuranScreen() {
   const [playing, setPlaying] =
     useState(false);
 
+  const [exitModalVisible, setExitModalVisible] =
+    useState(false);
+
   const fadeAnim = useRef(
     new Animated.Value(0),
   ).current;
@@ -883,7 +1057,7 @@ export default function QuranScreen() {
   }, [currentDay]);
 
   const totalVerses =
-    SURAH_YASIN.length;
+    SURAH_NABA.length;
 
   const memorizedVerses = useMemo(() => {
     let count = 0;
@@ -1044,7 +1218,9 @@ export default function QuranScreen() {
     setQuestionCorrect(null);
   };
 
-  const handleBack = () => {
+  const performExit = useCallback(() => {
+    setExitModalVisible(false);
+
     if (quizVisible) {
       setQuizVisible(false);
       return;
@@ -1053,7 +1229,40 @@ export default function QuranScreen() {
     if (navigation.canGoBack()) {
       navigation.goBack();
     }
-  };
+  }, [quizVisible, navigation]);
+
+  const handleBack = useCallback(() => {
+    if (exitModalVisible) return;
+
+    if (quizVisible) {
+      setExitModalVisible(true);
+      return;
+    }
+
+    performExit();
+  }, [exitModalVisible, quizVisible, performExit]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        if (exitModalVisible) {
+          setExitModalVisible(false);
+          return true;
+        }
+
+        handleBack();
+
+        return true;
+      },
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, [exitModalVisible, handleBack]);
 
   const startQuiz = (
     mode: StudyMode,
@@ -2160,9 +2369,7 @@ export default function QuranScreen() {
       visible={quizVisible}
       transparent
       animationType="fade"
-      onRequestClose={() =>
-        setQuizVisible(false)
-      }
+      onRequestClose={handleBack}
     >
       <View
         style={styles.modalOverlay}
@@ -2249,9 +2456,7 @@ export default function QuranScreen() {
 
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() =>
-                setQuizVisible(false)
-              }
+              onPress={handleBack}
               style={[
                 styles.closeButton,
                 {
@@ -2343,136 +2548,188 @@ export default function QuranScreen() {
     </Modal>
   );
 
+  const renderExitModal = () => (
+    <Modal
+      visible={exitModalVisible}
+      transparent
+      animationType="fade"
+      onRequestClose={() =>
+        setExitModalVisible(false)
+      }
+      statusBarTranslucent
+    >
+      <View style={styles.exitOverlay}>
+        <View
+          style={[
+            styles.exitCard,
+            {
+              backgroundColor:
+                colors.background || '#1b1024',
+              borderColor:
+                colors.border ||
+                'rgba(255,255,255,0.1)',
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.exitIcon,
+              {
+                backgroundColor:
+                  'rgba(239,68,68,0.12)',
+              },
+            ]}
+          >
+            <X
+              size={26}
+              color="#EF4444"
+              strokeWidth={2.5}
+            />
+          </View>
+
+          <Text
+            style={[
+              styles.exitTitle,
+              {
+                color: colors.text || '#fff',
+                textAlign: 'center',
+              },
+            ]}
+          >
+            {t.exitTitle}
+          </Text>
+
+          <Text
+            style={[
+              styles.exitMessage,
+              {
+                color:
+                  colors.textSecondary ||
+                  '#aaa',
+                textAlign: 'center',
+              },
+            ]}
+          >
+            {t.exitMessage}
+          </Text>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={performExit}
+            style={[
+              styles.exitConfirmButton,
+              {
+                backgroundColor:
+                  '#EF4444',
+              },
+            ]}
+          >
+            <Text
+              style={styles.exitConfirmText}
+            >
+              {t.exitConfirm}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() =>
+              setExitModalVisible(false)
+            }
+            style={[
+              styles.exitCancelButton,
+              {
+                borderColor:
+                  colors.border ||
+                  'rgba(255,255,255,0.12)',
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.exitCancelText,
+                {
+                  color: colors.text || '#fff',
+                },
+              ]}
+            >
+              {t.exitCancel}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
   /*
    * ------------------------------------------------------------
-   * Quran line grouping
+   * رندر هر خط از مصحف
    * ------------------------------------------------------------
-   *
-   * قانون:
-   * - هر خط باید از ابتدای یک آیه جدید شروع شود.
-   * - هر آیه لزوماً یک خط جدا نیست؛ آیه‌های کوتاه می‌توانند
-   *   در یک خط با آیه بعدی قرار بگیرند.
-   * - آیه‌های بلند به تنهایی در یک خط قرار می‌گیرند.
+   * هر خط دقیقاً شامل آیات تعریف‌شده در MUSHAF_LINES است و
+   * به صورت یک بلوک متنی جدا رندر می‌شود. این باعث می‌شود
+   * چیدمان دقیقاً مطابق تصویر مصحف مدینه باشد.
    */
-  const QURAN_LINE_GROUPS = useMemo(() => {
-    const groups: QuranVerse[][] = [];
-
-    const MAX_LINE_LENGTH = 60;
-
-    let currentGroup: QuranVerse[] = [];
-    let currentLength = 0;
-
-    SURAH_YASIN.forEach(verse => {
-      const verseLength = verse.arabic.length;
-
-      if (verseLength >= MAX_LINE_LENGTH) {
-        if (currentGroup.length > 0) {
-          groups.push(currentGroup);
-          currentGroup = [];
-          currentLength = 0;
-        }
-
-        groups.push([verse]);
-        return;
-      }
-
-      if (
-        currentGroup.length > 0 &&
-        currentLength + verseLength > MAX_LINE_LENGTH
-      ) {
-        groups.push(currentGroup);
-        currentGroup = [];
-        currentLength = 0;
-      }
-
-      currentGroup.push(verse);
-      currentLength += verseLength;
-    });
-
-    if (currentGroup.length > 0) {
-      groups.push(currentGroup);
-    }
-
-    return groups;
-  }, []);
-
-  const renderQuranLine = (
-    verses: QuranVerse[],
+  const renderMushafLine = (
+    verseNumbers: number[],
+    lineIndex: number,
   ) => {
     return (
       <Text
-        key={`quran-line-${verses[0]?.number}`}
+        key={`mushaf-line-${lineIndex}`}
         style={[
           styles.mushafLine,
           {
-            color:
-              colors.text || '#fff',
-            fontFamily:
-              QURAN_FONT_FAMILY,
+            color: colors.text || '#fff',
+            fontFamily: QURAN_FONT_FAMILY,
           },
         ]}
       >
-        {verses.map(
-          verse => {
-            const today =
-              todayVerses.includes(
-                verse.number,
-              );
+        {verseNumbers.map((num, idx) => {
+          const verse = getVerse(num);
 
-            const review =
-              isReviewMode &&
-              previousVerses.includes(
-                verse.number,
-              );
+          if (!verse) return null;
 
-            const visible =
-              today || review;
+          const today =
+            todayVerses.includes(num);
 
-            const markColor =
-              !visible
-                ? colors.textTertiary ||
-                  'rgba(255,255,255,0.35)'
-                : review
-                ? colors.success
-                : colors.primary;
+          const review =
+            isReviewMode &&
+            previousVerses.includes(num);
 
-            return (
+          const visible = today || review;
+
+          const markColor = !visible
+            ? colors.textTertiary ||
+              'rgba(255,255,255,0.35)'
+            : review
+            ? colors.success
+            : colors.primary;
+
+          return (
+            <Text key={num}>
               <Text
-                key={
-                  verse.number
-                }
+                style={{
+                  opacity: visible ? 1 : 0.14,
+                }}
+              >
+                {verse.arabic}
+              </Text>
+              {' '}
+              <Text
                 style={[
-                  styles.mushafAyahText,
+                  styles.mushafAyahMark,
                   {
-                    opacity:
-                      visible
-                        ? 1
-                        : 0.14,
+                    color: markColor,
+                    opacity: visible ? 1 : 0.4,
                   },
                 ]}
               >
-                {verse.arabic}
-
-                <Text
-                  style={[
-                    styles.mushafAyahMark,
-                    {
-                      color:
-                        markColor,
-                    },
-                  ]}
-                >
-                  {' '}
-                  ﴾
-                  {toArabicDigits(
-                    verse.number,
-                  )}
-                  ﴿{' '}
-                </Text>
+                ۞{toArabicDigits(num)}
               </Text>
-            );
-          },
-        )}
+              {idx < verseNumbers.length - 1 ? ' ' : ''}
+            </Text>
+          );
+        })}
       </Text>
     );
   };
@@ -2785,18 +3042,20 @@ export default function QuranScreen() {
             بِسۡمِ اللَّهِ الرَّحۡمَٰنِ الرَّحِيمِ
           </Text>
 
+          {/*
+            رندر خط به خط مطابق MUSHAF_LINES.
+            هر خط دقیقاً شامل آیات تعریف‌شده است.
+          */}
           <View
-            style={[
-              styles.mushafTextContainer,
-              {
-                direction: 'rtl',
-              },
-            ]}
+            style={
+              styles.mushafTextContainer
+            }
           >
-            {QURAN_LINE_GROUPS.map(
-              group =>
-                renderQuranLine(
-                  group,
+            {MUSHAF_LINES.map(
+              (line, index) =>
+                renderMushafLine(
+                  line,
+                  index,
                 ),
             )}
           </View>
@@ -4357,6 +4616,7 @@ export default function QuranScreen() {
       </Animated.View>
 
       {renderQuizModal()}
+      {renderExitModal()}
     </View>
   );
 }
@@ -4593,7 +4853,7 @@ const styles = StyleSheet.create({
   mushafFrame: {
     borderWidth: 1.5,
     borderRadius: 20,
-    padding: 16,
+    padding: 12,
     position: 'relative',
   },
 
@@ -4671,31 +4931,27 @@ const styles = StyleSheet.create({
 
   basmala: {
     textAlign: 'center',
-    fontSize: 18,
-    lineHeight: 35,
-    marginBottom: 13,
+    fontSize: 14,
+    lineHeight: 28,
+    marginBottom: 8,
   },
 
   mushafTextContainer: {
     width: '100%',
   },
 
+  
   mushafLine: {
     width: '100%',
-    textAlign: 'justify',
     writingDirection: 'rtl',
-    fontSize: 19,
-    lineHeight: 42,
-    marginBottom: 2,
-  },
-
-  mushafAyahText: {
-    fontFamily: QURAN_FONT_FAMILY,
+    fontSize: 11,
+    lineHeight: 26,
+    marginBottom: 1,
   },
 
   mushafAyahMark: {
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 10,
+    fontWeight: '700',
   },
 
   mushafNote: {
@@ -4846,8 +5102,8 @@ const styles = StyleSheet.create({
   reviewText: {
     flex: 1,
     fontFamily: QURAN_FONT_FAMILY,
-    fontSize: 17,
-    lineHeight: 30,
+    fontSize: 15,
+    lineHeight: 28,
   },
 
   actionSectionHeader: {
@@ -5139,8 +5395,8 @@ const styles = StyleSheet.create({
   displayText: {
     textAlign: 'center',
     fontFamily: QURAN_FONT_FAMILY,
-    fontSize: 19,
-    lineHeight: 36,
+    fontSize: 18,
+    lineHeight: 34,
   },
 
   input: {
@@ -5328,5 +5584,72 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 11,
     fontWeight: '900',
+  },
+
+  exitOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(10,5,17,0.75)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+
+  exitCard: {
+    width: '100%',
+    maxWidth: 380,
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 22,
+    alignItems: 'center',
+  },
+
+  exitIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+
+  exitTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+
+  exitMessage: {
+    fontSize: 13,
+    lineHeight: 21,
+    marginBottom: 20,
+  },
+
+  exitConfirmButton: {
+    width: '100%',
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+
+  exitConfirmText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+
+  exitCancelButton: {
+    width: '100%',
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  exitCancelText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

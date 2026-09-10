@@ -9,8 +9,11 @@ import React, {
 import {
   ActivityIndicator,
   Animated,
+  BackHandler,
   Dimensions,
   Image,
+  Modal,
+  Platform,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -171,9 +174,8 @@ const POETS: Poet[] = [
     bio: 'حماسه‌سرای بزرگ ایران و سرایندهٔ شاهنامه، گنجینهٔ اسطوره‌ها و تاریخ کهن پارسی.',
     englishBio:
       'The great epic poet of Iran and author of the Shahnameh, the treasure of Persian myths and ancient history.',
-     photo: require('../../assets/poem/ferdoosi.png'),
+    photo: require('../../assets/poem/ferdoosi.png'),
   },
-
 ];
 
 const POEMS: Poem[] = [
@@ -506,6 +508,16 @@ export default function HafezScreen() {
       reviewVerse: isPersian ? 'مرور بیت' : 'Review verse',
       reviewAndReinforce: isPersian ? 'مرور و تثبیت شعر' : 'Review and reinforce the poem',
 
+      // === EXIT CONFIRM DIALOG ===
+      exitTitle: isPersian
+        ? 'خروج از آزمون'
+        : 'Leave the Session',
+      exitMessage: isPersian
+        ? 'در حال حاضر وسط یک آزمون هستید. آیا واقعاً می‌خواهید از این صفحه خارج شوید؟ پیشرفت این جلسه ذخیره نخواهد شد.'
+        : 'You are currently in the middle of a session. Are you sure you want to leave this page? The progress of this session will not be saved.',
+      exitCancel: isPersian ? 'ادامه آزمون' : 'Continue Session',
+      exitConfirm: isPersian ? 'بله، خارج شو' : 'Yes, Leave',
+
       stage: {
         choose_misra: isPersian ? 'تشخیص مصرع' : 'Identify Hemistich',
         fill_blank: isPersian ? 'تکمیل جای خالی' : 'Fill in the Blank',
@@ -579,6 +591,9 @@ export default function HafezScreen() {
     useState<TodaySessionData | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
+
+  // === EXIT CONFIRM DIALOG ===
+  const [exitModalVisible, setExitModalVisible] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const translateAnim = useRef(new Animated.Value(12)).current;
@@ -1575,19 +1590,19 @@ export default function HafezScreen() {
 
         finishExercise();
       },
-      [
-        currentPoem,
-        finishExercise,
-        submitted,
-        t.correctAnswerIntro,
-        t.correctAnswerWithSimilarity,
-        t.similarity,
-        updateProgressAfterAnswer,
-        userAnswer,
-        userAnswer1,
-        userAnswer2,
-      ],
-    );
+    [
+      currentPoem,
+      finishExercise,
+      submitted,
+      t.correctAnswerIntro,
+      t.correctAnswerWithSimilarity,
+      t.similarity,
+      updateProgressAfterAnswer,
+      userAnswer,
+      userAnswer1,
+      userAnswer2,
+    ],
+  );
 
   useEffect(() => {
     if (!currentPoem) {
@@ -1672,6 +1687,73 @@ export default function HafezScreen() {
     );
   }, [currentPoem, poemStats]);
 
+  // ============================================================
+  // EXIT HANDLING - NEW
+  // ============================================================
+
+  /**
+   * Called when the user truly wants to leave.
+   * Performs the actual navigation depending on current view.
+   */
+  const performExit = useCallback(() => {
+    setExitModalVisible(false);
+
+    const isTopLevel = currentView === 'poets';
+    const isHome = currentView === 'home';
+
+    if (isTopLevel) {
+      router.back();
+    } else if (isHome) {
+      goToPoets();
+    } else {
+      setCurrentView('home');
+    }
+  }, [currentView, goToPoets, router]);
+
+  /**
+   * Intercepts every Back press.
+   * - If we're inside an active session → show confirm dialog.
+   * - Otherwise → perform the exit immediately.
+   */
+  const handleExitRequest = useCallback(() => {
+    if (exitModalVisible) return;
+
+    if (currentView === 'session') {
+      setExitModalVisible(true);
+      return;
+    }
+
+    performExit();
+  }, [currentView, exitModalVisible, performExit]);
+
+  // Android hardware back → same flow
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        if (exitModalVisible) {
+          // First press closes the dialog.
+          setExitModalVisible(false);
+          return true;
+        }
+
+        handleExitRequest();
+
+        return true;
+      },
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, [exitModalVisible, handleExitRequest]);
+
+  // ============================================================
+  // RENDER HELPERS
+  // ============================================================
+
   const renderHeader = () => {
     const isTopLevel =
       currentView === 'poets';
@@ -1746,17 +1828,7 @@ export default function HafezScreen() {
         ]}
       >
         <TouchableOpacity
-          onPress={() => {
-            if (isTopLevel) {
-              router.back();
-            } else if (isHome) {
-              goToPoets();
-            } else {
-              setCurrentView(
-                'home',
-              );
-            }
-          }}
+          onPress={handleExitRequest}
           activeOpacity={0.75}
           style={[
             styles.headerBackButton,
@@ -4789,6 +4861,93 @@ export default function HafezScreen() {
       }
     };
 
+  // ============================================================
+  // EXIT CONFIRM MODAL
+  // ============================================================
+
+  const renderExitModal = () => (
+    <Modal
+      visible={exitModalVisible}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setExitModalVisible(false)}
+      statusBarTranslucent
+    >
+      <View style={styles.exitOverlay}>
+        <View
+          style={[
+            styles.exitCard,
+            {
+              backgroundColor: colors.background,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.exitIcon,
+              { backgroundColor: 'rgba(239,68,68,0.12)' },
+            ]}
+          >
+            <X size={26} color="#EF4444" strokeWidth={2.5} />
+          </View>
+
+          <Text
+            style={[
+              styles.exitTitle,
+              { color: colors.text, textAlign: 'center' },
+            ]}
+          >
+            {t.exitTitle}
+          </Text>
+
+          <Text
+            style={[
+              styles.exitMessage,
+              {
+                color: colors.textSecondary,
+                textAlign: 'center',
+              },
+            ]}
+          >
+            {t.exitMessage}
+          </Text>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={performExit}
+            style={[
+              styles.exitConfirmButton,
+              { backgroundColor: '#EF4444' },
+            ]}
+          >
+            <Text style={styles.exitConfirmText}>
+              {t.exitConfirm}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setExitModalVisible(false)}
+            style={[
+              styles.exitCancelButton,
+              { borderColor: colors.border },
+            ]}
+          >
+            <Text
+              style={[
+                styles.exitCancelText,
+                { color: colors.text },
+              ]}
+            >
+              {t.exitCancel}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <SafeAreaView
       style={[
@@ -4860,6 +5019,8 @@ export default function HafezScreen() {
           </View>
         )}
       </View>
+
+      {renderExitModal()}
     </SafeAreaView>
   );
 }
@@ -5967,5 +6128,73 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent:
       'center',
+  },
+
+  // === EXIT MODAL ===
+  exitOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+
+  exitCard: {
+    width: '100%',
+    maxWidth: 380,
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 22,
+    alignItems: 'center',
+  },
+
+  exitIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+
+  exitTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+
+  exitMessage: {
+    fontSize: 13,
+    lineHeight: 21,
+    marginBottom: 20,
+  },
+
+  exitConfirmButton: {
+    width: '100%',
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+
+  exitConfirmText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+
+  exitCancelButton: {
+    width: '100%',
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  exitCancelText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
