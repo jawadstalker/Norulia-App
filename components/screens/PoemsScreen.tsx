@@ -179,6 +179,7 @@ const POETS: Poet[] = [
 ];
 
 const POEMS: Poem[] = [
+  // ==================== HAFEZ ====================
   {
     id: 0,
     poetId: 'hafez',
@@ -272,6 +273,106 @@ const POEMS: Poem[] = [
       vocabulary: [
         { word: 'Jam-e Jam (جام جم)', meaning: 'Legendary cup that showed the world; metaphor for complete knowledge' },
         { word: 'Kharabat (خرابات)', meaning: 'In mystical literature, the place of the people of the heart and knowledge' },
+      ],
+    },
+  },
+
+  // ==================== RUMI ====================
+  {
+    id: 2,
+    poetId: 'rumi',
+    title: 'مثنوی معنوی - دفتر اول',
+    englishTitle: 'Masnavi, Book One',
+    fullTitle: 'بشنو این نی چون شکایت می‌کند',
+    englishFullTitle: 'Listen to the Reed, How It Complains',
+    poet: 'مولانا جلال‌الدین رومی',
+    englishPoet: 'Rumi (Molana)',
+    couplets: [
+      'بشنو این نی چون شکایت می‌کند // از جدایی‌ها حکایت می‌کند',
+      'کز نیستان تا مرا ببریده‌اند // در نفیرم مرد و زن نالیده‌اند',
+      'سینه خواهم شرحه شرحه از فراق // تا بگویم شرح درد اشتیاق',
+      'هر کسی کو دور ماند از اصل خویش // باز جوید روزگار وصل خویش',
+    ],
+    meanings: [
+      'به صدای نی گوش کن که چگونه از جدایی‌ها شکایت می‌کند و حکایت می‌کند.',
+      'از زمانی که مرا از نیستان (اصل خود) جدا کرده‌اند، مردان و زنان با ناله من هم‌ناله شده‌اند.',
+      'سینه‌ای می‌خواهم پاره‌پاره از فراق، تا شرح درد اشتیاق را بگویم.',
+      'هر کسی که از اصل خود دور بیفتد، دوباره در پی روزگار وصال خویش می‌گردد.',
+    ],
+    meaning: {
+      summary: 'مولانا در آغاز مثنوی، از زبان نی سخن می‌گوید که نماد روح جدا‌مانده از اصل خویش است و از درد فراق و اشتیاق بازگشت به اصل حکایت می‌کند.',
+      interpretation: 'نی در این ابیات نماد انسان عاشق و روحی است که از عالم معنا جدا شده و در فراق اصل خویش ناله می‌کند.',
+      coreMessage: 'انسان تا زمانی که از اصل الهی خود دور است، در درد و اشتیاق بازگشت به سر می‌برد و این درد، محرک سلوک عرفانی است.',
+      moral: 'برای رسیدن به وصال حقیقی، باید درد فراق را پذیرفت و با سوز و گداز در پی بازگشت به اصل خویش بود.',
+      literaryNotes: 'نی به عنوان نماد «انسان کامل» و «عاشق» به کار رفته است. «نیستان» کنایه از عالم معنا و اصل الهی است.',
+      vocabulary: [
+        { word: 'نی', meaning: 'ساز بادی؛ در اینجا نماد انسان عاشق و روح جدا‌مانده' },
+        { word: 'نفیر', meaning: 'آواز و ناله نی' },
+        { word: 'فراق', meaning: 'جدایی و دوری' },
+        { word: 'اشتیاق', meaning: 'شوق و آرزوی شدید' },
+      ],
+    },
+    englishMeaning: {
+      summary: 'Rumi begins the Masnavi through the voice of the reed, a symbol of the soul separated from its origin, complaining of separation and longing to return.',
+      interpretation: 'The reed symbolizes the lover and the soul separated from the spiritual world, lamenting its separation from its origin.',
+      coreMessage: 'As long as man is away from his divine origin, he lives in pain and longing for return, and this pain drives mystical journey.',
+      moral: 'To reach true union, one must accept the pain of separation and seek to return to one\'s origin with burning desire.',
+      literaryNotes: 'The reed symbolizes the "perfect man" and the "lover". "Reed-bed" refers to the spiritual world and divine origin.',
+      vocabulary: [
+        { word: 'Ney (نی)', meaning: 'Reed flute; symbol of the lover and the separated soul' },
+        { word: 'Nafir (نفیر)', meaning: 'The wailing sound of the reed' },
+        { word: 'Feraq (فراق)', meaning: 'Separation and distance' },
+        { word: 'Ishtiyaq (اشتیاق)', meaning: 'Intense longing and desire' },
+      ],
+    },
+  },
+
+  // ==================== FERDOWSI ====================
+  {
+    id: 3,
+    poetId: 'ferdowsi',
+    title: 'شاهنامه - آغاز کتاب',
+    englishTitle: 'Shahnameh, The Beginning',
+    fullTitle: 'به نام خداوند جان و خرد',
+    englishFullTitle: 'In the Name of the Lord of Soul and Wisdom',
+    poet: 'فردوسی',
+    englishPoet: 'Ferdowsi',
+    couplets: [
+      'به نام خداوند جان و خرد // کزین برتر اندیشه برنگذرد',
+      'خداوند نام و خداوند جای // خداوند روزی‌ده رهنمای',
+      'خداوند کیوان و گردان‌سپهر // فروزنده ماه و ناهید و مهر',
+      'ز نام و نشان و گمان برترست // نگارندهٔ بر شده پیکرست',
+    ],
+    meanings: [
+      'به نام خداوند جان و خرد آغاز می‌کنم، که اندیشه‌ای برتر از این (نام خداوند) نمی‌تواند بگذرد.',
+      'خداوند نام و خداوند جای (مکان)، خداوند روزی‌دهنده و راهنما.',
+      'خداوند کیوان (زحل) و سپهر گردان، فروزنده ماه و ناهید (زهره) و مهر (خورشید).',
+      'خداوند برتر از نام و نشان و گمان است، نگارنده و آفرینندهٔ پیکرهای برافراشته.',
+    ],
+    meaning: {
+      summary: 'فردوسی در آغاز شاهنامه، خداوند را به عنوان آفرینندهٔ جان و خرد، روزی‌دهنده و راهنمای هستی می‌ستاید و بر والایی و برتری او بر اندیشه و گمان تأکید می‌کند.',
+      interpretation: 'شاعر با تجلیل از خداوند به عنوان منبع جان، خرد، هستی و روزی، بنیاد حماسهٔ خود را بر توحید و خداشناسی استوار می‌کند.',
+      coreMessage: 'خداوند برتر از اندیشه و گمان انسانی است و آفرینندهٔ جان، خرد و تمام هستی است.',
+      moral: 'آغاز هر کار مهم باید با یاد خداوند و توکل بر او باشد و عظمت او را در برابر عقل محدود بشری یادآوری کنیم.',
+      literaryNotes: 'استفاده از واژگان و مفاهیم دینی و اوستایی مانند «کیوان»، «ناهید» و «مهر» نشان‌دهندهٔ پیوند حماسه با باورهای کهن ایرانی است.',
+      vocabulary: [
+        { word: 'خرد', meaning: 'عقل و اندیشه' },
+        { word: 'کیوان', meaning: 'سیارهٔ زحل' },
+        { word: 'ناهید', meaning: 'سیارهٔ زهره' },
+        { word: 'مهر', meaning: 'خورشید؛ همچنین مهر و محبت' },
+      ],
+    },
+    englishMeaning: {
+      summary: 'Ferdowsi begins the Shahnameh by praising God as the creator of soul and wisdom, the provider and guide of existence, emphasizing His transcendence beyond thought and conjecture.',
+      interpretation: 'The poet glorifies God as the source of soul, wisdom, existence and sustenance, grounding his epic in monotheism.',
+      coreMessage: 'God is beyond human thought and conjecture, and is the creator of soul, wisdom and all existence.',
+      moral: 'Every important endeavor should begin with the remembrance of God and trust in Him, acknowledging His greatness before limited human reason.',
+      literaryNotes: 'The use of religious and ancient Iranian concepts such as "Kayvan", "Nahid" and "Mehr" shows the epic\'s connection with ancient Iranian beliefs.',
+      vocabulary: [
+        { word: 'Kherad (خرد)', meaning: 'Intellect and wisdom' },
+        { word: 'Kayvan (کیوان)', meaning: 'The planet Saturn' },
+        { word: 'Nahid (ناهید)', meaning: 'The planet Venus' },
+        { word: 'Mehr (مهر)', meaning: 'The sun; also love and affection' },
       ],
     },
   },
