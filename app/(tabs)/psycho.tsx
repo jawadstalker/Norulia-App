@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+
 import {
   View,
   Text,
@@ -6,59 +7,65 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  Linking,
   Platform,
   Alert,
 } from 'react-native';
+
 import {
   useRouter,
   useLocalSearchParams,
 } from 'expo-router';
+
 import {
   ArrowLeft,
   Brain,
   Clock,
-  Heart,
+  ClipboardList,
   Compass,
   ChevronLeft,
+  ChevronRight,
   Play,
   Trophy,
 } from 'lucide-react-native';
+
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+
 import {
   Spacing,
   BorderRadius,
 } from '../../constants/theme';
+
 import { Card } from '../../components/ui/Card';
 import { launchNoruPuzzle } from '../../utils/externalGame';
 
+/* =========================================================
+   CATEGORY DATA
+========================================================= */
+
 const categories = [
   {
-    id: 'psychological',
-    title: 'Psychological Games',
-    titleFa: 'بازی‌های روانشناختی',
-    description: 'Train your memory, attention and cognitive skills',
-    descriptionFa: 'حافظه، توجه و مهارت‌های شناختی خود را تقویت کنید',
-    icon: Brain,
-  },
-  {
-    id: 'stress',
-    title: 'Anti-Stress Games',
-    titleFa: 'بازی‌های ضد استرس',
-    description: 'Relax your mind and reduce stress',
-    descriptionFa: 'ذهن خود را آرام کنید و استرس را کاهش دهید',
-    icon: Heart,
+    id: 'tasks',
+    title: 'Tasks',
+    titleFa: 'تسک‌ها',
+    description: 'Psychological and anti-stress activities for your mind',
+    descriptionFa: 'تسک‌های روانشناختی و ضد استرس برای ذهن شما',
+    icon: ClipboardList,
   },
   {
     id: 'adventure',
     title: 'Adventure Games',
     titleFa: 'بازی‌های ماجراجویی',
     description: 'Explore new worlds and enjoy exciting challenges',
-    descriptionFa: 'دنیاهای جدید را کشف کنید و از چالش‌های هیجان‌انگیز لذت ببرید',
+    descriptionFa:
+      'دنیاهای جدید را کشف کنید و از چالش‌های هیجان‌انگیز لذت ببرید',
     icon: Compass,
   },
 ];
+
+/* =========================================================
+   GAMES
+========================================================= */
 
 const games = [
   {
@@ -75,6 +82,7 @@ const games = [
     timeFa: '۵ دقیقه',
     route: '/games/memory-challenge',
   },
+
   {
     id: '2',
     category: 'psychological',
@@ -89,6 +97,7 @@ const games = [
     timeFa: '۱۰ دقیقه',
     route: '/games/last-survival',
   },
+
   {
     id: '3',
     category: 'psychological',
@@ -103,6 +112,7 @@ const games = [
     timeFa: '۷ دقیقه',
     route: '/games/size-discrimination',
   },
+
   {
     id: '4',
     category: 'stress',
@@ -117,6 +127,7 @@ const games = [
     timeFa: '۵ دقیقه',
     route: '/games/visual-flow',
   },
+
   {
     id: '6',
     category: 'stress',
@@ -131,6 +142,7 @@ const games = [
     timeFa: '۱۰ دقیقه',
     route: '/games/Relaxe',
   },
+
   {
     id: '10',
     category: 'adventure',
@@ -145,13 +157,15 @@ const games = [
     timeFa: '۱۵ دقیقه',
     route: '/games/lost-island',
   },
+
   {
     id: '12',
     category: 'adventure',
     title: 'Noru Puzzle',
     titleFa: 'پازل نورو',
     description: 'Enter a mysterious psychological puzzle adventure',
-    descriptionFa: 'وارد یک ماجراجویی پازلی و روانشناختی مرموز شوید',
+    descriptionFa:
+      'وارد یک ماجراجویی پازلی و روانشناختی مرموز شوید',
     image: require('../../assets/games/game3.png'),
     level: 'Medium',
     levelFa: 'متوسط',
@@ -161,53 +175,115 @@ const games = [
   },
 ];
 
+/* =========================================================
+   SCREEN
+========================================================= */
+
 export default function PsychoScreen() {
   const { colors, isDark, isAthlete } = useTheme();
   const { t, language, isRTL } = useLanguage();
   const router = useRouter();
-  const { category } = useLocalSearchParams<{ category?: string }>();
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(
-    category === 'stress' ? 'stress' : null
-  );
+
+  const { category } = useLocalSearchParams<{
+    category?: string;
+  }>();
+
+  const getInitialCategory = () => {
+    if (
+      category === 'stress' ||
+      category === 'psychological' ||
+      category === 'tasks'
+    ) {
+      return 'tasks';
+    }
+
+    if (category === 'adventure') {
+      return 'adventure';
+    }
+
+    return null;
+  };
+
+  const [selectedCategory, setSelectedCategory] =
+    useState<string | null>(getInitialCategory());
+
   const textAlignStyle = isRTL ? 'right' : 'left';
 
-  // ===== تغییر رنگ آیکون‌ها بر اساس تم =====
+  /* =======================================================
+     THEME COLORS
+  ======================================================= */
+
   const getIconColor = () => {
-    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
-    if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
-    return colors.primary; // ← تغییر به colors.primary برای تم لایت
+    if (isAthlete) {
+      return '#22C55E';
+    }
+
+    if (isDark) {
+      return 'rgba(73, 194, 226, 1)';
+    }
+
+    return colors.primary;
   };
 
-  // رنگ دکمه بر اساس تم
   const getButtonColor = () => {
-    if (isAthlete) return '#22C55E'; // سبز برای تم ورزشکار
-    if (isDark) return 'rgba(73, 194, 226, 1)'; // آبی برای تم تاریک
-    return colors.primary; // ← تغییر به colors.primary برای تم لایت
+    if (isAthlete) {
+      return '#22C55E';
+    }
+
+    if (isDark) {
+      return 'rgba(73, 194, 226, 1)';
+    }
+
+    return colors.primary;
   };
 
-  // رنگ پس‌زمینه آیکون‌ها بر اساس تم
   const getIconBgColor = () => {
-    if (isAthlete) return '#22C55E' + '18'; // سبز با透明度 برای تم ورزشکار
-    if (isDark) return 'rgba(73, 194, 226, 0.15)'; // آبی با透明度 برای تم تاریک
-    return colors.primary + '14'; // ← تغییر به colors.primary با透明度 برای تم لایت
+    if (isAthlete) {
+      return '#22C55E18';
+    }
+
+    if (isDark) {
+      return 'rgba(73, 194, 226, 0.15)';
+    }
+
+    return colors.primary + '14';
   };
 
   const iconColor = getIconColor();
   const buttonColor = getButtonColor();
   const iconBgColor = getIconBgColor();
 
+  /* =======================================================
+     HANDLE URL CATEGORY
+  ======================================================= */
+
   useEffect(() => {
-    if (category === 'stress') {
-      setSelectedCategory('stress');
+    if (
+      category === 'stress' ||
+      category === 'psychological' ||
+      category === 'tasks'
+    ) {
+      setSelectedCategory('tasks');
+      return;
+    }
+
+    if (category === 'adventure') {
+      setSelectedCategory('adventure');
     }
   }, [category]);
+
+  /* =======================================================
+     GAME HELPERS
+  ======================================================= */
 
   const getGameTitle = (game: typeof games[number]) => {
     return language === 'fa' ? game.titleFa : game.title;
   };
 
   const getGameDescription = (game: typeof games[number]) => {
-    return language === 'fa' ? game.descriptionFa : game.description;
+    return language === 'fa'
+      ? game.descriptionFa
+      : game.description;
   };
 
   const getGameLevel = (game: typeof games[number]) => {
@@ -217,6 +293,37 @@ export default function PsychoScreen() {
   const getGameTime = (game: typeof games[number]) => {
     return language === 'fa' ? game.timeFa : game.time;
   };
+
+  /* =======================================================
+     FILTER GAMES
+  ======================================================= */
+
+  const filteredGames = games.filter((game) => {
+    if (selectedCategory === 'tasks') {
+      return (
+        game.category === 'psychological' ||
+        game.category === 'stress'
+      );
+    }
+
+    if (selectedCategory === 'adventure') {
+      return game.category === 'adventure';
+    }
+
+    return false;
+  });
+
+  /* =======================================================
+     BACK
+  ======================================================= */
+
+  const handleBack = () => {
+    setSelectedCategory(null);
+  };
+
+  /* =======================================================
+     NORU PUZZLE
+  ======================================================= */
 
   const openNoruPuzzle = async () => {
     if (Platform.OS !== 'android') {
@@ -241,15 +348,26 @@ export default function PsychoScreen() {
     }
   };
 
-  const filteredGames = games.filter((game) => game.category === selectedCategory);
+  /* =======================================================
+     ARROW ICON (RTL aware) - جایگزین transform
+  ======================================================= */
 
-  const handleBack = () => {
-    setSelectedCategory(null);
-  };
+  const ArrowIcon = isRTL ? ChevronLeft : ChevronRight;
+
+  /* =======================================================
+     FIRST PAGE
+  ======================================================= */
 
   if (!selectedCategory) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        {/* ================= HEADER ================= */}
+
         <View
           style={[
             styles.pageHeader,
@@ -260,6 +378,8 @@ export default function PsychoScreen() {
             },
           ]}
         >
+          {/* BACK */}
+
           <TouchableOpacity
             onPress={() => {
               if (router.canGoBack()) {
@@ -283,8 +403,14 @@ export default function PsychoScreen() {
               },
             ]}
           >
-            <ArrowLeft size={21} color={iconColor} strokeWidth={2.5} />
+            <ArrowLeft
+              size={22}
+              strokeWidth={2.4}
+              color={colors.text}
+            />
           </TouchableOpacity>
+
+          {/* TITLE */}
 
           <View
             style={[
@@ -316,13 +442,18 @@ export default function PsychoScreen() {
                 },
               ]}
             >
-              {language === 'fa' ? 'دسته مورد نظر خود را انتخاب کنید' : 'Choose a game category'}
+              {language === 'fa'
+                ? 'دسته مورد نظر خود را انتخاب کنید'
+                : 'Choose a game category'}
             </Text>
           </View>
 
-          {/* دکمه Trophy در سمت راست (همانند کد اصلی) */}
+          {/* RESULTS */}
+
           <TouchableOpacity
-            onPress={() => router.push('/games/results' as any)}
+            onPress={() =>
+              router.push('/games/results' as any)
+            }
             activeOpacity={0.75}
             accessibilityRole="button"
             accessibilityLabel={
@@ -342,9 +473,15 @@ export default function PsychoScreen() {
               },
             ]}
           >
-            <Trophy size={20} color={iconColor} strokeWidth={2.5} />
+            <Trophy
+              size={20}
+              strokeWidth={2.4}
+              color={colors.text}
+            />
           </TouchableOpacity>
         </View>
+
+        {/* ================= CATEGORY LIST ================= */}
 
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -357,20 +494,28 @@ export default function PsychoScreen() {
               <TouchableOpacity
                 key={categoryItem.id}
                 activeOpacity={0.88}
-                onPress={() => setSelectedCategory(categoryItem.id)}
+                onPress={() =>
+                  setSelectedCategory(categoryItem.id)
+                }
               >
                 <Card
                   style={StyleSheet.flatten([
                     styles.categoryCard,
                     {
-                      backgroundColor: isDark ? colors.surface : '#FFFFFF',
+                      backgroundColor: isDark
+                        ? colors.surface
+                        : '#FFFFFF',
                       borderColor: isDark
                         ? 'rgba(255,255,255,0.07)'
                         : 'rgba(0,0,0,0.04)',
-                      shadowColor: isDark ? '#000000' : colors.primary,
+                      shadowColor: isDark
+                        ? '#000000'
+                        : colors.primary,
                     },
                   ])}
                 >
+                  {/* ICON */}
+
                   <View
                     style={[
                       styles.categoryIcon,
@@ -382,14 +527,22 @@ export default function PsychoScreen() {
                       },
                     ]}
                   >
-                    <Icon size={31} color={iconColor} strokeWidth={2.1} />
+                    <Icon
+                      size={31}
+                      color={iconColor}
+                      strokeWidth={2.1}
+                    />
                   </View>
+
+                  {/* TEXT */}
 
                   <View
                     style={[
                       styles.categoryInfo,
                       {
-                        alignItems: isRTL ? 'flex-end' : 'flex-start',
+                        alignItems: isRTL
+                          ? 'flex-end'
+                          : 'flex-start',
                       },
                     ]}
                   >
@@ -402,7 +555,9 @@ export default function PsychoScreen() {
                         },
                       ]}
                     >
-                      {language === 'fa' ? categoryItem.titleFa : categoryItem.title}
+                      {language === 'fa'
+                        ? categoryItem.titleFa
+                        : categoryItem.title}
                     </Text>
 
                     <Text
@@ -414,25 +569,18 @@ export default function PsychoScreen() {
                         },
                       ]}
                     >
-                      {language === 'fa' ? categoryItem.descriptionFa : categoryItem.description}
+                      {language === 'fa'
+                        ? categoryItem.descriptionFa
+                        : categoryItem.description}
                     </Text>
                   </View>
 
-                  <ChevronLeft
+                  {/* CHEVRON - RTL aware without transform */}
+
+                  <ArrowIcon
                     size={21}
                     color={colors.textSecondary}
                     strokeWidth={2.2}
-                    style={
-                      isRTL
-                        ? {
-                            transform: [
-                              {
-                                rotate: '180deg',
-                              },
-                            ],
-                          }
-                        : undefined
-                    }
                   />
                 </Card>
               </TouchableOpacity>
@@ -443,12 +591,23 @@ export default function PsychoScreen() {
     );
   }
 
+  /* =======================================================
+     SELECTED CATEGORY
+  ======================================================= */
+
   const selectedCategoryData = categories.find(
     (categoryItem) => categoryItem.id === selectedCategory
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: colors.background },
+      ]}
+    >
+      {/* ================= HEADER ================= */}
+
       <View
         style={[
           styles.pageHeader,
@@ -459,6 +618,8 @@ export default function PsychoScreen() {
           },
         ]}
       >
+        {/* BACK */}
+
         <TouchableOpacity
           onPress={handleBack}
           activeOpacity={0.75}
@@ -476,8 +637,14 @@ export default function PsychoScreen() {
             },
           ]}
         >
-          <ArrowLeft size={21} color={iconColor} strokeWidth={2.5} />
+          <ArrowLeft
+            size={22}
+            strokeWidth={2.4}
+            color={colors.text}
+          />
         </TouchableOpacity>
+
+        {/* TITLE */}
 
         <View
           style={[
@@ -511,13 +678,17 @@ export default function PsychoScreen() {
               },
             ]}
           >
-            {filteredGames.length} {language === 'fa' ? 'بازی' : 'games'}
+            {filteredGames.length}{' '}
+            {language === 'fa' ? 'بازی' : 'games'}
           </Text>
         </View>
 
-        {/* دکمه Trophy در سمت راست (همانند کد اصلی) */}
+        {/* RESULTS */}
+
         <TouchableOpacity
-          onPress={() => router.push('/games/results' as any)}
+          onPress={() =>
+            router.push('/games/results' as any)
+          }
           activeOpacity={0.75}
           accessibilityRole="button"
           accessibilityLabel={
@@ -537,9 +708,15 @@ export default function PsychoScreen() {
             },
           ]}
         >
-          <Trophy size={20} color={iconColor} strokeWidth={2.5} />
+          <Trophy
+            size={20}
+            strokeWidth={2.4}
+            color={colors.text}
+          />
         </TouchableOpacity>
       </View>
+
+      {/* ================= GAME LIST ================= */}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -551,16 +728,27 @@ export default function PsychoScreen() {
             style={StyleSheet.flatten([
               styles.card,
               {
-                backgroundColor: isDark ? colors.surface : '#FFFFFF',
+                backgroundColor: isDark
+                  ? colors.surface
+                  : '#FFFFFF',
                 borderColor: isDark
                   ? 'rgba(255,255,255,0.07)'
                   : 'rgba(0,0,0,0.04)',
-                shadowColor: isDark ? '#000000' : colors.primary,
+                shadowColor: isDark
+                  ? '#000000'
+                  : colors.primary,
               },
             ])}
           >
+            {/* IMAGE */}
+
             <View style={styles.coverWrapper}>
-              <Image source={game.image} style={styles.cover} resizeMode="cover" />
+              <Image
+                source={game.image}
+                style={styles.cover}
+                resizeMode="cover"
+              />
+
               <View
                 style={[
                   styles.coverOverlay,
@@ -572,6 +760,8 @@ export default function PsychoScreen() {
                 ]}
               />
             </View>
+
+            {/* INFO */}
 
             <View style={styles.info}>
               <Text
@@ -598,11 +788,15 @@ export default function PsychoScreen() {
                 {getGameDescription(game)}
               </Text>
 
+              {/* DETAILS */}
+
               <View
                 style={[
                   styles.details,
                   {
-                    flexDirection: isRTL ? 'row-reverse' : 'row',
+                    flexDirection: isRTL
+                      ? 'row-reverse'
+                      : 'row',
                   },
                 ]}
               >
@@ -610,20 +804,20 @@ export default function PsychoScreen() {
                   <View
                     style={[
                       styles.detailIcon,
-                      {
-                        backgroundColor: iconBgColor,
-                      },
+                      { backgroundColor: iconBgColor },
                     ]}
                   >
-                    <Brain size={15} color={iconColor} strokeWidth={2} />
+                    <Brain
+                      size={15}
+                      color={iconColor}
+                      strokeWidth={2}
+                    />
                   </View>
 
                   <Text
                     style={[
                       styles.detailText,
-                      {
-                        color: colors.textSecondary,
-                      },
+                      { color: colors.textSecondary },
                     ]}
                   >
                     {getGameLevel(game)}
@@ -634,20 +828,20 @@ export default function PsychoScreen() {
                   <View
                     style={[
                       styles.detailIcon,
-                      {
-                        backgroundColor: iconBgColor,
-                      },
+                      { backgroundColor: iconBgColor },
                     ]}
                   >
-                    <Clock size={15} color={iconColor} strokeWidth={2} />
+                    <Clock
+                      size={15}
+                      color={iconColor}
+                      strokeWidth={2}
+                    />
                   </View>
 
                   <Text
                     style={[
                       styles.detailText,
-                      {
-                        color: colors.textSecondary,
-                      },
+                      { color: colors.textSecondary },
                     ]}
                   >
                     {getGameTime(game)}
@@ -655,23 +849,30 @@ export default function PsychoScreen() {
                 </View>
               </View>
 
+              {/* START BUTTON */}
+
               <TouchableOpacity
                 style={[
                   styles.button,
-                  {
-                    backgroundColor: buttonColor,
-                  },
+                  { backgroundColor: buttonColor },
                 ]}
                 onPress={() => {
                   if (game.route === 'external:noru-puzzle') {
                     openNoruPuzzle();
                     return;
                   }
+
                   router.push(game.route as any);
                 }}
                 activeOpacity={0.82}
               >
-                <Play size={17} color="#FFFFFF" fill="#FFFFFF" strokeWidth={2} />
+                <Play
+                  size={17}
+                  color="#FFFFFF"
+                  fill="#FFFFFF"
+                  strokeWidth={2}
+                />
+
                 <Text
                   style={[
                     styles.buttonText,
@@ -692,10 +893,15 @@ export default function PsychoScreen() {
   );
 }
 
+/* =========================================================
+   STYLES
+========================================================= */
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
   pageHeader: {
     width: '100%',
     paddingHorizontal: Spacing.lg,
@@ -705,6 +911,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+
   unifiedBackButton: {
     width: 44,
     height: 44,
@@ -715,25 +922,32 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     marginRight: 12,
   },
+
   pageHeaderText: {
     flex: 1,
     minWidth: 0,
   },
+
   pageHeaderTitle: {
     fontSize: 21,
     fontWeight: '800',
     lineHeight: 27,
   },
+
   pageHeaderSubtitle: {
     fontSize: 12,
     marginTop: 3,
     lineHeight: 18,
   },
+
   content: {
     paddingTop: 20,
     paddingHorizontal: Spacing.lg,
     paddingBottom: 110,
   },
+
+  /* CATEGORY CARDS */
+
   categoryCard: {
     minHeight: 120,
     marginBottom: Spacing.md,
@@ -742,14 +956,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderRadius: 20,
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
+    shadowOffset: { width: 0, height: 5 },
     shadowRadius: 14,
     shadowOpacity: 0.08,
     elevation: 2,
   },
+
   categoryIcon: {
     width: 62,
     height: 62,
@@ -759,34 +971,38 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     borderWidth: 1,
   },
+
   categoryInfo: {
     flex: 1,
     minWidth: 0,
     marginHorizontal: 14,
   },
+
   categoryTitle: {
     fontSize: 18,
     fontWeight: '800',
     lineHeight: 24,
   },
+
   categoryDescription: {
     fontSize: 13,
     marginTop: 5,
     lineHeight: 19,
   },
+
+  /* GAME CARDS */
+
   card: {
     marginBottom: Spacing.lg,
     overflow: 'hidden',
     borderRadius: 20,
     borderWidth: 1,
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
+    shadowOffset: { width: 0, height: 6 },
     shadowRadius: 16,
     shadowOpacity: 0.09,
     elevation: 3,
   },
+
   coverWrapper: {
     width: '100%',
     height: 175,
@@ -795,38 +1011,46 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
+
   cover: {
     width: '100%',
     height: '100%',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
+
   coverOverlay: {
     ...StyleSheet.absoluteFillObject,
   },
+
   info: {
     padding: Spacing.md,
   },
+
   gameTitle: {
     fontSize: 20,
     fontWeight: '800',
     lineHeight: 26,
   },
+
   description: {
     marginTop: 7,
     fontSize: 14,
     lineHeight: 21,
   },
+
   details: {
     marginTop: Spacing.md,
     alignItems: 'center',
     gap: 18,
   },
+
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
+
   detailIcon: {
     width: 28,
     height: 28,
@@ -834,10 +1058,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   detailText: {
     fontSize: 13,
     fontWeight: '500',
   },
+
   button: {
     marginTop: Spacing.md,
     minHeight: 48,
@@ -847,6 +1073,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
   },
+
   buttonText: {
     color: '#FFFFFF',
     fontSize: 14,

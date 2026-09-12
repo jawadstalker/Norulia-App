@@ -637,7 +637,7 @@ const WORD_LINE_LOCATIONS: Record<string, number> = {
 const normalizeArabic = (value: string) => {
   return value
     .trim()
-    .replace(/[ًٌٍَُِّْـ]/g, '')
+    .replace(/[ًٌٍَُِّْـ]/g, '')
     .replace(/ي/g, 'ی')
     .replace(/ى/g, 'ی')
     .replace(/ك/g, 'ک')

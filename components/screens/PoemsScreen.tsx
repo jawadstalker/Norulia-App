@@ -5331,11 +5331,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 18,
     overflow: 'hidden',
+    height: 300,   // ارتفاع کل کارت
   },
 
   poetPhoto: {
-    width: '100%',
-    height: 132,
+    width: 80,        // به جای '100%'
+    height: '40%',       // به جای 132
+    alignSelf: 'center', // وسط‌چین کردن افقی
+    marginTop: 16,    // فاصله از بالای کارت
   },
 
   poetPhotoFallback: {
