@@ -66,9 +66,6 @@ import {
   useGameExitGuard,
 } from '../context/GameExitGuard';
 
-// ============================================================
-// اضافه کردن GameDataProvider
-// ============================================================
 import { GameDataProvider } from '../context/GameDataContext';
 
 import AppSplashScreen from '../components/screens/SplashScreen';
@@ -85,108 +82,76 @@ import {
   useFrameworkReady,
 } from '../hooks/useFrameworkReady';
 
-/* ================================================================
+/* ============================================================
    NATIVE SPLASH
-================================================================ */
+============================================================ */
 
 SplashScreen
   .preventAutoHideAsync()
   .catch(() => {});
 
-/* ================================================================
+/* ============================================================
    NOTIFICATION CONFIGURATION
-================================================================ */
+============================================================ */
 
 Notifications.setNotificationHandler({
-  handleNotification:
-    async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
 });
 
-/* ================================================================
+/* ============================================================
    FONT FAMILY
-
-   فارسی:
-   Estedad-Medium
-
-   انگلیسی:
-   Inter
-================================================================ */
+============================================================ */
 
 export const FONT_FAMILY = {
   persian: 'EstedadMedium',
 
   english: {
-    regular:
-      'Inter_400Regular',
-
-    medium:
-      'Inter_500Medium',
-
-    semiBold:
-      'Inter_600SemiBold',
-
-    bold:
-      'Inter_700Bold',
+    regular: 'Inter_400Regular',
+    medium: 'Inter_500Medium',
+    semiBold: 'Inter_600SemiBold',
+    bold: 'Inter_700Bold',
   },
 };
 
-/* ================================================================
+/* ============================================================
    ROUTE NORMALIZER
-================================================================ */
+============================================================ */
 
-function normalizeRoute(
-  value: string
-): string {
+function normalizeRoute(value: string): string {
   if (!value) {
     return '/';
   }
 
-  const normalized =
-    value
-      .replace(
-        /\/\([^)]+\)/g,
-        ''
-      )
-      .replace(
-        /\/{2,}/g,
-        '/'
-      );
+  const normalized = value
+    .replace(/\/\([^)]+\)/g, '')
+    .replace(/\/{2,}/g, '/');
 
   if (
     normalized.length > 1 &&
     normalized.endsWith('/')
   ) {
-    return normalized.slice(
-      0,
-      -1
-    );
+    return normalized.slice(0, -1);
   }
 
-  return (
-    normalized || '/'
-  );
+  return normalized || '/';
 }
 
-/* ================================================================
+/* ============================================================
    ANDROID SYSTEM NAVIGATION BAR
-================================================================ */
+============================================================ */
 
 async function hideAndroidNavigationBar() {
-  if (
-    Platform.OS !== 'android'
-  ) {
+  if (Platform.OS !== 'android') {
     return;
   }
 
   try {
-    await NavigationBar.setVisibilityAsync(
-      'hidden'
-    );
+    await NavigationBar.setVisibilityAsync('hidden');
 
     await NavigationBar.setBehaviorAsync(
       'overlay-swipe'
@@ -200,32 +165,14 @@ async function hideAndroidNavigationBar() {
       'light'
     );
   } catch {
-    /*
-     * Some Android versions or Expo
-     * versions may not support every
-     * navigation-bar API.
-     */
+    // بعضی نسخه‌های اندروید/Expo این APIها را پشتیبانی نمی‌کنند.
   }
 }
 
-/* ================================================================
+/* ============================================================
    WORKOUT REMINDER NOTIFICATION
-================================================================ */
+============================================================ */
 
-/**
- * Creates the workout reminder using the language currently
- * selected by the user.
- *
- * IMPORTANT:
- *
- * The language is loaded from AsyncStorage by LanguageContext.
- * We wait for `isLanguageLoaded` before creating the notification.
- *
- * Therefore:
- *
- * fa -> Persian notification
- * en -> English notification
- */
 function useWorkoutReminderNotification() {
   const {
     language,
@@ -236,209 +183,119 @@ function useWorkoutReminderNotification() {
     let mounted = true;
 
     let timer:
-      ReturnType<
-        typeof setTimeout
-      > | null = null;
+      ReturnType<typeof setTimeout> | null = null;
 
-    const setupNotification =
-      async () => {
-        try {
-          /*
-           * -------------------------------------------------------
-           * Wait for the saved language.
-           *
-           * Without this check the application could start with
-           * the default `fa` value while AsyncStorage still
-           * contains `en`, resulting in a wrong notification.
-           * -------------------------------------------------------
-           */
-          if (
-            !isLanguageLoaded
-          ) {
-            return;
-          }
+    const setupNotification = async () => {
+      try {
+        if (!isLanguageLoaded) {
+          return;
+        }
 
-          /*
-           * -------------------------------------------------------
-           * Android notification channel
-           * -------------------------------------------------------
-           */
-          if (
-            Platform.OS ===
-            'android'
-          ) {
-            await Notifications.setNotificationChannelAsync(
-              'daily-reminder',
-              {
-                /*
-                 * Channel name follows application language.
-                 */
-                name:
-                  language ===
-                  'fa'
-                    ? 'یادآوری‌های روزانه'
-                    : 'Daily Reminders',
-
-                importance:
-                  Notifications
-                    .AndroidImportance
-                    .HIGH,
-
-                vibrationPattern: [
-                  0,
-                  250,
-                  250,
-                  250,
-                ],
-
-                sound: 'default',
-
-                lockscreenVisibility:
-                  Notifications
-                    .AndroidNotificationVisibility
-                    .PUBLIC,
-              }
-            );
-          }
-
-          /*
-           * -------------------------------------------------------
-           * Check notification permission
-           * -------------------------------------------------------
-           */
-          const currentPermissions =
-            await Notifications.getPermissionsAsync();
-
-          let permissionStatus =
-            currentPermissions.status;
-
-          /*
-           * Ask for permission when necessary.
-           */
-          if (
-            permissionStatus !==
-            'granted'
-          ) {
-            const requestedPermissions =
-              await Notifications.requestPermissionsAsync();
-
-            permissionStatus =
-              requestedPermissions.status;
-          }
-
-          /*
-           * Permission denied.
-           */
-          if (
-            permissionStatus !==
-              'granted' ||
-            !mounted
-          ) {
-            return;
-          }
-
-          /*
-           * -------------------------------------------------------
-           * Wait exactly 10 seconds after application startup.
-           * -------------------------------------------------------
-           */
-          await new Promise<void>(
-            (resolve) => {
-              timer =
-                setTimeout(
-                  resolve,
-                  10000
-                );
-            }
-          );
-
-          /*
-           * Component/layout may have been unmounted
-           * during the 10-second delay.
-           */
-          if (!mounted) {
-            return;
-          }
-
-          /*
-           * -------------------------------------------------------
-           * LOCALIZED NOTIFICATION CONTENT
-           * -------------------------------------------------------
-           */
-
-          const notificationTitle =
-            language === 'fa'
-              ? 'نورولیا'
-              : 'Neurolia';
-
-          const notificationBody =
-            language === 'fa'
-              ? 'هنوز تمرین امروزت را کامل نکرده‌ای. فراموش نکن که از بدنت مراقبت کنی!'
-              : "You haven't completed today's workout yet. Don't forget to take care of your body!";
-
-          /*
-           * -------------------------------------------------------
-           * Schedule local notification
-           * -------------------------------------------------------
-           */
-          await Notifications.scheduleNotificationAsync(
+        if (Platform.OS === 'android') {
+          await Notifications.setNotificationChannelAsync(
+            'daily-reminder',
             {
-              content: {
-                title:
-                  notificationTitle,
+              name:
+                language === 'fa'
+                  ? 'یادآوری‌های روزانه'
+                  : 'Daily Reminders',
 
-                body:
-                  notificationBody,
+              importance:
+                Notifications.AndroidImportance.HIGH,
 
-                sound:
-                  'default',
+              vibrationPattern: [
+                0,
+                250,
+                250,
+                250,
+              ],
 
-                data: {
-                  type:
-                    'workout-reminder',
+              sound: 'default',
 
-                  source:
-                    'app-launch',
-
-                  /*
-                   * Store the language used to create
-                   * the notification as metadata.
-                   */
-                  language:
-                    language,
-                },
-              },
-
-              /*
-               * null means send immediately.
-               *
-               * The 10-second delay is already handled above.
-               */
-              trigger: null,
+              lockscreenVisibility:
+                Notifications
+                  .AndroidNotificationVisibility
+                  .PUBLIC,
             }
-          );
-        } catch (error) {
-          console.warn(
-            'Neurolia notification error:',
-            error
           );
         }
-      };
+
+        const currentPermissions =
+          await Notifications.getPermissionsAsync();
+
+        let permissionStatus =
+          currentPermissions.status;
+
+        if (
+          permissionStatus !== 'granted'
+        ) {
+          const requestedPermissions =
+            await Notifications.requestPermissionsAsync();
+
+          permissionStatus =
+            requestedPermissions.status;
+        }
+
+        if (
+          permissionStatus !== 'granted' ||
+          !mounted
+        ) {
+          return;
+        }
+
+        await new Promise<void>((resolve) => {
+          timer = setTimeout(
+            resolve,
+            10000
+          );
+        });
+
+        if (!mounted) {
+          return;
+        }
+
+        const notificationTitle =
+          language === 'fa'
+            ? 'نورولیا'
+            : 'Neurolia';
+
+        const notificationBody =
+          language === 'fa'
+            ? 'هنوز تمرین امروزت را کامل نکرده‌ای. فراموش نکن که از بدنت مراقبت کنی!'
+            : "You haven't completed today's workout yet. Don't forget to take care of your body!";
+
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: notificationTitle,
+
+            body: notificationBody,
+
+            sound: 'default',
+
+            data: {
+              type: 'workout-reminder',
+              source: 'app-launch',
+              language,
+            },
+          },
+
+          trigger: null,
+        });
+      } catch (error) {
+        console.warn(
+          'Neurolia notification error:',
+          error
+        );
+      }
+    };
 
     void setupNotification();
 
-    /*
-     * -------------------------------------------------------------
-     * Cleanup
-     * -------------------------------------------------------------
-     */
     return () => {
       mounted = false;
 
       if (timer) {
-        clearTimeout(
-          timer
-        );
+        clearTimeout(timer);
       }
     };
   }, [
@@ -447,15 +304,14 @@ function useWorkoutReminderNotification() {
   ]);
 }
 
-/* ================================================================
+/* ============================================================
    APP CONTENT
-================================================================ */
+============================================================ */
 
 function AppContent() {
   const {
     isAuthenticated,
-    isLoading:
-      authLoading,
+    isLoading: authLoading,
   } = useAuth();
 
   const {
@@ -463,11 +319,9 @@ function AppContent() {
     theme,
   } = useTheme();
 
-  const router =
-    useRouter();
+  const router = useRouter();
 
-  const pathname =
-    usePathname();
+  const pathname = usePathname();
 
   const {
     confirmExit,
@@ -478,46 +332,149 @@ function AppContent() {
     setShowSplash,
   ] = useState(true);
 
-  /*
-   * Localized workout reminder.
-   */
-  useWorkoutReminderNotification();
-
-  /* ==============================================================
-     SYSTEM NAVIGATION BAR
-  ============================================================== */
+  /* ==========================================================
+     DEBUG AUTH
+  ========================================================== */
 
   useEffect(() => {
-    hideAndroidNavigationBar();
-  }, []);
+    console.log(
+      '[APP AUTH]',
+      {
+        isAuthenticated,
+        authLoading,
+        pathname,
+      }
+    );
+  }, [
+    isAuthenticated,
+    authLoading,
+    pathname,
+  ]);
 
-  /*
-   * Android can occasionally restore its navigation bar after
-   * focus changes, dialogs or transitions.
-   */
+  /* ==========================================================
+     LOGIN SUCCESS → HOME
+  ========================================================== */
+
+  useEffect(() => {
+    /*
+     * وقتی Login موفق شد، AuthContext مقدار
+     * isAuthenticated را true می‌کند.
+     *
+     * اگر هنوز روی صفحه login باشیم،
+     * کاربر را به route اصلی می‌فرستیم.
+     */
+
+    if (
+      !authLoading &&
+      isAuthenticated
+    ) {
+      const currentRoute =
+        normalizeRoute(
+          pathname || '/'
+        );
+
+      console.log(
+        '[AUTH ROUTER] User authenticated:',
+        currentRoute
+      );
+
+      /*
+       * اگر روی login یا routeهای عمومی هستیم،
+       * برو به صفحه اصلی.
+       *
+       * اگر همین الان داخل اپ هستیم،
+       * route را دستکاری نمی‌کنیم.
+       */
+      if (
+        currentRoute === '/login' ||
+        currentRoute === '/auth' ||
+        currentRoute === '/signin'
+      ) {
+        console.log(
+          '[AUTH ROUTER] Redirecting to /'
+        );
+
+        router.replace('/');
+      }
+    }
+  }, [
+    isAuthenticated,
+    authLoading,
+    pathname,
+    router,
+  ]);
+
+  /* ==========================================================
+     AUTHENTICATED USER ON LOGIN ROUTE
+  ========================================================== */
+
   useEffect(() => {
     if (
-      Platform.OS !==
-      'android'
+      authLoading ||
+      !isAuthenticated
     ) {
+      return;
+    }
+
+    const currentRoute =
+      normalizeRoute(
+        pathname || '/'
+      );
+
+    /*
+     * در بعضی ساختارهای Expo Router،
+     * AuthScreen ممکن است روی route اصلی نمایش داده شود.
+     *
+     * اگر authenticated هستیم، اجازه نمی‌دهیم
+     * صفحه Login دوباره نمایش داده شود.
+     */
+
+    if (
+      currentRoute === '/login' ||
+      currentRoute === '/auth' ||
+      currentRoute === '/signin'
+    ) {
+      router.replace('/');
+    }
+  }, [
+    authLoading,
+    isAuthenticated,
+    pathname,
+    router,
+  ]);
+
+  /* ==========================================================
+     LOCALIZED WORKOUT REMINDER
+  ========================================================== */
+
+  useWorkoutReminderNotification();
+
+  /* ==========================================================
+     SYSTEM NAVIGATION BAR
+  ========================================================== */
+
+  useEffect(() => {
+    void hideAndroidNavigationBar();
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
       return;
     }
 
     const interval =
       setInterval(() => {
-        hideAndroidNavigationBar();
+        void hideAndroidNavigationBar();
       }, 2000);
 
     return () => {
-      clearInterval(
-        interval
-      );
+      clearInterval(interval);
     };
   }, []);
 
-  /* ==============================================================
+  /* ==========================================================
      SPLASH COMPLETE
-  ============================================================== */
+  ========================================================== */
 
   const handleSplashComplete =
     useCallback(() => {
@@ -527,18 +484,16 @@ function AppContent() {
         .hideAsync()
         .catch(() => {});
 
-      hideAndroidNavigationBar();
+      void hideAndroidNavigationBar();
     }, []);
 
-  /* ==============================================================
+  /* ==========================================================
      BOTTOM NAVIGATION
-  ============================================================== */
+  ========================================================== */
 
   const handleBottomNavigation =
     useCallback(
-      (
-        route: string
-      ) => {
+      (route: string) => {
         if (!route) {
           return;
         }
@@ -549,48 +504,31 @@ function AppContent() {
           );
 
         const target =
-          normalizeRoute(
-            route
-          );
+          normalizeRoute(route);
 
-        /*
-         * Already on this route.
-         */
-        if (
-          current === target
-        ) {
+        if (current === target) {
           return;
         }
 
-        const navigate =
-          () => {
-            /*
-             * replace() prevents the navigation stack
-             * from growing.
-             */
-            router.replace(
-              route as any
-            );
+        const navigate = () => {
+          console.log(
+            '[BOTTOM NAV] Navigating:',
+            route
+          );
 
-            /*
-             * Restore Android immersive navigation
-             * after route change.
-             */
-            if (
-              Platform.OS ===
-              'android'
-            ) {
-              setTimeout(() => {
-                hideAndroidNavigationBar();
-              }, 150);
-            }
-          };
+          router.replace(
+            route as any
+          );
 
-        /*
-         * If a game screen is currently active, ask for
-         * confirmation (with the current score) before
-         * navigating away via the bottom nav bar.
-         */
+          if (
+            Platform.OS === 'android'
+          ) {
+            setTimeout(() => {
+              void hideAndroidNavigationBar();
+            }, 150);
+          }
+        };
+
         confirmExit(navigate);
       },
       [
@@ -600,9 +538,9 @@ function AppContent() {
       ]
     );
 
-  /* ==============================================================
+  /* ==========================================================
      CUSTOM SPLASH
-  ============================================================== */
+  ========================================================== */
 
   if (showSplash) {
     return (
@@ -614,9 +552,9 @@ function AppContent() {
     );
   }
 
-  /* ==============================================================
+  /* ==========================================================
      AUTH LOADING
-  ============================================================== */
+  ========================================================== */
 
   if (authLoading) {
     return (
@@ -637,8 +575,7 @@ function AppContent() {
       >
         <StatusBar
           style={
-            theme ===
-            'dark'
+            theme === 'dark'
               ? 'light'
               : 'dark'
           }
@@ -654,9 +591,9 @@ function AppContent() {
     );
   }
 
-  /* ==============================================================
-     LOGIN / REGISTER
-  ============================================================== */
+  /* ==========================================================
+     NOT AUTHENTICATED
+  ========================================================== */
 
   if (!isAuthenticated) {
     return (
@@ -671,8 +608,7 @@ function AppContent() {
       >
         <StatusBar
           style={
-            theme ===
-            'dark'
+            theme === 'dark'
               ? 'light'
               : 'dark'
           }
@@ -683,9 +619,9 @@ function AppContent() {
     );
   }
 
-  /* ==============================================================
+  /* ==========================================================
      AUTHENTICATED APPLICATION
-  ============================================================== */
+  ========================================================== */
 
   return (
     <View
@@ -705,9 +641,9 @@ function AppContent() {
         }
       />
 
-      {/* ========================================================
+      {/* ======================================================
           MAIN ROUTER
-      ======================================================== */}
+      ====================================================== */}
 
       <View
         style={
@@ -716,18 +652,15 @@ function AppContent() {
       >
         <Stack
           screenOptions={{
-            headerShown:
-              false,
-
-            animation:
-              'none',
+            headerShown: false,
+            animation: 'none',
           }}
         />
       </View>
 
-      {/* ========================================================
+      {/* ======================================================
           GLOBAL BOTTOM NAVIGATION
-      ======================================================== */}
+      ====================================================== */}
 
       <BottomNavBar
         currentRoute={
@@ -741,29 +674,25 @@ function AppContent() {
   );
 }
 
-/* ================================================================
+/* ============================================================
    ROOT LAYOUT
-================================================================ */
+============================================================ */
 
 export default function RootLayout() {
   useFrameworkReady();
 
-  /* ==============================================================
+  /* ==========================================================
      FONTS
-  ============================================================== */
+  ========================================================== */
 
   const [
     fontsLoaded,
     fontError,
   ] = useFonts({
-    /* English */
-
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
-
-    /* Persian */
 
     EstedadMedium:
       require(
@@ -771,9 +700,9 @@ export default function RootLayout() {
       ),
   });
 
-  /* ==============================================================
+  /* ==========================================================
      NATIVE SPLASH
-  ============================================================== */
+  ========================================================== */
 
   useEffect(() => {
     if (
@@ -784,16 +713,16 @@ export default function RootLayout() {
         .hideAsync()
         .catch(() => {});
 
-      hideAndroidNavigationBar();
+      void hideAndroidNavigationBar();
     }
   }, [
     fontsLoaded,
     fontError,
   ]);
 
-  /* ==============================================================
+  /* ==========================================================
      WAIT FOR FONTS
-  ============================================================== */
+  ========================================================== */
 
   if (
     !fontsLoaded &&
@@ -802,13 +731,9 @@ export default function RootLayout() {
     return null;
   }
 
-  /* ==============================================================
+  /* ==========================================================
      PROVIDERS
-
-     ترتیب Providerها:
-     ThemeProvider → LanguageProvider → GameDataProvider → AuthProvider →
-     AssessmentProvider → GameExitGuardProvider
-  ============================================================== */
+  ========================================================== */
 
   return (
     <GestureHandlerRootView
@@ -819,19 +744,25 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ThemeProvider>
           <LanguageProvider>
-            {/* ====================================================
-                GameDataProvider بعد از LanguageProvider قرار می‌گیرد
-                تا از زبان برای نمایش نام بازی‌ها استفاده کند
-            ==================================================== */}
+
             <GameDataProvider>
+
               <AuthProvider>
+
                 <AssessmentProvider>
+
                   <GameExitGuardProvider>
+
                     <AppContent />
+
                   </GameExitGuardProvider>
+
                 </AssessmentProvider>
+
               </AuthProvider>
+
             </GameDataProvider>
+
           </LanguageProvider>
         </ThemeProvider>
       </SafeAreaProvider>
@@ -839,9 +770,9 @@ export default function RootLayout() {
   );
 }
 
-/* ================================================================
+/* ============================================================
    STYLES
-================================================================ */
+============================================================ */
 
 const styles =
   StyleSheet.create({

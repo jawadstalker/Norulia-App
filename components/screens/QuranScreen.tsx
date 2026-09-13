@@ -546,35 +546,105 @@ const SURAH_NABA: QuranVerse[] = [
  * ------------------------------------------------------------
  * چیدمان دقیق خطوط مصحف مدینه برای سوره نبأ
  * ------------------------------------------------------------
- * صفحهٔ اول (آیات ۱ تا ۳۰) — ۱۵ خط — مطابق تصویر ارسالی
- * صفحهٔ دوم (آیات ۳۱ تا ۴۰) — ۷ خط — مطابق مصحف مدینه صفحه ۵۸۳
+ * آیات ۱ تا ۳۰ (۱۳ خط) دقیقاً از روی تصویر صفحهٔ ارسال‌شده
+ * (چاپ مجمع ملک فهد، رسم‌الخط عثمان طه) خط‌به‌خط پیاده‌سازی
+ * شده — شامل مواردی که یک آیه وسط کلمه از خطی به خط بعد
+ * می‌رود (مثلاً آیهٔ ۱۲ با «وَبَنَيۡنَا» در پایان یک خط تمام
+ * می‌شود و «فَوۡقَكُمۡ سَبۡعٗا شِدَادٗا» در ابتدای خط بعد ادامه
+ * پیدا می‌کند). هر بخش از یک آیه یا 'full' (کامل روی همین خط)
+ * یا 'start' (شروع آیه، بدون علامت پایان) یا 'end' (باقیِ
+ * متن + علامت پایان آیه) است.
+ *
+ * آیات ۳۱ تا ۴۰ (۷ خط) چون تصویر مرجعی برایشان ارسال نشده،
+ * با همان تقسیم‌بندی معقول قبلی نگه داشته شده‌اند.
  */
-const MUSHAF_LINES: number[][] = [
-  // ===== صفحهٔ اول (آیات ۱ تا ۳۰) =====
-  [1, 2, 3],
-  [4, 5],
-  [6, 7],
-  [8, 9],
-  [10, 11],
-  [12, 13],
-  [14],
-  [15, 16],
-  [17, 18],
-  [19, 20],
-  [21, 22],
-  [23, 24],
-  [25, 26, 27],
-  [28, 29],
-  [30],
+type MushafSegment =
+  | { verse: number; part: 'full' }
+  | { verse: number; part: 'start'; text: string }
+  | { verse: number; part: 'end'; text: string };
 
-  // ===== صفحهٔ دوم (آیات ۳۱ تا ۴۰) =====
-  [31, 32, 33],
-  [34, 35],
-  [36],
-  [37],
-  [38],
-  [39],
-  [40],
+const MUSHAF_LINES: MushafSegment[][] = [
+  // ===== صفحهٔ اول — دقیقاً مطابق تصویر (آیات ۱ تا ۳۰) =====
+  [
+    { verse: 1, part: 'full' },
+    { verse: 2, part: 'full' },
+    { verse: 3, part: 'full' },
+  ],
+  [
+    { verse: 4, part: 'full' },
+    { verse: 5, part: 'full' },
+    { verse: 6, part: 'full' },
+  ],
+  [
+    { verse: 7, part: 'full' },
+    { verse: 8, part: 'full' },
+    { verse: 9, part: 'full' },
+  ],
+  [
+    { verse: 10, part: 'full' },
+    { verse: 11, part: 'full' },
+    { verse: 12, part: 'start', text: 'وَبَنَيۡنَا' },
+  ],
+  [
+    { verse: 12, part: 'end', text: 'فَوۡقَكُمۡ سَبۡعٗا شِدَادٗا' },
+    { verse: 13, part: 'full' },
+    { verse: 14, part: 'start', text: 'وَأَنزَلۡنَا' },
+  ],
+  [
+    { verse: 14, part: 'end', text: 'مِنَ ٱلۡمُعۡصِرَٰتِ مَآءٗ ثَجَّاجٗا' },
+    { verse: 15, part: 'full' },
+    { verse: 16, part: 'start', text: 'وَجَنَّٰتٍ' },
+  ],
+  [
+    { verse: 16, part: 'end', text: 'أَلۡفَافًا' },
+    { verse: 17, part: 'full' },
+    { verse: 18, part: 'start', text: 'يَوۡمَ يُنفَخُ فِي ٱلصُّورِ' },
+  ],
+  [
+    { verse: 18, part: 'end', text: 'فَتَأۡتُونَ أَفۡوَاجٗا' },
+    { verse: 19, part: 'full' },
+    { verse: 20, part: 'start', text: 'وَسُيِّرَتِ' },
+  ],
+  [
+    { verse: 20, part: 'end', text: 'ٱلۡجِبَالُ فَكَانَتۡ سَرَابًا' },
+    { verse: 21, part: 'full' },
+    { verse: 22, part: 'start', text: 'لِّلطَّٰغِينَ' },
+  ],
+  [
+    { verse: 22, part: 'end', text: 'مَآبٗا' },
+    { verse: 23, part: 'full' },
+    { verse: 24, part: 'full' },
+  ],
+  [
+    { verse: 25, part: 'full' },
+    { verse: 26, part: 'full' },
+    { verse: 27, part: 'start', text: 'إِنَّهُمۡ كَانُواْ' },
+  ],
+  [
+    { verse: 27, part: 'end', text: 'لَا يَرۡجُونَ حِسَابٗا' },
+    { verse: 28, part: 'full' },
+    { verse: 29, part: 'start', text: 'وَكُلَّ شَيۡءٍ' },
+  ],
+  [
+    { verse: 29, part: 'end', text: 'أَحۡصَيۡنَٰهُ كِتَٰبٗا' },
+    { verse: 30, part: 'full' },
+  ],
+
+  // ===== صفحهٔ دوم (آیات ۳۱ تا ۴۰) — بدون تصویر مرجع =====
+  [
+    { verse: 31, part: 'full' },
+    { verse: 32, part: 'full' },
+    { verse: 33, part: 'full' },
+  ],
+  [
+    { verse: 34, part: 'full' },
+    { verse: 35, part: 'full' },
+  ],
+  [{ verse: 36, part: 'full' }],
+  [{ verse: 37, part: 'full' }],
+  [{ verse: 38, part: 'full' }],
+  [{ verse: 39, part: 'full' }],
+  [{ verse: 40, part: 'full' }],
 ];
 
 const WORD_LINE_LOCATIONS: Record<string, number> = {
@@ -584,54 +654,54 @@ const WORD_LINE_LOCATIONS: Record<string, number> = {
   ٱلۡعَظِيمِ: 1,
   مُخۡتَلِفُونَ: 1,
   سَيَعۡلَمُونَ: 2,
-  ٱلۡأَرۡضَ: 3,
-  مِهَٰدٗا: 3,
+  ٱلۡأَرۡضَ: 2,
+  مِهَٰدٗا: 2,
   وَٱلۡجِبَالَ: 3,
   أَوۡتَادٗا: 3,
-  أَزۡوَٰجٗا: 4,
-  سُبَاتٗا: 4,
-  لِبَاسٗا: 5,
-  مَعَاشٗا: 5,
-  سَبۡعٗا: 6,
-  شِدَادٗا: 6,
-  سِرَاجٗا: 6,
-  وَهَّاجٗا: 6,
-  ٱلۡمُعۡصِرَٰتِ: 7,
-  ثَجَّاجٗا: 7,
-  حَبّٗا: 8,
-  وَنَبَاتٗا: 8,
-  أَلۡفَافًا: 8,
-  ٱلۡفَصۡلِ: 9,
-  مِيقَٰتٗا: 9,
-  ٱلصُّورِ: 9,
-  أَفۡوَاجٗا: 9,
-  أَبۡوَٰبٗا: 10,
-  سَرَابًا: 10,
-  جَهَنَّمَ: 11,
-  مِرۡصَادٗا: 11,
-  لِّلطَّٰغِينَ: 11,
-  أَحۡقَابٗا: 12,
-  حَمِيمٗا: 13,
-  وَغَسَّاقٗا: 13,
-  وِفَاقًا: 13,
-  يَرۡجُونَ: 13,
-  حِسَابٗا: 13,
-  كِتَٰبٗا: 14,
-  عَذَابًا: 15,
-  مَفَازٗا: 16,
-  حَدَآئِقَ: 16,
-  وَأَعۡنَٰبٗا: 16,
-  وَكَوَاعِبَ: 16,
-  أَتۡرَابٗا: 16,
-  دِهَاقٗا: 17,
-  لَغۡوٗا: 17,
-  كِذَّٰبٗا: 17,
-  ٱلرُّوحُ: 20,
-  صَوَابٗا: 20,
-  ٱلۡحَقُّ: 21,
-  مَآبًا: 21,
-  قَرِيبٗا: 22,
-  تُرَٰبَۢا: 22,
+  أَزۡوَٰجٗا: 3,
+  سُبَاتٗا: 3,
+  لِبَاسٗا: 4,
+  مَعَاشٗا: 4,
+  سَبۡعٗا: 5,
+  شِدَادٗا: 5,
+  سِرَاجٗا: 5,
+  وَهَّاجٗا: 5,
+  ٱلۡمُعۡصِرَٰتِ: 6,
+  ثَجَّاجٗا: 6,
+  حَبّٗا: 6,
+  وَنَبَاتٗا: 6,
+  أَلۡفَافًا: 7,
+  ٱلۡفَصۡلِ: 7,
+  مِيقَٰتٗا: 7,
+  ٱلصُّورِ: 7,
+  أَفۡوَاجٗا: 8,
+  أَبۡوَٰبٗا: 8,
+  سَرَابًا: 9,
+  جَهَنَّمَ: 9,
+  مِرۡصَادٗا: 9,
+  لِّلطَّٰغِينَ: 9,
+  أَحۡقَابٗا: 10,
+  حَمِيمٗا: 11,
+  وَغَسَّاقٗا: 11,
+  وِفَاقًا: 11,
+  يَرۡجُونَ: 12,
+  حِسَابٗا: 12,
+  كِتَٰبٗا: 13,
+  عَذَابًا: 13,
+  مَفَازٗا: 14,
+  حَدَآئِقَ: 14,
+  وَأَعۡنَٰبٗا: 14,
+  وَكَوَاعِبَ: 14,
+  أَتۡرَابٗا: 14,
+  دِهَاقٗا: 15,
+  لَغۡوٗا: 15,
+  كِذَّٰبٗا: 15,
+  ٱلرُّوحُ: 18,
+  صَوَابٗا: 18,
+  ٱلۡحَقُّ: 19,
+  مَآبًا: 19,
+  قَرِيبٗا: 20,
+  تُرَٰبَۢا: 20,
 };
 
 const normalizeArabic = (value: string) => {
@@ -2679,13 +2749,14 @@ export default function QuranScreen() {
    * ------------------------------------------------------------
    * رندر هر خط از مصحف
    * ------------------------------------------------------------
-   * این تابع آیات یک خط را به هم می‌چسباند و شماره هر آیه را
-   * با علامت ۞ در انتهای آن قرار می‌دهد. فونت و lineHeight
-   * مستقیماً روی Text اعمال می‌شود تا از override شدن توسط
-   * AppText جلوگیری شود.
+   * هر خط از چند «بخش» تشکیل شده: 'full' (آیه کامل + شماره)،
+   * 'start' (فقط شروع متن یک آیه که ادامه‌اش خط بعد می‌آید،
+   * بدون شماره) یا 'end' (باقیِ متن آیه + شمارهٔ آن). شمارهٔ
+   * آیه به سادگی به‌صورت یک عدد داخل پرانتز نمایش داده می‌شود
+   * تا روی هر فونت/دستگاهی درست دیده شود.
    */
   const renderMushafLine = (
-    verseNumbers: number[],
+    segments: MushafSegment[],
     lineIndex: number,
   ) => {
     return (
@@ -2707,17 +2778,25 @@ export default function QuranScreen() {
             lineHeight: MUSHAF_LINE_HEIGHT,
           }}
         >
-          {verseNumbers.map((num, idx) => {
-            const verse = getVerse(num);
+          {segments.map((segment, idx) => {
+            const verse = getVerse(segment.verse);
 
             if (!verse) return null;
 
+            const text =
+              segment.part === 'full'
+                ? verse.arabic
+                : segment.text;
+
+            const showsMark =
+              segment.part !== 'start';
+
             const today =
-              todayVerses.includes(num);
+              todayVerses.includes(segment.verse);
 
             const review =
               isReviewMode &&
-              previousVerses.includes(num);
+              previousVerses.includes(segment.verse);
 
             const visible = today || review;
 
@@ -2729,7 +2808,7 @@ export default function QuranScreen() {
               : colors.primary;
 
             return (
-              <Text key={num}>
+              <Text key={`${segment.verse}-${segment.part}`}>
                 <Text
                   style={{
                     opacity: visible ? 1 : 0.14,
@@ -2738,21 +2817,23 @@ export default function QuranScreen() {
                     fontFamily: QURAN_FONT_FAMILY,
                   }}
                 >
-                  {verse.arabic}
+                  {text}
                 </Text>
-                {' '}
-                <Text
-                  style={{
-                    color: markColor,
-                    opacity: visible ? 1 : 0.4,
-                    fontSize: MUSHAF_MARK_FONT_SIZE,
-                    fontWeight: '700',
-                    fontFamily: QURAN_FONT_FAMILY,
-                  }}
-                >
-                  ۞{toArabicDigits(num)}
-                </Text>
-                {idx < verseNumbers.length - 1 ? ' ' : ''}
+                {showsMark && (
+                  <Text
+                    style={{
+                      color: markColor,
+                      opacity: visible ? 1 : 0.4,
+                      fontSize: MUSHAF_MARK_FONT_SIZE,
+                      fontWeight: '700',
+                      fontFamily: QURAN_FONT_FAMILY,
+                    }}
+                  >
+                    {' '}
+                    ({toArabicDigits(segment.verse)})
+                  </Text>
+                )}
+                {idx < segments.length - 1 ? ' ' : ''}
               </Text>
             );
           })}

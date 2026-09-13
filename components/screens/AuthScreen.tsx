@@ -1,4 +1,3 @@
-
 import React, {
   useState,
 } from 'react';
@@ -10,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 
 import {
@@ -29,7 +29,6 @@ import {
 import * as Haptics from 'expo-haptics';
 
 import {
-  Mail,
   Lock,
   Eye,
   EyeOff,
@@ -98,13 +97,13 @@ export function AuthScreen() {
   ] = useState<1 | -1>(1);
 
   const [
-    email,
-    setEmail,
+    username,
+    setUsername,
   ] = useState('');
 
   const [
-    password,
-    setPassword,
+    phone,
+    setPhone,
   ] = useState('');
 
   const [
@@ -113,8 +112,8 @@ export function AuthScreen() {
   ] = useState('');
 
   const [
-    showPassword,
-    setShowPassword,
+    showPhone,
+    setShowPhone,
   ] = useState(false);
 
   const [
@@ -138,17 +137,6 @@ export function AuthScreen() {
      FONT CONFIGURATION
   ============================================================== */
 
-  /*
-   * IMPORTANT:
-   *
-   * Estedad-Medium.ttf is a single physical Persian font file.
-   *
-   * Do NOT apply fontWeight to Persian text.
-   *
-   * Android can otherwise attempt to resolve another font
-   * weight and fall back to the system font.
-   */
-
   const textFontFamily =
     isRTL
       ? Fonts.persian
@@ -169,12 +157,6 @@ export function AuthScreen() {
       ? Fonts.persian
       : Fonts.bold;
 
-  /*
-   * Persian uses the weight contained inside
-   * Estedad-Medium.ttf.
-   *
-   * English uses the Inter weight files.
-   */
   const persianSafeWeight =
     isRTL
       ? undefined
@@ -199,58 +181,128 @@ export function AuthScreen() {
      SUBMIT
   ============================================================== */
 
-  const handleSubmit =
-    async () => {
-      if (isLoading) {
-        return;
-      }
+  const handleSubmit = async () => {
+    if (isLoading) {
+      return;
+    }
 
-      Haptics.impactAsync(
-        Haptics.ImpactFeedbackStyle.Medium
+    Haptics.impactAsync(
+      Haptics.ImpactFeedbackStyle.Medium
+    );
+
+    /*
+     * USERNAME VALIDATION
+     */
+
+    if (!username.trim()) {
+      Alert.alert(
+        'نام کاربری',
+        'لطفاً نام کاربری خود را وارد کنید.'
       );
 
+      return;
+    }
+
+    /*
+     * PASSWORD VALIDATION
+     */
+
+    if (!phone.trim()) {
+      Alert.alert(
+        'رمز ورود',
+        'لطفاً رمز ورود خود را وارد کنید.'
+      );
+
+      return;
+    }
+
+    /*
+     * REGISTER NAME VALIDATION
+     */
+
+    if (
+      !isLogin &&
+      !name.trim()
+    ) {
+      Alert.alert(
+        'نام',
+        'لطفاً نام خود را وارد کنید.'
+      );
+
+      return;
+    }
+
+    try {
       /*
-       * Basic validation.
-       *
-       * Do NOT call login/register until the user
-       * actually submits the form.
+       * LOGIN
        */
 
-      if (!email.trim()) {
-        return;
-      }
+      if (isLogin) {
+        console.log(
+          '[AUTH SCREEN] Starting login...'
+        );
 
-      if (!password.trim()) {
-        return;
-      }
+        console.log(
+          '[AUTH SCREEN] Username:',
+          username.trim()
+        );
 
-      if (
-        !isLogin &&
-        !name.trim()
-      ) {
-        return;
-      }
+        console.log(
+          '[AUTH SCREEN] Password:',
+          phone.trim()
+        );
 
-      try {
-        if (isLogin) {
-          await login(
-            email.trim(),
-            password
-          );
-        } else {
-          await register(
-            name.trim(),
-            email.trim(),
-            password
-          );
-        }
-      } catch (error) {
-        console.error(
-          '[AUTH SCREEN] Submit failed:',
-          error
+        await login(
+          username.trim(),
+          phone.trim()
+        );
+
+        console.log(
+          '[AUTH SCREEN] Login completed successfully.'
         );
       }
-    };
+
+      /*
+       * REGISTER
+       */
+
+      else {
+        console.log(
+          '[AUTH SCREEN] Starting register...'
+        );
+
+        await register(
+          name.trim(),
+          username.trim(),
+          phone.trim()
+        );
+
+        console.log(
+          '[AUTH SCREEN] Register completed successfully.'
+        );
+      }
+    } catch (error) {
+      console.error(
+        '[AUTH SCREEN] Submit failed:',
+        error
+      );
+
+      let message =
+        'ورود انجام نشد. لطفاً دوباره تلاش کنید.';
+
+      if (
+        error instanceof Error &&
+        error.message
+      ) {
+        message = error.message;
+      }
+
+      Alert.alert(
+        'ورود ناموفق',
+        message
+      );
+    }
+  };
 
   /* ==============================================================
      SWITCH LOGIN / REGISTER
@@ -310,6 +362,7 @@ export function AuthScreen() {
         styles.container
       }
     >
+
       {/* ========================================================
           FLOATING AMBIENT ORB
       ======================================================== */}
@@ -394,6 +447,7 @@ export function AuthScreen() {
           styles.flex
         }
       >
+
         <ScrollView
           contentContainerStyle={
             styles.scrollContent
@@ -403,6 +457,7 @@ export function AuthScreen() {
           }
           keyboardShouldPersistTaps="handled"
         >
+
           {/* ====================================================
               HEADER / LOGO
           ==================================================== */}
@@ -412,11 +467,13 @@ export function AuthScreen() {
               styles.header
             }
           >
+
             <View
               style={
                 styles.logoWrapper
               }
             >
+
               <MotiView
                 from={{
                   rotate: '0deg',
@@ -428,13 +485,13 @@ export function AuthScreen() {
                   type: 'timing',
                   duration: 14000,
                   loop: true,
-                  repeatReverse:
-                    false,
+                  repeatReverse: false,
                 }}
                 style={
                   styles.logoRing
                 }
               >
+
                 <LinearGradient
                   colors={[
                     colors.primary,
@@ -453,6 +510,7 @@ export function AuthScreen() {
                     styles.logoRingGradient
                   }
                 />
+
               </MotiView>
 
               <MotiView
@@ -480,10 +538,12 @@ export function AuthScreen() {
                   },
                 ]}
               >
+
                 <Brain
                   size={34}
                   color="#FFFFFF"
                 />
+
               </MotiView>
 
               <MotiView
@@ -508,13 +568,16 @@ export function AuthScreen() {
                   styles.sparkleBadge
                 }
               >
+
                 <Sparkles
                   size={14}
                   color={
                     colors.primary
                   }
                 />
+
               </MotiView>
+
             </View>
 
             {/* ==================================================
@@ -601,6 +664,7 @@ export function AuthScreen() {
             >
               {t.welcome}
             </MotiText>
+
           </View>
 
           {/* ====================================================
@@ -637,8 +701,9 @@ export function AuthScreen() {
               },
             ]}
           >
+
             {/* ==================================================
-                SEGMENTED TAB SWITCHER
+                TAB SWITCHER
             ================================================== */}
 
             <View
@@ -656,15 +721,14 @@ export function AuthScreen() {
                 },
               ]}
             >
+
               {tabWidth > 0 && (
                 <MotiView
                   animate={{
                     translateX:
                       isLogin
                         ? 2
-                        : tabWidth /
-                            2 -
-                          2,
+                        : tabWidth / 2 - 2,
                   }}
                   transition={{
                     type: 'spring',
@@ -675,9 +739,7 @@ export function AuthScreen() {
                     styles.tabIndicator,
                     {
                       width:
-                        tabWidth /
-                          2 -
-                        4,
+                        tabWidth / 2 - 4,
 
                       backgroundColor:
                         colors.primary,
@@ -692,11 +754,10 @@ export function AuthScreen() {
                 }
                 activeOpacity={0.8}
                 onPress={() =>
-                  switchMode(
-                    true
-                  )
+                  switchMode(true)
                 }
               >
+
                 <MotiText
                   animate={{
                     color:
@@ -726,6 +787,7 @@ export function AuthScreen() {
                 >
                   {t.login}
                 </MotiText>
+
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -734,11 +796,10 @@ export function AuthScreen() {
                 }
                 activeOpacity={0.8}
                 onPress={() =>
-                  switchMode(
-                    false
-                  )
+                  switchMode(false)
                 }
               >
+
                 <MotiText
                   animate={{
                     color:
@@ -768,11 +829,13 @@ export function AuthScreen() {
                 >
                   {t.register}
                 </MotiText>
+
               </TouchableOpacity>
+
             </View>
 
             {/* ==================================================
-                ANIMATED FORM BODY
+                ANIMATED FORM
             ================================================== */}
 
             <AnimatePresence
@@ -781,6 +844,7 @@ export function AuthScreen() {
                 direction
               }
             >
+
               <MotiView
                 key={
                   isLogin
@@ -790,8 +854,7 @@ export function AuthScreen() {
                 from={{
                   opacity: 0,
                   translateX:
-                    36 *
-                    direction,
+                    36 * direction,
                 }}
                 animate={{
                   opacity: 1,
@@ -800,14 +863,14 @@ export function AuthScreen() {
                 exit={{
                   opacity: 0,
                   translateX:
-                    -36 *
-                    direction,
+                    -36 * direction,
                 }}
                 transition={{
                   type: 'timing',
                   duration: 280,
                 }}
               >
+
                 {/* ============================================
                     NAME
                 ============================================ */}
@@ -830,26 +893,23 @@ export function AuthScreen() {
                       delay: 60,
                     }}
                   >
+
                     <FieldWrapper
                       fieldKey="name"
                       focusedField={
                         focusedField
                       }
                     >
+
                       <Input
-                        label={
-                          t.language ===
-                          'fa'
-                            ? 'نام'
-                            : 'Name'
-                        }
+                        label="نام"
                         value={
                           name
                         }
                         onChangeText={
                           setName
                         }
-                        placeholder="John Doe"
+                        placeholder="نام خود را وارد کنید"
                         onFocus={() =>
                           setFocusedField(
                             'name'
@@ -862,21 +922,21 @@ export function AuthScreen() {
                         }
                         leftIcon={
                           <User
-                            size={
-                              20
-                            }
+                            size={20}
                             color={
                               colors.textTertiary
                             }
                           />
                         }
                       />
+
                     </FieldWrapper>
+
                   </MotiView>
                 )}
 
                 {/* ============================================
-                    EMAIL
+                    USERNAME
                 ============================================ */}
 
                 <MotiView
@@ -894,28 +954,28 @@ export function AuthScreen() {
                     delay: 100,
                   }}
                 >
+
                   <FieldWrapper
-                    fieldKey="email"
+                    fieldKey="username"
                     focusedField={
                       focusedField
                     }
                   >
+
                     <Input
-                      label={
-                        t.email
-                      }
+                      label="نام کاربری"
                       value={
-                        email
+                        username
                       }
                       onChangeText={
-                        setEmail
+                        setUsername
                       }
-                      placeholder="example@email.com"
-                      keyboardType="email-address"
+                      placeholder="نام کاربری خود را وارد کنید"
                       autoCapitalize="none"
+                      autoCorrect={false}
                       onFocus={() =>
                         setFocusedField(
-                          'email'
+                          'username'
                         )
                       }
                       onBlur={() =>
@@ -924,17 +984,17 @@ export function AuthScreen() {
                         )
                       }
                       leftIcon={
-                        <Mail
-                          size={
-                            20
-                          }
+                        <User
+                          size={20}
                           color={
                             colors.textTertiary
                           }
                         />
                       }
                     />
+
                   </FieldWrapper>
+
                 </MotiView>
 
                 {/* ============================================
@@ -956,29 +1016,32 @@ export function AuthScreen() {
                     delay: 160,
                   }}
                 >
+
                   <FieldWrapper
-                    fieldKey="password"
+                    fieldKey="phone"
                     focusedField={
                       focusedField
                     }
                   >
+
                     <Input
-                      label={
-                        t.password
-                      }
+                      label="رمز ورود"
                       value={
-                        password
+                        phone
                       }
                       onChangeText={
-                        setPassword
+                        setPhone
                       }
-                      placeholder="••••••••"
+                      placeholder="رمز ورود خود را وارد کنید"
+                      keyboardType="default"
+                      autoCapitalize="none"
+                      autoCorrect={false}
                       secureTextEntry={
-                        !showPassword
+                        !showPhone
                       }
                       onFocus={() =>
                         setFocusedField(
-                          'password'
+                          'phone'
                         )
                       }
                       onBlur={() =>
@@ -988,9 +1051,7 @@ export function AuthScreen() {
                       }
                       leftIcon={
                         <Lock
-                          size={
-                            20
-                          }
+                          size={20}
                           color={
                             colors.textTertiary
                           }
@@ -999,8 +1060,8 @@ export function AuthScreen() {
                       rightIcon={
                         <TouchableOpacity
                           onPress={() =>
-                            setShowPassword(
-                              !showPassword
+                            setShowPhone(
+                              !showPhone
                             )
                           }
                           hitSlop={{
@@ -1010,67 +1071,68 @@ export function AuthScreen() {
                             right: 8,
                           }}
                         >
+
                           <AnimatePresence
                             exitBeforeEnter
                           >
+
                             <MotiView
                               key={
-                                showPassword
-                                  ? 'open'
-                                  : 'closed'
+                                showPhone
+                                  ? 'visible'
+                                  : 'hidden'
                               }
                               from={{
                                 opacity: 0,
                                 scale: 0.5,
-                                rotate:
-                                  '-45deg',
+                                rotate: '-45deg',
                               }}
                               animate={{
                                 opacity: 1,
                                 scale: 1,
-                                rotate:
-                                  '0deg',
+                                rotate: '0deg',
                               }}
                               exit={{
                                 opacity: 0,
                                 scale: 0.5,
-                                rotate:
-                                  '45deg',
+                                rotate: '45deg',
                               }}
                               transition={{
                                 type: 'timing',
                                 duration: 180,
                               }}
                             >
-                              {showPassword ? (
-                                <EyeOff
-                                  size={
-                                    20
-                                  }
+
+                              {showPhone ? (
+                                <Eye
+                                  size={20}
                                   color={
                                     colors.textTertiary
                                   }
                                 />
                               ) : (
-                                <Eye
-                                  size={
-                                    20
-                                  }
+                                <EyeOff
+                                  size={20}
                                   color={
                                     colors.textTertiary
                                   }
                                 />
                               )}
+
                             </MotiView>
+
                           </AnimatePresence>
+
                         </TouchableOpacity>
                       }
                     />
+
                   </FieldWrapper>
+
                 </MotiView>
 
                 {/* ============================================
-                    FORGOT PASSWORD
+                    LOGIN INFO
                 ============================================ */}
 
                 {isLogin && (
@@ -1086,26 +1148,34 @@ export function AuthScreen() {
                       duration: 300,
                       delay: 220,
                     }}
+                    style={
+                      styles.loginHintWrapper
+                    }
                   >
-                    <TouchableOpacity
-                      style={
-                        styles.forgotPassword
-                      }
-                    >
-                      <Text
-                        style={[
-                          styles.forgotText,
-                          {
-                            color:
-                              colors.primary,
-                          },
-                        ]}
-                      >
+
+                    <Text
+                      style={[
+                        styles.loginHint,
                         {
-                          t.forgotPassword
-                        }
-                      </Text>
-                    </TouchableOpacity>
+                          color:
+                            colors.textSecondary,
+
+                          fontFamily:
+                            textFontFamily,
+
+                          fontWeight:
+                            persianSafeWeight,
+
+                          writingDirection:
+                            isRTL
+                              ? 'rtl'
+                              : 'ltr',
+                        },
+                      ]}
+                    >
+                      لطفاً نام کاربری و رمز ورود ثبت‌شده خود را وارد کنید.
+                    </Text>
+
                   </MotiView>
                 )}
 
@@ -1128,6 +1198,7 @@ export function AuthScreen() {
                     delay: 260,
                   }}
                 >
+
                   <TouchableOpacity
                     activeOpacity={0.9}
                     disabled={
@@ -1147,6 +1218,7 @@ export function AuthScreen() {
                       handleSubmit
                     }
                   >
+
                     <MotiView
                       animate={{
                         scale:
@@ -1166,15 +1238,14 @@ export function AuthScreen() {
                         },
                       ]}
                     >
+
                       {!isLoading && (
                         <MotiView
                           from={{
-                            translateX:
-                              -140,
+                            translateX: -140,
                           }}
                           animate={{
-                            translateX:
-                              220,
+                            translateX: 220,
                           }}
                           transition={{
                             type: 'timing',
@@ -1186,6 +1257,7 @@ export function AuthScreen() {
                             styles.shimmer
                           }
                         >
+
                           <LinearGradient
                             colors={[
                               'transparent',
@@ -1204,13 +1276,16 @@ export function AuthScreen() {
                               styles.shimmerGradient
                             }
                           />
+
                         </MotiView>
                       )}
 
                       <AnimatePresence
                         exitBeforeEnter
                       >
+
                         {isLoading ? (
+
                           <MotiView
                             key="loading"
                             from={{
@@ -1223,14 +1298,13 @@ export function AuthScreen() {
                               opacity: 0,
                             }}
                           >
+
                             <MotiView
                               from={{
-                                rotate:
-                                  '0deg',
+                                rotate: '0deg',
                               }}
                               animate={{
-                                rotate:
-                                  '360deg',
+                                rotate: '360deg',
                               }}
                               transition={{
                                 type: 'timing',
@@ -1241,8 +1315,11 @@ export function AuthScreen() {
                                 styles.loadingRing
                               }
                             />
+
                           </MotiView>
+
                         ) : (
+
                           <MotiView
                             key="idle"
                             from={{
@@ -1258,6 +1335,7 @@ export function AuthScreen() {
                               styles.submitContent
                             }
                           >
+
                             <Text
                               style={[
                                 styles.submitText,
@@ -1284,11 +1362,17 @@ export function AuthScreen() {
                               size={20}
                               color="#FFFFFF"
                             />
+
                           </MotiView>
+
                         )}
+
                       </AnimatePresence>
+
                     </MotiView>
+
                   </TouchableOpacity>
+
                 </MotiView>
 
                 {/* ============================================
@@ -1311,12 +1395,24 @@ export function AuthScreen() {
                     styles.switchAuth
                   }
                 >
+
                   <Text
                     style={[
                       styles.switchText,
                       {
                         color:
                           colors.textSecondary,
+
+                        fontFamily:
+                          textFontFamily,
+
+                        fontWeight:
+                          persianSafeWeight,
+
+                        writingDirection:
+                          isRTL
+                            ? 'rtl'
+                            : 'ltr',
                       },
                     ]}
                   >
@@ -1332,6 +1428,7 @@ export function AuthScreen() {
                       )
                     }
                   >
+
                     <Text
                       style={[
                         styles.switchLink,
@@ -1356,13 +1453,21 @@ export function AuthScreen() {
                         ? t.register
                         : t.login}
                     </Text>
+
                   </TouchableOpacity>
+
                 </MotiView>
+
               </MotiView>
+
             </AnimatePresence>
+
           </MotiView>
+
         </ScrollView>
+
       </KeyboardAvoidingView>
+
     </LinearGradient>
   );
 }
@@ -1371,10 +1476,6 @@ export function AuthScreen() {
    FIELD WRAPPER
 ================================================================ */
 
-/**
- * Small wrapper that gives a field a gentle "lift"
- * when it is focused.
- */
 function FieldWrapper({
   fieldKey,
   focusedField,
@@ -1413,6 +1514,7 @@ function FieldWrapper({
 
 const styles =
   StyleSheet.create({
+
     container: {
       flex: 1,
     },
@@ -1422,8 +1524,7 @@ const styles =
     },
 
     orb: {
-      position:
-        'absolute',
+      position: 'absolute',
 
       width: 260,
       height: 260,
@@ -1445,8 +1546,7 @@ const styles =
     },
 
     header: {
-      alignItems:
-        'center',
+      alignItems: 'center',
 
       marginBottom:
         Spacing.xl,
@@ -1456,27 +1556,22 @@ const styles =
       width: 100,
       height: 100,
 
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
+      alignItems: 'center',
+      justifyContent: 'center',
 
       marginBottom:
         Spacing.md,
     },
 
     logoRing: {
-      position:
-        'absolute',
+      position: 'absolute',
 
       width: 100,
       height: 100,
 
       borderRadius: 50,
 
-      overflow:
-        'hidden',
+      overflow: 'hidden',
 
       padding: 4,
     },
@@ -1493,55 +1588,37 @@ const styles =
 
       borderRadius: 42,
 
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
 
     sparkleBadge: {
-      position:
-        'absolute',
+      position: 'absolute',
 
       width: 28,
       height: 28,
 
       borderRadius: 14,
 
-      backgroundColor:
-        '#FFFFFF',
+      backgroundColor: '#FFFFFF',
 
-      alignItems:
-        'center',
+      alignItems: 'center',
+      justifyContent: 'center',
 
-      justifyContent:
-        'center',
-
-      shadowColor:
-        '#000',
+      shadowColor: '#000',
 
       shadowOffset: {
         width: 0,
         height: 2,
       },
 
-      shadowOpacity:
-        0.15,
+      shadowOpacity: 0.15,
 
       shadowRadius: 4,
 
       elevation: 4,
     },
 
-    /*
-     * IMPORTANT:
-     *
-     * No fontWeight here.
-     *
-     * The actual font is applied directly to MotiText
-     * according to the selected language.
-     */
     appName: {
       fontSize: 32,
 
@@ -1565,8 +1642,7 @@ const styles =
         height: 8,
       },
 
-      shadowOpacity:
-        0.14,
+      shadowOpacity: 0.14,
 
       shadowRadius: 24,
 
@@ -1574,8 +1650,7 @@ const styles =
     },
 
     tabsContainer: {
-      flexDirection:
-        'row',
+      flexDirection: 'row',
 
       borderRadius:
         BorderRadius.lg,
@@ -1585,16 +1660,13 @@ const styles =
       marginBottom:
         Spacing.lg,
 
-      position:
-        'relative',
+      position: 'relative',
 
-      overflow:
-        'hidden',
+      overflow: 'hidden',
     },
 
     tabIndicator: {
-      position:
-        'absolute',
+      position: 'absolute',
 
       top: 2,
       bottom: 2,
@@ -1608,42 +1680,31 @@ const styles =
 
       paddingVertical: 11,
 
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
+      alignItems: 'center',
+      justifyContent: 'center',
 
       zIndex: 1,
     },
 
-    /*
-     * No fontWeight here.
-     *
-     * It is applied dynamically above:
-     *
-     * Persian -> undefined
-     * English -> 700
-     */
     tabText: {
       fontSize: 14,
     },
 
-    forgotPassword: {
-      alignSelf:
-        'flex-end',
+    loginHintWrapper: {
+      marginTop: 2,
 
       marginBottom:
         Spacing.md,
+
+      paddingHorizontal: 2,
     },
 
-    forgotText: {
-      fontSize: 14,
+    loginHint: {
+      fontSize: 12,
 
-      /*
-       * The weight is intentionally not specified here.
-       * AppText resolves the Persian font.
-       */
+      lineHeight: 20,
+
+      textAlign: 'right',
     },
 
     submitButton: {
@@ -1652,46 +1713,34 @@ const styles =
       borderRadius:
         BorderRadius.lg,
 
-      alignItems:
-        'center',
+      alignItems: 'center',
 
-      justifyContent:
-        'center',
+      justifyContent: 'center',
 
       marginTop:
         Spacing.md,
 
-      overflow:
-        'hidden',
+      overflow: 'hidden',
     },
 
     submitContent: {
-      flexDirection:
-        'row',
+      flexDirection: 'row',
 
-      alignItems:
-        'center',
+      alignItems: 'center',
 
-      justifyContent:
-        'center',
+      justifyContent: 'center',
 
       gap: 8,
     },
 
-    /*
-     * Weight is applied dynamically because Persian
-     * must not receive an Android fontWeight.
-     */
     submitText: {
-      color:
-        '#FFFFFF',
+      color: '#FFFFFF',
 
       fontSize: 16,
     },
 
     shimmer: {
-      position:
-        'absolute',
+      position: 'absolute',
 
       top: 0,
       bottom: 0,
@@ -1706,8 +1755,7 @@ const styles =
 
       transform: [
         {
-          skewX:
-            '-20deg',
+          skewX: '-20deg',
         },
       ],
     },
@@ -1728,11 +1776,11 @@ const styles =
     },
 
     switchAuth: {
-      flexDirection:
-        'row',
+      flexDirection: 'row',
 
-      justifyContent:
-        'center',
+      justifyContent: 'center',
+
+      alignItems: 'center',
 
       marginTop:
         Spacing.lg,
@@ -1745,11 +1793,8 @@ const styles =
       fontSize: 14,
     },
 
-    /*
-     * Weight is applied dynamically.
-     */
     switchLink: {
       fontSize: 14,
     },
-  });
 
+  });
